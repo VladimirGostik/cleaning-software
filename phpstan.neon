@@ -1,0 +1,19 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # NOTE: level 5 for v0.1 baseline. Increment toward max as code stabilises.
+    level: 5
+    paths:
+        - app
+        - database
+    excludePaths:
+        - database/migrations/2026_05_03_194335_create_permission_tables.php
+        - database/migrations/2026_05_03_194336_create_media_table.php
+    ignoreErrors:
+        -
+            identifier: missingType.generics
+            reportUnmatched: false
+        -
+            identifier: trait.unused
+            reportUnmatched: false

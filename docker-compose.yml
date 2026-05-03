@@ -1,0 +1,42 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    image: cleaning-software-app:dev
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: cleaning
+      DB_USERNAME: cleaning
+      DB_PASSWORD: secret
+      APP_URL: http://localhost:8000
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cleaning
+      POSTGRES_USER: cleaning
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cleaning -d cleaning"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

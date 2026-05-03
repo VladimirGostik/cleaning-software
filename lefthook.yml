@@ -1,0 +1,27 @@
+pre-commit:
+  parallel: true
+  commands:
+    pint:
+      glob: '*.php'
+      run: docker compose run --rm --no-deps app vendor/bin/pint {staged_files}
+      stage_fixed: true
+    phpstan:
+      glob: '*.php'
+      run: docker compose run --rm --no-deps app vendor/bin/phpstan analyse --no-progress {staged_files}
+    eslint:
+      glob: '*.{js,ts,vue}'
+      run: docker compose run --rm --no-deps app pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
+    prettier:
+      glob: '*.{css,json,md}'
+      run: docker compose run --rm --no-deps app pnpm exec prettier --write {staged_files}
+      stage_fixed: true
+    typescript-transform:
+      glob: '{app/Data/**,app/Enums/**}/*.php'
+      run: docker compose run --rm --no-deps app php artisan typescript:transform && git add resources/js/types/generated.d.ts
+      stage_fixed: true
+
+pre-push:
+  commands:
+    typecheck:
+      run: docker compose run --rm --no-deps app pnpm exec vue-tsc --noEmit

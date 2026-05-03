@@ -1,0 +1,8 @@
+node_modules
+vendor
+public/build
+public/hot
+storage
+.env
+.env.*
+resources/js/types/generated.d.ts
