@@ -74,6 +74,12 @@ We tried Inertia v3's published augmentation pattern (`declare module '@inertiaj
 
 `UserSeeder` creates: User `admin@example.com` / `password` → TenantMembership → Tenant `Demo Cleaning s.r.o.` (IČO 12345678, VAT-payer, plan `premium`). After seed, sets `permissions team_id` to the tenant and runs `RoleTemplatesSeeder` which creates the 6 default roles per spec, assigns Vlastník to admin.
 
+## Design handoff bundle
+
+Claude Design HTML/JSX prototypes live in `docs/design-handoff/`. Source of truth for screen visuals (landing, login, dashboard, klienti, quotes, zmluva, invoices, rozvrh, zamestnanec). Per the bundle README: re-implement pixel-perfectly in Vue 3 + Tailwind 4, do **not** copy the prototype's React structure or its `cm-*` CSS classes. The custom CSS in `docs/design-handoff/project/styles.css` is reference-only — never imported.
+
+The landing page (`Pages/Landing.vue`) deliberately uses raw Tailwind palette (blue/slate) instead of DaisyUI semantic tokens because the marketing visual targets a fixed brand palette regardless of the in-app theme.
+
 ## Known gaps to close in /feature passes
 
 In rough dependency order:

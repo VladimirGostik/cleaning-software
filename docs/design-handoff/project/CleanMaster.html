@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8" />
+<title>CleanMaster — UI návrhy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; font-family: 'Plus Jakarta Sans', sans-serif; }
+  #root { height: 100%; }
+</style>
+</head>
+<body>
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#2563EB"/>
+      <path d="M30 60c0-11 9-20 20-20s20 9 20 20" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M38 70h24" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="68" cy="32" r="3" fill="#fff"/>
+      <circle cx="56" cy="26" r="2" fill="#fff"/>
+    </svg>
+  </template>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="cm-shared.jsx"></script>
+  <script type="text/babel" src="cm-layout.jsx"></script>
+  <script type="text/babel" src="screens/login.jsx"></script>
+  <script type="text/babel" src="screens/landing.jsx"></script>
+  <script type="text/babel" src="screens/dashboard.jsx"></script>
+  <script type="text/babel" src="screens/klienti.jsx"></script>
+  <script type="text/babel" src="screens/quotes.jsx"></script>
+  <script type="text/babel" src="screens/zmluva.jsx"></script>
+  <script type="text/babel" src="screens/invoices.jsx"></script>
+  <script type="text/babel" src="screens/rozvrh.jsx"></script>
+  <script type="text/babel" src="screens/zamestnanec.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAKS = /*EDITMODE-BEGIN*/{
+      "accent": "#D97706",
+      "accentDark": "#B45309",
+      "accentLight": "#FEF3C7",
+      "density": "cozy",
+      "multiFirma": true
+    }/*EDITMODE-END*/;
+
+    const ACCENTS = [
+      { id: 'blue',   label: 'Modrá',     v: '#2563EB', d: '#1D4ED8', l: '#DBEAFE' },
+      { id: 'indigo', label: 'Indigo',    v: '#4F46E5', d: '#4338CA', l: '#E0E7FF' },
+      { id: 'teal',   label: 'Teal',      v: '#0D9488', d: '#0F766E', l: '#CCFBF1' },
+      { id: 'emerald',label: 'Smaragd',   v: '#059669', d: '#047857', l: '#D1FAE5' },
+      { id: 'violet', label: 'Fialová',   v: '#7C3AED', d: '#6D28D9', l: '#EDE9FE' },
+      { id: 'rose',   label: 'Ružová',    v: '#E11D48', d: '#BE123C', l: '#FFE4E6' },
+      { id: 'amber',  label: 'Jantárová', v: '#D97706', d: '#B45309', l: '#FEF3C7' },
+      { id: 'slate',  label: 'Bridlica',  v: '#475569', d: '#334155', l: '#E2E8F0' },
+    ];
+
+    const App = () => {
+      const [tweaks, setTweak] = useTweaks(TWEAKS);
+      const [firma, setFirma] = React.useState('all');
+
+      // Find current accent (match by hex)
+      const accentId = (ACCENTS.find(a => a.v.toLowerCase() === (tweaks.accent||'').toLowerCase()) || ACCENTS[0]).id;
+
+      // Apply accent + density to root
+      React.useEffect(() => {
+        const r = document.documentElement;
+        r.style.setProperty('--primary', tweaks.accent);
+        r.style.setProperty('--primary-dark', tweaks.accentDark);
+        r.style.setProperty('--primary-light', tweaks.accentLight);
+        r.dataset.density = tweaks.density;
+      }, [tweaks.accent, tweaks.accentDark, tweaks.accentLight, tweaks.density]);
+
+      const setAccent = (id) => {
+        const a = ACCENTS.find(x => x.id === id) || ACCENTS[0];
+        setTweak({ accent: a.v, accentDark: a.d, accentLight: a.l });
+      };
+
+      // Common props for screens
+      const sp = { firma, setFirma };
+      // multiFirma forwarded via topbar wrapper
+      const wrap = (children) => React.cloneElement(children, { multiFirma: tweaks.multiFirma });
+
+      // Override AppShell topbar visibility via context-less prop drilling — tweak passed deep
+      // Simpler: monkey-patch AppShell's children's Topbar by reading multiFirma from window
+      window.__cmMultiFirma = tweaks.multiFirma;
+
+      return (
+        <>
+          <DesignCanvas>
+            <DCSection id="entry" title="Vstupné body" subtitle="Prvé dotyky — landing pre marketing, login pre používateľov.">
+              <DCArtboard id="landing" label="Landing page · cleanmaster.sk" width={1280} height={820}>
+                <LandingScreen />
+              </DCArtboard>
+              <DCArtboard id="login" label="Prihlásenie" width={1280} height={820}>
+                <LoginScreen />
+              </DCArtboard>
+            </DCSection>
+
+            <DCSection id="admin-overview" title="Admin portál — prehľady" subtitle="Hlavné navigačné rozhranie pre majiteľa firmy.">
+              <DCArtboard id="dashboard" label="Dashboard" width={1440} height={920}>
+                <Dashboard {...sp} />
+              </DCArtboard>
+              <DCArtboard id="rozvrh" label="Rozvrh · týždenný kalendár" width={1440} height={920}>
+                <Rozvrh {...sp} />
+              </DCArtboard>
+            </DCSection>
+
+            <DCSection id="klienti-section" title="Klienti" subtitle="Zoznam s filtrami + bohatý detail s objektami, zmluvami a faktúrami.">
+              <DCArtboard id="klienti-list" label="Klienti · zoznam" width={1440} height={860}>
+                <KlientiList {...sp} />
+              </DCArtboard>
+              <DCArtboard id="klient-detail" label="Detail klienta · Alza.sk" width={1440} height={1100}>
+                <KlientDetail {...sp} />
+              </DCArtboard>
+            </DCSection>
+
+            <DCSection id="quotes-section" title="Cenové ponuky" subtitle="Editovateľné položky → schvaľovanie → automatický rozpis prác do zmluvy.">
+              <DCArtboard id="quote-create" label="Cenová ponuka · vytvoriť" width={1440} height={1100}>
+                <QuoteCreate {...sp} />
+              </DCArtboard>
+              <DCArtboard id="quote-detail" label="Cenová ponuka · detail (odoslaná)" width={1440} height={1080}>
+                <QuoteDetail {...sp} />
+              </DCArtboard>
+            </DCSection>
+
+            <DCSection id="zmluva-section" title="Zmluvy" subtitle="Detail s tabmi: prehľad, faktúry, zákazky, história zmien.">
+              <DCArtboard id="zmluva-detail" label="Zmluva · detail s tabmi" width={1440} height={1100}>
+                <ZmluvaDetail {...sp} />
+              </DCArtboard>
+            </DCSection>
+
+            <DCSection id="invoices-section" title="Faktúry" subtitle="Vystavovanie z nefakturovaných zákaziek + náhľad PDF s QR platbou.">
+              <DCArtboard id="invoice-create" label="Faktúra · vytvoriť" width={1440} height={1180}>
+                <InvoiceCreate {...sp} />
+              </DCArtboard>
+              <DCArtboard id="invoice-detail" label="Faktúra · detail (vystavená)" width={1440} height={1180}>
+                <InvoiceDetail {...sp} />
+              </DCArtboard>
+            </DCSection>
+
+            <DCSection id="employees-section" title="Zamestnanci" subtitle="Detail s editorom oprávnení podľa modulov.">
+              <DCArtboard id="zamestnanec" label="Zamestnanec · detail s oprávneniami" width={1440} height={1100}>
+                <ZamestnanecDetail {...sp} />
+              </DCArtboard>
+            </DCSection>
+          </DesignCanvas>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection title="Vzhľad">
+              <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap: 6, marginBottom: 4}}>
+                {ACCENTS.map(a => (
+                  <div key={a.id} onClick={() => setAccent(a.id)}
+                    style={{cursor:'pointer', padding: 6, borderRadius: 6, border: '1.5px solid ' + (accentId === a.id ? a.v : 'transparent'), background: accentId === a.id ? a.l : 'transparent', transition:'all .12s'}}>
+                    <div style={{width:'100%', height: 18, background: a.v, borderRadius: 4, marginBottom: 4}}></div>
+                    <div style={{fontSize: 10, fontWeight: 600, color: '#334155', textAlign:'center'}}>{a.label}</div>
+                  </div>
+                ))}
+              </div>
+            </TweakSection>
+            <TweakRadio label="Hustota" value={tweaks.density} options={[{value:'compact',label:'Hustá'},{value:'cozy',label:'Štandard'},{value:'spacious',label:'Vzdušná'}]} onChange={v => setTweak('density', v)} />
+            <TweakSection title="Multi-firma">
+              <TweakToggle label="Zobraziť firma filter & tagy" value={tweaks.multiFirma} onChange={v => setTweak('multiFirma', v)} />
+            </TweakSection>
+          </TweaksPanel>
+        </>
+      );
+    };
+
+    // Patch AppShell to honor global multiFirma flag set from App
+    const _AppShell = window.AppShell;
+    window.AppShell = (props) => _AppShell({ ...props, multiFirma: window.__cmMultiFirma !== false });
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
