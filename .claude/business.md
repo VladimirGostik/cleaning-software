@@ -39,7 +39,7 @@ Permissions, not roles, drive UI: a cleaner with no permission for "Reklamácie"
 - `Tenant` — firma/cleaning company. UUIDv7. VAT-payer flag globally toggles VAT fields across all documents. Subscription plan + entity limits.
 - `User` — global identity. UUID. `locale` (sk/en/uk), `is_active`.
 - `TenantMembership` — pivot User × Tenant. Permission scope. **Deactivating** a membership only revokes access for that tenant; user still exists in others.
-- `Client` — typ: `Firemný` (firemný — IČO/DIČ/IČ DPH) or `Súkromný` (private person).
+- `Client` — typ: `Corporate` (firemný — IČO/DIČ/IČ DPH required) or `Private` (private person, IČO optional). Has multiple contacts with primary flag. Soft-delete. Partial unique index on (tenant_id, ico) per tenant for active clients.
 - `Object` — physical cleaning location (kancelária/byt/dom/spoločné priestory). The **central entity**: client → object → (quote → contract → invoices). Holds access info (codes, keys), special instructions.
 - `Quote` (cenová ponuka) — items with name/description/frequency/unit/quantity/price. Status: Draft → Odoslaná → Schválená → Zamietnutá → Expirovaná. Auto-generates work breakdown.
 - `Contract` — **polymorphic** (`contractable_type` + `contractable_id`) so it can target Object (client contract) or TenantMembership (employee contract) or future entities. Has `ContractCategory` enum (configurable per tenant). Type: doba určitá / doba neurčitá. Has change log (audit). Notifies 30/14/7 days before expiry.

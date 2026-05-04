@@ -28,6 +28,12 @@ export default [
     },
     {
         files: ['**/*.{ts,vue}'],
+        languageOptions: {
+            globals: {
+                // App namespace is declared globally in resources/js/types/generated.d.ts
+                App: 'readonly',
+            },
+        },
         rules: {
             '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
             'vue/multi-word-component-names': 'off',

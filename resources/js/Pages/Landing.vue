@@ -40,6 +40,7 @@
         clients: string;
         features: string[];
         popular?: boolean;
+        amber?: boolean;
     }
 
     const plans: Plan[] = [
@@ -75,6 +76,7 @@
             users: '∞',
             clients: '∞',
             features: ['Všetko bez limitov', 'Prioritná podpora', 'Vlastný branding'],
+            amber: true,
         },
     ];
 
@@ -88,8 +90,15 @@
         { label: 'Zamestnanci', icon: '◐' },
     ];
 
-    const stats = [
-        { label: 'Dnes', value: '8', tone: 'text-blue-600' },
+    interface Stat {
+        label: string;
+        value: string;
+        tone: string;
+        navy?: boolean;
+    }
+
+    const stats: Stat[] = [
+        { label: 'Dnes', value: '8', tone: 'text-[#1E3A8A]', navy: true },
         { label: 'Bez upratovačky', value: '2', tone: 'text-red-600' },
         { label: 'Nefakturované', value: '14', tone: 'text-amber-600' },
         { label: 'Končiace', value: '3', tone: 'text-amber-600' },
@@ -112,7 +121,7 @@
         >
             <Link href="/" class="mr-auto flex items-center gap-2 font-bold tracking-tight text-slate-900">
                 <span
-                    class="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow"
+                    class="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-[#A16207] to-[#713F12] text-white shadow"
                 >
                     <svg
                         viewBox="0 0 24 24"
@@ -177,7 +186,7 @@
             </Link>
             <Link
                 href="/login"
-                class="inline-flex h-9 items-center rounded-md bg-blue-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow"
+                class="inline-flex h-9 items-center rounded-md bg-[#A16207] px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#713F12] hover:shadow"
             >
                 {{ t('landing.nav.try_free') }}
             </Link>
@@ -186,7 +195,7 @@
         <!-- Hero -->
         <section class="mx-auto max-w-[1100px] px-6 pt-20 pb-16 text-center md:px-12">
             <span
-                class="mb-7 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-[5px] text-xs font-semibold text-blue-700"
+                class="mb-7 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-[5px] text-xs font-semibold text-amber-800"
             >
                 <SparklesIcon class="h-3 w-3" />
                 {{ t('landing.hero.badge') }}
@@ -195,7 +204,7 @@
             <h1 class="mb-5 text-5xl leading-[1.05] font-bold tracking-tight text-slate-900 md:text-6xl">
                 {{ t('landing.hero.title_1') }}
                 <br />
-                <span class="bg-gradient-to-br from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+                <span class="bg-gradient-to-br from-[#A16207] to-[#713F12] bg-clip-text text-transparent">
                     {{ t('landing.hero.title_2') }}
                 </span>
             </h1>
@@ -206,14 +215,14 @@
             <div class="flex flex-wrap justify-center gap-3">
                 <Link
                     href="/login"
-                    class="inline-flex h-11 items-center gap-2 rounded-md bg-blue-600 px-5 text-sm font-semibold text-white shadow transition hover:bg-blue-700 hover:shadow-lg"
+                    class="inline-flex h-11 items-center gap-2 rounded-md bg-[#A16207] px-5 text-sm font-semibold text-white shadow transition hover:bg-[#713F12] hover:shadow-lg"
                 >
                     {{ t('landing.hero.cta_primary') }}
                     <ArrowRightIcon class="h-4 w-4" />
                 </Link>
                 <button
                     type="button"
-                    class="inline-flex h-11 items-center gap-2 rounded-md border border-slate-200 bg-white px-5 text-sm font-semibold text-blue-600 transition hover:border-blue-600 hover:bg-slate-50"
+                    class="inline-flex h-11 items-center gap-2 rounded-md border border-slate-200 bg-white px-5 text-sm font-semibold text-[#1E3A8A] transition hover:border-[#1E3A8A] hover:bg-slate-50"
                 >
                     {{ t('landing.hero.cta_secondary') }}
                 </button>
@@ -240,7 +249,7 @@
                             v-for="(item, i) in navMockItems"
                             :key="item.label"
                             class="flex items-center gap-2 rounded-[5px] px-2 py-1.5 text-[11px]"
-                            :class="item.active ? 'bg-blue-600 text-white' : 'text-slate-400'"
+                            :class="item.active ? 'bg-[#1E3A8A] text-white' : 'text-slate-400'"
                         >
                             <span class="text-xs">{{ item.icon }}</span>
                             {{ item.label }}
@@ -253,7 +262,8 @@
                             <div
                                 v-for="s in stats"
                                 :key="s.label"
-                                class="rounded-md border border-slate-200 bg-white p-2.5"
+                                class="rounded-md border p-2.5"
+                                :class="s.navy ? 'border-[#1E3A8A]/30 bg-blue-50' : 'border-slate-200 bg-white'"
                             >
                                 <div class="text-[9px] font-semibold tracking-wide text-slate-500 uppercase">
                                     {{ s.label }}
@@ -294,7 +304,7 @@
                     class="rounded-2xl border border-slate-200 bg-slate-50 p-8 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                     <div
-                        class="mb-4 flex h-11 w-11 items-center justify-center rounded-[10px] bg-blue-100 text-blue-600"
+                        class="mb-4 flex h-11 w-11 items-center justify-center rounded-[10px] bg-amber-100 text-amber-700"
                     >
                         <component :is="f.icon" class="h-5 w-5" />
                     </div>
@@ -322,18 +332,27 @@
                         v-for="plan in plans"
                         :key="plan.name"
                         class="relative rounded-2xl border border-slate-200 bg-white px-6 py-8"
-                        :class="
-                            plan.popular ? 'border-blue-600 ring-[3px] ring-blue-100 lg:-translate-y-2' : ''
-                        "
+                        :class="[
+                            plan.popular ? 'border-[#1E3A8A] ring-[3px] ring-[#1E3A8A]/15 lg:-translate-y-2' : '',
+                            plan.amber
+                                ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-white ring-[3px] ring-amber-100 shadow-md shadow-amber-100/40'
+                                : '',
+                        ]"
                     >
                         <span
                             v-if="plan.popular"
-                            class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-xl bg-blue-600 px-3.5 py-1 text-[11px] font-bold tracking-wider text-white uppercase"
+                            class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-xl bg-[#1E3A8A] px-3.5 py-1 text-[11px] font-bold tracking-wider text-white uppercase"
                         >
                             {{ t('landing.pricing.popular') }}
                         </span>
+                        <span
+                            v-if="plan.amber"
+                            class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3.5 py-1 text-[11px] font-bold tracking-wider text-white uppercase shadow-sm shadow-amber-200"
+                        >
+                            {{ t('landing.pricing.premium_badge') }}
+                        </span>
                         <h4 class="text-lg font-bold text-slate-900">{{ plan.name }}</h4>
-                        <div class="mt-2 mb-1 text-4xl font-bold tracking-tight text-slate-900">
+                        <div class="mt-2 mb-1 text-4xl font-bold tracking-tight" :class="plan.amber ? 'text-amber-600' : 'text-slate-900'">
                             {{ plan.price }} €
                             <small class="text-sm font-medium text-slate-500">{{
                                 t('landing.pricing.month')
@@ -341,15 +360,15 @@
                         </div>
                         <ul class="my-5 flex flex-col gap-2">
                             <li class="flex items-center gap-2 text-sm text-slate-700">
-                                <CheckIcon class="h-3.5 w-3.5 text-emerald-600" />
+                                <CheckIcon :class="['h-3.5 w-3.5', plan.amber ? 'text-amber-500' : 'text-emerald-600']" />
                                 {{ t('landing.pricing.firms') }}: {{ plan.firms }}
                             </li>
                             <li class="flex items-center gap-2 text-sm text-slate-700">
-                                <CheckIcon class="h-3.5 w-3.5 text-emerald-600" />
+                                <CheckIcon :class="['h-3.5 w-3.5', plan.amber ? 'text-amber-500' : 'text-emerald-600']" />
                                 {{ t('landing.pricing.users') }}: {{ plan.users }}
                             </li>
                             <li class="flex items-center gap-2 text-sm text-slate-700">
-                                <CheckIcon class="h-3.5 w-3.5 text-emerald-600" />
+                                <CheckIcon :class="['h-3.5 w-3.5', plan.amber ? 'text-amber-500' : 'text-emerald-600']" />
                                 {{ t('landing.pricing.clients') }}: {{ plan.clients }}
                             </li>
                             <li
@@ -357,18 +376,22 @@
                                 :key="feat"
                                 class="flex items-center gap-2 text-sm text-slate-700"
                             >
-                                <CheckIcon class="h-3.5 w-3.5 text-emerald-600" />
+                                <CheckIcon :class="['h-3.5 w-3.5', plan.amber ? 'text-amber-500' : 'text-emerald-600']" />
                                 {{ feat }}
                             </li>
                         </ul>
                         <Link
                             href="/login"
                             class="inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-semibold transition"
-                            :class="
-                                plan.popular
-                                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-                                    : 'border border-slate-200 bg-white text-blue-600 hover:border-blue-600 hover:bg-slate-50'
-                            "
+                            :class="[
+                                plan.popular ? 'bg-[#1E3A8A] text-white shadow-sm hover:bg-[#152d6e]' : '',
+                                plan.amber
+                                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm hover:from-amber-500 hover:to-amber-600'
+                                    : '',
+                                !plan.popular && !plan.amber
+                                    ? 'border border-slate-200 bg-white text-[#1E3A8A] hover:border-[#1E3A8A] hover:bg-slate-50'
+                                    : '',
+                            ]"
                         >
                             {{ t('landing.pricing.choose') }}
                         </Link>
@@ -379,7 +402,7 @@
 
         <!-- CTA -->
         <section
-            class="bg-gradient-to-br from-blue-600 to-blue-800 px-6 py-20 text-center text-white md:px-12"
+            class="bg-gradient-to-br from-[#78350F] via-[#A16207] to-[#422006] px-6 py-20 text-center text-white md:px-12"
         >
             <h2 class="text-3xl font-bold tracking-tight md:text-4xl">{{ t('landing.cta.title') }}</h2>
             <p class="mt-3 text-base text-white/85 md:text-lg">{{ t('landing.cta.subtitle') }}</p>
@@ -394,7 +417,7 @@
                 />
                 <button
                     type="submit"
-                    class="inline-flex h-10 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+                    class="inline-flex h-10 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#A16207] transition hover:bg-amber-50"
                 >
                     {{ t('landing.cta.start') }}
                     <ArrowRightIcon class="h-4 w-4" />
@@ -408,7 +431,7 @@
         >
             <div class="flex items-center gap-3">
                 <span
-                    class="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-blue-600 to-blue-700 text-white"
+                    class="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-[#A16207] to-[#713F12] text-white"
                 >
                     <svg
                         viewBox="0 0 24 24"

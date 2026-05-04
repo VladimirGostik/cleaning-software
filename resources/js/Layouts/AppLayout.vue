@@ -23,7 +23,7 @@
 
     const navItems: NavItem[] = [
         { key: 'dashboard', label: 'dashboard', href: '/dashboard' },
-        { key: 'clients', label: 'nav.clients', can: 'viewClients' },
+        { key: 'clients', label: 'nav.clients', href: '/clients', can: 'viewClients' },
         { key: 'objects', label: 'nav.objects', can: 'viewObjects' },
         { key: 'quotes', label: 'nav.quotes', can: 'viewQuotes' },
         { key: 'contracts', label: 'nav.contracts', can: 'viewContracts' },

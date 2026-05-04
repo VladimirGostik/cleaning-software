@@ -80,13 +80,26 @@ Claude Design HTML/JSX prototypes live in `docs/design-handoff/`. Source of trut
 
 The landing page (`Pages/Landing.vue`) deliberately uses raw Tailwind palette (blue/slate) instead of DaisyUI semantic tokens because the marketing visual targets a fixed brand palette regardless of the in-app theme.
 
+## Clients module — implementation notes
+
+- **Dual models** `Client` + `ClientContact` (N:1 relation). Both use `BelongsToTenant`, `SoftDeletes`, `LogsActivity`, `HasUuids`. Contact FK `client_id ON DELETE CASCADE`.
+- **Type enum** `App\Enums\ClientType` with keys `Corporate` (IČO required) + `Private` (IČO optional). Auto-cast on model + `#[TypeScript]` for FE.
+- **Partial unique index** `(tenant_id, ico) WHERE deleted_at IS NULL AND ico IS NOT NULL` — IČO unique per tenant among active clients; soft-deleted clients don't block re-use.
+- **`ClientService` (final readonly)** — `paginate(filter)` via Spatie QueryBuilder (filters: search, type; sorts: name, created_at). `create(data)` + `update(id, data)` in transaction with `syncContacts` diff-apply (eager-load, diff incoming IDs, soft-delete missing, update/create matched). Unique IČO QueryException → ValidationException.
+- **`ClientPolicy`** — viewAny/view/create/update/delete gates on permissions `view/create/edit/delete clients` per Spatie permission.
+- **DTO naming** — `ClientIndexFilterData` (filters), `ClientListItemData` (paginated row), `ClientDetailData` (with contacts), `ClientStoreData` + `ClientUpdateData`.
+- **Side drawer pattern** — Inertia `Clients/Index` + `Clients/Show` pages; create/edit forms in reusable `ClientFormDrawer` component on both pages (not separate routes).
+- **Generic components** — `EmptyState` (illustration + CTA) + `PageHeader` (title + action button) now live in `Components/` for reuse across Object, Quote, Contract, Invoice modules.
+- **FE composable** `useClientFilters` — state management for form inputs, clear/apply actions, reactive filter submission.
+- **i18n flat** — `lang/{sk,en,uk}/app.php` has `clients.*` keys (list.title, list.empty, show.title, form.name, form.type, client_type.corporate, client_type.private, etc.). Flattened by `Arr::dot()` on BE, accessed via `t(key)` on FE.
+
 ## Known gaps to close in /feature passes
 
 In rough dependency order:
 
 1. **Tenant CRUD** (`/feature` — list, create, edit, switch). Touches AppLayout tenant switcher.
 2. **User invite + Profile + change-password.**
-3. **Client + Object** (CRUD). First domain modules. Will pull in DataTable, Pagination, ConfirmDeleteModal as shared components.
+3. **Object** (CRUD). Polymorphic address, special instructions, access info. FK to Client.
 4. **Quote** (CRUD with line items, PDF, send-to-client flow, status enum).
 5. **Contract** (polymorphic, change log, expiry notifications, types incl. employee).
 6. **Schedule + Job** (calendar, drag-drop, recurrence from work breakdown).

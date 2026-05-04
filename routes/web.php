@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\LanguageController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,8 @@ Route::middleware('auth')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
+
+    Route::resource('clients', ClientController::class)->except(['create', 'edit']);
 });
 
 Route::get('language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');

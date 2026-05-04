@@ -1,5 +1,5 @@
 import './bootstrap';
-import { createApp, h, type DefineComponent } from 'vue';
+import { createApp, h, Transition, type DefineComponent } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
@@ -10,11 +10,14 @@ createInertiaApp({
     resolve: (name) =>
         resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob<DefineComponent>('./Pages/**/*.vue')),
     setup: ({ el, App, props, plugin }) => {
-        createApp({ render: () => h(App, props) })
+        createApp({
+            render: () =>
+                h(Transition, { name: 'page', mode: 'out-in', appear: true }, () => h(App, props)),
+        })
             .use(plugin)
             .mount(el);
     },
     progress: {
-        color: 'oklch(60% 0.18 250)',
+        color: '#A16207',
     },
 });

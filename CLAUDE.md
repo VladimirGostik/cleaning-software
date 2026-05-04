@@ -254,7 +254,7 @@ lint.notes: |
 ## Deployment Status
 
 - **Deployed to production:** no
-- **Last verified:** 2026-05-03
+- **Last verified:** 2026-05-04
 
 (Migration strategy: free to refactor schema. No production users. Re-run `migrate:fresh --seed` whenever schema changes.)
 
@@ -262,15 +262,15 @@ lint.notes: |
 
 - **Auth** — login / forgot-password / reset-password (Inertia + Spatie permission teams).
 - **Landing** — public marketing page at `/` (Inertia `Pages/Landing.vue`). Auth users redirect to `/dashboard`. Visual design source: `docs/design-handoff/project/screens/landing.jsx`. Tailwind 4 + heroicons; no DaisyUI utilities (custom marketing palette: blue-600 primary, slate neutrals).
+- **Clients** — CRUD (list + detail/edit via side drawer). Soft-delete. Multi-contact with primary flag. Type enum (Corporate/Private). Permission-gated. QueryBuilder filters (search, type). Pagination. Generic `EmptyState` + `PageHeader` components.
 
 ## Out of scope for v0.1 base scaffold (defer to /feature)
 
-- DataTable / Pagination / ConfirmDeleteModal generic components
 - PermissionManager UI
 - Profile page + change-password
 - Audit log read UI
 - Scribe API docs route + lockdown
 - `app:demo` artisan command
 - Generic `useFilters`, `useDeleteConfirm`, `useToast` composables
-- Domain modules: Client, Object, Quote, Contract, Schedule, Invoice, Employee, Template, Notification, etc.
+- Domain modules: Object, Quote, Contract, Schedule, Invoice, Employee, Template, Notification, etc.
 
