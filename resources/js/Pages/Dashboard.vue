@@ -4,6 +4,8 @@
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
 
+    defineOptions({ layout: AppLayout });
+
     const pageProps = usePageProps();
     const { t } = useTranslate();
 
@@ -12,8 +14,7 @@
 </script>
 
 <template>
-    <AppLayout>
-        <div class="max-w-5xl mx-auto">
+    <div class="max-w-5xl mx-auto">
             <h1 class="text-3xl font-bold mb-2">{{ t('dashboard') }}</h1>
             <p class="text-base-content/60 mb-6">
                 <span v-if="tenant">{{ tenant.name }} • </span>
@@ -49,5 +50,4 @@
                 </span>
             </div>
         </div>
-    </AppLayout>
 </template>

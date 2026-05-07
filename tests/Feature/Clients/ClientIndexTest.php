@@ -6,6 +6,7 @@ namespace Tests\Feature\Clients;
 
 use App\Enums\ClientType;
 use App\Models\Client;
+use App\Models\ClientContact;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -27,8 +28,6 @@ final class ClientIndexTest extends TestCase
             'dic' => null,
             'vat_number' => null,
             'is_vat_payer' => false,
-            'email' => null,
-            'phone' => null,
             'street' => null,
             'city' => null,
             'postal_code' => null,
@@ -151,5 +150,90 @@ final class ClientIndexTest extends TestCase
     {
         // Act & Assert
         $this->get(route('clients.index'))->assertRedirect(route('login'));
+    }
+
+    public function test_listing_exposes_primary_contact_email_from_primary_contact(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        ClientContact::factory()->for($client)->create([
+            'tenant_id' => $tenant->id,
+            'email' => 'primary@example.com',
+            'phone' => null,
+            'is_primary' => true,
+        ]);
+        ClientContact::factory()->for($client)->create([
+            'tenant_id' => $tenant->id,
+            'email' => 'other@example.com',
+            'phone' => null,
+            'is_primary' => false,
+        ]);
+
+        // Act
+        $response = $this->get(route('clients.index'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Clients/Index')
+                ->where('clients.data.0.primary_contact_email', 'primary@example.com'),
+        );
+    }
+
+    public function test_listing_exposes_primary_contact_phone_from_primary_contact(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        ClientContact::factory()->for($client)->create([
+            'tenant_id' => $tenant->id,
+            'email' => null,
+            'phone' => '+421900123456',
+            'is_primary' => true,
+        ]);
+
+        // Act
+        $response = $this->get(route('clients.index'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Clients/Index')
+                ->where('clients.data.0.primary_contact_phone', '+421900123456'),
+        );
+    }
+
+    public function test_listing_primary_contact_fields_are_null_when_no_primary_contact_exists(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        // non-primary contact only
+        ClientContact::factory()->for($client)->create([
+            'tenant_id' => $tenant->id,
+            'email' => 'nonprimary@example.com',
+            'is_primary' => false,
+        ]);
+
+        // Act
+        $response = $this->get(route('clients.index'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Clients/Index')
+                ->where('clients.data.0.primary_contact_email', null)
+                ->where('clients.data.0.primary_contact_phone', null),
+        );
     }
 }

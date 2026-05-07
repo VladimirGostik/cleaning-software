@@ -6,7 +6,6 @@ namespace App\Data\Clients;
 
 use App\Enums\ClientType;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
-use Spatie\LaravelData\Attributes\Validation\Email;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -31,10 +30,6 @@ final class ClientUpdateData extends Data
         #[Nullable, Max(32)]
         public ?string $vat_number,
         public bool $is_vat_payer,
-        #[Nullable, Email, Max(255)]
-        public ?string $email,
-        #[Nullable, Max(64)]
-        public ?string $phone,
         #[Nullable, Max(255)]
         public ?string $street,
         #[Nullable, Max(255)]

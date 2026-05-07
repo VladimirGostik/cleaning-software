@@ -28,8 +28,6 @@ final class ClientFactory extends Factory
             'dic' => '20' . fake()->numerify('########'),
             'vat_number' => 'SK' . fake()->numerify('##########'),
             'is_vat_payer' => true,
-            'email' => fake()->companyEmail(),
-            'phone' => fake()->phoneNumber(),
             'street' => fake()->streetAddress(),
             'city' => fake()->city(),
             'postal_code' => fake()->postcode(),
@@ -47,7 +45,6 @@ final class ClientFactory extends Factory
             'dic' => null,
             'vat_number' => null,
             'is_vat_payer' => false,
-            'email' => fake()->safeEmail(),
         ]);
     }
 

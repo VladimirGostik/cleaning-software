@@ -21,8 +21,6 @@ final class ClientDetailData extends Data
         public ?string $dic,
         public ?string $vat_number,
         public bool $is_vat_payer,
-        public ?string $email,
-        public ?string $phone,
         public ?string $street,
         public ?string $city,
         public ?string $postal_code,

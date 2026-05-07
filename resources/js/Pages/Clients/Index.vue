@@ -3,6 +3,9 @@
     import { Link, router } from '@inertiajs/vue3';
     import { PlusIcon, UsersIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
     import AppLayout from '@/Layouts/AppLayout.vue';
+
+    defineOptions({ layout: AppLayout });
+
     import PageHeader from '@/Components/PageHeader.vue';
     import EmptyState from '@/Components/EmptyState.vue';
     import ClientTypeBadge from '@/Components/Clients/ClientTypeBadge.vue';
@@ -68,8 +71,7 @@
 </script>
 
 <template>
-    <AppLayout>
-        <div class="max-w-7xl mx-auto">
+    <div class="max-w-7xl mx-auto">
             <div v-if="flash.success" class="alert alert-success mb-4">
                 <span>{{ flash.success }}</span>
             </div>
@@ -134,7 +136,7 @@
                                     </span>
                                     <span v-else>{{ t('common.empty_dash') }}</span>
                                 </td>
-                                <td>{{ row.email ?? t('common.empty_dash') }}</td>
+                                <td>{{ row.primary_contact_email ?? t('common.empty_dash') }}</td>
                                 <td @click.stop>
                                     <Link
                                         v-if="can.editClients"
@@ -168,7 +170,8 @@
                         </div>
                         <div class="flex gap-3 text-sm mt-2 text-base-content/70">
                             <span v-if="row.ico">{{ t('clients.col.ico') }}: {{ row.ico }}</span>
-                            <span v-if="row.email">{{ row.email }}</span>
+                            <span v-if="row.primary_contact_email">{{ row.primary_contact_email }}</span>
+                            <span v-if="row.primary_contact_phone">{{ row.primary_contact_phone }}</span>
                         </div>
                     </div>
                 </div>
@@ -228,5 +231,4 @@
                 @saved="onDrawerSaved"
             />
         </div>
-    </AppLayout>
 </template>

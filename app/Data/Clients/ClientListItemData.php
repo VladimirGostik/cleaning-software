@@ -17,12 +17,12 @@ final class ClientListItemData extends Data
         public ClientType $type,
         public string $name,
         public ?string $ico,
-        public ?string $email,
-        public ?string $phone,
         public ?string $city,
         public int $contacts_count,
         public int $objects_count,         // TODO: replace with real count when objects module lands
         public int $active_contracts_count, // TODO: replace with real count when contracts module lands
+        public ?string $primary_contact_email,
+        public ?string $primary_contact_phone,
         public string $created_at,
     ) {}
 
@@ -31,17 +31,19 @@ final class ClientListItemData extends Data
         /** @var ClientType $type */
         $type = $client->type;
 
+        $primaryContact = $client->contacts->firstWhere('is_primary', true);
+
         return new self(
             id: $client->id,
             type: $type,
             name: $client->name,
             ico: $client->ico,
-            email: $client->email,
-            phone: $client->phone,
             city: $client->city,
             contacts_count: (int) ($client->contacts_count ?? 0),
             objects_count: 0,
             active_contracts_count: 0,
+            primary_contact_email: $primaryContact?->email,
+            primary_contact_phone: $primaryContact?->phone,
             created_at: $client->created_at->toIso8601String(),
         );
     }

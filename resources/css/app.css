@@ -58,6 +58,17 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+.content-enter-active,
+.content-leave-active {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.content-enter-from,
+.content-leave-to {
+    opacity: 0;
+    transform: translateY(4px);
+}
+
 .page-enter-active,
 .page-leave-active {
     transition:

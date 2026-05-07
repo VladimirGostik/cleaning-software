@@ -82,12 +82,12 @@ The landing page (`Pages/Landing.vue`) deliberately uses raw Tailwind palette (b
 
 ## Clients module — implementation notes
 
-- **Dual models** `Client` + `ClientContact` (N:1 relation). Both use `BelongsToTenant`, `SoftDeletes`, `LogsActivity`, `HasUuids`. Contact FK `client_id ON DELETE CASCADE`.
+- **Dual models** `Client` + `ClientContact` (N:1 relation). Both use `BelongsToTenant`, `SoftDeletes`, `LogsActivity`, `HasUuids`. Contact FK `client_id ON DELETE CASCADE`. **Client model no longer holds `email`/`phone`** — both are exclusive to `ClientContact`. Email/phone data is always read from the primary contact (marked by `is_primary` flag).
 - **Type enum** `App\Enums\ClientType` with keys `Corporate` (IČO required) + `Private` (IČO optional). Auto-cast on model + `#[TypeScript]` for FE.
 - **Partial unique index** `(tenant_id, ico) WHERE deleted_at IS NULL AND ico IS NOT NULL` — IČO unique per tenant among active clients; soft-deleted clients don't block re-use.
-- **`ClientService` (final readonly)** — `paginate(filter)` via Spatie QueryBuilder (filters: search, type; sorts: name, created_at). `create(data)` + `update(id, data)` in transaction with `syncContacts` diff-apply (eager-load, diff incoming IDs, soft-delete missing, update/create matched). Unique IČO QueryException → ValidationException.
+- **`ClientService` (final readonly)** — `paginate(filter)` via Spatie QueryBuilder (filters: search, type; sorts: name, created_at). `create(data)` + `update(id, data)` in transaction with `syncContacts` diff-apply (eager-load, diff incoming IDs, soft-delete missing, update/create matched). Unique IČO QueryException → ValidationException. **`scopeSearch` now searches only `name` + `ico`** (email moved to contact layer).
 - **`ClientPolicy`** — viewAny/view/create/update/delete gates on permissions `view/create/edit/delete clients` per Spatie permission.
-- **DTO naming** — `ClientIndexFilterData` (filters), `ClientListItemData` (paginated row), `ClientDetailData` (with contacts), `ClientStoreData` + `ClientUpdateData`.
+- **DTO naming** — `ClientIndexFilterData` (filters), `ClientListItemData` (paginated row with `primary_contact_email`, `primary_contact_phone` derived), `ClientDetailData` (full address + contacts array, zero email/phone fields), `ClientStoreData` + `ClientUpdateData`.
 - **Side drawer pattern** — Inertia `Clients/Index` + `Clients/Show` pages; create/edit forms in reusable `ClientFormDrawer` component on both pages (not separate routes).
 - **Generic components** — `EmptyState` (illustration + CTA) + `PageHeader` (title + action button) now live in `Components/` for reuse across Object, Quote, Contract, Invoice modules.
 - **FE composable** `useClientFilters` — state management for form inputs, clear/apply actions, reactive filter submission.

@@ -1,39 +1,68 @@
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { Link, router } from '@inertiajs/vue3';
+    import { Link, router, usePage } from '@inertiajs/vue3';
+    import {
+        Squares2X2Icon,
+        UsersIcon,
+        BuildingOfficeIcon,
+        DocumentTextIcon,
+        ClipboardDocumentListIcon,
+        CalendarDaysIcon,
+        UserGroupIcon,
+        ReceiptPercentIcon,
+        FolderIcon,
+        BellIcon,
+        ShieldCheckIcon,
+        Cog6ToothIcon,
+        ChevronDownIcon,
+        ChevronUpDownIcon,
+    } from '@heroicons/vue/24/outline';
     import { usePageProps } from '@/Composables/usePageProps';
     import { useTranslate } from '@/Composables/useTranslate';
+
+    const props = usePageProps();
+    const { t } = useTranslate();
+    const page = usePage();
+
+    const user = computed(() => props.auth?.user);
+    const tenant = computed(() => props.tenant?.active);
+    const can = computed(() => props.can ?? {});
+    const languages = computed(() => props.languages ?? []);
+    const currentLocale = computed(() => props.locale ?? 'sk');
+    const pageComponent = computed(() => `${page.component}::${page.props.locale as string ?? 'sk'}`);
 
     interface NavItem {
         key: string;
         label: string;
-        href?: string;
+        href: string;
+        icon: unknown;
         can?: string;
     }
 
-    const props = usePageProps();
-    const { t } = useTranslate();
-
-    const user = computed(() => props.auth?.user);
-    const tenant = computed(() => props.tenant?.active);
-    const tenants = computed(() => props.tenant?.available ?? []);
-    const can = computed(() => props.can ?? {});
-    const languages = computed(() => props.languages ?? []);
-    const currentLocale = computed(() => props.locale ?? 'sk');
-
     const navItems: NavItem[] = [
-        { key: 'dashboard', label: 'dashboard', href: '/dashboard' },
-        { key: 'clients', label: 'nav.clients', href: '/clients', can: 'viewClients' },
-        { key: 'objects', label: 'nav.objects', can: 'viewObjects' },
-        { key: 'quotes', label: 'nav.quotes', can: 'viewQuotes' },
-        { key: 'contracts', label: 'nav.contracts', can: 'viewContracts' },
-        { key: 'employees', label: 'nav.employees', can: 'viewEmployees' },
-        { key: 'schedule', label: 'nav.schedule', can: 'viewSchedule' },
-        { key: 'invoices', label: 'nav.invoices', can: 'viewInvoices' },
-        { key: 'templates', label: 'nav.templates', can: 'viewTemplates' },
+        { key: 'dashboard', label: 'dashboard', href: '/dashboard', icon: Squares2X2Icon },
+        { key: 'clients', label: 'nav.clients', href: '/clients', icon: UsersIcon, can: 'viewClients' },
+        { key: 'objects', label: 'nav.objects', href: '/objects', icon: BuildingOfficeIcon, can: 'viewObjects' },
+        { key: 'quotes', label: 'nav.quotes', href: '/quotes', icon: DocumentTextIcon, can: 'viewQuotes' },
+        { key: 'contracts', label: 'nav.contracts', href: '/contracts', icon: ClipboardDocumentListIcon, can: 'viewContracts' },
+        { key: 'schedule', label: 'nav.schedule', href: '/schedule', icon: CalendarDaysIcon, can: 'viewSchedule' },
+        { key: 'employees', label: 'nav.employees', href: '/employees', icon: UserGroupIcon, can: 'viewEmployees' },
+        { key: 'invoices', label: 'nav.invoices', href: '/invoices', icon: ReceiptPercentIcon, can: 'viewInvoices' },
+        { key: 'templates', label: 'nav.templates', href: '/templates', icon: FolderIcon, can: 'viewTemplates' },
     ];
 
-    const visibleNav = computed(() => navItems.filter((item) => !item.can || can.value[item.can]));
+    const adminNavItems: NavItem[] = [
+        { key: 'permissions', label: 'nav.permissions', href: '/permissions', icon: ShieldCheckIcon },
+        { key: 'settings', label: 'nav.settings', href: '/settings', icon: Cog6ToothIcon },
+    ];
+
+    const visibleNav = computed(() =>
+        navItems.filter((item) => !item.can || can.value[item.can as keyof typeof can.value]),
+    );
+
+    function isActive(href: string): boolean {
+        return page.url.startsWith(href);
+    }
 
     function logout() {
         router.post('/logout');
@@ -45,101 +74,174 @@
 </script>
 
 <template>
-    <div class="drawer lg:drawer-open">
-        <input id="app-drawer" type="checkbox" class="drawer-toggle" />
-
-        <div class="drawer-content flex flex-col min-h-screen bg-base-200">
-            <header class="navbar bg-base-100 border-b border-base-300 lg:hidden">
-                <div class="flex-1 px-4">
-                    <label for="app-drawer" class="btn btn-square btn-ghost btn-sm">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16"
-                            />
-                        </svg>
-                    </label>
-                    <span class="ml-3 font-semibold">{{ tenant?.name ?? t('app_name') }}</span>
-                </div>
-            </header>
-
-            <main class="flex-1 p-6">
-                <slot />
-            </main>
-        </div>
-
-        <aside class="drawer-side z-20">
-            <label for="app-drawer" aria-label="close sidebar" class="drawer-overlay" />
-
-            <div class="bg-base-100 min-h-full w-72 p-4 flex flex-col gap-4 border-r border-base-300">
-                <div class="px-2 py-3">
-                    <Link href="/dashboard" class="text-xl font-bold text-primary">{{ t('app_name') }}</Link>
-                    <p v-if="tenant" class="text-sm text-base-content/70 mt-1">{{ tenant.name }}</p>
-                </div>
-
-                <ul class="menu menu-md w-full px-0 grow">
-                    <li v-for="item in visibleNav" :key="item.key">
-                        <Link v-if="item.href" :href="item.href">{{ t(item.label) }}</Link>
-                        <span v-else class="opacity-60 cursor-not-allowed">{{ t(item.label) }}</span>
-                    </li>
-                </ul>
-
-                <div v-if="user" class="border-t border-base-300 pt-3">
-                    <div class="flex items-center gap-3 px-2 py-2">
-                        <div class="avatar avatar-placeholder">
-                            <div class="bg-primary text-primary-content w-10 rounded-full">
-                                <span>{{ user.name.charAt(0).toUpperCase() }}</span>
-                            </div>
-                        </div>
-                        <div class="grow">
-                            <p class="font-semibold text-sm">{{ user.name }}</p>
-                            <p class="text-xs text-base-content/60">{{ user.email }}</p>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 mt-2">
-                        <div class="dropdown dropdown-top">
-                            <div tabindex="0" role="button" class="btn btn-sm btn-ghost">
-                                {{ languages.find((l) => l.code === currentLocale)?.flag }}
-                                <span class="ml-1">{{ currentLocale.toUpperCase() }}</span>
-                            </div>
-                            <ul
-                                tabindex="0"
-                                class="dropdown-content menu bg-base-100 rounded-box z-10 mb-2 w-44 p-2 shadow"
-                            >
-                                <li v-for="lang in languages" :key="lang.code">
-                                    <button
-                                        type="button"
-                                        :class="{ active: lang.code === currentLocale }"
-                                        @click="switchLocale(lang.code)"
-                                    >
-                                        <span>{{ lang.flag }}</span>
-                                        <span>{{ lang.label }}</span>
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <button type="button" class="btn btn-sm btn-ghost ml-auto" @click="logout">
-                            {{ t('logout') }}
-                        </button>
-                    </div>
-
-                    <div v-if="tenants.length > 1" class="mt-3 px-2">
-                        <p class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
-                            {{ tenants.length }} {{ t('nav.tenants') }}
-                        </p>
-                    </div>
-                </div>
+    <div class="app-shell">
+        <!-- Topbar -->
+        <header class="app-topbar">
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-200 transition select-none">
+                <span class="h-2 w-2 rounded-full bg-amber-600 flex-shrink-0" />
+                <span class="max-w-[200px] truncate">{{ tenant?.name ?? t('app_name') }}</span>
+                <ChevronUpDownIcon class="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
             </div>
+
+            <div class="flex-1" />
+
+            <!-- Lang switcher -->
+            <div class="flex items-center gap-0.5 rounded-md bg-slate-100 p-[3px]">
+                <button
+                    v-for="lang in languages"
+                    :key="lang.code"
+                    type="button"
+                    class="rounded px-2 py-[3px] text-[11px] font-semibold uppercase transition"
+                    :class="lang.code === currentLocale ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                    @click="switchLocale(lang.code)"
+                >
+                    {{ lang.code }}
+                </button>
+            </div>
+
+            <!-- Bell -->
+            <button type="button" class="relative flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition">
+                <BellIcon class="h-5 w-5" />
+                <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 border-2 border-white" />
+            </button>
+
+            <!-- User -->
+            <button type="button" class="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 hover:bg-slate-100 transition" @click="logout">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-white flex-shrink-0">
+                    {{ user?.name?.charAt(0)?.toUpperCase() ?? 'U' }}
+                </span>
+                <span class="text-[13px] font-semibold text-slate-800">{{ user?.name }}</span>
+                <ChevronDownIcon class="h-3 w-3 text-slate-400" />
+            </button>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+            <!-- Logo -->
+            <div class="px-3 pb-5 pt-1">
+                <Link href="/dashboard" class="flex items-center gap-2 text-white hover:opacity-90 transition">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-[#A16207] to-[#713F12] flex-shrink-0">
+                        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M5 14c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round" />
+                            <path d="M8 17h8" stroke-linecap="round" />
+                            <circle cx="17" cy="6" r="1" fill="currentColor" />
+                            <circle cx="13" cy="4" r="0.7" fill="currentColor" />
+                        </svg>
+                    </span>
+                    <span class="text-[16px] font-bold tracking-tight">{{ t('app_name') }}</span>
+                </Link>
+            </div>
+
+            <!-- Main nav -->
+            <nav class="flex flex-col gap-0.5 px-2">
+                <Link
+                    v-for="item in visibleNav"
+                    :key="item.key"
+                    :href="item.href"
+                    class="nav-item"
+                    :class="isActive(item.href) ? 'nav-item-active' : 'nav-item-idle'"
+                >
+                    <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
+                    <span>{{ t(item.label) }}</span>
+                </Link>
+            </nav>
+
+            <!-- Admin section -->
+            <div class="mt-4 border-t border-white/[0.06] pt-3 px-2">
+                <div class="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    Administrácia
+                </div>
+                <nav class="flex flex-col gap-0.5">
+                    <Link
+                        v-for="item in adminNavItems"
+                        :key="item.key"
+                        :href="item.href"
+                        class="nav-item"
+                        :class="isActive(item.href) ? 'nav-item-active' : 'nav-item-idle'"
+                    >
+                        <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
+                        <span>{{ t(item.label) }}</span>
+                    </Link>
+                </nav>
+            </div>
+
+            <div class="flex-1" />
         </aside>
+
+        <!-- Content with content-only transition -->
+        <main class="app-content">
+            <Transition name="content" mode="out-in">
+                <div :key="pageComponent">
+                    <slot />
+                </div>
+            </Transition>
+        </main>
     </div>
 </template>
+
+<style scoped>
+.app-shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    grid-template-rows: 56px 1fr;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-topbar {
+    grid-column: 1 / 3;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    z-index: 10;
+}
+
+.app-sidebar {
+    background: #0f172a;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.app-content {
+    background: #f8fafc;
+    overflow-y: auto;
+    padding: 28px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.12s;
+    text-decoration: none;
+}
+
+.nav-item-idle {
+    color: #94a3b8;
+}
+
+.nav-item-idle:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+}
+
+.nav-item-active {
+    background: #a16207;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(161, 98, 7, 0.35);
+}
+
+.nav-item-active:hover {
+    background: #713f12;
+}
+</style>

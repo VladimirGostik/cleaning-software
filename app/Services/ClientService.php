@@ -42,6 +42,7 @@ final readonly class ClientService
             )
             ->defaultSort('name')
             ->withCount('contacts')
+            ->with(['contacts' => fn ($q) => $q->where('is_primary', true)])
             ->paginate($filter->per_page)
             ->appends(request()->query());
     }

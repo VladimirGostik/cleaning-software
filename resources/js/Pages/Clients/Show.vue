@@ -16,6 +16,9 @@
         ReceiptPercentIcon,
     } from '@heroicons/vue/24/outline';
     import AppLayout from '@/Layouts/AppLayout.vue';
+
+    defineOptions({ layout: AppLayout });
+
     import PageHeader from '@/Components/PageHeader.vue';
     import EmptyState from '@/Components/EmptyState.vue';
     import ClientTypeBadge from '@/Components/Clients/ClientTypeBadge.vue';
@@ -33,6 +36,8 @@
     const pageProps = usePageProps();
     const can = computed(() => pageProps.can ?? {});
     const flash = computed(() => pageProps.flash);
+
+    const primaryContact = computed(() => props.client.contacts?.find((c) => c.is_primary) ?? null);
 
     const ui = reactive({ editDrawerOpen: false, deleteConfirmOpen: false });
 
@@ -61,8 +66,7 @@
 </script>
 
 <template>
-    <AppLayout>
-        <div class="max-w-7xl mx-auto">
+    <div class="max-w-7xl mx-auto">
             <div v-if="flash.success" class="alert alert-success mb-4">
                 <span>{{ flash.success }}</span>
             </div>
@@ -173,16 +177,16 @@
                         <div class="card-body">
                             <h2 class="card-title text-base">{{ t('clients.detail.contact') }}</h2>
                             <dl class="space-y-2 text-sm mt-2">
-                                <div v-if="client.email" class="flex items-center gap-2">
+                                <div v-if="primaryContact?.email" class="flex items-center gap-2">
                                     <EnvelopeIcon class="w-4 h-4 text-base-content/50 shrink-0" />
-                                    <a :href="`mailto:${client.email}`" class="link link-hover">
-                                        {{ client.email }}
+                                    <a :href="`mailto:${primaryContact.email}`" class="link link-hover">
+                                        {{ primaryContact.email }}
                                     </a>
                                 </div>
-                                <div v-if="client.phone" class="flex items-center gap-2">
+                                <div v-if="primaryContact?.phone" class="flex items-center gap-2">
                                     <PhoneIcon class="w-4 h-4 text-base-content/50 shrink-0" />
-                                    <a :href="`tel:${client.phone}`" class="link link-hover">
-                                        {{ client.phone }}
+                                    <a :href="`tel:${primaryContact.phone}`" class="link link-hover">
+                                        {{ primaryContact.phone }}
                                     </a>
                                 </div>
                                 <div
@@ -300,5 +304,4 @@
                 <div class="modal-backdrop" @click="ui.deleteConfirmOpen = false" />
             </dialog>
         </div>
-    </AppLayout>
 </template>

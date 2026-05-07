@@ -21,7 +21,7 @@ use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable([
     'type', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
-    'email', 'phone', 'street', 'city', 'postal_code', 'country', 'note',
+    'street', 'city', 'postal_code', 'country', 'note',
 ])]
 final class Client extends Model
 {
@@ -44,7 +44,7 @@ final class Client extends Model
         return LogOptions::defaults()
             ->logOnly([
                 'type', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
-                'email', 'phone', 'street', 'city', 'postal_code', 'country',
+                'street', 'city', 'postal_code', 'country',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
@@ -67,8 +67,7 @@ final class Client extends Model
 
         return $query->where(function (Builder $q) use ($term, $operator): void {
             $q->where('name', $operator, '%' . $term . '%')
-                ->orWhere('ico', $operator, '%' . $term . '%')
-                ->orWhere('email', $operator, '%' . $term . '%');
+                ->orWhere('ico', $operator, '%' . $term . '%');
         });
     }
 }

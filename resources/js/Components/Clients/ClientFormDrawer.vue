@@ -26,8 +26,6 @@
         dic: props.client?.dic ?? '',
         vat_number: props.client?.vat_number ?? '',
         is_vat_payer: props.client?.is_vat_payer ?? false,
-        email: props.client?.email ?? '',
-        phone: props.client?.phone ?? '',
         street: props.client?.street ?? '',
         city: props.client?.city ?? '',
         postal_code: props.client?.postal_code ?? '',
@@ -67,10 +65,10 @@
                 </button>
             </header>
 
-            <form class="p-6 space-y-6 pb-24 flex-1" @submit.prevent="submit">
+            <form id="client-form" class="p-6 space-y-6 pb-24 flex-1" @submit.prevent="submit">
                 <!-- Typ klienta -->
                 <section>
-                    <p class="label-text font-medium mb-2">{{ t('clients.form.section.type') }}</p>
+                    <p class="text-sm font-medium mb-2">{{ t('clients.form.section.type') }}</p>
                     <div class="flex gap-4">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input v-model="form.type" type="radio" class="radio" value="corporate" />
@@ -85,182 +83,150 @@
 
                 <!-- Zakladne udaje -->
                 <section>
-                    <p class="label-text font-medium mb-3">{{ t('clients.form.section.basic') }}</p>
+                    <p class="text-sm font-medium mb-3">{{ t('clients.form.section.basic') }}</p>
                     <div class="space-y-3">
-                        <label class="form-control w-full">
-                            <span class="label-text">
+                        <fieldset class="fieldset w-full">
+                            <legend class="fieldset-legend">
                                 {{ t('clients.form.name') }} <span class="text-error">*</span>
-                            </span>
+                            </legend>
                             <input
                                 v-model="form.name"
                                 type="text"
-                                class="input input-bordered"
+                                class="input w-full"
                                 :class="{ 'input-error': form.errors.name }"
                             />
-                            <span v-if="form.errors.name" class="text-error text-xs mt-1">
+                            <span v-if="form.errors.name" class="fieldset-label text-error">
                                 {{ form.errors.name }}
                             </span>
-                        </label>
+                        </fieldset>
 
-                        <label v-if="form.type === 'corporate'" class="form-control w-full">
-                            <span class="label-text">
+                        <fieldset v-if="form.type === 'corporate'" class="fieldset w-full">
+                            <legend class="fieldset-legend">
                                 {{ t('clients.form.ico') }} <span class="text-error">*</span>
-                            </span>
+                            </legend>
                             <input
                                 v-model="form.ico"
                                 type="text"
-                                class="input input-bordered"
+                                class="input w-full"
                                 :class="{ 'input-error': form.errors.ico }"
                             />
-                            <span v-if="form.errors.ico" class="text-error text-xs mt-1">
+                            <span v-if="form.errors.ico" class="fieldset-label text-error">
                                 {{ form.errors.ico }}
                             </span>
-                        </label>
+                        </fieldset>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <label class="form-control w-full">
-                                <span class="label-text">{{ t('clients.form.dic') }}</span>
+                            <fieldset class="fieldset w-full">
+                                <legend class="fieldset-legend">{{ t('clients.form.dic') }}</legend>
                                 <input
                                     v-model="form.dic"
                                     type="text"
-                                    class="input input-bordered"
+                                    class="input w-full"
                                     :class="{ 'input-error': form.errors.dic }"
                                 />
-                                <span v-if="form.errors.dic" class="text-error text-xs mt-1">
+                                <span v-if="form.errors.dic" class="fieldset-label text-error">
                                     {{ form.errors.dic }}
                                 </span>
-                            </label>
+                            </fieldset>
 
-                            <label class="form-control w-full">
-                                <span class="label-text">{{ t('clients.form.ic_dph') }}</span>
+                            <fieldset class="fieldset w-full">
+                                <legend class="fieldset-legend">{{ t('clients.form.ic_dph') }}</legend>
                                 <input
                                     v-model="form.vat_number"
                                     type="text"
-                                    class="input input-bordered"
+                                    class="input w-full"
                                     :class="{ 'input-error': form.errors.vat_number }"
                                 />
-                                <span v-if="form.errors.vat_number" class="text-error text-xs mt-1">
+                                <span v-if="form.errors.vat_number" class="fieldset-label text-error">
                                     {{ form.errors.vat_number }}
                                 </span>
-                            </label>
+                            </fieldset>
                         </div>
 
                         <label class="flex items-center gap-3 cursor-pointer">
                             <input v-model="form.is_vat_payer" type="checkbox" class="toggle toggle-primary" />
-                            <span class="label-text">{{ t('clients.form.is_vat_payer') }}</span>
+                            <span class="text-sm">{{ t('clients.form.is_vat_payer') }}</span>
                         </label>
                     </div>
                 </section>
 
                 <!-- Adresa -->
                 <section>
-                    <p class="label-text font-medium mb-3">{{ t('clients.form.section.address') }}</p>
+                    <p class="text-sm font-medium mb-3">{{ t('clients.form.section.address') }}</p>
                     <div class="space-y-3">
-                        <label class="form-control w-full">
-                            <span class="label-text">{{ t('clients.form.street') }}</span>
+                        <fieldset class="fieldset w-full">
+                            <legend class="fieldset-legend">{{ t('clients.form.street') }}</legend>
                             <input
                                 v-model="form.street"
                                 type="text"
-                                class="input input-bordered"
+                                class="input w-full"
                                 :class="{ 'input-error': form.errors.street }"
                             />
-                            <span v-if="form.errors.street" class="text-error text-xs mt-1">
+                            <span v-if="form.errors.street" class="fieldset-label text-error">
                                 {{ form.errors.street }}
                             </span>
-                        </label>
+                        </fieldset>
 
                         <div class="grid grid-cols-2 gap-3">
-                            <label class="form-control w-full">
-                                <span class="label-text">{{ t('clients.form.city') }}</span>
+                            <fieldset class="fieldset w-full">
+                                <legend class="fieldset-legend">{{ t('clients.form.city') }}</legend>
                                 <input
                                     v-model="form.city"
                                     type="text"
-                                    class="input input-bordered"
+                                    class="input w-full"
                                     :class="{ 'input-error': form.errors.city }"
                                 />
-                                <span v-if="form.errors.city" class="text-error text-xs mt-1">
+                                <span v-if="form.errors.city" class="fieldset-label text-error">
                                     {{ form.errors.city }}
                                 </span>
-                            </label>
+                            </fieldset>
 
-                            <label class="form-control w-full">
-                                <span class="label-text">{{ t('clients.form.postal_code') }}</span>
+                            <fieldset class="fieldset w-full">
+                                <legend class="fieldset-legend">{{ t('clients.form.postal_code') }}</legend>
                                 <input
                                     v-model="form.postal_code"
                                     type="text"
-                                    class="input input-bordered"
+                                    class="input w-full"
                                     :class="{ 'input-error': form.errors.postal_code }"
                                 />
-                                <span v-if="form.errors.postal_code" class="text-error text-xs mt-1">
+                                <span v-if="form.errors.postal_code" class="fieldset-label text-error">
                                     {{ form.errors.postal_code }}
                                 </span>
-                            </label>
+                            </fieldset>
                         </div>
 
-                        <label class="form-control w-full">
-                            <span class="label-text">{{ t('clients.form.country') }}</span>
+                        <fieldset class="fieldset w-full">
+                            <legend class="fieldset-legend">{{ t('clients.form.country') }}</legend>
                             <input
                                 v-model="form.country"
                                 type="text"
-                                class="input input-bordered"
+                                class="input w-full"
                                 :class="{ 'input-error': form.errors.country }"
                             />
-                            <span v-if="form.errors.country" class="text-error text-xs mt-1">
+                            <span v-if="form.errors.country" class="fieldset-label text-error">
                                 {{ form.errors.country }}
                             </span>
-                        </label>
-                    </div>
-                </section>
-
-                <!-- Kontakt -->
-                <section>
-                    <p class="label-text font-medium mb-3">{{ t('clients.form.section.contact') }}</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <label class="form-control w-full">
-                            <span class="label-text">{{ t('clients.form.email') }}</span>
-                            <input
-                                v-model="form.email"
-                                type="email"
-                                class="input input-bordered"
-                                :class="{ 'input-error': form.errors.email }"
-                            />
-                            <span v-if="form.errors.email" class="text-error text-xs mt-1">
-                                {{ form.errors.email }}
-                            </span>
-                        </label>
-
-                        <label class="form-control w-full">
-                            <span class="label-text">{{ t('clients.form.phone') }}</span>
-                            <input
-                                v-model="form.phone"
-                                type="tel"
-                                class="input input-bordered"
-                                :class="{ 'input-error': form.errors.phone }"
-                            />
-                            <span v-if="form.errors.phone" class="text-error text-xs mt-1">
-                                {{ form.errors.phone }}
-                            </span>
-                        </label>
+                        </fieldset>
                     </div>
                 </section>
 
                 <!-- Kontaktne osoby -->
                 <section>
-                    <p class="label-text font-medium mb-3">{{ t('clients.form.section.contacts') }}</p>
+                    <p class="text-sm font-medium mb-3">{{ t('clients.form.section.contacts') }}</p>
                     <ContactsListField v-model="form.contacts" :errors="form.errors" />
                 </section>
 
                 <!-- Poznamka -->
                 <section>
-                    <p class="label-text font-medium mb-2">{{ t('clients.form.section.note') }}</p>
-                    <textarea
-                        v-model="form.note"
-                        class="textarea textarea-bordered w-full"
-                        rows="3"
-                    />
-                    <span v-if="form.errors.note" class="text-error text-xs mt-1">
-                        {{ form.errors.note }}
-                    </span>
+                    <fieldset class="fieldset w-full">
+                        <legend class="fieldset-legend">{{ t('clients.form.section.note') }}</legend>
+                        <div class="textarea w-full">
+                            <textarea v-model="form.note" rows="3" />
+                        </div>
+                        <span v-if="form.errors.note" class="fieldset-label text-error">
+                            {{ form.errors.note }}
+                        </span>
+                    </fieldset>
                 </section>
             </form>
 
@@ -271,10 +237,10 @@
                     {{ t('clients.form.cancel') }}
                 </button>
                 <button
-                    type="button"
+                    type="submit"
+                    form="client-form"
                     class="btn btn-primary"
                     :disabled="form.processing"
-                    @click="submit"
                 >
                     <span v-if="form.processing" class="loading loading-spinner loading-xs" />
                     {{ t('clients.form.save') }}

@@ -26,8 +26,6 @@ final class ClientUpdateTest extends TestCase
             'dic' => $client->dic,
             'vat_number' => $client->vat_number,
             'is_vat_payer' => $client->is_vat_payer,
-            'email' => $client->email,
-            'phone' => $client->phone,
             'street' => $client->street,
             'city' => $client->city,
             'postal_code' => $client->postal_code,

@@ -20,8 +20,6 @@ return new class extends Migration
             $table->string('dic', 32)->nullable();
             $table->string('vat_number', 32)->nullable();
             $table->boolean('is_vat_payer')->default(false);
-            $table->string('email', 255)->nullable();
-            $table->string('phone', 64)->nullable();
             $table->string('street', 255)->nullable();
             $table->string('city', 255)->nullable();
             $table->string('postal_code', 16)->nullable();

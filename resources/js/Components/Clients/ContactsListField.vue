@@ -89,32 +89,32 @@
                     <input
                         v-model="c.name"
                         :placeholder="t('clients.form.contact.name')"
-                        class="input input-bordered input-sm w-full"
+                        class="input input-sm w-full"
                         :class="{ 'input-error': errors[`contacts.${i}.name`] }"
                         @input="onFieldChange"
                     />
-                    <p v-if="errors[`contacts.${i}.name`]" class="text-error text-xs mt-1">
+                    <p v-if="errors[`contacts.${i}.name`]" class="text-error text-xs">
                         {{ errors[`contacts.${i}.name`] }}
                     </p>
                 </div>
                 <input
                     v-model="c.position"
                     :placeholder="t('clients.form.contact.position')"
-                    class="input input-bordered input-sm w-full"
+                    class="input input-sm w-full"
                     @input="onFieldChange"
                 />
                 <input
                     v-model="c.email"
                     type="email"
-                    :placeholder="t('clients.form.email')"
-                    class="input input-bordered input-sm w-full"
+                    :placeholder="t('clients.form.contact.email')"
+                    class="input input-sm w-full"
                     @input="onFieldChange"
                 />
                 <input
                     v-model="c.phone"
                     type="tel"
-                    :placeholder="t('clients.form.phone')"
-                    class="input input-bordered input-sm w-full"
+                    :placeholder="t('clients.form.contact.phone')"
+                    class="input input-sm w-full"
                     @input="onFieldChange"
                 />
             </div>
