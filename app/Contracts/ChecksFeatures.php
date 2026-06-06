@@ -13,4 +13,11 @@ interface ChecksFeatures
 
     /** Returns the plan quota limit for the given feature. null = unlimited or no quota concept. */
     public function getQuota(Tenant $tenant, FeatureEnum $feature): ?int;
+
+    /**
+     * Returns all feature values enabled for the tenant's current plan.
+     *
+     * @return list<string>
+     */
+    public function featuresFor(Tenant $tenant): array;
 }

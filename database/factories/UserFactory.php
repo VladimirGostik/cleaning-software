@@ -33,10 +33,32 @@ final class UserFactory extends Factory
         ];
     }
 
+    public function configure(): static
+    {
+        return $this->afterMaking(function (User $user): void {
+            // is_super_admin is not fillable; set the safe default here so make() always has a typed bool.
+            if (! isset($user->attributes['is_super_admin'])) {
+                $user->is_super_admin = false;
+            }
+        });
+    }
+
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function superAdmin(): static
+    {
+        return $this
+            ->afterMaking(function (User $user): void {
+                $user->is_super_admin = true;
+            })
+            ->afterCreating(function (User $user): void {
+                $user->is_super_admin = true;
+                $user->saveQuietly();
+            });
     }
 }

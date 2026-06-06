@@ -33,7 +33,14 @@ final class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_super_admin' => 'boolean',
         ];
+    }
+
+    /** Platform-level super-admin bypass — distinct from per-tenant RBAC roles. */
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_super_admin;
     }
 
     public function getActivitylogOptions(): LogOptions

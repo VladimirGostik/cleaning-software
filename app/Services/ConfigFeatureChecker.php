@@ -27,6 +27,16 @@ final readonly class ConfigFeatureChecker implements ChecksFeatures
     }
 
     /**
+     * Returns all feature values enabled for the tenant's current plan.
+     *
+     * @return list<string>
+     */
+    public function featuresFor(Tenant $tenant): array
+    {
+        return $this->planConfig($tenant)['features'];
+    }
+
+    /**
      * @return array{features: list<string>, quotas: array<string, int|null>}
      */
     private function planConfig(Tenant $tenant): array

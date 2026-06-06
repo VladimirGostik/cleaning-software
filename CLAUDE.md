@@ -295,6 +295,7 @@ lint.notes: |
 - **Landing** — public marketing page at `/` (Inertia `Pages/Landing.vue`). Auth users redirect to `/dashboard`. Visual design source: `docs/design-handoff/project/screens/landing.jsx`. Tailwind 4 + heroicons; no DaisyUI utilities (custom marketing palette: blue-600 primary, slate neutrals).
 - **Clients** — CRUD (list + detail/edit via side drawer). Soft-delete. Multi-contact with primary flag (email/phone on contacts, not client model). Type enum (Corporate/Private). Permission-gated. QueryBuilder filters (search, type). Pagination. Generic `EmptyState` + `PageHeader` components.
 - **Subscription plans / Feature gating** — per-tenant entitlement engine (4 tiers: Free/Starter/Pro/Enterprise). `config/subscription.php` matrix + `SubscriptionPlanEnum` + `FeatureEnum` + `ChecksFeatures` interface + `ConfigFeatureChecker` impl. Middleware `RequiresTenantFeature` gates routes. Distinct layer from Spatie RBAC permissions (plan-level vs. user-level).
+- **Capabilities system** — two-axis authorization (user/permission axis AND plan/feature axis). BE: `User.is_super_admin` + `Gate::before` bypass; `GET /api/me` returns MeData (permissions, features). FE: Pinia store + `useAuthorization()` composable + `Can` component for declarative UI gating. `can(permission)` + `hasFeature(feature)` + `allows(permission, feature)` AND semantics.
 
 ## Out of scope for v0.1 base scaffold (defer to /feature)
 
@@ -305,6 +306,7 @@ lint.notes: |
 - `app:demo` artisan command
 - Generic `useFilters`, `useDeleteConfirm`, `useToast` composables
 - Domain modules: Object, Quote, Contract, Schedule, Invoice, Employee, Template, Notification, etc.
+- (Capabilities system — DONE: super-admin flag, Gate::before, /api/me endpoint, FE store + composable + Can component, two-axis AND auth.)
 
 ## Rules for agents
 

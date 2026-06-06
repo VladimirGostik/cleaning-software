@@ -41,6 +41,16 @@ Flat Spatie permission strings, **scoped per tenant** (teams = `tenant_id`). For
 
 Only Vlastník manages subscription + the permission bundles themselves.
 
+## Authorization model (two axes)
+
+Access = `user/permission axis` AND `plan/feature axis`.
+
+- **User/permission axis** — per-tenant Spatie RBAC. Roles bundle permissions; owner customizes per tenant. Example: a Sekretárka with no "edit clients" permission simply cannot. Enforced: BE Policy + `#[Authorize]` + FE `Can` component.
+- **Plan/feature axis** — tenant's subscription tier unlocks modules. Free plan = no Invoices access, no matter a user's permission string. Enforced: BE `RequiresTenantFeature` middleware + FE `useAuthorization().hasFeature()` + `Can` component.
+- **Both must pass.** A Vlastník in a Free plan cannot access Invoices (fails plan axis). A Sekretárka in a Pro plan cannot access Invoices (fails permission axis).
+- **Super-admin bypass** — `User.is_super_admin = true` (platform-staff flag, not a per-tenant role). `Gate::before` returns true, bypassing **permission** checks (can do anything to any tenant). Does NOT bypass plan/feature gates — super-admin is a person override, not a plan entitlement.
+- **Render by capability, not by role.** UI conditionals never check `.roles()` or `.hasRole()`. Always use `Can` component or `useAuthorization().allows(permission, feature)` composite check. Roles are custom per tenant; capabilities are the contract.
+
 ## Subscription plans (entitlement layer)
 
 Separate from RBAC permissions (which gate **users**). Plans gate **tenants** — what modules/features/quotas the company's tier unlocks. Not in scope: per-tenant plan edits (hardcoded 4-tier matrix in `config/subscription.php`), UI, enforcement of entity limits at write-time.

@@ -17,17 +17,22 @@ Laravel 13 / PHP 8.5 (Sail) · Inertia 3 + Vue 3 + TypeScript · PostgreSQL 18 �
 
 The spine every other domain hangs off. **Not** a `BelongsToTenant` model itself — it *defines* tenancy.
 
-- **Core:** `App\Models\User` (global identity, UUID, `locale`, `is_active`) + `App\Models\Tenant` (firma, UUID, VAT-payer flag, subscription_plan) + `App\Models\TenantMembership` (User × Tenant pivot, `is_active`, `joined_at`).
+- **Core:** `App\Models\User` (global identity, UUID, `locale`, `is_active`, `is_super_admin` boolean — platform-level bypass, not mass-assignable) + `App\Models\Tenant` (firma, UUID, VAT-payer flag, subscription_plan) + `App\Models\TenantMembership` (User × Tenant pivot, `is_active`, `joined_at`).
 - **Satellites:**
   - `App\Http\Middleware\TenantContextMiddleware` — resolves active tenant from session `active_tenant_id` (or first active membership), binds `app('current_tenant_id')`, calls `PermissionRegistrar::setPermissionsTeamId($tenantId)`. Without it the global scope and permission lookups have no tenant.
   - `App\Models\Role` extends `Spatie\Permission\Models\Role` + `LogsActivity` + `search` scope. Per-tenant via `tenant_id` team key.
   - `App\Http\Middleware\HandleInertiaRequests` — shares `tenant {active, available}` + `can {…}` to every page.
   - `App\Http\Controllers\Auth\*` — login / logout / forgot-password / reset-password.
+  - `App\Http\Controllers\Api\MeController` — returns `MeData` (userId, activeTenantId, permissions, features). Single `__invoke` endpoint, no `#[Authorize]` by design (self-endpoint, `auth` middleware is the gate).
+  - `App\Data\Auth\MeData` DTO (`#[TypeScript]`): userId, activeTenantId (?string), permissions (list), features (list). Generated to `resources/js/types/generated.d.ts`.
+  - `App\Http\Middleware\RequiresTenantFeature` and `routes/api.php` registered in `bootstrap/app.php` (api middleware group appends EncryptCookies → AddQueuedCookies → StartSession → LocaleMiddleware → TenantContextMiddleware → throttle:api).
+  - `User::isSuperAdmin(): bool` helper method. `App\Providers\AppServiceProvider::boot()` registers `Gate::before` — super-admin returns `true` (passes all Gate/Policy checks, cross-tenant), null for normal users (policies run). Does NOT bypass `feature:` middleware (person axis ≠ plan axis).
 - **Flow (login):** `POST /login` → `Auth\AuthController@login` (`LoginData` DTO) → session auth → `TenantContextMiddleware` binds tenant on subsequent requests → `/dashboard`.
+- **Flow (capabilities):** FE navigates → `Inertia.router.on('before')` guard syncs store via `useAuthorization().ensureLoaded()` → `GET /api/me` (session-auth XHR) → returns MeData (permissions = active-tenant Spatie names, features = plan list) → store updates → `allows(permission, feature)` AND-gate re-evaluates on each render.
 - **Depends on:** nothing (root).
 - **Depended on by:** **every** domain model via `tenant_id` FK + the per-tenant permission scope.
-- **If you change Core, check:** `TenantContextMiddleware`, `HandleInertiaRequests::share`, `App\Scopes\TenantScope`, every seeder that calls `setPermissionsTeamId`.
-- **Keywords:** tenant, firma, membership, Vlastník, active_tenant_id, teams.
+- **If you change Core, check:** `TenantContextMiddleware`, `HandleInertiaRequests::share`, `App\Scopes\TenantScope`, every seeder that calls `setPermissionsTeamId`, `MeController` (super-admin override for permissions list), `Gate::before`.
+- **Keywords:** tenant, firma, membership, Vlastník, active_tenant_id, teams, is_super_admin, /api/me, capabilities.
 
 ### subscription-plans
 
@@ -37,12 +42,13 @@ Per-tenant feature gating (entitlement, distinct from Spatie RBAC).
 - **Satellites:**
   - `App\Http\Middleware\RequiresTenantFeature` — `'feature'` alias in bootstrap/app.php. Usage: `Route::...->middleware('feature:clients')`. Resolves tenant from `app('current_tenant_id')`, uses `FeatureEnum::tryFrom`, aborts 403 (`app.feature.locked`) if plan lacks feature.
   - `App\Models\Tenant` — `subscription_plan` cast to `SubscriptionPlanEnum` + thin `hasFeature(FeatureEnum): bool` accessor (delegates to bound `ChecksFeatures`).
+  - `ChecksFeatures::featuresFor(Tenant): list<string>` — returns all feature enum values (as strings) for the tenant's plan. Used by FE capabilities store + `MeController`.
   - Translations `lang/{sk,en,uk}/app.php` — `subscription_plan.*` labels + `feature.locked` 403 message.
 - **Flow:** route-level `->middleware('feature:quotes')` → `RequiresTenantFeature` checks tenant plan's feature list against `FeatureEnum::tryFrom($param)` → allow 200 or abort 403.
 - **Depends on:** `identity-tenancy` (reads `current_tenant_id`, writes to Tenant model).
-- **Depended on by (future):** entity-limit enforcement at write-time (quota checks in services, not built).
-- **If you change Core, check:** `TenantFactory` (default Free + `pro()`/`enterprise()` states), `UserSeeder` (demo tenant plan = Pro), language files, any route gated `->middleware('feature:...')`.
-- **Keywords:** plan, feature, quota, entitlement, Free/Starter/Pro/Enterprise, gating, SubscriptionPlanEnum, FeatureEnum, ChecksFeatures, ConfigFeatureChecker.
+- **Depended on by:** `identity-tenancy` (MeController calls `featuresFor`); FE capabilities layer.
+- **If you change Core, check:** `TenantFactory` (default Free + `pro()`/`enterprise()` states), `UserSeeder` (demo tenant plan = Pro), language files, any route gated `->middleware('feature:...')`, `MeController` (calls `ChecksFeatures::featuresFor`).
+- **Keywords:** plan, feature, quota, entitlement, Free/Starter/Pro/Enterprise, gating, SubscriptionPlanEnum, FeatureEnum, ChecksFeatures, ConfigFeatureChecker, featuresFor.
 
 ### clients
 
@@ -59,14 +65,28 @@ The only fully-implemented business domain.
 - **Flow (write):** `POST|PUT /clients` → `ClientController@store|update` (DTO) → `ClientService` in `DB::transaction` → `syncContacts` diff-apply (eager-load, diff incoming IDs, soft-delete missing, update/create matched) → redirect with `flash.success`.
 - **Depends on:** `identity-tenancy` (tenant_id FK, permission gate).
 - **Depended on by (planned):** Object → Quote → Contract → Invoice all FK to Client (not yet built).
-- **If you change Core, check:** `ClientController` (5 actions), `ClientPolicy`, `routes/web.php:38` (`Route::resource('clients')->except(create,edit)`), `lang/{sk,en,uk}/app.php` `clients.*` keys.
+- **If you change Core, check:** `ClientController` (5 actions), `ClientPolicy`, `routes/web.php` (explicit routes: `clients.index`, `clients.show`, `clients.store`, `clients.update`, `clients.destroy`), `lang/{sk,en,uk}/app.php` `clients.*` keys.
 - **Keywords:** klient, kontakt, IČO, DIČ, IČ DPH, Corporate, Private, primary contact.
 
-## Cross-cutting
+### capabilities
+
+Client-side authorization + entitlement layer. Queries server for runtime permission + feature check (two-axis AND model: user/permission axis AND plan/feature axis).
+
+- **Core:** `resources/js/stores/capabilities.ts` (Pinia Options store) — state: permissions, features, loaded (bool); actions: fetch, ensureLoaded, reset. Hydrated async from `GET /api/me`.
+- **Satellites:**
+  - `resources/js/services/MeService.ts` — `GET /api/me` over window.axios (session-auth XHR, returns `MeData` from BE DTO).
+  - `resources/js/composables/useAuthorization.ts` — read-only composable `can(permission)`, `hasFeature(feature)`, `allows(permission, feature)` (AND semantics). Reads from store.
+  - `resources/js/Components/Can.vue` — declarative slot-based guard: `<Can permission feature>` (both optional, both AND if present) + `#fallback`. Render conditionally or hide element.
+  - `resources/js/lib/routeRequirements.ts` — path-prefix → {permission?, feature?} map for route-level early guard.
+- **Flow (page load):** App.vue mounted → `useAuthorization().ensureLoaded()` (sync cache check, fail-open on first nav) → Inertia `router.on('before')` reads store, denies redirect to /dashboard if lacking capability. `navigate` hook async-awaits `ensureLoaded()`. `AppLayout.vue` logout calls store `reset()`.
+- **Depends on:** `identity-tenancy` (MeController, /api/me endpoint); `subscription-plans` (features list).
+- **Depended on by:** every page that needs UI capability gating (client-side render condition via `Can` or composable `can()`).
+- **If you change Core, check:** `MeController` (permissions/features hydration), `ChecksFeatures::featuresFor` (feature list), `routes/api.php` (/api/me route), BE super-admin logic + FE tests for capabilities guard.
+- **Keywords:** permission, feature, can, allows, capability, entitlement, two-axis AND, render-by-capability, Can component, useAuthorization.
 
 - **Multi-tenancy global scope** — `App\Concerns\BelongsToTenant` auto-applies `App\Scopes\TenantScope` and auto-fills `tenant_id` on `creating` from `app('current_tenant_id')`. Reach: every domain query. Bypass (jobs/console only): `Model::withoutGlobalScope(TenantScope::class)`. We deliberately did **not** install `stancl/tenancy` — spec mandates the trait+scope approach.
-- **Permissions (Spatie teams=tenant_id)** — `config/permission.php`: `teams=true`, `team_foreign_key='tenant_id'`, `'role'=>App\Models\Role::class`. Flat strings via `App\Enums\PermissionEnum` (canonical source of truth — all code references `PermissionEnum::Xxx->value`). Reach: every Policy + `#[Authorize]` site. **Outside HTTP (seeder/job/console/test) you MUST `setPermissionsTeamId($tenantId)` first** or lookups return "permission not found".
-- **Feature gating (entitlement layer)** — `ChecksFeatures` interface + `ConfigFeatureChecker` reads `config/subscription.php` plan matrix. Stacks **on top of** RBAC permissions: plan gates the tenant ("does your tier unlock Invoices?"), Spatie gates the user ("can you view invoices?"). Middleware `RequiresTenantFeature` enforces plan entitlements at the route level. DIP interface allows future `PennantFeatureChecker` or DB-backed adapter without caller changes. Reach: any route gated `->middleware('feature:xxx')`. Quota enforcement (entity count vs. limit) is caller responsibility, checker is stateless.
+- **Permissions (Spatie teams=tenant_id)** — `config/permission.php`: `teams=true`, `team_foreign_key='tenant_id'`, `'role'=>App\Models\Role::class`. Flat strings via `App\Enums\PermissionEnum` (canonical source of truth — all code references `PermissionEnum::Xxx->value`). BE Policy + Controller `#[Authorize]` gating; FE `Can` component + `useAuthorization().can()` composable read from Pinia store (hydrated from `/api/me`). Super-admin override: `User.is_super_admin=true` → `Gate::before` returns true (all checks pass, cross-tenant). Reach: every Policy + `#[Authorize]` site + every FE render conditional. **Outside HTTP (seeder/job/console/test) you MUST `setPermissionsTeamId($tenantId)` first** or lookups return "permission not found".
+- **Feature gating (entitlement layer)** — `ChecksFeatures` interface + `ConfigFeatureChecker` reads `config/subscription.php` plan matrix. Stacks **on top of** RBAC permissions: plan gates the tenant ("does your tier unlock Invoices?"), Spatie gates the user ("can you view invoices?"). Both must pass (AND logic). BE: Middleware `RequiresTenantFeature` enforces plan entitlements at route level. FE: capabilities store + `useAuthorization().hasFeature()` + `Can` component gate UI. DIP interface allows future `PennantFeatureChecker` or DB-backed adapter without caller changes. Reach: any route gated `->middleware('feature:xxx')` + any FE component checking `hasFeature()`. Quota enforcement (entity count vs. limit) is caller responsibility, checker is stateless. Does NOT bypass `feature:` middleware when a super-admin is in effect (person axis ≠ plan axis).
 - **Activitylog** — `LogsActivity` on Role (+ Client/ClientContact). Auth events (Login/Logout/Failed/Lockout/PasswordReset/PasswordChanged/Registered/Verified) are logged asynchronously via `App\Listeners\AuthEventListener` (implements `ShouldQueue`, `#[Tries(3)]`). Writes to `activity_log`. Morph columns `subject_id`/`causer_id` are **strings** to span mixed-PK models (Role bigint, User/Client UUID).
 - **MediaLibrary** — `media` table present, `model_id` UUID. No collections wired on domain models yet (reserved for DocumentTemplate / photos).
 - **i18n** — SK (default) / EN / UA. `App\Enums\SupportedLanguage`, `lang/{sk,en,uk}/app.php`, `LocaleMiddleware` (order: user.locale → session → cookie → Accept-Language → SK). BE flattens nested keys via `Arr::dot()`; FE `useTranslate()` does flat `t(key)` lookup. Reach: every visible string.
@@ -78,7 +98,8 @@ The only fully-implemented business domain.
 - **HTTP ↔ Service** — Controllers hand a Spatie Data DTO to the service, never an array. Controllers are thin: type-hint DTO param + service in constructor, return `Inertia::render` or `to_route()->with('flash.success', …)`.
 - **Service ↔ Model** — `DB::transaction` lives in the Service, NEVER the Controller. Services are `final readonly class XxxService`.
 - **BE ↔ FE (Inertia)** — page prop shape = the DTO's generated TS namespace. Shared props also follow the DTO rule: `tenant.available` is a `DataCollection<TenantListItemData>` (not raw arrays). Enums shared via `#[TypeScript]` → `generated.d.ts`. Flash via `flash.success` session key.
-- **Auth gate** — business models are gated by **Policy + `#[Authorize]` per controller method** (rbac-full), not route middleware. Permission lookup is tenant-scoped — relies on `TenantContextMiddleware` having run.
+- **BE ↔ FE (API: /api/me)** — `GET /api/me` returns `MeData(userId, activeTenantId, permissions: list<string>, features: list<string>)`. Session-auth XHR (cookies). FE capabilities store hydrates from this shape; UI conditionals read from store via `useAuthorization()` composable + `Can` component.
+- **Auth gate** — BE: business models gated by **Policy + `#[Authorize]` per controller method** (rbac-full), not route middleware. FE: `<Can permission feature>` component + `useAuthorization()` composable conditionally render. Both axes (permission + feature) AND together; missing either → deny render / deny route access. Super-admin `is_super_admin=true` bypasses permission checks (not feature checks). Permission lookup is tenant-scoped — relies on `TenantContextMiddleware` having run.
 
 ## Gotchas
 
@@ -140,6 +161,6 @@ Not deployed (`CLAUDE.md › Deployment Status`). Re-run `migrate:fresh --seed` 
 ## Verification status
 
 - Last full scan: 2026-06-05 (`/init` full re-init — schema + routes via Boost MCP, source grep)
-- Last delta: 2026-06-06 (subscription-plans: SubscriptionPlanEnum, FeatureEnum, config matrix, ChecksFeatures interface, ConfigFeatureChecker, RequiresTenantFeature middleware, Tenant enum cast + accessor, AppServiceProvider binding, bootstrap alias, seed alignment)
+- Last delta: 2026-06-06 (capabilities system: User.is_super_admin + isSuperAdmin(), Gate::before super-admin bypass, ChecksFeatures.featuresFor(), MeController + MeData + routes/api.php, FE Pinia store + composable + Can component, two-axis AND auth model)
 - Open `TODO verify`: 0
 - Reference inventory: `.claude/inventory.md` (not generated; opt-in via `/spec-sync --full --with-inventory`)

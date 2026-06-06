@@ -9,6 +9,12 @@ email: string,
 password: string,
 remember: boolean,
 };
+export type MeData = {
+userId: string,
+activeTenantId: string | null,
+permissions: string[],
+features: string[],
+};
 export type ResetPasswordData = {
 token: string,
 email: string,
