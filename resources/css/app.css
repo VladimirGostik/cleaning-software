@@ -58,6 +58,55 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+:root {
+    --auth-gradient-from:  #78350F;
+    --auth-gradient-mid:   #A16207;
+    --auth-gradient-to:    #713F12;
+    --auth-text-muted:     rgba(255,255,255,0.7);
+    --auth-text-bright:    rgba(255,255,255,0.9);
+    --auth-copyright:      rgba(255,255,255,0.6);
+    --auth-border-muted:   #cbd5e1;
+    --auth-link:           #1E3A8A;
+}
+
+/* Auth page utility classes */
+.auth-hero-bg {
+    background: linear-gradient(135deg, var(--auth-gradient-from) 0%, var(--auth-gradient-mid) 45%, var(--auth-gradient-to) 100%);
+}
+
+.auth-mobile-logo-bg {
+    background: linear-gradient(to bottom right, var(--auth-gradient-mid), var(--auth-gradient-to));
+}
+
+.auth-input:focus {
+    border-color: var(--auth-gradient-mid);
+    --tw-ring-color: color-mix(in srgb, var(--auth-gradient-mid) 20%, transparent);
+    box-shadow: 0 0 0 2px var(--tw-ring-color);
+}
+
+.auth-checkbox-checked {
+    border-color: var(--auth-gradient-mid);
+    background-color: var(--auth-gradient-mid);
+    color: white;
+}
+
+.auth-checkbox-unchecked {
+    border-color: var(--auth-border-muted);
+    background-color: white;
+}
+
+.auth-link {
+    color: var(--auth-link);
+}
+
+.auth-submit-btn {
+    background-color: var(--auth-gradient-mid);
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+    background-color: var(--auth-gradient-to);
+}
+
 .content-enter-active,
 .content-leave-active {
     transition: opacity 0.18s ease, transform 0.18s ease;

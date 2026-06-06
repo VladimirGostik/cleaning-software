@@ -9,7 +9,7 @@ use App\Data\Clients\ClientIndexFilterData;
 use App\Data\Clients\ClientListItemData;
 use App\Data\Clients\ClientStoreData;
 use App\Data\Clients\ClientUpdateData;
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use App\Services\ClientService;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +28,7 @@ final class ClientController extends Controller
         return Inertia::render('Clients/Index', [
             'clients' => ClientListItemData::collect($this->clients->paginate($filter), PaginatedDataCollection::class),
             'filters' => $filter,
-            'types' => ClientType::options(),
+            'types' => ClientTypeEnum::options(),
         ]);
     }
 

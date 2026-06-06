@@ -6,7 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,7 +34,7 @@ final class Client extends Model
     protected function casts(): array
     {
         return [
-            'type' => ClientType::class,
+            'type' => ClientTypeEnum::class,
             'is_vat_payer' => 'boolean',
         ];
     }

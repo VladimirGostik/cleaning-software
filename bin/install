@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# ---------------------------------------------------------------------------
+# Color helpers
+# ---------------------------------------------------------------------------
+info()  { printf '\033[0;32m==> %s\033[0m\n' "$*"; }
+warn()  { printf '\033[0;33mwarn: %s\033[0m\n' "$*"; }
+error() { printf '\033[0;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
+
+SAIL="./vendor/bin/sail"
+
+# ---------------------------------------------------------------------------
+# 1. Prerequisite checks
+# ---------------------------------------------------------------------------
+info "Checking prerequisites..."
+
+command -v docker >/dev/null 2>&1 || error "docker not found. Install Docker Desktop or Docker Engine and try again."
+docker compose version >/dev/null 2>&1 || error "docker compose v2 not found. Upgrade Docker Desktop or install the compose plugin."
+docker info >/dev/null 2>&1 || error "Docker daemon is not running. Start Docker Desktop or the Docker service and try again."
+
+# ---------------------------------------------------------------------------
+# 2. .env setup (with host UID/GID injection for Sail)
+# ---------------------------------------------------------------------------
+if [ ! -f .env ]; then
+    info "Creating .env from .env.example..."
+    cp .env.example .env
+else
+    warn ".env already exists — skipping copy. Review it manually if this is a fresh install."
+fi
+
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+
+if grep -qE '^WWWUSER=' .env; then
+    sed -i.bak -E "s/^WWWUSER=.*/WWWUSER=${HOST_UID}/" .env && rm -f .env.bak
+else
+    printf '\nWWWUSER=%s\n' "$HOST_UID" >> .env
+fi
+if grep -qE '^WWWGROUP=' .env; then
+    sed -i.bak -E "s/^WWWGROUP=.*/WWWGROUP=${HOST_GID}/" .env && rm -f .env.bak
+else
+    printf 'WWWGROUP=%s\n' "$HOST_GID" >> .env
+fi
+info "Sail will run as ${HOST_UID}:${HOST_GID}."
+
+# ---------------------------------------------------------------------------
+# 3. Bootstrap composer install (vendor/ may not exist yet → use sail composer image)
+# ---------------------------------------------------------------------------
+if [ ! -x "$SAIL" ]; then
+    info "Bootstrapping composer install via laravelsail/php85-composer..."
+    docker run --rm \
+        -u "${HOST_UID}:${HOST_GID}" \
+        -v "$(pwd):/var/www/html" \
+        -w /var/www/html \
+        laravelsail/php85-composer:latest \
+        composer install --ignore-platform-reqs --no-interaction
+fi
+
+chmod +x "$SAIL"
+
+# ---------------------------------------------------------------------------
+# 4. Build & start Sail stack
+# ---------------------------------------------------------------------------
+info "Building Sail images..."
+$SAIL build
+
+info "Starting Sail stack (laravel.test, pgsql, mailpit, minio)..."
+$SAIL up -d
+
+# ---------------------------------------------------------------------------
+# 5. Wait for PostgreSQL
+# ---------------------------------------------------------------------------
+info "Waiting for PostgreSQL to be ready..."
+DB_USER="$(grep -E '^DB_USERNAME=' .env | cut -d= -f2-)"
+DB_NAME="$(grep -E '^DB_DATABASE=' .env | cut -d= -f2-)"
+until $SAIL exec -T pgsql pg_isready -q -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; do
+    warn "PostgreSQL not ready yet — retrying in 2s..."
+    sleep 2
+done
+info "PostgreSQL is ready."
+
+# ---------------------------------------------------------------------------
+# 6. Wait for MinIO
+# ---------------------------------------------------------------------------
+info "Waiting for MinIO to be ready..."
+until $SAIL exec -T minio mc ready local >/dev/null 2>&1; do
+    warn "MinIO not ready yet — retrying in 2s..."
+    sleep 2
+done
+info "MinIO is ready."
+
+# ---------------------------------------------------------------------------
+# 7. APP_KEY
+# ---------------------------------------------------------------------------
+if grep -qE '^APP_KEY=$' .env; then
+    info "Generating APP_KEY..."
+    $SAIL artisan key:generate --force
+else
+    info "APP_KEY already set — skipping."
+fi
+
+# ---------------------------------------------------------------------------
+# 8. Frontend deps + build
+# ---------------------------------------------------------------------------
+info "Installing pnpm dependencies..."
+$SAIL pnpm install
+
+info "Generating TypeScript types from PHP DTOs/Enums..."
+$SAIL artisan typescript:transform
+
+info "Building frontend assets..."
+$SAIL pnpm build
+
+# ---------------------------------------------------------------------------
+# 9. Database migrate + seed
+# ---------------------------------------------------------------------------
+info "Running migrate:fresh --seed..."
+$SAIL artisan migrate:fresh --seed --force
+
+# ---------------------------------------------------------------------------
+# 10. Summary
+# ---------------------------------------------------------------------------
+APP_PORT_VAL="$(grep -E '^APP_PORT=' .env | cut -d= -f2-)"
+APP_PORT_VAL="${APP_PORT_VAL:-80}"
+
+printf '\n'
+printf '\033[0;32m+------------------------------------------------------+\033[0m\n'
+printf '\033[0;32m|         CleanMaster local setup complete             |\033[0m\n'
+printf '\033[0;32m+------------------------------------------------------+\033[0m\n'
+printf '\033[0;32m|  App                 http://localhost:%-15s|\033[0m\n' "$APP_PORT_VAL"
+printf '\033[0;32m|  Vite (HMR)          http://localhost:5173           |\033[0m\n'
+printf '\033[0;32m|  Mailpit             http://localhost:8025           |\033[0m\n'
+printf '\033[0;32m|  MinIO console       http://localhost:8900           |\033[0m\n'
+printf '\033[0;32m|                                                      |\033[0m\n'
+printf '\033[0;32m|  Login:  admin@example.com                           |\033[0m\n'
+printf '\033[0;32m|  Pass:   password                                    |\033[0m\n'
+printf '\033[0;32m|                                                      |\033[0m\n'
+printf '\033[0;32m|  Dev (HMR):  ./vendor/bin/sail pnpm dev              |\033[0m\n'
+printf '\033[0;32m|  Stop:       ./vendor/bin/sail down                  |\033[0m\n'
+printf '\033[0;32m+------------------------------------------------------+\033[0m\n'
+printf '\n'

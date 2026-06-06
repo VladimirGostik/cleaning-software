@@ -4,13 +4,13 @@
 
     defineProps<{
         search: string;
-        type: App.Enums.ClientType | undefined;
+        type: App.Enums.ClientTypeEnum | undefined;
         types: Array<{ value: string; label: string }>;
     }>();
 
     const emit = defineEmits<{
         (e: 'update:search', v: string): void;
-        (e: 'update:type', v: App.Enums.ClientType | undefined): void;
+        (e: 'update:type', v: App.Enums.ClientTypeEnum | undefined): void;
     }>();
 
     const { t } = useTranslate();

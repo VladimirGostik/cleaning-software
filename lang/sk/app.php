@@ -42,6 +42,15 @@ return [
     'nav.audit_logs' => 'Audit log',
     'nav.roles' => 'Role a oprávnenia',
 
+    'auth.hero.title_1' => 'Celá vaša firma',
+    'auth.hero.title_2' => 'pod kontrolou.',
+    'auth.hero.subtitle' => 'Správa klientov, zmlúv, zamestnancov a faktúr na jednom mieste.',
+    'auth.hero.feature_free' => '14 dní zadarmo',
+    'auth.hero.feature_no_card' => 'Bez kreditnej karty',
+    'auth.hero.feature_support' => 'SK podpora',
+    'auth.back_home' => 'Späť na hlavnú',
+    'auth.welcome_back' => 'Vitajte späť. Zadajte svoje údaje.',
+
     'clients.created' => 'Klient bol úspešne vytvorený.',
     'clients.updated' => 'Klient bol úspešne aktualizovaný.',
     'clients.deleted' => 'Klient bol úspešne zmazaný.',

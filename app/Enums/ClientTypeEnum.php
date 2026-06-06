@@ -7,7 +7,7 @@ namespace App\Enums;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]
-enum ClientType: string
+enum ClientTypeEnum: string
 {
     case Corporate = 'corporate';
     case Private = 'private';

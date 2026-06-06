@@ -7,12 +7,6 @@ export interface AuthUser {
     is_active: boolean;
 }
 
-export interface TenantSummary {
-    id: string;
-    name: string;
-    is_active: boolean;
-}
-
 export interface SupportedLanguageOption {
     code: string;
     label: string;
@@ -29,7 +23,7 @@ export interface FlashMessages {
 export interface SharedProps {
     app: { name: string };
     auth: { user: AuthUser | null };
-    tenant: { active: TenantSummary | null; available: TenantSummary[] };
+    tenant: { active: App.Data.Tenants.TenantListItemData | null; available: App.Data.Tenants.TenantListItemData[] };
     can: Record<string, boolean>;
     flash: FlashMessages;
     translations: Record<string, string>;

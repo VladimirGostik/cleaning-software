@@ -4,7 +4,7 @@
     import { useTranslate } from '@/Composables/useTranslate';
 
     const props = defineProps<{
-        type: App.Enums.ClientType;
+        type: App.Enums.ClientTypeEnum;
     }>();
 
     const { t } = useTranslate();

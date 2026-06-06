@@ -79,7 +79,12 @@ final readonly class ClientService
 
     public function delete(Client $client): void
     {
-        $client->delete();
+        $client->load('contacts');
+
+        $this->db->transaction(function () use ($client): void {
+            $client->contacts->each(fn (ClientContact $contact) => $contact->delete());
+            $client->delete();
+        });
     }
 
     /**

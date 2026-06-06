@@ -41,8 +41,13 @@
 
     const ui = reactive({ editDrawerOpen: false, deleteConfirmOpen: false });
 
+    const localeTag = computed(() => {
+        const map: Record<string, string> = { sk: 'sk-SK', en: 'en-GB', uk: 'uk-UA' };
+        return map[pageProps.locale] ?? 'sk-SK';
+    });
+
     function formatDate(dateStr: string): string {
-        return new Date(dateStr).toLocaleDateString('sk-SK', {
+        return new Date(dateStr).toLocaleDateString(localeTag.value, {
             year: 'numeric',
             month: 'long',
             day: 'numeric',

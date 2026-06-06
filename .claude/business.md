@@ -29,6 +29,18 @@ Cleaning company **owner** (Vlastník). One owner can run multiple cleaning comp
 
 Permissions, not roles, drive UI: a cleaner with no permission for "Reklamácie" simply doesn't see the section. Roles are bundles only.
 
+## Permissions
+
+Flat Spatie permission strings, **scoped per tenant** (teams = `tenant_id`). Format: `<verb> <resource>`. Roles bundle them via `RoleTemplatesSeeder`; the owner can re-bundle per tenant. Verbs in use: `view`, `create`, `edit`, `delete`.
+
+**Implemented:**
+
+- `view clients` / `create clients` / `edit clients` / `delete clients` — Vlastník (all), Sekretárka (all), Účtovníčka (view only). Enforced by `ClientPolicy` + `#[Authorize]` on `ClientController`.
+
+**Spec-planned (seeded as role bundles, UI not yet built):** objects, quotes, contracts, schedule/jobs, invoices, employees, complaints, photos, templates, notifications, VAT settings, subscription, permission management. See the per-role defaults table above and the roadmap in `technical.md › Known gaps`.
+
+Only Vlastník manages subscription + the permission bundles themselves.
+
 ## Phases
 
 - **Fáza 1 (in scope)** — Admin Portal (AP). Web-only, desktop+tablet responsive.

@@ -18,7 +18,7 @@
 
     interface Props {
         clients: PaginatedData<App.Data.Clients.ClientListItemData>;
-        filters: { search?: string | null; type?: App.Enums.ClientType | null; sort?: string; per_page?: number };
+        filters: { search?: string | null; type?: App.Enums.ClientTypeEnum | null; sort?: string; per_page?: number };
         types: Array<{ value: string; label: string }>;
     }
 

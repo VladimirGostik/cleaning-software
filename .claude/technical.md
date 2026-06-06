@@ -1,112 +1,129 @@
-# CleanMaster — Technical context
+<!-- inogile:context-version=3 -->
+# CleanMaster — Technical map
 
-Companion to `business.md`. This file documents non-obvious technical decisions an LLM/contributor needs to know **before writing code**. Generic conventions belong in `CLAUDE.md`'s "Architecture invariants" section; this file captures the *why*.
+Companion to `business.md`. Captures **relationships, flows, and the *why* behind non-obvious decisions** an LLM/contributor needs before writing code. Generic conventions live in `CLAUDE.md` (`## Architecture invariants`); this file is the relationship map + rationale, not an inventory.
 
-## Why these versions
+## Project type
 
-- **PHP 8.5 in Docker** — host has 8.4. Laravel 13 requires `^8.5`. We chose Docker over `brew install php@8.5` so the toolchain is reproducible and CI matches local without per-developer setup. Composer/Pint/PHPStan/artisan all run inside `php:8.5-cli` via `docker compose run --rm app …`.
-- **Vite 7 (not Vite 8)** — Vite 8 ships with Rolldown which has a known issue importing DaisyUI 5's CSS through the Tailwind 4 plugin (`Unknown file extension ".css"` from Node ESM loader). Vite 7 is stable.
-- **DaisyUI 5 + Tailwind 4** — declared via `@plugin 'daisyui'` in `resources/css/app.css`, theme via `@plugin 'daisyui/theme' { name: 'cleanmaster'; … }` with OKLCH tokens. Tailwind 4 no longer needs `tailwind.config.js`; everything is CSS-driven via `@theme` and `@source` directives.
-- **Spatie Activitylog v5** — note the namespace shift: `Spatie\Activitylog\Models\Concerns\LogsActivity` (not `Traits`), `Spatie\Activitylog\Support\LogOptions` (not root). Method `dontSubmitEmptyLogs()` was renamed to `dontLogEmptyChanges()`. Keep `activity_log.id` as bigint and `causer_id`/`subject_id` as **strings** to support polymorphic morphs across mixed-PK models (Role bigint, User UUID).
-- **Spatie Laravel-Data v4 + Laravel-TypeScript-Transformer v3** — version mismatch: `Spatie\LaravelData\Support\TypeScriptTransformer\DataTypeScriptTransformer` references `Spatie\LaravelTypeScriptTransformer\Transformers\DtoTransformer` which was removed. Use `Spatie\LaravelTypeScriptTransformer\LaravelData\Transformers\DataClassTransformer` directly instead. See `app/Providers/TypeScriptTransformerServiceProvider.php`.
-- **`spatie/laravel-typescript-transformer` v3** — does not ship a `config/typescript-transformer.php`; configuration happens via the published `App\Providers\TypeScriptTransformerServiceProvider`. The config-file paths some docs reference are outdated.
+laravel-be + inertia-fe
 
-## Multi-tenancy implementation choices
+## Stack snapshot
 
-We deliberately **did not** install `stancl/tenancy` or another multi-tenancy package because the spec says: *"Tenant izolácia je riešená cez BelongsToTenant trait s global scope — každý query automaticky filtruje podľa tenant_id."* So:
+Laravel 13 / PHP 8.5 (Sail) · Inertia 3 + Vue 3 + TypeScript · PostgreSQL 18 · Spatie laravel-data / permission (teams=`tenant_id`) / activitylog / medialibrary / query-builder / typescript-transformer · Tailwind 4 + DaisyUI 5.
 
-- `App\Concerns\BelongsToTenant` (trait) auto-applies `App\Scopes\TenantScope` and auto-fills `tenant_id` on `creating` from `app('current_tenant_id')`.
-- `App\Http\Middleware\TenantContextMiddleware` populates `app('current_tenant_id')` per request from the session and tells `Spatie\Permission\PermissionRegistrar::setPermissionsTeamId()` so role/permission lookups stay scoped.
-- The User model itself does **not** use `BelongsToTenant`. Users are global; tenancy is expressed via `tenant_memberships`.
+## Domains
 
-To bypass the global scope (rare — typically only in jobs/console where there is no active user): `Model::withoutGlobalScope(\App\Scopes\TenantScope::class)`.
+### identity-tenancy
 
-## Spatie Permission with teams = tenant_id
+The spine every other domain hangs off. **Not** a `BelongsToTenant` model itself — it *defines* tenancy.
 
-Configured in `config/permission.php`:
-```php
-'role'             => App\Models\Role::class,
-'team_foreign_key' => 'tenant_id',
-'teams'            => true,
-```
+- **Core:** `App\Models\User` (global identity, UUID, `locale`, `is_active`) + `App\Models\Tenant` (firma, UUID, VAT-payer flag, subscription_plan) + `App\Models\TenantMembership` (User × Tenant pivot, `is_active`, `joined_at`).
+- **Satellites:**
+  - `App\Http\Middleware\TenantContextMiddleware` — resolves active tenant from session `active_tenant_id` (or first active membership), binds `app('current_tenant_id')`, calls `PermissionRegistrar::setPermissionsTeamId($tenantId)`. Without it the global scope and permission lookups have no tenant.
+  - `App\Models\Role` extends `Spatie\Permission\Models\Role` + `LogsActivity` + `search` scope. Per-tenant via `tenant_id` team key.
+  - `App\Http\Middleware\HandleInertiaRequests` — shares `tenant {active, available}` + `can {…}` to every page.
+  - `App\Http\Controllers\Auth\*` — login / logout / forgot-password / reset-password.
+- **Flow (login):** `POST /login` → `Auth\AuthController@login` (`LoginData` DTO) → session auth → `TenantContextMiddleware` binds tenant on subsequent requests → `/dashboard`.
+- **Depends on:** nothing (root).
+- **Depended on by:** **every** domain model via `tenant_id` FK + the per-tenant permission scope.
+- **If you change Core, check:** `TenantContextMiddleware`, `HandleInertiaRequests::share`, `App\Scopes\TenantScope`, every seeder that calls `setPermissionsTeamId`.
+- **Keywords:** tenant, firma, membership, Vlastník, active_tenant_id, teams.
 
-UUID model_id was wired by editing the published migration `2026_05_03_194335_create_permission_tables.php`: `model_morph_key` and `team_foreign_key` columns are `uuid()` not `unsignedBigInteger()`. The `permissions.id` and `roles.id` columns themselves remain bigint (Spatie internal — never exposed in URLs or DTOs).
+### clients
 
-In code, **always** call `app(PermissionRegistrar::class)->setPermissionsTeamId($tenantId)` before role/permission ops outside an HTTP request (seeders, queue workers, console commands, tests). Forgetting this returns "permission not found" errors.
+The only fully-implemented business domain.
 
-## DTO / Service / Controller pattern
+- **Core:** `App\Models\Client` + `App\Services\ClientService` — `paginate(ClientIndexFilterData): LengthAwarePaginator`, `create(ClientStoreData): Client`, `update(Client, ClientUpdateData): Client`, `delete(Client): void`.
+- **Satellites:**
+  - `App\Models\ClientContact` — N:1 to Client, FK `client_id ON DELETE CASCADE`. Holds `email`/`phone`/`is_primary`. **Client itself has no email/phone column** — both read from the primary contact.
+  - `App\Data\Clients\*` — `ClientIndexFilterData` (filters: search, type), `ClientListItemData` (row + derived `primary_contact_email`/`primary_contact_phone`), `ClientDetailData` (address + contacts array, zero email/phone fields), `ClientStoreData`, `ClientUpdateData`, `ClientContactData`.
+  - `App\Policies\ClientPolicy` — gates viewAny/view/create/update/delete on `view|create|edit|delete clients` permissions (references `PermissionEnum`).
+  - `App\Enums\ClientTypeEnum` — `Corporate` (IČO required) | `Private` (IČO optional). `#[TypeScript]`. Methods: `label()` (i18n key), `options()` (select list).
+  - FE: `Clients/Index` + `Clients/Show` Inertia pages, shared `ClientFormDrawer` (side-drawer create/edit, no separate routes), `useClientFilters` composable, generic `EmptyState` + `PageHeader`.
+- **Flow (list):** `GET /clients` → `ClientController@index` (`#[Authorize('viewAny', Client)]`) → `ClientService::paginate` (Spatie QueryBuilder: filters search/type, sorts name/created_at) → `ClientListItemData::collect(..., PaginatedDataCollection)` → Inertia `Clients/Index`.
+- **Flow (write):** `POST|PUT /clients` → `ClientController@store|update` (DTO) → `ClientService` in `DB::transaction` → `syncContacts` diff-apply (eager-load, diff incoming IDs, soft-delete missing, update/create matched) → redirect with `flash.success`.
+- **Depends on:** `identity-tenancy` (tenant_id FK, permission gate).
+- **Depended on by (planned):** Object → Quote → Contract → Invoice all FK to Client (not yet built).
+- **If you change Core, check:** `ClientController` (5 actions), `ClientPolicy`, `routes/web.php:38` (`Route::resource('clients')->except(create,edit)`), `lang/{sk,en,uk}/app.php` `clients.*` keys.
+- **Keywords:** klient, kontakt, IČO, DIČ, IČ DPH, Corporate, Private, primary contact.
 
-- **Controllers** are thin — type-hint a DTO param, type-hint a service in the constructor, return `redirect()->with(...)` or `Inertia::render(...)`.
-- **DTOs** live in `app/Data/`, extend `Spatie\LaravelData\Data`, are `final`, validation via attributes (`#[Required]`, `#[Email]`, `#[Min]`). Carry a `#[TypeScript]` attribute so they are picked up by `php artisan typescript:transform`.
-- **Services** live in `app/Services/`, are `final readonly class XxxService`. Bind as **singletons** in `AppServiceProvider::register()` (only when one is added — none yet for v0.1 base).
-- **Models** use `#[Fillable]`, `#[Hidden]`, `#[Cast]` PHP attributes, declare `final`, are `declare(strict_types=1)`. `casts(): array` method preferred over `$casts` property.
-- **`activity_log` morph columns are strings**, not UUIDs — explicit decision so polymorphic `causer`/`subject` works for both bigint Spatie models and UUID domain models.
+## Cross-cutting
 
-## Frontend type plumbing
+- **Multi-tenancy global scope** — `App\Concerns\BelongsToTenant` auto-applies `App\Scopes\TenantScope` and auto-fills `tenant_id` on `creating` from `app('current_tenant_id')`. Reach: every domain query. Bypass (jobs/console only): `Model::withoutGlobalScope(TenantScope::class)`. We deliberately did **not** install `stancl/tenancy` — spec mandates the trait+scope approach.
+- **Permissions (Spatie teams=tenant_id)** — `config/permission.php`: `teams=true`, `team_foreign_key='tenant_id'`, `'role'=>App\Models\Role::class`. Flat strings via `App\Enums\PermissionEnum` (canonical source of truth — all code references `PermissionEnum::Xxx->value`). Reach: every Policy + `#[Authorize]` site. **Outside HTTP (seeder/job/console/test) you MUST `setPermissionsTeamId($tenantId)` first** or lookups return "permission not found".
+- **Activitylog** — `LogsActivity` on Role (+ Client/ClientContact). Auth events (Login/Logout/Failed/Lockout/PasswordReset/PasswordChanged/Registered/Verified) are logged asynchronously via `App\Listeners\AuthEventListener` (implements `ShouldQueue`, `#[Tries(3)]`). Writes to `activity_log`. Morph columns `subject_id`/`causer_id` are **strings** to span mixed-PK models (Role bigint, User/Client UUID).
+- **MediaLibrary** — `media` table present, `model_id` UUID. No collections wired on domain models yet (reserved for DocumentTemplate / photos).
+- **i18n** — SK (default) / EN / UA. `App\Enums\SupportedLanguage`, `lang/{sk,en,uk}/app.php`, `LocaleMiddleware` (order: user.locale → session → cookie → Accept-Language → SK). BE flattens nested keys via `Arr::dot()`; FE `useTranslate()` does flat `t(key)` lookup. Reach: every visible string.
+- **Inertia shared props** — `HandleInertiaRequests::share`: `app, auth, tenant{active,available}, can{…}, flash, translations, locale, languages, canResetPassword`. `tenant.available` is a `DataCollection<TenantListItemData>` (typed DTO: id, name, is_active). Typed in `resources/js/types/index.d.ts`, read via `usePageProps()`. Reach: every page.
+- **TypeScript transformer** — `php artisan typescript:transform` generates `resources/js/types/generated.d.ts` from `app/Data` + `app/Enums` (`#[TypeScript]`). Never hand-edit. Wired via `App\Providers\TypeScriptTransformerServiceProvider` (no config file in v3).
 
-Why `usePageProps()` composable instead of typed `usePage<SharedProps>()`:
+## Layer contracts
 
-We tried Inertia v3's published augmentation pattern (`declare module '@inertiajs/core' { interface InertiaConfig { sharedPageProps: SharedProps } }`). vue-tsc did not pick it up reliably across imports. Instead we cast inside one composable: `usePage().props as unknown as SharedProps`. Single cast, fully typed downstream. If Inertia's typing improves we can revert.
+- **HTTP ↔ Service** — Controllers hand a Spatie Data DTO to the service, never an array. Controllers are thin: type-hint DTO param + service in constructor, return `Inertia::render` or `to_route()->with('flash.success', …)`.
+- **Service ↔ Model** — `DB::transaction` lives in the Service, NEVER the Controller. Services are `final readonly class XxxService`.
+- **BE ↔ FE (Inertia)** — page prop shape = the DTO's generated TS namespace. Shared props also follow the DTO rule: `tenant.available` is a `DataCollection<TenantListItemData>` (not raw arrays). Enums shared via `#[TypeScript]` → `generated.d.ts`. Flash via `flash.success` session key.
+- **Auth gate** — business models are gated by **Policy + `#[Authorize]` per controller method** (rbac-full), not route middleware. Permission lookup is tenant-scoped — relies on `TenantContextMiddleware` having run.
 
-`useTranslate()` returns `t(key)` that flat-looks up `props.translations[key]` (server flattens nested keys with `Arr::dot()`), falls back to the key itself.
+## Gotchas
 
-## Build / dev workflow inside Docker
+- **Soft-delete + partial unique** — `clients (tenant_id, ico) WHERE deleted_at IS NULL AND ico IS NOT NULL`. IČO unique per tenant among *active* clients; resurrected/soft-deleted rows don't block re-use. A plain `unique` would break this. `ClientService` catches the `QueryException` and rethrows as `ValidationException`.
+- **Permission team scope outside HTTP** — forgetting `setPermissionsTeamId` in seeders/jobs/tests silently returns empty permissions. Most common multi-tenant bug.
+- **`activity_log` morph columns are strings** — not UUIDs, so polymorphic causer/subject works across bigint (Role) + UUID (User/Client) models.
+- **Spatie permission migration is UUID-patched** — the published `2026_05_03_194335_create_permission_tables.php` was edited: `model_morph_key` + `team_foreign_key` are `uuid()`, but `permissions.id`/`roles.id` stay bigint (Spatie internal, never in URLs/DTOs).
+- **Spatie Data v4 ↔ typescript-transformer v3 mismatch** — `DataTypeScriptTransformer` references a removed class. Use `Spatie\LaravelTypeScriptTransformer\LaravelData\Transformers\DataClassTransformer` directly (see the service provider).
+- **Activitylog v5 namespace shift** — `…\Models\Concerns\LogsActivity` (not `Traits`), `…\Support\LogOptions`; `dontSubmitEmptyLogs()` → `dontLogEmptyChanges()`.
+- **Auth page palette** — `Pages/Auth/Login.vue` uses `--auth-*` CSS custom properties (brown/amber gradient, not `cleanmaster` DaisyUI theme tokens). Tokenized in `resources/css/app.css` (:62–107). Not the same as `Landing.vue`'s blue/slate or the main app's DaisyUI theme.
+- **Landing page palette** — `Pages/Landing.vue` uses raw Tailwind blue/slate, NOT DaisyUI semantic tokens (fixed marketing brand, theme-independent). Don't "fix" it to use the `cleanmaster` theme.
+- **`usePageProps()` cast** — Inertia v3 augmentation didn't type-check reliably across imports, so we cast once inside the composable (`usePage().props as unknown as SharedProps`). Revisit if Inertia typing improves.
 
-- `php artisan serve` runs as the default `command` of the `app` service, so `docker compose up app` exposes port 8000.
-- Vite dev server: `docker compose run --rm --service-ports app pnpm dev` (binds 5173 with `host: '0.0.0.0'` per `vite.config.js`).
-- `pnpm build` produces `public/build/{manifest.json, assets/*}` for production.
+## Why these versions / decisions
+
+- **PHP 8.5 in Docker/Sail** — host has 8.4; L13 requires `^8.5`. Reproducible toolchain, CI matches local.
+- **Vite 7 (not 8)** — Vite 8's Rolldown chokes importing DaisyUI 5 CSS through the Tailwind 4 plugin (`Unknown file extension ".css"`).
+- **DaisyUI 5 + Tailwind 4** — `@plugin 'daisyui'` + `@plugin 'daisyui/theme' { name:'cleanmaster'; … }` (OKLCH) in `resources/css/app.css`. No `tailwind.config.js` — CSS-driven via `@theme`/`@source`.
+- **Design handoff** — Claude Design JSX prototypes in `docs/design-handoff/`. Source of truth for *visuals only*; re-implement in Vue 3 + Tailwind 4, do **not** copy the React structure or `cm-*` classes. `styles.css` there is reference-only, never imported.
+
+## Build / dev workflow (Sail)
+
+- Whole stack: `./vendor/bin/sail up -d` (laravel.test, pgsql, mailpit, minio). App → http://localhost, Mailpit → :8025, MinIO → :8900.
+- Vite HMR: `./vendor/bin/sail pnpm dev` (:5173, `host:'0.0.0.0'`). Prod build: `./vendor/bin/sail pnpm build` → `public/build/{manifest.json, assets/*}`.
 
 ## Quality-gate baseline
 
-- **Pint** — passes on full repo. Canonical L13 preset enforces strict types, final classes, ordered imports.
-- **PHPStan** — level 5 baseline (was max but the published Spatie permission migration carries unavoidable `mixed` types from `config()` lookups). The two excluded migrations are vendor-shipped untyped code. Aim is to ramp to level 8 then max as we add explicit types in domain code.
-- **vue-tsc** — strict, passes on the v0.1 base. Adds `@/types` re-exports for shared types.
-- **ESLint flat config** — bans `ref()` for application logic via `no-restricted-syntax` (rationale in `eslint.config.js`).
-- **Prettier** — formats `resources/**/*.{ts,vue,css,json}`. 110-char line width.
-- **Lefthook** — `pre-commit`: pint, phpstan, eslint, prettier, ts-transform; `pre-push`: vue-tsc.
-- **php artisan test** — 3 passing tests; sqlite in-memory.
+- **Pint** — passes; canonical L13 preset (strict types, final classes, ordered imports).
+- **PHPStan** — level 5 baseline (the published Spatie permission migration carries unavoidable `mixed` from `config()`). Ramp toward max as domain code gains explicit types.
+- **vue-tsc** — strict, passes.
+- **ESLint** — bans `ref()` for app logic (`no-restricted-syntax`). **Prettier** — `resources/**/*.{ts,vue,css,json}`, 110-char.
+- **Lefthook** — pre-commit: pint, phpstan, eslint, prettier, ts-transform; pre-push: vue-tsc.
+- **Tests** — PHPUnit, sqlite in-memory; small passing suite on the v0.1 base.
 
 ## Migration strategy
 
-`Deployment Status: not deployed`. We re-run `migrate:fresh --seed` whenever schema changes. When the first production deploy ships, switch to additive migrations and bump `Last verified` in `CLAUDE.md`.
+Not deployed (`CLAUDE.md › Deployment Status`). Re-run `migrate:fresh --seed` on any schema change. On first production deploy, switch to additive migrations and bump `Last verified`.
 
 ## Demo state
 
-`UserSeeder` creates: User `admin@example.com` / `password` → TenantMembership → Tenant `Demo Cleaning s.r.o.` (IČO 12345678, VAT-payer, plan `premium`). After seed, sets `permissions team_id` to the tenant and runs `RoleTemplatesSeeder` which creates the 6 default roles per spec, assigns Vlastník to admin.
+`UserSeeder`: User `admin@example.com` / `password` → TenantMembership → Tenant `Demo Cleaning s.r.o.` (IČO 12345678, VAT-payer, plan `premium`). Sets permission `team_id` to the tenant, runs `RoleTemplatesSeeder` (6 spec roles per tenant), assigns Vlastník to admin.
 
-## Design handoff bundle
+## Known gaps to close in /feature passes (rough dependency order)
 
-Claude Design HTML/JSX prototypes live in `docs/design-handoff/`. Source of truth for screen visuals (landing, login, dashboard, klienti, quotes, zmluva, invoices, rozvrh, zamestnanec). Per the bundle README: re-implement pixel-perfectly in Vue 3 + Tailwind 4, do **not** copy the prototype's React structure or its `cm-*` CSS classes. The custom CSS in `docs/design-handoff/project/styles.css` is reference-only — never imported.
-
-The landing page (`Pages/Landing.vue`) deliberately uses raw Tailwind palette (blue/slate) instead of DaisyUI semantic tokens because the marketing visual targets a fixed brand palette regardless of the in-app theme.
-
-## Clients module — implementation notes
-
-- **Dual models** `Client` + `ClientContact` (N:1 relation). Both use `BelongsToTenant`, `SoftDeletes`, `LogsActivity`, `HasUuids`. Contact FK `client_id ON DELETE CASCADE`. **Client model no longer holds `email`/`phone`** — both are exclusive to `ClientContact`. Email/phone data is always read from the primary contact (marked by `is_primary` flag).
-- **Type enum** `App\Enums\ClientType` with keys `Corporate` (IČO required) + `Private` (IČO optional). Auto-cast on model + `#[TypeScript]` for FE.
-- **Partial unique index** `(tenant_id, ico) WHERE deleted_at IS NULL AND ico IS NOT NULL` — IČO unique per tenant among active clients; soft-deleted clients don't block re-use.
-- **`ClientService` (final readonly)** — `paginate(filter)` via Spatie QueryBuilder (filters: search, type; sorts: name, created_at). `create(data)` + `update(id, data)` in transaction with `syncContacts` diff-apply (eager-load, diff incoming IDs, soft-delete missing, update/create matched). Unique IČO QueryException → ValidationException. **`scopeSearch` now searches only `name` + `ico`** (email moved to contact layer).
-- **`ClientPolicy`** — viewAny/view/create/update/delete gates on permissions `view/create/edit/delete clients` per Spatie permission.
-- **DTO naming** — `ClientIndexFilterData` (filters), `ClientListItemData` (paginated row with `primary_contact_email`, `primary_contact_phone` derived), `ClientDetailData` (full address + contacts array, zero email/phone fields), `ClientStoreData` + `ClientUpdateData`.
-- **Side drawer pattern** — Inertia `Clients/Index` + `Clients/Show` pages; create/edit forms in reusable `ClientFormDrawer` component on both pages (not separate routes).
-- **Generic components** — `EmptyState` (illustration + CTA) + `PageHeader` (title + action button) now live in `Components/` for reuse across Object, Quote, Contract, Invoice modules.
-- **FE composable** `useClientFilters` — state management for form inputs, clear/apply actions, reactive filter submission.
-- **i18n flat** — `lang/{sk,en,uk}/app.php` has `clients.*` keys (list.title, list.empty, show.title, form.name, form.type, client_type.corporate, client_type.private, etc.). Flattened by `Arr::dot()` on BE, accessed via `t(key)` on FE.
-
-## Known gaps to close in /feature passes
-
-In rough dependency order:
-
-1. **Tenant CRUD** (`/feature` — list, create, edit, switch). Touches AppLayout tenant switcher.
+1. **Tenant CRUD** — list/create/edit/switch. Touches AppLayout tenant switcher.
 2. **User invite + Profile + change-password.**
-3. **Object** (CRUD). Polymorphic address, special instructions, access info. FK to Client.
-4. **Quote** (CRUD with line items, PDF, send-to-client flow, status enum).
-5. **Contract** (polymorphic, change log, expiry notifications, types incl. employee).
-6. **Schedule + Job** (calendar, drag-drop, recurrence from work breakdown).
-7. **Absence** + scheduling impact notification.
-8. **Invoice** (line items, VAT logic, Pay-by-Square QR, status transitions, PDF, send).
-9. **DocumentTemplate** (upload + download per type enum).
-10. **Notification settings + log** (config UI + delivery channels).
-11. **Audit log** read UI surfacing the existing Spatie ActivityLog rows.
-12. **Subscription / Plan** enforcement (entity limits, feature gating).
-13. **Mobile + customer portal scaffolding** (Phase 2 — separate Vite entry points or separate apps).
+3. **Object** — CRUD, polymorphic address, access info, special instructions, FK to Client. The central entity (client → object → quote → contract → invoice).
+4. **Quote** — line items, status enum, PDF, send-to-client, auto work breakdown.
+5. **Contract** — polymorphic (`contractable`), change log, expiry notifications (30/14/7d), employee-contract child.
+6. **Schedule + Job** — calendar, drag-drop, recurrence from work breakdown.
+7. **Absence** — cleaner-reported, scheduling-impact notification.
+8. **Invoice** — line items, VAT logic, Pay-by-Square QR, status transitions, PDF, send.
+9. **DocumentTemplate** — upload/download per type enum (MediaLibrary).
+10. **Notification settings + log** — channels (DB/email/push), per role × type.
+11. **Audit log read UI** — surface existing Spatie ActivityLog rows.
+12. **Subscription / Plan enforcement** — entity limits, feature gating.
+13. **Mobile + customer portal scaffolding** (Phase 2).
+
+## Verification status
+
+- Last full scan: 2026-06-05 (`/init` full re-init — schema + routes via Boost MCP, source grep)
+- Last delta: 2026-06-06 (compliance fixes: PermissionEnum, TenantListItemData DTO, AuthEventListener, ClientTypeEnum)
+- Open `TODO verify`: 0
+- Reference inventory: `.claude/inventory.md` (not generated; opt-in via `/spec-sync --full --with-inventory`)

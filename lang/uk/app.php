@@ -42,6 +42,15 @@ return [
     'nav.audit_logs' => 'Журнал подій',
     'nav.roles' => 'Ролі та дозволи',
 
+    'auth.hero.title_1' => 'Уся ваша компанія',
+    'auth.hero.title_2' => 'під контролем.',
+    'auth.hero.subtitle' => 'Керування клієнтами, договорами, працівниками та рахунками в одному місці.',
+    'auth.hero.feature_free' => '14 днів безкоштовно',
+    'auth.hero.feature_no_card' => 'Без кредитної картки',
+    'auth.hero.feature_support' => 'Підтримка SK',
+    'auth.back_home' => 'На головну',
+    'auth.welcome_back' => 'Ласкаво просимо. Введіть свої дані.',
+
     'clients.created' => 'Клієнта успішно створено.',
     'clients.updated' => 'Клієнта успішно оновлено.',
     'clients.deleted' => 'Клієнта успішно видалено.',

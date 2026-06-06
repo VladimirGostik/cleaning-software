@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Clients;
 
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,7 +20,7 @@ final class ClientStoreTest extends TestCase
     private function corporatePayload(array $overrides = []): array
     {
         return array_merge([
-            'type' => ClientType::Corporate->value,
+            'type' => ClientTypeEnum::Corporate->value,
             'name' => 'Test Corp s.r.o.',
             'ico' => '12345678',
             'dic' => '2012345678',
@@ -79,7 +79,7 @@ final class ClientStoreTest extends TestCase
         $this->actingAsTenantUser('Vlastník', $tenant);
 
         $payload = [
-            'type' => ClientType::Private->value,
+            'type' => ClientTypeEnum::Private->value,
             'name' => 'Jana Nováková',
             'ico' => null,
             'dic' => null,

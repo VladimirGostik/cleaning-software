@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use App\Models\ClientContact;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +22,7 @@ final class ClientFactory extends Factory
     public function definition(): array
     {
         return [
-            'type' => ClientType::Corporate,
+            'type' => ClientTypeEnum::Corporate,
             'name' => fake()->company(),
             'ico' => (string) fake()->numberBetween(10000000, 99999999),
             'dic' => '20' . fake()->numerify('########'),
@@ -39,7 +39,7 @@ final class ClientFactory extends Factory
     public function private(): static
     {
         return $this->state(fn () => [
-            'type' => ClientType::Private,
+            'type' => ClientTypeEnum::Private,
             'name' => fake()->name(),
             'ico' => null,
             'dic' => null,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Clients;
 
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use Spatie\LaravelData\Attributes\Validation\Between;
 use Spatie\LaravelData\Attributes\Validation\In;
 use Spatie\LaravelData\Attributes\Validation\Max;
@@ -20,7 +20,7 @@ final class ClientIndexFilterData extends Data
         #[Nullable, Max(255)]
         public ?string $search = null,
         #[Nullable]
-        public ?ClientType $type = null,
+        public ?ClientTypeEnum $type = null,
         #[In(['name', '-name', 'created_at', '-created_at'])]
         public string $sort = 'name',
         #[Min(1)]

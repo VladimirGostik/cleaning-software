@@ -16,6 +16,7 @@
     const { t } = useTranslate();
 
     const canResetPassword = computed<boolean>(() => Boolean(props.canResetPassword));
+    // eslint-disable-next-line no-restricted-syntax -- imperative DOM toggle: password input type attribute
     const showPassword = ref(false);
     const currentLocale = computed(() => props.locale ?? 'sk');
 
@@ -61,8 +62,7 @@
 
         <!-- Hero (left 60%) -->
         <div
-            class="hidden lg:flex lg:w-[60%] flex-col justify-center px-14 pt-24 pb-16 relative overflow-hidden"
-            style="background: linear-gradient(135deg, #78350F 0%, #A16207 45%, #713F12 100%)"
+            class="hidden lg:flex lg:w-[60%] flex-col justify-center px-14 pt-24 pb-16 relative overflow-hidden auth-hero-bg"
         >
             <!-- Radial overlay -->
             <div
@@ -73,30 +73,30 @@
             <!-- Tagline (vertically centered) -->
             <div class="relative z-10">
                 <h1 class="text-[72px] leading-[1.02] font-bold tracking-[-0.035em] text-white max-w-[640px]">
-                    Celá vaša firma<br />pod kontrolou.
+                    {{ t('auth.hero.title_1') }}<br />{{ t('auth.hero.title_2') }}
                 </h1>
-                <p class="mt-6 text-[22px] leading-[1.5] max-w-[560px]" style="color: rgba(255,255,255,.88)">
-                    Správa klientov, zmlúv, zamestnancov a faktúr na jednom mieste. Vytvorené pre slovenské upratovacie firmy.
+                <p class="mt-6 text-[22px] leading-[1.5] max-w-[560px]" :style="{ color: 'var(--auth-text-muted)' }">
+                    {{ t('auth.hero.subtitle') }}
                 </p>
-                <div class="mt-11 flex gap-8 text-[16px]" style="color: rgba(255,255,255,.9)">
+                <div class="mt-11 flex gap-8 text-[16px]" :style="{ color: 'var(--auth-text-bright)' }">
                     <div class="flex items-center gap-2">
                         <CheckIcon class="h-5 w-5" />
-                        14 dní zadarmo
+                        {{ t('auth.hero.feature_free') }}
                     </div>
                     <div class="flex items-center gap-2">
                         <CheckIcon class="h-5 w-5" />
-                        Bez kreditnej karty
+                        {{ t('auth.hero.feature_no_card') }}
                     </div>
                     <div class="flex items-center gap-2">
                         <CheckIcon class="h-5 w-5" />
-                        SK podpora
+                        {{ t('auth.hero.feature_support') }}
                     </div>
                 </div>
             </div>
 
             <!-- Copyright (absolute bottom) -->
-            <div class="absolute bottom-10 left-14 z-10 text-[12px]" style="color: rgba(255,255,255,.6)">
-                © 2026 CleanMaster s.r.o.
+            <div class="absolute bottom-10 left-14 z-10 text-[12px]" :style="{ color: 'var(--auth-copyright)' }">
+                {{ t('landing.footer.copy') }}
             </div>
         </div>
 
@@ -108,12 +108,12 @@
                 class="absolute right-6 top-6 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 transition hover:text-slate-900"
             >
                 <ArrowLeftIcon class="h-3.5 w-3.5" />
-                Späť na hlavnú
+                {{ t('auth.back_home') }}
             </Link>
 
             <!-- Mobile logo -->
             <Link href="/" class="mb-8 flex items-center gap-2 lg:hidden">
-                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#A16207] to-[#713F12] text-white">
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg text-white auth-mobile-logo-bg">
                     <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M5 14c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round" />
                         <path d="M8 17h8" stroke-linecap="round" />
@@ -125,7 +125,7 @@
             <div class="w-full max-w-[380px]">
                 <div class="mb-9">
                     <h2 class="text-[26px] font-bold text-slate-900">{{ t('login') }}</h2>
-                    <p class="mt-1.5 text-sm text-slate-500">Vitajte späť. Zadajte svoje údaje.</p>
+                    <p class="mt-1.5 text-sm text-slate-500">{{ t('auth.welcome_back') }}</p>
                 </div>
 
                 <form class="flex flex-col gap-[18px]" @submit.prevent="submit">
@@ -139,7 +139,7 @@
                                 type="email"
                                 required
                                 autocomplete="email"
-                                class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-[#A16207] focus:ring-2 focus:ring-[#A16207]/20"
+                                class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition auth-input"
                                 :class="{ 'border-red-400 focus:border-red-400 focus:ring-red-100': form.errors.email }"
                             />
                         </div>
@@ -156,7 +156,7 @@
                                 :type="showPassword ? 'text' : 'password'"
                                 required
                                 autocomplete="current-password"
-                                class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-[#A16207] focus:ring-2 focus:ring-[#A16207]/20"
+                                class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition auth-input"
                                 :class="{ 'border-red-400 focus:border-red-400 focus:ring-red-100': form.errors.password }"
                             />
                             <button
@@ -176,7 +176,7 @@
                         <label class="flex cursor-pointer items-center gap-2">
                             <span
                                 class="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition"
-                                :class="form.remember ? 'border-[#A16207] bg-[#A16207] text-white' : 'border-slate-300 bg-white'"
+                                :class="form.remember ? 'auth-checkbox-checked' : 'auth-checkbox-unchecked'"
                             >
                                 <CheckIcon v-if="form.remember" class="h-3 w-3" />
                             </span>
@@ -186,7 +186,7 @@
                         <Link
                             v-if="canResetPassword"
                             href="/forgot-password"
-                            class="text-[13px] font-medium text-[#1E3A8A] hover:underline"
+                            class="text-[13px] font-medium hover:underline auth-link"
                         >
                             {{ t('forgot_password') }}
                         </Link>
@@ -195,7 +195,7 @@
                     <!-- Submit -->
                     <button
                         type="submit"
-                        class="flex w-full items-center justify-center rounded-lg bg-[#A16207] py-2.5 text-sm font-semibold text-white transition hover:bg-[#713F12] disabled:opacity-70"
+                        class="flex w-full items-center justify-center rounded-lg py-2.5 text-sm font-semibold text-white transition auth-submit-btn disabled:opacity-70"
                         :disabled="form.processing"
                     >
                         <span v-if="form.processing" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

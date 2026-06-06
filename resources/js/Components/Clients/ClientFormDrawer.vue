@@ -20,7 +20,7 @@
     const isEdit = computed(() => props.mode === 'edit' && !!props.client);
 
     const form = useForm({
-        type: (props.client?.type ?? 'corporate') as App.Enums.ClientType,
+        type: (props.client?.type ?? 'corporate') as App.Enums.ClientTypeEnum,
         name: props.client?.name ?? '',
         ico: props.client?.ico ?? '',
         dic: props.client?.dic ?? '',

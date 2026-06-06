@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Data\Tenants\TenantListItemData;
+use App\Enums\PermissionEnum;
 use App\Enums\SupportedLanguage;
-use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
+use Spatie\LaravelData\DataCollection;
 
 final class HandleInertiaRequests extends Middleware
 {
@@ -78,33 +80,28 @@ final class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{active: array<string, mixed>|null, available: array<int, array<string, mixed>>}
+     * @return array{active: TenantListItemData|null, available: DataCollection<int, TenantListItemData>}
      */
     private function tenantPayload(Request $request): array
     {
         $user = $request->user();
         if ($user === null) {
-            return ['active' => null, 'available' => []];
+            return ['active' => null, 'available' => TenantListItemData::collect([], DataCollection::class)];
         }
 
         $activeId = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
 
-        $available = $user->tenants()
+        $tenants = $user->tenants()
             ->wherePivot('is_active', true)
-            ->get()
-            ->map(function ($t) {
-                /** @var Tenant $t */
-                return [
-                    'id' => $t->id,
-                    'name' => $t->name,
-                    'is_active' => $t->is_active,
-                ];
-            })
-            ->all();
+            ->get();
 
-        $active = collect($available)->firstWhere('id', $activeId);
+        /** @var DataCollection<int, TenantListItemData> $available */
+        $available = TenantListItemData::collect($tenants, DataCollection::class);
 
-        return ['active' => $active, 'available' => $available];
+        $active = $tenants->first(fn ($t) => $t->id === $activeId);
+        $activeDto = $active !== null ? TenantListItemData::fromModel($active) : null;
+
+        return ['active' => $activeDto, 'available' => $available];
     }
 
     /**
@@ -116,32 +113,38 @@ final class HandleInertiaRequests extends Middleware
             return [];
         }
 
-        $perms = [
-            'viewClients', 'createClients', 'editClients', 'deleteClients',
-            'viewObjects', 'createObjects', 'editObjects', 'deleteObjects',
-            'viewQuotes', 'createQuotes', 'editQuotes',
-            'viewContracts', 'createContracts',
-            'viewEmployees', 'createEmployees',
-            'viewSchedule', 'createSchedule',
-            'viewInvoices', 'createInvoices',
-            'viewTemplates',
-            'manageRoles',
-            'manageTenant',
-            'viewAuditLogs',
+        /** @var array<string, PermissionEnum> $map */
+        $map = [
+            'viewClients' => PermissionEnum::ViewClients,
+            'createClients' => PermissionEnum::CreateClients,
+            'editClients' => PermissionEnum::EditClients,
+            'deleteClients' => PermissionEnum::DeleteClients,
+            'viewObjects' => PermissionEnum::ViewObjects,
+            'createObjects' => PermissionEnum::CreateObjects,
+            'editObjects' => PermissionEnum::EditObjects,
+            'deleteObjects' => PermissionEnum::DeleteObjects,
+            'viewQuotes' => PermissionEnum::ViewQuotes,
+            'createQuotes' => PermissionEnum::CreateQuotes,
+            'editQuotes' => PermissionEnum::EditQuotes,
+            'viewContracts' => PermissionEnum::ViewContracts,
+            'createContracts' => PermissionEnum::CreateContracts,
+            'viewEmployees' => PermissionEnum::ViewEmployees,
+            'createEmployees' => PermissionEnum::CreateEmployees,
+            'viewSchedule' => PermissionEnum::ViewSchedule,
+            'createSchedule' => PermissionEnum::CreateSchedule,
+            'viewInvoices' => PermissionEnum::ViewInvoices,
+            'createInvoices' => PermissionEnum::CreateInvoices,
+            'viewTemplates' => PermissionEnum::ViewTemplates,
+            'manageRoles' => PermissionEnum::ManageRoles,
+            'manageTenant' => PermissionEnum::ManageTenant,
+            'viewAuditLogs' => PermissionEnum::ViewAuditLogs,
         ];
 
-        return collect($perms)
-            ->mapWithKeys(fn (string $perm) => [
-                $perm => $user->can($this->permissionString($perm)),
-            ])
-            ->all();
-    }
+        $result = [];
+        foreach ($map as $key => $permission) {
+            $result[$key] = $user->can($permission->value);
+        }
 
-    private function permissionString(string $camel): string
-    {
-        // viewClients → view clients ; manageBillingSettings → manage billing settings
-        $snake = (string) preg_replace('/([a-z])([A-Z])/', '$1 $2', $camel);
-
-        return strtolower($snake);
+        return $result;
     }
 }

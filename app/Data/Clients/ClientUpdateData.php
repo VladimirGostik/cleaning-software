@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Clients;
 
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
@@ -20,7 +20,7 @@ final class ClientUpdateData extends Data
 {
     public function __construct(
         #[Required]
-        public ClientType $type,
+        public ClientTypeEnum $type,
         #[Required, Max(255)]
         public string $name,
         #[Nullable, Max(32), RequiredIf('type', 'corporate')]

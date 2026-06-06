@@ -42,6 +42,15 @@ return [
     'nav.audit_logs' => 'Audit log',
     'nav.roles' => 'Roles & permissions',
 
+    'auth.hero.title_1' => 'Your entire company',
+    'auth.hero.title_2' => 'under control.',
+    'auth.hero.subtitle' => 'Manage clients, contracts, employees and invoices in one place.',
+    'auth.hero.feature_free' => '14 days free',
+    'auth.hero.feature_no_card' => 'No credit card',
+    'auth.hero.feature_support' => 'SK support',
+    'auth.back_home' => 'Back to home',
+    'auth.welcome_back' => 'Welcome back. Enter your details.',
+
     'clients.created' => 'Client created successfully.',
     'clients.updated' => 'Client updated successfully.',
     'clients.deleted' => 'Client deleted successfully.',

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Clients;
 
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use App\Models\ClientContact;
 use App\Models\Tenant;
@@ -22,7 +22,7 @@ final class ClientIndexTest extends TestCase
     private function minimalStorePayload(): array
     {
         return [
-            'type' => ClientType::Corporate->value,
+            'type' => ClientTypeEnum::Corporate->value,
             'name' => 'Test Corp',
             'ico' => '12345678',
             'dic' => null,
@@ -88,7 +88,7 @@ final class ClientIndexTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Vlastník', $tenant);
 
-        Client::factory()->count(3)->create(['tenant_id' => $tenant->id, 'type' => ClientType::Corporate]);
+        Client::factory()->count(3)->create(['tenant_id' => $tenant->id, 'type' => ClientTypeEnum::Corporate]);
         Client::factory()->count(2)->private()->create(['tenant_id' => $tenant->id]);
 
         // Act

@@ -192,16 +192,38 @@ Multi-tenant SaaS for cleaning companies (SK/CZ market). Phase 1 = web Admin Por
 
 ## Stack target
 
-Laravel 13
+**Decisive signal for architect-be-agent and be-agent. Overrides `composer.json` version.**
 
-- PHP 8.5 (via `php:8.5-cli` Docker image; no native PHP 8.5 on host)
-- Laravel 13 + Inertia 2 + Vue 3 + TypeScript
+- **Target Laravel version:** 13
+- **Greenfield (no production):** yes
+- **Legacy patterns allowed (Repository / FormRequest / JsonResource):** no
+- **Last verified:** 2026-06-05
+
+Rule: `Target 13` + `Legacy no` → always `laravel-13-conventions` skill. No FormRequest, no JsonResource, no Repository. Spatie Data DTO at the controller boundary; Inertia render / DTO `toArray` for responses.
+
+Stack detail:
+
+- PHP 8.5 (Sail `php:8.5` image; host has 8.4)
+- Laravel 13 + Inertia 3 (server + Vue 3 client) + Vue 3 + TypeScript
 - Tailwind 4 + DaisyUI 5 (custom `cleanmaster` theme, OKLCH tokens)
-- PostgreSQL 16
+- PostgreSQL 18 (Sail)
 - Spatie: laravel-data, laravel-permission (with **teams** = `tenant_id`), laravel-activitylog, laravel-medialibrary, laravel-typescript-transformer, laravel-query-builder
-- Inertia (server + Vue 3 client), Knuckleswtf Scribe (config published, not yet wired)
+- Knuckleswtf Scribe (config published, not yet wired)
 - Larastan, Laravel Pint, Laravel Boost, Laravel Pail
 - ESLint flat config (with `no-restricted-syntax` ban on Vue `ref` for app logic), Prettier, vue-tsc, Lefthook
+
+## Auth profile
+
+profile: rbac-full
+
+Granular flat permission strings (`view clients`, `create clients`, …) + a Policy per business model + per-method gating via the `#[Authorize]` controller attribute. Permissions and roles are **per-tenant** (Spatie teams = `tenant_id`). `reviewer-agent` reads this value on every PR and reports `auth-profile-violation` if the diff route-gates a business model instead of policy-gating it, or skips the per-tenant team scope. Detail: `skills/laravel-13-conventions/references/auth-profiles.md`.
+
+## Quick links
+
+- Business logic, roles, domain rules, permissions → `.claude/business.md`
+- Technical relationship map, domains, layer contracts, gotchas → `.claude/technical.md`
+- Active plans → `.claude/plans/<slug>.md` **(read ONLY when a parent passes an explicit `plan_path`; never auto-glob)**
+- Full product spec (Slovak, 2312 lines) → `docs/cleanmaster-technicka-specifikacia-v1.md.docx`
 
 ## Architecture invariants (read before writing any model)
 
@@ -222,21 +244,30 @@ Laravel 13
 
 ## Working with this repo
 
+Local stack runs via **Laravel Sail** (PHP 8.5 + Postgres 18 + Mailpit + MinIO). Optional shell alias: `alias sail='./vendor/bin/sail'`.
+
 ```bash
-# Bring up DB
-docker compose up -d db
+# Bring up the whole stack (laravel.test, pgsql, mailpit, minio)
+./vendor/bin/sail up -d
 
-# Run any artisan / composer / pnpm command in the PHP 8.5 container
-docker compose run --rm app composer install
-docker compose run --rm app php artisan migrate:fresh --seed
-docker compose run --rm app php artisan typescript:transform
-docker compose run --rm app pnpm build
-docker compose run --rm app pnpm exec vue-tsc --noEmit
+# Run any artisan / composer / pnpm command inside the container
+./vendor/bin/sail composer install
+./vendor/bin/sail artisan migrate:fresh --seed
+./vendor/bin/sail artisan typescript:transform
+./vendor/bin/sail pnpm install
+./vendor/bin/sail pnpm build
+./vendor/bin/sail pnpm exec vue-tsc --noEmit
 
-# Dev server
-docker compose up app          # serves http://localhost:8000
-docker compose run --rm --service-ports app pnpm dev  # vite dev http://localhost:5173
+# Dev server (HMR)
+./vendor/bin/sail pnpm dev     # vite dev: http://localhost:5173
+
+# Endpoints
+# App         → http://localhost
+# Mailpit UI  → http://localhost:8025
+# MinIO UI    → http://localhost:8900   (sail / password)
 ```
+
+If a port (80/5432/1025/8025/9000/8900) is occupied, override via `APP_PORT`, `FORWARD_DB_PORT`, `FORWARD_MAILPIT_PORT`, `FORWARD_MINIO_PORT` in `.env`.
 
 ## Lint
 
@@ -273,4 +304,13 @@ lint.notes: |
 - `app:demo` artisan command
 - Generic `useFilters`, `useDeleteConfirm`, `useToast` composables
 - Domain modules: Object, Quote, Contract, Schedule, Invoice, Employee, Template, Notification, etc.
+
+## Rules for agents
+
+1. Hot context = these 3 files (`CLAUDE.md`, `.claude/business.md`, `.claude/technical.md`). Do not read anything else from `.claude/` by default.
+2. **Read plans in `.claude/plans/<slug>.md` ONLY if the parent passes an explicit `plan_path`.** NEVER `Glob .claude/plans/*.md`.
+3. On ambiguity STOP, NEVER guess. The product is spec-driven — when code and spec disagree, ask.
+4. Large features (`plan_size: file`) MUST have a plan approved by a human.
+5. **Skill load — architect-as-dirigent:** architect agents (`architect-be-agent`, `architect-fe-agent`) eager-load skills in Step 0. Implementation agents (`be-agent`, `fe-agent`, `tester-agent`, `reviewer-agent`, `devops-agent`, `docs-agent`) load **only** the skills passed to them in the `## Skills (for executor)` section of their prompt.
+6. **Every new domain model** obeys the multi-tenancy invariant (see `## Architecture invariants` #1–#3): `tenant_id` UUID FK + `BelongsToTenant` + per-tenant permission scope. This is non-negotiable and the most common review failure.
 

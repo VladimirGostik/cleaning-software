@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\PermissionEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use Illuminate\Database\Seeder;
@@ -30,33 +31,55 @@ final class RoleTemplatesSeeder extends Seeder
         return [
             'Vlastník' => [], // empty = all permissions assigned at runtime
             'Vedúca' => [
-                'view schedule', 'create schedule', 'edit schedule', 'assign cleaners',
-                'view employees', 'assign employees',
-                'view complaints', 'resolve complaints', 'reject complaints',
-                'view photos', 'review photos',
-                'view objects',
+                PermissionEnum::ViewSchedule->value,
+                PermissionEnum::CreateSchedule->value,
+                PermissionEnum::EditSchedule->value,
+                PermissionEnum::AssignCleaners->value,
+                PermissionEnum::ViewEmployees->value,
+                PermissionEnum::AssignEmployees->value,
+                PermissionEnum::ViewComplaints->value,
+                PermissionEnum::ResolveComplaints->value,
+                PermissionEnum::RejectComplaints->value,
+                PermissionEnum::ViewPhotos->value,
+                PermissionEnum::ReviewPhotos->value,
+                PermissionEnum::ViewObjects->value,
             ],
             'Upratovačka' => [
-                'view schedule',
+                PermissionEnum::ViewSchedule->value,
             ],
             'Sekretárka' => [
-                'view clients', 'create clients', 'edit clients', 'delete clients',
-                'view objects', 'create objects', 'edit objects', 'delete objects',
-                'view quotes', 'create quotes', 'edit quotes', 'send quotes',
-                'view contracts', 'create contracts',
-                'view templates', 'upload templates', 'delete templates',
-                'view notifications',
+                PermissionEnum::ViewClients->value,
+                PermissionEnum::CreateClients->value,
+                PermissionEnum::EditClients->value,
+                PermissionEnum::DeleteClients->value,
+                PermissionEnum::ViewObjects->value,
+                PermissionEnum::CreateObjects->value,
+                PermissionEnum::EditObjects->value,
+                PermissionEnum::DeleteObjects->value,
+                PermissionEnum::ViewQuotes->value,
+                PermissionEnum::CreateQuotes->value,
+                PermissionEnum::EditQuotes->value,
+                PermissionEnum::SendQuotes->value,
+                PermissionEnum::ViewContracts->value,
+                PermissionEnum::CreateContracts->value,
+                PermissionEnum::ViewTemplates->value,
+                PermissionEnum::UploadTemplates->value,
+                PermissionEnum::DeleteTemplates->value,
+                PermissionEnum::ViewNotifications->value,
             ],
             'Účtovníčka' => [
-                'view invoices', 'create invoices', 'edit invoices', 'cancel invoices',
-                'view contracts',
-                'view clients',
-                'manage billing settings',
+                PermissionEnum::ViewInvoices->value,
+                PermissionEnum::CreateInvoices->value,
+                PermissionEnum::EditInvoices->value,
+                PermissionEnum::CancelInvoices->value,
+                PermissionEnum::ViewContracts->value,
+                PermissionEnum::ViewClients->value,
+                PermissionEnum::ManageBillingSettings->value,
             ],
             'Zákazník' => [
-                'view schedule',
-                'view photos',
-                'view complaints',
+                PermissionEnum::ViewSchedule->value,
+                PermissionEnum::ViewPhotos->value,
+                PermissionEnum::ViewComplaints->value,
             ],
         ];
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Clients;
 
-use App\Enums\ClientType;
+use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -14,7 +14,7 @@ final class ClientListItemData extends Data
 {
     public function __construct(
         public string $id,
-        public ClientType $type,
+        public ClientTypeEnum $type,
         public string $name,
         public ?string $ico,
         public ?string $city,
@@ -28,7 +28,7 @@ final class ClientListItemData extends Data
 
     public static function fromModel(Client $client): self
     {
-        /** @var ClientType $type */
+        /** @var ClientTypeEnum $type */
         $type = $client->type;
 
         $primaryContact = $client->contacts->firstWhere('is_primary', true);
