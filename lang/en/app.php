@@ -118,6 +118,23 @@ return [
     'client_type.corporate' => 'Corporate',
     'client_type.private' => 'Private',
 
+    'subscription_plan.free' => 'Free',
+    'subscription_plan.starter' => 'Starter',
+    'subscription_plan.pro' => 'Pro',
+    'subscription_plan.enterprise' => 'Enterprise',
+
+    'feature.locked' => 'This feature is not included in your subscription plan.',
+    'feature.clients' => 'Clients',
+    'feature.objects' => 'Locations',
+    'feature.quotes' => 'Quotes',
+    'feature.contracts' => 'Contracts',
+    'feature.schedule' => 'Schedule',
+    'feature.invoices' => 'Invoices',
+    'feature.employees' => 'Employees',
+    'feature.reports' => 'Reports',
+    'feature.mobile_access' => 'Mobile access',
+    'feature.multi_user' => 'Multiple users',
+
     'landing.nav.features' => 'Features',
     'landing.nav.pricing' => 'Pricing',
     'landing.nav.about' => 'About',

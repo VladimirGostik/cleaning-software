@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\HasUuids;
+use App\Contracts\ChecksFeatures;
+use App\Enums\FeatureEnum;
+use App\Enums\SubscriptionPlanEnum;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -47,6 +50,7 @@ final class Tenant extends Model
             'is_vat_payer' => 'boolean',
             'is_active' => 'boolean',
             'vat_rate' => 'decimal:2',
+            'subscription_plan' => SubscriptionPlanEnum::class,
         ];
     }
 
@@ -59,6 +63,11 @@ final class Tenant extends Model
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
+    }
+
+    public function hasFeature(FeatureEnum $feature): bool
+    {
+        return app(ChecksFeatures::class)->hasFeature($this, $feature);
     }
 
     public function memberships(): HasMany

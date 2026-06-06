@@ -29,6 +29,21 @@ The spine every other domain hangs off. **Not** a `BelongsToTenant` model itself
 - **If you change Core, check:** `TenantContextMiddleware`, `HandleInertiaRequests::share`, `App\Scopes\TenantScope`, every seeder that calls `setPermissionsTeamId`.
 - **Keywords:** tenant, firma, membership, Vlastník, active_tenant_id, teams.
 
+### subscription-plans
+
+Per-tenant feature gating (entitlement, distinct from Spatie RBAC).
+
+- **Core:** `config/subscription.php` — static matrix (4 tiers: Free/Starter/Pro/Enterprise); keyed by `SubscriptionPlanEnum` value; each plan has `features` array (FeatureEnum values) + `quotas` map (feature → int|null). `App\Enums\SubscriptionPlanEnum` (Free|Starter|Pro|Enterprise) + `App\Enums\FeatureEnum` (Clients|Objects|Quotes|Contracts|Schedule|Invoices|Employees|Reports|MobileAccess|MultiUser). Both `#[TypeScript]`. `App\Contracts\ChecksFeatures` interface (DIP seam) + `App\Services\ConfigFeatureChecker` final impl.
+- **Satellites:**
+  - `App\Http\Middleware\RequiresTenantFeature` — `'feature'` alias in bootstrap/app.php. Usage: `Route::...->middleware('feature:clients')`. Resolves tenant from `app('current_tenant_id')`, uses `FeatureEnum::tryFrom`, aborts 403 (`app.feature.locked`) if plan lacks feature.
+  - `App\Models\Tenant` — `subscription_plan` cast to `SubscriptionPlanEnum` + thin `hasFeature(FeatureEnum): bool` accessor (delegates to bound `ChecksFeatures`).
+  - Translations `lang/{sk,en,uk}/app.php` — `subscription_plan.*` labels + `feature.locked` 403 message.
+- **Flow:** route-level `->middleware('feature:quotes')` → `RequiresTenantFeature` checks tenant plan's feature list against `FeatureEnum::tryFrom($param)` → allow 200 or abort 403.
+- **Depends on:** `identity-tenancy` (reads `current_tenant_id`, writes to Tenant model).
+- **Depended on by (future):** entity-limit enforcement at write-time (quota checks in services, not built).
+- **If you change Core, check:** `TenantFactory` (default Free + `pro()`/`enterprise()` states), `UserSeeder` (demo tenant plan = Pro), language files, any route gated `->middleware('feature:...')`.
+- **Keywords:** plan, feature, quota, entitlement, Free/Starter/Pro/Enterprise, gating, SubscriptionPlanEnum, FeatureEnum, ChecksFeatures, ConfigFeatureChecker.
+
 ### clients
 
 The only fully-implemented business domain.
@@ -51,6 +66,7 @@ The only fully-implemented business domain.
 
 - **Multi-tenancy global scope** — `App\Concerns\BelongsToTenant` auto-applies `App\Scopes\TenantScope` and auto-fills `tenant_id` on `creating` from `app('current_tenant_id')`. Reach: every domain query. Bypass (jobs/console only): `Model::withoutGlobalScope(TenantScope::class)`. We deliberately did **not** install `stancl/tenancy` — spec mandates the trait+scope approach.
 - **Permissions (Spatie teams=tenant_id)** — `config/permission.php`: `teams=true`, `team_foreign_key='tenant_id'`, `'role'=>App\Models\Role::class`. Flat strings via `App\Enums\PermissionEnum` (canonical source of truth — all code references `PermissionEnum::Xxx->value`). Reach: every Policy + `#[Authorize]` site. **Outside HTTP (seeder/job/console/test) you MUST `setPermissionsTeamId($tenantId)` first** or lookups return "permission not found".
+- **Feature gating (entitlement layer)** — `ChecksFeatures` interface + `ConfigFeatureChecker` reads `config/subscription.php` plan matrix. Stacks **on top of** RBAC permissions: plan gates the tenant ("does your tier unlock Invoices?"), Spatie gates the user ("can you view invoices?"). Middleware `RequiresTenantFeature` enforces plan entitlements at the route level. DIP interface allows future `PennantFeatureChecker` or DB-backed adapter without caller changes. Reach: any route gated `->middleware('feature:xxx')`. Quota enforcement (entity count vs. limit) is caller responsibility, checker is stateless.
 - **Activitylog** — `LogsActivity` on Role (+ Client/ClientContact). Auth events (Login/Logout/Failed/Lockout/PasswordReset/PasswordChanged/Registered/Verified) are logged asynchronously via `App\Listeners\AuthEventListener` (implements `ShouldQueue`, `#[Tries(3)]`). Writes to `activity_log`. Morph columns `subject_id`/`causer_id` are **strings** to span mixed-PK models (Role bigint, User/Client UUID).
 - **MediaLibrary** — `media` table present, `model_id` UUID. No collections wired on domain models yet (reserved for DocumentTemplate / photos).
 - **i18n** — SK (default) / EN / UA. `App\Enums\SupportedLanguage`, `lang/{sk,en,uk}/app.php`, `LocaleMiddleware` (order: user.locale → session → cookie → Accept-Language → SK). BE flattens nested keys via `Arr::dot()`; FE `useTranslate()` does flat `t(key)` lookup. Reach: every visible string.
@@ -103,7 +119,7 @@ Not deployed (`CLAUDE.md › Deployment Status`). Re-run `migrate:fresh --seed` 
 
 ## Demo state
 
-`UserSeeder`: User `admin@example.com` / `password` → TenantMembership → Tenant `Demo Cleaning s.r.o.` (IČO 12345678, VAT-payer, plan `premium`). Sets permission `team_id` to the tenant, runs `RoleTemplatesSeeder` (6 spec roles per tenant), assigns Vlastník to admin.
+`UserSeeder`: User `admin@example.com` / `password` → TenantMembership → Tenant `Demo Cleaning s.r.o.` (IČO 12345678, VAT-payer, subscription plan `Pro`). Sets permission `team_id` to the tenant, runs `RoleTemplatesSeeder` (6 spec roles per tenant), assigns Vlastník to admin.
 
 ## Known gaps to close in /feature passes (rough dependency order)
 
@@ -118,12 +134,12 @@ Not deployed (`CLAUDE.md › Deployment Status`). Re-run `migrate:fresh --seed` 
 9. **DocumentTemplate** — upload/download per type enum (MediaLibrary).
 10. **Notification settings + log** — channels (DB/email/push), per role × type.
 11. **Audit log read UI** — surface existing Spatie ActivityLog rows.
-12. **Subscription / Plan enforcement** — entity limits, feature gating.
+12. **Subscription / Plan enforcement** — **gating engine done** (config + enums + middleware); entity-limit enforcement at write-time (quota checks in service layer) + UI still pending.
 13. **Mobile + customer portal scaffolding** (Phase 2).
 
 ## Verification status
 
 - Last full scan: 2026-06-05 (`/init` full re-init — schema + routes via Boost MCP, source grep)
-- Last delta: 2026-06-06 (compliance fixes: PermissionEnum, TenantListItemData DTO, AuthEventListener, ClientTypeEnum)
+- Last delta: 2026-06-06 (subscription-plans: SubscriptionPlanEnum, FeatureEnum, config matrix, ChecksFeatures interface, ConfigFeatureChecker, RequiresTenantFeature middleware, Tenant enum cast + accessor, AppServiceProvider binding, bootstrap alias, seed alignment)
 - Open `TODO verify`: 0
 - Reference inventory: `.claude/inventory.md` (not generated; opt-in via `/spec-sync --full --with-inventory`)

@@ -118,6 +118,23 @@ return [
     'client_type.corporate' => 'Firemný',
     'client_type.private' => 'Súkromný',
 
+    'subscription_plan.free' => 'Free',
+    'subscription_plan.starter' => 'Starter',
+    'subscription_plan.pro' => 'Pro',
+    'subscription_plan.enterprise' => 'Enterprise',
+
+    'feature.locked' => 'Táto funkcia nie je súčasťou vášho predplatného.',
+    'feature.clients' => 'Klienti',
+    'feature.objects' => 'Objekty',
+    'feature.quotes' => 'Cenové ponuky',
+    'feature.contracts' => 'Zmluvy',
+    'feature.schedule' => 'Rozvrh',
+    'feature.invoices' => 'Faktúry',
+    'feature.employees' => 'Zamestnanci',
+    'feature.reports' => 'Reporty',
+    'feature.mobile_access' => 'Mobilný prístup',
+    'feature.multi_user' => 'Viacero používateľov',
+
     'landing.nav.features' => 'Funkcie',
     'landing.nav.pricing' => 'Cenník',
     'landing.nav.about' => 'O nás',

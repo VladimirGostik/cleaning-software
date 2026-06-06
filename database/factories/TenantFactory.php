@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -33,8 +34,18 @@ final class TenantFactory extends Factory
             'country' => 'SK',
             'contact_email' => fake()->companyEmail(),
             'contact_phone' => fake()->phoneNumber(),
-            'subscription_plan' => 'basic',
+            'subscription_plan' => SubscriptionPlanEnum::Free->value,
             'is_active' => true,
         ];
+    }
+
+    public function pro(): static
+    {
+        return $this->state(['subscription_plan' => SubscriptionPlanEnum::Pro->value]);
+    }
+
+    public function enterprise(): static
+    {
+        return $this->state(['subscription_plan' => SubscriptionPlanEnum::Enterprise->value]);
     }
 }

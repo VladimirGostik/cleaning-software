@@ -294,6 +294,7 @@ lint.notes: |
 - **Auth** — login / forgot-password / reset-password (Inertia + Spatie permission teams).
 - **Landing** — public marketing page at `/` (Inertia `Pages/Landing.vue`). Auth users redirect to `/dashboard`. Visual design source: `docs/design-handoff/project/screens/landing.jsx`. Tailwind 4 + heroicons; no DaisyUI utilities (custom marketing palette: blue-600 primary, slate neutrals).
 - **Clients** — CRUD (list + detail/edit via side drawer). Soft-delete. Multi-contact with primary flag (email/phone on contacts, not client model). Type enum (Corporate/Private). Permission-gated. QueryBuilder filters (search, type). Pagination. Generic `EmptyState` + `PageHeader` components.
+- **Subscription plans / Feature gating** — per-tenant entitlement engine (4 tiers: Free/Starter/Pro/Enterprise). `config/subscription.php` matrix + `SubscriptionPlanEnum` + `FeatureEnum` + `ChecksFeatures` interface + `ConfigFeatureChecker` impl. Middleware `RequiresTenantFeature` gates routes. Distinct layer from Spatie RBAC permissions (plan-level vs. user-level).
 
 ## Out of scope for v0.1 base scaffold (defer to /feature)
 

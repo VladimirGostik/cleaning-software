@@ -118,6 +118,23 @@ return [
     'client_type.corporate' => 'Корпоративний',
     'client_type.private' => 'Приватний',
 
+    'subscription_plan.free' => 'Free',
+    'subscription_plan.starter' => 'Starter',
+    'subscription_plan.pro' => 'Pro',
+    'subscription_plan.enterprise' => 'Enterprise',
+
+    'feature.locked' => 'Ця функція не входить до вашого тарифного плану.',
+    'feature.clients' => 'Клієнти',
+    'feature.objects' => 'Об\'єкти',
+    'feature.quotes' => 'Цінові пропозиції',
+    'feature.contracts' => 'Договори',
+    'feature.schedule' => 'Розклад',
+    'feature.invoices' => 'Рахунки',
+    'feature.employees' => 'Працівники',
+    'feature.reports' => 'Звіти',
+    'feature.mobile_access' => 'Мобільний доступ',
+    'feature.multi_user' => 'Кілька користувачів',
+
     'landing.nav.features' => 'Функції',
     'landing.nav.pricing' => 'Тарифи',
     'landing.nav.about' => 'Про нас',

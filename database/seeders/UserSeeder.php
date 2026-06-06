@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\SubscriptionPlanEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
@@ -42,7 +43,7 @@ final class UserSeeder extends Seeder
                 'country' => 'SK',
                 'contact_email' => 'kontakt@cleanmaster.test',
                 'contact_phone' => '+421 900 000 000',
-                'subscription_plan' => 'premium',
+                'subscription_plan' => SubscriptionPlanEnum::Pro->value,
                 'is_active' => true,
             ],
         );

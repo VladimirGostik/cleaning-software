@@ -41,6 +41,18 @@ Flat Spatie permission strings, **scoped per tenant** (teams = `tenant_id`). For
 
 Only Vlastník manages subscription + the permission bundles themselves.
 
+## Subscription plans (entitlement layer)
+
+Separate from RBAC permissions (which gate **users**). Plans gate **tenants** — what modules/features/quotas the company's tier unlocks. Not in scope: per-tenant plan edits (hardcoded 4-tier matrix in `config/subscription.php`), UI, enforcement of entity limits at write-time.
+
+**Tiers** (from `SubscriptionPlanEnum`):
+- `Free` — trial/demo. No modules unlocked. `MultiUser` quota = 1 (owner only). 
+- `Starter` — basic. Clients + Objects. `MultiUser` quota = 5.
+- `Pro` — full (demo tenant default). Clients + Objects + Quotes + Contracts + Schedule + Invoices + Employees + Reports. `MultiUser` quota = 20.
+- `Enterprise` — all + unlimited. Every feature + `MultiUser` = unlimited (null).
+
+**Architecture:** `FeatureEnum` lists gatable features (Clients, Objects, …, MultiUser). `ChecksFeatures` interface (DIP seam) + `ConfigFeatureChecker` impl reads plan from `config/subscription.php`. Middleware `RequiresTenantFeature` gate individual routes. Tenant model has thin `hasFeature(FeatureEnum): bool` accessor. If plans later become editable per-tenant or we adopt `laravel/pennant`, a new adapter behind the same interface swaps in without caller changes.
+
 ## Phases
 
 - **Fáza 1 (in scope)** — Admin Portal (AP). Web-only, desktop+tablet responsive.
