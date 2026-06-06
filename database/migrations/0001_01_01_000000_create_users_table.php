@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('password');
             $table->string('locale', 5)->default('sk');
             $table->boolean('is_active')->default(true);
-            $table->boolean('is_super_admin')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });

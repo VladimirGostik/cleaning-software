@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Contracts\ChecksFeatures;
 use App\Data\Auth\MeData;
-use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
@@ -24,13 +23,7 @@ final class MeController extends Controller
             ? app('current_tenant_id')
             : null;
 
-        if ($user->isSuperAdmin()) {
-            // Gate::before bypasses permission checks for super-admins but getAllPermissions()
-            // returns empty for a global user with no per-tenant assignments. Return the full set.
-            $permissions = PermissionEnum::values();
-        } else {
-            $permissions = $user->getAllPermissions()->pluck('name')->values()->all();
-        }
+        $permissions = $user->getAllPermissions()->pluck('name')->values()->all();
 
         if ($activeTenantId !== null) {
             $tenant = Tenant::find($activeTenantId);

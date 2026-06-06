@@ -101,42 +101,6 @@ final class MeTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // super-admin: permissions = all PermissionEnum::values()
-    // -------------------------------------------------------------------------
-
-    public function test_super_admin_returns_all_permission_enum_values_regardless_of_role(): void
-    {
-        // Arrange — super-admin with a tenant context (but no role assignment)
-        $tenant = Tenant::factory()->create();
-        $superAdmin = User::factory()->superAdmin()->create();
-
-        TenantMembership::create([
-            'user_id' => $superAdmin->id,
-            'tenant_id' => $tenant->id,
-            'is_active' => true,
-            'joined_at' => now(),
-        ]);
-
-        $this->actingAs($superAdmin);
-        session(['active_tenant_id' => $tenant->id]);
-        app()->instance('current_tenant_id', $tenant->id);
-
-        $expectedPermissions = PermissionEnum::values();
-
-        // Act
-        $response = $this->getJson(route('api.me'));
-
-        // Assert
-        $response->assertOk();
-
-        $returnedPermissions = $response->json('permissions');
-        sort($returnedPermissions);
-        sort($expectedPermissions);
-
-        $this->assertSame($expectedPermissions, $returnedPermissions);
-    }
-
-    // -------------------------------------------------------------------------
     // edge: Free plan tenant → features is empty array
     // -------------------------------------------------------------------------
 
