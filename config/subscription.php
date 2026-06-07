@@ -8,6 +8,7 @@ use App\Enums\SubscriptionPlanEnum;
 return [
     'plans' => [
         SubscriptionPlanEnum::Free->value => [
+            'max_tenants' => 1,
             'features' => [],
             'quotas' => [
                 FeatureEnum::MultiUser->value => 1,
@@ -15,6 +16,7 @@ return [
         ],
 
         SubscriptionPlanEnum::Starter->value => [
+            'max_tenants' => 2,
             'features' => [
                 FeatureEnum::Clients->value,
                 FeatureEnum::Objects->value,
@@ -25,6 +27,7 @@ return [
         ],
 
         SubscriptionPlanEnum::Pro->value => [
+            'max_tenants' => 3,
             'features' => [
                 FeatureEnum::Clients->value,
                 FeatureEnum::Objects->value,
@@ -41,6 +44,7 @@ return [
         ],
 
         SubscriptionPlanEnum::Enterprise->value => [
+            'max_tenants' => null,
             'features' => [
                 FeatureEnum::Clients->value,
                 FeatureEnum::Objects->value,

@@ -26,17 +26,25 @@ final class MeController extends Controller
         $permissions = $user->getAllPermissions()->pluck('name')->values()->all();
 
         if ($activeTenantId !== null) {
-            $tenant = Tenant::find($activeTenantId);
+            $tenant = Tenant::with('owner')->find($activeTenantId);
             $features = $tenant !== null ? $checker->featuresFor($tenant) : [];
         } else {
             $features = [];
         }
+
+        $accountPlan = $user->subscription_plan->value;
+        $maxTenants = $checker->maxTenants($user);
+        $remainingTenantSlots = $maxTenants === null
+            ? null
+            : max(0, $maxTenants - $user->ownedTenants()->count());
 
         return new MeData(
             userId: $user->id,
             activeTenantId: $activeTenantId,
             permissions: $permissions,
             features: $features,
+            accountPlan: $accountPlan,
+            remainingTenantSlots: $remainingTenantSlots,
         );
     }
 }

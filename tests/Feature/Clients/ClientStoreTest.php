@@ -198,4 +198,46 @@ final class ClientStoreTest extends TestCase
         // Act & Assert
         $this->post(route('clients.store'), $this->corporatePayload())->assertForbidden();
     }
+
+    /** @test regression: country field accepts full country name (was limited to 2 chars by Size(2)) */
+    public function test_store_country_full_name_accepted(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        $payload = $this->corporatePayload(['country' => 'Slovensko', 'ico' => '11111111']);
+
+        // Act
+        $response = $this->post(route('clients.store'), $payload);
+
+        // Assert — must not produce 422; country accepted as string up to 255 chars
+        $response->assertRedirect(route('clients.index'));
+        $this->assertDatabaseHas('clients', [
+            'ico' => '11111111',
+            'country' => 'Slovensko',
+            'tenant_id' => $tenant->id,
+        ]);
+    }
+
+    /** @test regression: 2-char ISO code still accepted after removing Size(2) */
+    public function test_store_country_iso_code_still_accepted(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        $payload = $this->corporatePayload(['country' => 'SK', 'ico' => '22222222']);
+
+        // Act
+        $response = $this->post(route('clients.store'), $payload);
+
+        // Assert
+        $response->assertRedirect(route('clients.index'));
+        $this->assertDatabaseHas('clients', [
+            'ico' => '22222222',
+            'country' => 'SK',
+            'tenant_id' => $tenant->id,
+        ]);
+    }
 }

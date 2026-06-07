@@ -1,5 +1,7 @@
 <script setup lang="ts">
     import { computed } from 'vue';
+
+    import { ref } from 'vue';
     import { Link, router, usePage } from '@inertiajs/vue3';
     import {
         Squares2X2Icon,
@@ -16,22 +18,32 @@
         Cog6ToothIcon,
         ChevronDownIcon,
         ChevronUpDownIcon,
+        PlusIcon,
     } from '@heroicons/vue/24/outline';
     import { usePageProps } from '@/Composables/usePageProps';
     import { useTranslate } from '@/Composables/useTranslate';
     import { useCapabilitiesStore } from '@/stores/capabilities';
+    import { useAuthorization } from '@/Composables/useAuthorization';
+    import AddTenantModal from '@/Pages/Tenants/AddTenantModal.vue';
 
     const props = usePageProps();
     const { t } = useTranslate();
     const page = usePage();
     const capabilitiesStore = useCapabilitiesStore();
+    const { canCreateTenant } = useAuthorization();
 
     const user = computed(() => props.auth?.user);
     const tenant = computed(() => props.tenant?.active);
     const can = computed(() => props.can ?? {});
     const languages = computed(() => props.languages ?? []);
     const currentLocale = computed(() => props.locale ?? 'sk');
+    const tenantColors = computed(() => props.tenantColors ?? []);
     const pageComponent = computed(() => `${page.component}::${(page.props.locale as string) ?? 'sk'}`);
+
+    // eslint-disable-next-line no-restricted-syntax -- imperative UI toggle: tenant dropdown
+    const isTenantMenuOpen = ref(false);
+    // eslint-disable-next-line no-restricted-syntax -- imperative UI toggle: add tenant modal
+    const isAddTenantOpen = ref(false);
 
     interface NavItem {
         key: string;
@@ -39,25 +51,42 @@
         href: string;
         icon: unknown;
         can?: string;
+        implemented: boolean;
     }
 
     const navItems: NavItem[] = [
-        { key: 'dashboard', label: 'dashboard', href: '/dashboard', icon: Squares2X2Icon },
-        { key: 'clients', label: 'nav.clients', href: '/clients', icon: UsersIcon, can: 'viewClients' },
+        { key: 'dashboard', label: 'dashboard', href: '/dashboard', icon: Squares2X2Icon, implemented: true },
+        {
+            key: 'clients',
+            label: 'nav.clients',
+            href: '/clients',
+            icon: UsersIcon,
+            can: 'viewClients',
+            implemented: true,
+        },
         {
             key: 'objects',
             label: 'nav.objects',
             href: '/objects',
             icon: BuildingOfficeIcon,
             can: 'viewObjects',
+            implemented: false,
         },
-        { key: 'quotes', label: 'nav.quotes', href: '/quotes', icon: DocumentTextIcon, can: 'viewQuotes' },
+        {
+            key: 'quotes',
+            label: 'nav.quotes',
+            href: '/quotes',
+            icon: DocumentTextIcon,
+            can: 'viewQuotes',
+            implemented: false,
+        },
         {
             key: 'contracts',
             label: 'nav.contracts',
             href: '/contracts',
             icon: ClipboardDocumentListIcon,
             can: 'viewContracts',
+            implemented: false,
         },
         {
             key: 'schedule',
@@ -65,6 +94,7 @@
             href: '/schedule',
             icon: CalendarDaysIcon,
             can: 'viewSchedule',
+            implemented: false,
         },
         {
             key: 'employees',
@@ -72,6 +102,7 @@
             href: '/employees',
             icon: UserGroupIcon,
             can: 'viewEmployees',
+            implemented: false,
         },
         {
             key: 'invoices',
@@ -79,6 +110,7 @@
             href: '/invoices',
             icon: ReceiptPercentIcon,
             can: 'viewInvoices',
+            implemented: false,
         },
         {
             key: 'templates',
@@ -86,12 +118,25 @@
             href: '/templates',
             icon: FolderIcon,
             can: 'viewTemplates',
+            implemented: false,
         },
     ];
 
     const adminNavItems: NavItem[] = [
-        { key: 'permissions', label: 'nav.permissions', href: '/permissions', icon: ShieldCheckIcon },
-        { key: 'settings', label: 'nav.settings', href: '/settings', icon: Cog6ToothIcon },
+        {
+            key: 'permissions',
+            label: 'nav.permissions',
+            href: '/permissions',
+            icon: ShieldCheckIcon,
+            implemented: false,
+        },
+        {
+            key: 'settings',
+            label: 'nav.settings',
+            href: '/settings',
+            icon: Cog6ToothIcon,
+            implemented: false,
+        },
     ];
 
     const visibleNav = computed(() =>
@@ -110,18 +155,54 @@
     function switchLocale(code: string) {
         router.get(`/language/${code}`, {}, { preserveState: false });
     }
+
+    function openAddTenant() {
+        isTenantMenuOpen.value = false;
+        isAddTenantOpen.value = true;
+    }
 </script>
 
 <template>
     <div class="app-shell">
         <!-- Topbar -->
         <header class="app-topbar">
-            <div
-                class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-200 transition select-none"
-            >
-                <span class="h-2 w-2 rounded-full bg-amber-600 flex-shrink-0" />
-                <span class="max-w-[200px] truncate">{{ tenant?.name ?? t('app_name') }}</span>
-                <ChevronUpDownIcon class="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+            <!-- Tenant chip with dropdown -->
+            <div class="relative">
+                <button
+                    type="button"
+                    class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-200 transition select-none"
+                    :aria-expanded="isTenantMenuOpen"
+                    aria-haspopup="true"
+                    @click="isTenantMenuOpen = !isTenantMenuOpen"
+                >
+                    <span class="h-2 w-2 rounded-full bg-amber-600 flex-shrink-0" />
+                    <span class="max-w-[200px] truncate">{{ tenant?.name ?? t('app_name') }}</span>
+                    <ChevronUpDownIcon class="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                </button>
+
+                <!-- Dropdown -->
+                <Transition name="dropdown">
+                    <div
+                        v-if="isTenantMenuOpen"
+                        class="absolute left-0 top-full mt-1 z-30 min-w-[220px] rounded-lg border border-slate-200 bg-white shadow-lg py-1"
+                    >
+                        <button
+                            type="button"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            :disabled="!canCreateTenant"
+                            @click="openAddTenant"
+                        >
+                            <PlusIcon class="h-4 w-4 text-slate-400" />
+                            {{ t('nav.add_tenant') }}
+                        </button>
+                        <p v-if="!canCreateTenant" class="px-3 py-1 text-xs text-slate-500">
+                            {{ t('tenant.limit_reached') }}
+                        </p>
+                    </div>
+                </Transition>
+
+                <!-- Click-outside overlay -->
+                <div v-if="isTenantMenuOpen" class="fixed inset-0 z-20" @click="isTenantMenuOpen = false" />
             </div>
 
             <div class="flex-1" />
@@ -201,16 +282,30 @@
 
             <!-- Main nav -->
             <nav class="flex flex-col gap-0.5 px-2">
-                <Link
-                    v-for="item in visibleNav"
-                    :key="item.key"
-                    :href="item.href"
-                    class="nav-item"
-                    :class="isActive(item.href) ? 'nav-item-active' : 'nav-item-idle'"
-                >
-                    <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
-                    <span>{{ t(item.label) }}</span>
-                </Link>
+                <template v-for="item in visibleNav" :key="item.key">
+                    <Link
+                        v-if="item.implemented"
+                        :href="item.href"
+                        class="nav-item"
+                        :class="isActive(item.href) ? 'nav-item-active' : 'nav-item-idle'"
+                    >
+                        <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
+                        <span>{{ t(item.label) }}</span>
+                    </Link>
+                    <div
+                        v-else
+                        class="nav-item nav-item-idle opacity-50 cursor-not-allowed pointer-events-none"
+                        aria-disabled="true"
+                    >
+                        <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
+                        <span>{{ t(item.label) }}</span>
+                        <span
+                            class="ml-auto text-[10px] font-medium text-slate-500 bg-slate-700 rounded px-1.5 py-0.5 leading-tight"
+                        >
+                            {{ t('nav.coming_soon') }}
+                        </span>
+                    </div>
+                </template>
             </nav>
 
             <!-- Admin section -->
@@ -219,16 +314,30 @@
                     Administrácia
                 </div>
                 <nav class="flex flex-col gap-0.5">
-                    <Link
-                        v-for="item in adminNavItems"
-                        :key="item.key"
-                        :href="item.href"
-                        class="nav-item"
-                        :class="isActive(item.href) ? 'nav-item-active' : 'nav-item-idle'"
-                    >
-                        <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
-                        <span>{{ t(item.label) }}</span>
-                    </Link>
+                    <template v-for="item in adminNavItems" :key="item.key">
+                        <Link
+                            v-if="item.implemented"
+                            :href="item.href"
+                            class="nav-item"
+                            :class="isActive(item.href) ? 'nav-item-active' : 'nav-item-idle'"
+                        >
+                            <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
+                            <span>{{ t(item.label) }}</span>
+                        </Link>
+                        <div
+                            v-else
+                            class="nav-item nav-item-idle opacity-50 cursor-not-allowed pointer-events-none"
+                            aria-disabled="true"
+                        >
+                            <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
+                            <span>{{ t(item.label) }}</span>
+                            <span
+                                class="ml-auto text-[10px] font-medium text-slate-500 bg-slate-700 rounded px-1.5 py-0.5 leading-tight"
+                            >
+                                {{ t('nav.coming_soon') }}
+                            </span>
+                        </div>
+                    </template>
                 </nav>
             </div>
 
@@ -244,6 +353,9 @@
             </Transition>
         </main>
     </div>
+
+    <!-- Add tenant modal — mounted outside app-shell grid -->
+    <AddTenantModal v-model:open="isAddTenantOpen" :colors="tenantColors" @close="isAddTenantOpen = false" />
 </template>
 
 <style scoped>
@@ -310,5 +422,18 @@
 
     .nav-item-active:hover {
         background: #713f12;
+    }
+
+    .dropdown-enter-active,
+    .dropdown-leave-active {
+        transition:
+            opacity 0.15s ease,
+            transform 0.15s ease;
+    }
+
+    .dropdown-enter-from,
+    .dropdown-leave-to {
+        opacity: 0;
+        transform: translateY(-4px);
     }
 </style>

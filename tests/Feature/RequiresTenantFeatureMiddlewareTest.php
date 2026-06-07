@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use RuntimeException;
@@ -41,8 +42,9 @@ final class RequiresTenantFeatureMiddlewareTest extends TestCase
 
     public function test_request_passes_when_tenant_plan_includes_feature(): void
     {
-        // Arrange — Pro plan includes Quotes
-        $tenant = Tenant::factory()->pro()->create();
+        // Arrange — Pro-owned tenant; Pro plan includes Quotes
+        $owner = User::factory()->pro()->create();
+        $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->bindTenantContext($tenant);
 
         // Act
@@ -59,8 +61,9 @@ final class RequiresTenantFeatureMiddlewareTest extends TestCase
 
     public function test_request_returns_403_when_tenant_plan_lacks_feature(): void
     {
-        // Arrange — Free plan has no features
-        $tenant = Tenant::factory()->create(); // default = Free
+        // Arrange — Free-owned tenant has no features
+        $owner = User::factory()->create(); // default Free
+        $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->bindTenantContext($tenant);
 
         // Act
@@ -93,7 +96,8 @@ final class RequiresTenantFeatureMiddlewareTest extends TestCase
     public function test_invalid_feature_param_throws_runtime_exception_in_non_prod(): void
     {
         // Arrange
-        $tenant = Tenant::factory()->pro()->create();
+        $owner = User::factory()->pro()->create();
+        $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->bindTenantContext($tenant);
 
         $this->expectException(RuntimeException::class);
@@ -110,8 +114,10 @@ final class RequiresTenantFeatureMiddlewareTest extends TestCase
     public function test_two_tenants_on_different_plans_resolve_own_entitlement(): void
     {
         // Arrange
-        $freeTenant = Tenant::factory()->create();          // Free — no features
-        $proTenant = Tenant::factory()->pro()->create();   // Pro — has Objects
+        $freeOwner = User::factory()->create();
+        $proOwner = User::factory()->pro()->create();
+        $freeTenant = Tenant::factory()->forOwner($freeOwner)->create();
+        $proTenant = Tenant::factory()->forOwner($proOwner)->create();
 
         // Act + Assert: Free tenant is denied
         $this->bindTenantContext($freeTenant);

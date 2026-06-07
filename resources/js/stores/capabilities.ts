@@ -24,6 +24,8 @@ export const useCapabilitiesStore = defineStore('capabilities', {
     state: () => ({
         permissions: [] as App.Enums.PermissionEnum[],
         features: [] as App.Enums.FeatureEnum[],
+        accountPlan: '' as string,
+        remainingTenantSlots: null as number | null,
         loaded: false,
     }),
 
@@ -45,6 +47,8 @@ export const useCapabilitiesStore = defineStore('capabilities', {
             const me = await meService.fetchMe();
             this.permissions = me.permissions as App.Enums.PermissionEnum[];
             this.features = me.features as App.Enums.FeatureEnum[];
+            this.accountPlan = me.accountPlan;
+            this.remainingTenantSlots = me.remainingTenantSlots;
             this.loaded = true;
         },
 

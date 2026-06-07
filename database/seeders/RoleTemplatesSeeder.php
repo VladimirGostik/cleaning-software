@@ -84,27 +84,29 @@ final class RoleTemplatesSeeder extends Seeder
         ];
     }
 
-    public function run(): void
+    public static function seedForTenant(Tenant $tenant): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
 
         $allPermissions = Permission::all();
 
-        Tenant::query()->each(function (Tenant $tenant) use ($allPermissions): void {
-            app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+        foreach (self::templates() as $roleName => $permissions) {
+            /** @var Role $role */
+            $role = Role::findOrCreate($roleName, 'web');
 
-            foreach (self::templates() as $roleName => $permissions) {
-                /** @var Role $role */
-                $role = Role::findOrCreate($roleName, 'web');
+            if ($roleName === 'Vlastník') {
+                $role->syncPermissions($allPermissions);
 
-                if ($roleName === 'Vlastník') {
-                    $role->syncPermissions($allPermissions);
-
-                    continue;
-                }
-
-                $role->syncPermissions($permissions);
+                continue;
             }
-        });
+
+            $role->syncPermissions($permissions);
+        }
+    }
+
+    public function run(): void
+    {
+        Tenant::query()->each(fn (Tenant $tenant) => self::seedForTenant($tenant));
     }
 }

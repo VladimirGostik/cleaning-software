@@ -3,6 +3,8 @@
     import AppLayout from '@/Layouts/AppLayout.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
+    import RegisterWelcome from '@/Pages/Auth/RegisterWelcome.vue';
+    import { router } from '@inertiajs/vue3';
 
     defineOptions({ layout: AppLayout });
 
@@ -11,10 +13,23 @@
 
     const user = computed(() => pageProps.auth?.user);
     const tenant = computed(() => pageProps.tenant?.active);
+
+    const showWelcome = computed<boolean>(() => pageProps.flash?.justRegistered === true);
+
+    function onWelcomeContinue() {
+        router.visit('/dashboard', { replace: true });
+    }
 </script>
 
 <template>
-    <div class="max-w-5xl mx-auto">
+    <template v-if="showWelcome">
+        <RegisterWelcome
+            :company-name="tenant?.name ?? ''"
+            @continue="onWelcomeContinue"
+        />
+    </template>
+    <template v-else>
+        <div class="max-w-5xl mx-auto">
             <h1 class="text-3xl font-bold mb-2">{{ t('dashboard') }}</h1>
             <p class="text-base-content/60 mb-6">
                 <span v-if="tenant">{{ tenant.name }} • </span>
@@ -50,4 +65,5 @@
                 </span>
             </div>
         </div>
+    </template>
 </template>

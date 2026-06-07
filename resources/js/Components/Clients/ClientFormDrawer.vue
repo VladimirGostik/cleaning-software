@@ -220,9 +220,12 @@
                 <section>
                     <fieldset class="fieldset w-full">
                         <legend class="fieldset-legend">{{ t('clients.form.section.note') }}</legend>
-                        <div class="textarea w-full">
-                            <textarea v-model="form.note" rows="3" />
-                        </div>
+                        <textarea
+                            v-model="form.note"
+                            rows="4"
+                            class="textarea textarea-bordered w-full"
+                            :class="{ 'textarea-error': form.errors.note }"
+                        />
                         <span v-if="form.errors.note" class="fieldset-label text-error">
                             {{ form.errors.note }}
                         </span>

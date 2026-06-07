@@ -13,6 +13,8 @@ return new class extends Migration
         Schema::create('tenants', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
+            $table->foreignUuid('owner_id')->constrained('users')->cascadeOnDelete();
+
             $table->string('name');
             $table->string('ico')->nullable();
             $table->string('dic')->nullable();
@@ -30,7 +32,6 @@ return new class extends Migration
             $table->string('contact_email')->nullable();
             $table->string('contact_phone')->nullable();
 
-            $table->string('subscription_plan')->default('free');
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();

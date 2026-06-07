@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 final class TenantFactory extends Factory
 {
+    /** @var class-string<Tenant> */
     protected $model = Tenant::class;
 
     /**
@@ -21,6 +22,7 @@ final class TenantFactory extends Factory
     public function definition(): array
     {
         return [
+            'owner_id' => User::factory(),
             'name' => fake()->company() . ' s.r.o.',
             'ico' => (string) fake()->unique()->numberBetween(10000000, 99999999),
             'dic' => '20' . fake()->numerify('########'),
@@ -34,18 +36,12 @@ final class TenantFactory extends Factory
             'country' => 'SK',
             'contact_email' => fake()->companyEmail(),
             'contact_phone' => fake()->phoneNumber(),
-            'subscription_plan' => SubscriptionPlanEnum::Free->value,
             'is_active' => true,
         ];
     }
 
-    public function pro(): static
+    public function forOwner(User $owner): static
     {
-        return $this->state(['subscription_plan' => SubscriptionPlanEnum::Pro->value]);
-    }
-
-    public function enterprise(): static
-    {
-        return $this->state(['subscription_plan' => SubscriptionPlanEnum::Enterprise->value]);
+        return $this->state(['owner_id' => $owner->id]);
     }
 }

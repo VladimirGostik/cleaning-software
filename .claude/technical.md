@@ -17,43 +17,90 @@ Laravel 13 / PHP 8.5 (Sail) · Inertia 3 + Vue 3 + TypeScript · PostgreSQL 18 �
 
 The spine every other domain hangs off. **Not** a `BelongsToTenant` model itself — it *defines* tenancy.
 
-- **Core:** `App\Models\User` (global identity, UUID, `locale`, `is_active`) + `App\Models\Tenant` (firma, UUID, VAT-payer flag, subscription_plan) + `App\Models\TenantMembership` (User × Tenant pivot, `is_active`, `joined_at`).
+- **Core:** `App\Models\User` (global identity, UUID, `locale`, `is_active`, `subscription_plan` SubscriptionPlanEnum, `ownedTenants() HasMany`) + `App\Models\Tenant` (firma, UUID, VAT-payer flag, `owner_id` FK to User ON DELETE CASCADE, `interface() HasOne`) + `App\Models\TenantMembership` (User × Tenant pivot, `is_active`, `joined_at`).
 - **Satellites:**
+  - `App\Models\TenantInterface` — 1:1 to Tenant (bigint PK, deliberately NOT UUID; settings never in URLs/DTOs). Stores `color` (TenantColorEnum cast). Cascades on delete. Tenant→interface() HasOne.
   - `App\Http\Middleware\TenantContextMiddleware` — resolves active tenant from session `active_tenant_id` (or first active membership), binds `app('current_tenant_id')`, calls `PermissionRegistrar::setPermissionsTeamId($tenantId)`. Without it the global scope and permission lookups have no tenant.
   - `App\Models\Role` extends `Spatie\Permission\Models\Role` + `LogsActivity` + `search` scope. Per-tenant via `tenant_id` team key.
-  - `App\Http\Middleware\HandleInertiaRequests` — shares `tenant {active, available}` + `can {…}` to every page.
+  - `App\Http\Middleware\HandleInertiaRequests` — shares `tenant {active, available}` + `can {…}` + `tenantColors` (TenantColorEnum::options()) + `flash.justRegistered` (boolean) to every page.
   - `App\Http\Controllers\Auth\*` — login / logout / forgot-password / reset-password.
   - `App\Http\Controllers\Api\MeController` — returns `MeData` (userId, activeTenantId, permissions, features). Single `__invoke` endpoint, no `#[Authorize]` by design (self-endpoint, `auth` middleware is the gate).
   - `App\Data\Auth\MeData` DTO (`#[TypeScript]`): userId, activeTenantId (?string), permissions (list), features (list). Generated to `resources/js/types/generated.d.ts`.
   - `App\Http\Middleware\RequiresTenantFeature` and `routes/api.php` registered in `bootstrap/app.php` (api middleware group appends EncryptCookies → AddQueuedCookies → StartSession → LocaleMiddleware → TenantContextMiddleware → throttle:api).
 - **Flow (login):** `POST /login` → `Auth\AuthController@login` (`LoginData` DTO) → session auth → `TenantContextMiddleware` binds tenant on subsequent requests → `/dashboard`.
-- **Flow (capabilities):** FE navigates → `Inertia.router.on('before')` guard syncs store via `useAuthorization().ensureLoaded()` → `GET /api/me` (session-auth XHR) → returns MeData (permissions = active-tenant Spatie names, features = plan list) → store updates → `allows(permission, feature)` AND-gate re-evaluates on each render.
+- **Flow (capabilities):** FE navigates → `Inertia.router.on('before')` guard syncs store via `useAuthorization().ensureLoaded()` → `GET /api/me` (session-auth XHR) → returns MeData (permissions = active-tenant Spatie names, features = plan list, accountPlan = owner's SubscriptionPlanEnum value, remainingTenantSlots = int|null) → store updates → `allows(permission, feature)` AND-gate re-evaluates on each render.
 - **Depends on:** nothing (root).
 - **Depended on by:** **every** domain model via `tenant_id` FK + the per-tenant permission scope.
-- **If you change Core, check:** `TenantContextMiddleware`, `HandleInertiaRequests::share`, `App\Scopes\TenantScope`, every seeder that calls `setPermissionsTeamId`, `MeController` (permissions list).
-- **Keywords:** tenant, firma, membership, Vlastník, active_tenant_id, teams, /api/me, capabilities.
+- **If you change Core, check:** `TenantContextMiddleware`, `HandleInertiaRequests::share`, `App\Scopes\TenantScope`, every seeder that calls `setPermissionsTeamId`, `MeController` (permissions + accountPlan + remainingTenantSlots hydration), `TenantFactory` (interface creation, owner assignment), Tenant model (owner relation), User model (subscription_plan cast, ownedTenants relation), RegistrationService::register (sets owner_id on new tenant).
+- **Keywords:** tenant, firma, membership, Vlastník, active_tenant_id, teams, /api/me, capabilities, tenantColors, justRegistered.
 
 ### subscription-plans
 
-Per-tenant feature gating (entitlement, distinct from Spatie RBAC).
+Per-account feature gating (entitlement, distinct from Spatie RBAC). Account's plan → tenant features + tenant-creation quota.
 
-- **Core:** `config/subscription.php` — static matrix (4 tiers: Free/Starter/Pro/Enterprise); keyed by `SubscriptionPlanEnum` value; each plan has `features` array (FeatureEnum values) + `quotas` map (feature → int|null). `App\Enums\SubscriptionPlanEnum` (Free|Starter|Pro|Enterprise) + `App\Enums\FeatureEnum` (Clients|Objects|Quotes|Contracts|Schedule|Invoices|Employees|Reports|MobileAccess|MultiUser). Both `#[TypeScript]`. `App\Contracts\ChecksFeatures` interface (DIP seam) + `App\Services\ConfigFeatureChecker` final impl.
+- **Core:** `config/subscription.php` — static matrix (4 tiers: Free/Starter/Pro/Enterprise); keyed by `SubscriptionPlanEnum` value; each plan has `max_tenants` (int|null), `features` array (FeatureEnum values), `quotas` map (feature → int|null). `App\Enums\SubscriptionPlanEnum` (Free|Starter|Pro|Enterprise) + `App\Enums\FeatureEnum` (Clients|Objects|Quotes|Contracts|Schedule|Invoices|Employees|Reports|MobileAccess|MultiUser). Both `#[TypeScript]`. `App\Contracts\ChecksFeatures` interface (DIP seam) + `App\Services\ConfigFeatureChecker` final impl.
 - **Satellites:**
-  - `App\Http\Middleware\RequiresTenantFeature` — `'feature'` alias in bootstrap/app.php. Usage: `Route::...->middleware('feature:clients')`. Resolves tenant from `app('current_tenant_id')`, uses `FeatureEnum::tryFrom`, aborts 403 (`app.feature.locked`) if plan lacks feature.
-  - `App\Models\Tenant` — `subscription_plan` cast to `SubscriptionPlanEnum` + thin `hasFeature(FeatureEnum): bool` accessor (delegates to bound `ChecksFeatures`).
-  - `ChecksFeatures::featuresFor(Tenant): list<string>` — returns all feature enum values (as strings) for the tenant's plan. Used by FE capabilities store + `MeController`.
-  - Translations `lang/{sk,en,uk}/app.php` — `subscription_plan.*` labels + `feature.locked` 403 message.
-- **Flow:** route-level `->middleware('feature:quotes')` → `RequiresTenantFeature` checks tenant plan's feature list against `FeatureEnum::tryFrom($param)` → allow 200 or abort 403.
-- **Depends on:** `identity-tenancy` (reads `current_tenant_id`, writes to Tenant model).
-- **Depended on by:** `identity-tenancy` (MeController calls `featuresFor`); FE capabilities layer.
-- **If you change Core, check:** `TenantFactory` (default Free + `pro()`/`enterprise()` states), `UserSeeder` (demo tenant plan = Pro), language files, any route gated `->middleware('feature:...')`, `MeController` (calls `ChecksFeatures::featuresFor`).
+  - `App\Http\Middleware\RequiresTenantFeature` — `'feature'` alias in bootstrap/app.php. Usage: `Route::...->middleware('feature:clients')`. Resolves tenant from `app('current_tenant_id')`, loads owner, checks `$tenant->owner->subscription_plan` against `config/subscription.php`, aborts 403 (`app.feature.locked`) if plan lacks feature.
+  - `App\Models\Tenant` — `hasFeature(FeatureEnum): bool` accessor (delegates to bound `ChecksFeatures::hasFeature($this, $feature)` which reads `$this->owner->subscription_plan`).
+  - `App\Models\User` — `subscription_plan` cast to `SubscriptionPlanEnum` + `ownedTenants() HasMany` relation (default eager-loaded in `ConfigFeatureChecker::canCreateTenant`).
+  - `ChecksFeatures::maxTenants(User): ?int` — returns the account's `max_tenants` from plan config. null = unlimited.
+  - `ChecksFeatures::canCreateTenant(User): bool` — returns true if `User::ownedTenants()->count() < maxTenants(user)`.
+  - `ChecksFeatures::featuresFor(Tenant): list<string>` — returns all feature enum values (as strings) for the tenant owner's plan. Used by FE capabilities store + `MeController`.
+  - Translations `lang/{sk,en,uk}/app.php` — `subscription_plan.*` labels + `feature.locked` 403 message + `tenant.limit_reached` error.
+- **Flow (feature check):** route-level `->middleware('feature:quotes')` → `RequiresTenantFeature` loads tenant + owner, checks owner's plan's feature list against `FeatureEnum::tryFrom($param)` → allow 200 or abort 403.
+- **Flow (add-tenant quota):** `TenantController@store` calls `ChecksFeatures::canCreateTenant($user)` before creating new tenant. If false, aborts 403 with `app.tenant.limit_reached`.
+- **Depends on:** `identity-tenancy` (reads `current_tenant_id` + User subscription_plan, Tenant owner relation).
+- **Depended on by:** `identity-tenancy` (MeController calls `maxTenants` + `canCreateTenant` + `featuresFor`); every route gated `->middleware('feature:...')`; TenantController; FE capabilities layer.
+- **If you change Core, check:** `config/subscription.php` (max_tenants matrix), `UserFactory` (default Free + states for other tiers), `UserSeeder` (demo account plans), `TenantFactory` (owner_id assignment), `TenantController@store` (canCreateTenant check), language files, any route gated `->middleware('feature:...')`, `MeController` (maxTenants + remainingTenantSlots hydration), `ConfigFeatureChecker::planConfig` (loads owner).
 - **Keywords:** plan, feature, quota, entitlement, Free/Starter/Pro/Enterprise, gating, SubscriptionPlanEnum, FeatureEnum, ChecksFeatures, ConfigFeatureChecker, featuresFor.
+
+### register-flow-fe
+
+Web registration onboarding (3-step wizard → atomic backend transaction → auto-login + welcome overlay).
+
+- **Core:** `Pages/Auth/Register.vue` 3-step machine (account → company → invites) + `RegistrationService::register(RegisterData)` on BE (atomic via `DB::transaction`). New User created with subscription_plan (default Free per spec), new Tenant created with owner_id = the new User, email auto-verified, user auto-logged-in, `active_tenant_id` set in session, Vlastník role assigned.
+- **Satellites:**
+  - `RegisterData` DTO (`#[TypeScript]`) — name, email, password, `company: CompanyData`, `invites: array<InviteData>`. CompanyData: name, ico, dic, vat_number, is_vat_payer, address_line, city, postal_code, country. InviteData: email, role_name.
+  - `Pages/Auth/{RegisterHero, RegisterStepAccount, RegisterStepCompany, RegisterStepInvites, RegisterWelcome}.vue` — step components + hero banner (auth page palette: --auth-* not cleanmaster theme).
+  - `Components/Forms/PasswordStrengthBar.vue` — visual strength indicator on account step.
+  - `App\Http\Controllers\Auth\RegisterController` — `showRegister()` GET (renders page), `register()` POST with `RegisterData` DTO + throttle:register.
+  - `RoleTemplatesSeeder` — refactored static `seedForTenant(Tenant $tenant)` method (called by `RegistrationService::bootstrapTenant()`, shared with add-tenant flow). Creates 6 spec roles + permissions per tenant.
+  - `IcoLookupService` (BE) — synchronous lookup, currently hardcoded SKMap, `TODO swap for ARES API`.
+  - `useIcoLookup()` composable (FE) — debounced 400ms lookup, calls `IcoLookupService.ts`, yields company name + VAT status to form.
+  - `ColorSwatchPicker` component (company step) — choose 8 TenantColorEnum presets (hex palette), stored in TenantInterface.
+  - Dashboard flash `justRegistered` (boolean) → `Pages/Dashboard.vue` renders welcome overlay (Option C: overlay on existing dashboard, not separate route/page).
+  - `AppLayout` tenant dropdown now lists `tenant.available` + "Pridať novú firmu" link (→ AddTenantModal).
+  - Rate limiter `register` added to `AppServiceProvider`.
+- **Flow:** GET `/register` → RegisterController→showRegister() → Register.vue mounted, user enters 3 steps → POST `/register` (RegistrationService::register() transaction: User create with subscription_plan=Free, Tenant create with owner_id=the new User, TenantInterface create, TenantMembership create, seed roles, assign Vlastník, create invitations) → auto-login + redirect `/dashboard` with flash justRegistered=true → Dashboard overlay renders welcome → "Continue" dismisses overlay.
+- **Depends on:** `identity-tenancy` (User subscription_plan field, Tenant owner_id FK, TenantMembership, RoleTemplatesSeeder), `subscription-plans` (new user defaults to Free plan).
+- **Depended on by:** nothing (entry point).
+- **If you change Core, check:** `RegisterController` route (throttle:register limiter), `RegistrationService::register` + `::bootstrapTenant` transaction boundary + owner_id assignment, `RoleTemplatesSeeder::seedForTenant` static signature, `TenantInterface` creation, Tenant model `owner() BelongsTo` relation, User model `subscription_plan` cast, `HandleInertiaRequests` (tenantColors shared prop, justRegistered flash), AppLayout tenant dropdown, Dashboard welcome logic.
+- **Keywords:** register, wizard, onboarding, co-founder, invite, atomic, email_verified_at forceFill, TenantInterface, tenantColors, RoleTemplatesSeeder::seedForTenant static.
+
+### ico-lookup
+
+Guest-accessible synchronous company registry lookup (mock → TODO ARES API).
+
+- **Core:** `GET /api/icos/{ico}` endpoint (guest-accessible, throttled, whereNumber validation) returns `IcoLookupData` DTO (ico, name, vat_status).
+- **Satellites:**
+  - `App\Http\Controllers\Api\IcoLookupController` — single action, throttle:ico-lookup.
+  - `App\Services\IcoLookupService::lookup(string $ico): IcoLookupData` — current impl: hardcoded SKMap (demo IČOs map to company names + VAT status). Flags `TODO swap for ARES API` (Slovakia's official company registry) when user-facing.
+  - `IcoLookupData` DTO (`#[TypeScript]`) — ico (string), name (?string), vat_status (?bool). Generated to resources/js/types/generated.d.ts.
+  - `resources/js/services/IcoLookupService.ts` — async `lookup(ico): Promise<IcoLookupData>` over XHR.
+  - `resources/js/composables/useIcoLookup.ts` — debounced 400ms wrapper, call `lookup()` as user types, yields name + VAT status. Cancellable on unmount.
+  - Rate limiter `ico-lookup` added to `AppServiceProvider`.
+  - FE integration: Register.vue CompanyStep uses `useIcoLookup` to populate name + vat_status on IČO input blur.
+- **Flow (register company step):** User enters IČO → debounced 400ms → `useIcoLookup()` calls `IcoLookupService.lookup()` → `GET /api/icos/{ico}` (throttled, guest OK) → returns IcoLookupData → form name + vat_status fields auto-populate → user can override before POST /register.
+- **Depends on:** nothing (stateless lookup service).
+- **Depended on by:** `register-flow-fe` (company step auto-fill), `AddTenantModal` (optional).
+- **If you change Core, check:** `IcoLookupController` route + throttle:ico-lookup limiter, `IcoLookupService::lookup` (when swapping mock for ARES), FE `useIcoLookup` debounce params (400ms), RegisterStepCompany form binding.
+- **Keywords:** IČO, company lookup, registry, ARES TODO, mock, guest-accessible, throttled, debounced.
 
 ### clients
 
-The only fully-implemented business domain.
+First implemented business domain layer (CRUD, filtering, soft-delete, multi-contact, type enum).
 
-- **Core:** `App\Models\Client` + `App\Services\ClientService` — `paginate(ClientIndexFilterData): LengthAwarePaginator`, `create(ClientStoreData): Client`, `update(Client, ClientUpdateData): Client`, `delete(Client): void`.
+- **Core:** `App\Models\Client` (UUID, tenant_id FK, BelongsToTenant, SoftDeletes) + `App\Services\ClientService` — `paginate(ClientIndexFilterData): LengthAwarePaginator`, `create(ClientStoreData): Client`, `update(Client, ClientUpdateData): Client`, `delete(Client): void`.
 - **Satellites:**
   - `App\Models\ClientContact` — N:1 to Client, FK `client_id ON DELETE CASCADE`. Holds `email`/`phone`/`is_primary`. **Client itself has no email/phone column** — both read from the primary contact.
   - `App\Data\Clients\*` — `ClientIndexFilterData` (filters: search, type), `ClientListItemData` (row + derived `primary_contact_email`/`primary_contact_phone`), `ClientDetailData` (address + contacts array, zero email/phone fields), `ClientStoreData`, `ClientUpdateData`, `ClientContactData`.
@@ -69,18 +116,20 @@ The only fully-implemented business domain.
 
 ### capabilities
 
-Client-side authorization + entitlement layer. Queries server for runtime permission + feature check (two-axis AND model: user/permission axis AND plan/feature axis).
+Client-side authorization + entitlement layer. Queries server for runtime permission + feature check (two-axis AND model: user/permission axis AND plan/feature axis) + remaining tenant-creation quota.
 
-- **Core:** `resources/js/stores/capabilities.ts` (Pinia Options store) — state: permissions, features, loaded (bool); actions: fetch, ensureLoaded, reset. Hydrated async from `GET /api/me`.
+- **Core:** `resources/js/stores/capabilities.ts` (Pinia Options store) — state: permissions, features, accountPlan, remainingTenantSlots, loaded (bool); actions: fetch, ensureLoaded, reset. Hydrated async from `GET /api/me`.
 - **Satellites:**
-  - `resources/js/services/MeService.ts` — `GET /api/me` over window.axios (session-auth XHR, returns `MeData` from BE DTO).
-  - `resources/js/composables/useAuthorization.ts` — read-only composable `can(permission)`, `hasFeature(feature)`, `allows(permission, feature)` (AND semantics). Reads from store.
+  - `resources/js/services/MeService.ts` — `GET /api/me` over window.axios (session-auth XHR, returns `MeData` from BE DTO with accountPlan + remainingTenantSlots).
+  - `resources/js/composables/useAuthorization.ts` — read-only composable `can(permission)`, `hasFeature(feature)`, `allows(permission, feature)` (AND semantics), `canCreateTenant(): bool` (checks remainingTenantSlots > 0). Reads from store.
   - `resources/js/Components/Can.vue` — declarative slot-based guard: `<Can permission feature>` (both optional, both AND if present) + `#fallback`. Render conditionally or hide element.
   - `resources/js/lib/routeRequirements.ts` — path-prefix → {permission?, feature?} map for route-level early guard.
+  - `AppLayout.vue` tenant dropdown — conditionally disables "Pridať novú firmu" affordance if `!useAuthorization().canCreateTenant()`.
 - **Flow (page load):** App.vue mounted → `useAuthorization().ensureLoaded()` (sync cache check, fail-open on first nav) → Inertia `router.on('before')` reads store, denies redirect to /dashboard if lacking capability. `navigate` hook async-awaits `ensureLoaded()`. `AppLayout.vue` logout calls store `reset()`.
-- **Depends on:** `identity-tenancy` (MeController, /api/me endpoint); `subscription-plans` (features list).
-- **Depended on by:** every page that needs UI capability gating (client-side render condition via `Can` or composable `can()`).
-- **If you change Core, check:** `MeController` (permissions/features hydration), `ChecksFeatures::featuresFor` (feature list), `routes/api.php` (/api/me route), FE tests for capabilities guard.
+- **Flow (add tenant UX):** AppLayout tenant dropdown displays active tenant + available tenants + "Pridať novú firmu" link. Link disabled (grayed) if `remainingTenantSlots <= 0`. Click → AddTenantModal dialog. Submit → `TenantController@store` server-side canCreateTenant check (403 if over limit, FE shows `app.tenant.limit_reached`). On success, tenant added to list, store re-synced on next navigation.
+- **Depends on:** `identity-tenancy` (MeController, /api/me endpoint); `subscription-plans` (features list, max_tenants quota).
+- **Depended on by:** every page that needs UI capability gating (client-side render condition via `Can` or composable `can()`); AppLayout (canCreateTenant disabling).
+- **If you change Core, check:** `MeController` (accountPlan + remainingTenantSlots hydration = maxTenants - ownedTenants.count), `ChecksFeatures::maxTenants` (plan config lookup), `routes/api.php` (/api/me route), FE store (state shape), FE composable `canCreateTenant`, AppLayout tenant dropdown UX disable logic.
 - **Keywords:** permission, feature, can, allows, capability, entitlement, two-axis AND, render-by-capability, Can component, useAuthorization.
 
 - **Multi-tenancy global scope** — `App\Concerns\BelongsToTenant` auto-applies `App\Scopes\TenantScope` and auto-fills `tenant_id` on `creating` from `app('current_tenant_id')`. Reach: every domain query. Bypass (jobs/console only): `Model::withoutGlobalScope(TenantScope::class)`. We deliberately did **not** install `stancl/tenancy` — spec mandates the trait+scope approach.
@@ -95,22 +144,31 @@ Client-side authorization + entitlement layer. Queries server for runtime permis
 ## Layer contracts
 
 - **HTTP ↔ Service** — Controllers hand a Spatie Data DTO to the service, never an array. Controllers are thin: type-hint DTO param + service in constructor, return `Inertia::render` or `to_route()->with('flash.success', …)`.
-- **Service ↔ Model** — `DB::transaction` lives in the Service, NEVER the Controller. Services are `final readonly class XxxService`.
-- **BE ↔ FE (Inertia)** — page prop shape = the DTO's generated TS namespace. Shared props also follow the DTO rule: `tenant.available` is a `DataCollection<TenantListItemData>` (not raw arrays). Enums shared via `#[TypeScript]` → `generated.d.ts`. Flash via `flash.success` session key.
+- **Service ↔ Model** — `DB::transaction` lives in the Service, NEVER the Controller. Services are `final readonly class XxxService`. Multi-model bootstrap (register) also in Service.
+- **BE ↔ FE (Inertia, page render)** — page prop shape = the DTO's generated TS namespace. Shared props also follow the DTO rule: `tenant.available` is a `DataCollection<TenantListItemData>` (not raw arrays). Enums shared via `#[TypeScript]` → `generated.d.ts`. Flash via `flash.success` session key. Inertia provides new-registered user with `justRegistered: boolean` flash to trigger welcome overlay.
 - **BE ↔ FE (API: /api/me)** — `GET /api/me` returns `MeData(userId, activeTenantId, permissions: list<string>, features: list<string>)`. Session-auth XHR (cookies). FE capabilities store hydrates from this shape; UI conditionals read from store via `useAuthorization()` composable + `Can` component.
+- **BE ↔ FE (API: /api/icos/{ico})** — `GET /api/icos/{ico}` returns `IcoLookupData(ico, name?, vat_status?)` over JSON. Guest-accessible, throttled. FE composable `useIcoLookup` debounces + cancels on unmount.
 - **Auth gate** — BE: business models gated by **Policy + `#[Authorize]` per controller method** (rbac-full), not route middleware. FE: `<Can permission feature>` component + `useAuthorization()` composable conditionally render. Both axes (permission + feature) AND together; missing either → deny render / deny route access. Permission lookup is tenant-scoped — relies on `TenantContextMiddleware` having run.
+- **Registration (atomic)** — `POST /register` collects all 3 steps client-side (account + company + invites), sends single `RegisterData` DTO, RegistrationService wraps User→Tenant→TenantInterface→TenantMembership→Roles→Invitations in `DB::transaction`. User auto-login + `active_tenant_id` session binding happens post-commit (outside transaction).
 
 ## Gotchas
 
+- **Registration atomic scope — no role assignment outside transaction** — `RegistrationService::register()` calls `RoleTemplatesSeeder::seedForTenant()` and assigns Vlastník role *inside* the `DB::transaction`. Post-transaction, the request redirects + auto-logs in (session-only). Do NOT move role assignment outside the transaction; it must happen before user can be queried for permissions in later requests.
+- **RoleTemplatesSeeder now static** — refactored from seeder to `static seedForTenant(Tenant)` (called from RegistrationService and add-tenant flow). Outside HTTP (jobs/console), always call `setPermissionsTeamId()` *before* using the seeder or querying roles. Inside RegistrationService transaction, it's already set.
+- **TenantInterface uses bigint PK, not UUID** — deliberate exception. Settings models never appear in URLs/DTOs, so bigint is safe. The 1:1 relation is enforced at DB level (unique tenant_id FK). Always create via `TenantInterface::create()` when bootstrapping a tenant; the RegistrationService does this automatically.
+- **Email auto-verified on register** — no email-verification flow exists in this SaaS. `RegistrationService::register()` calls `$user->forceFill(['email_verified_at' => now()])->save()` post-creation (email_verified_at is NOT in fillable; forceFill bypasses guards). This is intentional (spec).
+- **TenantInvitation partial unique + soft-delete** — migration creates `unique(['tenant_id', 'email'], [], where: "status = 'pending' AND deleted_at IS NULL")`. Pending invites are unique per tenant; soft-deleting one allows re-inviting the same email. Accepting an invite will change status to Accepted (future feature); multiple Pending rows with same email should never coexist.
 - **Soft-delete + partial unique** — `clients (tenant_id, ico) WHERE deleted_at IS NULL AND ico IS NOT NULL`. IČO unique per tenant among *active* clients; resurrected/soft-deleted rows don't block re-use. A plain `unique` would break this. `ClientService` catches the `QueryException` and rethrows as `ValidationException`.
 - **Permission team scope outside HTTP** — forgetting `setPermissionsTeamId` in seeders/jobs/tests silently returns empty permissions. Most common multi-tenant bug.
-- **`activity_log` morph columns are strings** — not UUIDs, so polymorphic causer/subject works across bigint (Role) + UUID (User/Client) models.
+- **`activity_log` morph columns are strings** — not UUIDs, so polymorphic causer/subject works across bigint (Role) + UUID (User/Client/TenantInvitation) models.
 - **Spatie permission migration is UUID-patched** — the published `2026_05_03_194335_create_permission_tables.php` was edited: `model_morph_key` + `team_foreign_key` are `uuid()`, but `permissions.id`/`roles.id` stay bigint (Spatie internal, never in URLs/DTOs).
 - **Spatie Data v4 ↔ typescript-transformer v3 mismatch** — `DataTypeScriptTransformer` references a removed class. Use `Spatie\LaravelTypeScriptTransformer\LaravelData\Transformers\DataClassTransformer` directly (see the service provider).
 - **Activitylog v5 namespace shift** — `…\Models\Concerns\LogsActivity` (not `Traits`), `…\Support\LogOptions`; `dontSubmitEmptyLogs()` → `dontLogEmptyChanges()`.
-- **Auth page palette** — `Pages/Auth/Login.vue` uses `--auth-*` CSS custom properties (brown/amber gradient, not `cleanmaster` DaisyUI theme tokens). Tokenized in `resources/css/app.css` (:62–107). Not the same as `Landing.vue`'s blue/slate or the main app's DaisyUI theme.
+- **Auth page palette** — `Pages/Auth/Register.vue` + `Login.vue` use `--auth-*` CSS custom properties (brown/amber gradient, not `cleanmaster` DaisyUI theme tokens). Tokenized in `resources/css/app.css` (:62–107). Not the same as `Landing.vue`'s blue/slate or the main app's DaisyUI theme.
 - **Landing page palette** — `Pages/Landing.vue` uses raw Tailwind blue/slate, NOT DaisyUI semantic tokens (fixed marketing brand, theme-independent). Don't "fix" it to use the `cleanmaster` theme.
 - **`usePageProps()` cast** — Inertia v3 augmentation didn't type-check reliably across imports, so we cast once inside the composable (`usePage().props as unknown as SharedProps`). Revisit if Inertia typing improves.
+- **IČO lookup mock is hardcoded** — `IcoLookupService::lookup()` currently checks a static SKMap. Replace with ARES API when ready (flag says `// TODO swap for ARES API`). No unit tests on the mock; API integration tests will be needed post-swap.
+- **Subscription plan moved from Tenant to User** — Tenant no longer has a `subscription_plan` column. Plans belong to the **account** (User). Each Tenant has an `owner_id` FK to the User who created it. Feature gating via `$tenant->owner->subscription_plan`, not `$tenant->subscription_plan`. `ConfigFeatureChecker::hasFeature($tenant, $feature)` eagerly loads owner and reads its plan. Tenant quota (max tenants) checked via `ChecksFeatures::canCreateTenant($user)` before POST /tenants. ON DELETE CASCADE when owner is deleted.
 
 ## Why these versions / decisions
 
@@ -160,6 +218,6 @@ Not deployed (`CLAUDE.md › Deployment Status`). Re-run `migrate:fresh --seed` 
 ## Verification status
 
 - Last full scan: 2026-06-05 (`/init` full re-init — schema + routes via Boost MCP, source grep)
-- Last delta: 2026-06-06 (removed super-admin concept: is_super_admin boolean column, isSuperAdmin() method, Gate::before super-admin bypass, User model no longer references platform-level override — all users now modeled per-tenant with explicit permissions)
-- Open `TODO verify`: 0
+- Last delta: 2026-06-07 (feat: per-account subscription migration — subscription_plan moved from Tenant to User, User gains subscription_plan SubscriptionPlanEnum + ownedTenants() HasMany, Tenant gains owner_id FK to User ON DELETE CASCADE, ConfigFeatureChecker::planConfig loads tenant->owner, ChecksFeatures interface gains maxTenants(User) + canCreateTenant(User), config/subscription.php matrix adds max_tenants per tier, MeData gains accountPlan + remainingTenantSlots, TenantController@store checks canCreateTenant before creating, capabilities store + useAuthorization composable + AppLayout tenant dropdown updated for add-tenant quota, FE canCreateTenant() returns remainingTenantSlots > 0, UserSeeder creates 5 demo accounts with different subscription tiers + owned tenants)
+- Open `TODO verify`: 1 (IČO lookup service mock — ARES API swap pending)
 - Reference inventory: `.claude/inventory.md` (not generated; opt-in via `/spec-sync --full --with-inventory`)

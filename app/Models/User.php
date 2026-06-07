@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\HasUuids;
+use App\Enums\SubscriptionPlanEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,7 +18,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'locale', 'is_active'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'locale', 'is_active', 'subscription_plan'])]
 #[Hidden(['password', 'remember_token'])]
 final class User extends Authenticatable
 {
@@ -33,13 +34,14 @@ final class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'subscription_plan' => SubscriptionPlanEnum::class,
         ];
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'phone', 'locale', 'is_active'])
+            ->logOnly(['name', 'email', 'phone', 'locale', 'is_active', 'subscription_plan'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
@@ -54,5 +56,10 @@ final class User extends Authenticatable
         return $this->belongsToMany(Tenant::class, 'tenant_memberships')
             ->withPivot(['is_active', 'joined_at'])
             ->withTimestamps();
+    }
+
+    public function ownedTenants(): HasMany
+    {
+        return $this->hasMany(Tenant::class, 'owner_id');
     }
 }

@@ -10,19 +10,38 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleTemplatesSeeder;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // CSRF verification is not meaningful in the test environment (array session driver
+        // means each request gets a fresh session, so tokens never round-trip correctly).
+        // Disable globally so web POST tests don't get spurious 419 responses.
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+    }
+
+    /**
+     * Create and authenticate a user with the given role inside a tenant.
+     * The user is also set as owner of the tenant (owner_id = user.id) so that
+     * quota checks via ownedTenants() reflect correctly.
+     */
     protected function actingAsTenantUser(string $roleName, ?Tenant $tenant = null): User
     {
-        $tenant ??= Tenant::factory()->create();
-
         $user = User::factory()->create([
             'is_active' => true,
             'locale' => 'sk',
         ]);
+
+        if ($tenant === null) {
+            // Create tenant with this user as owner
+            $tenant = Tenant::factory()->forOwner($user)->create();
+        }
 
         TenantMembership::create([
             'user_id' => $user->id,

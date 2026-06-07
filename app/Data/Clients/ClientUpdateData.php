@@ -10,7 +10,6 @@ use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\RequiredIf;
-use Spatie\LaravelData\Attributes\Validation\Size;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\DataCollection;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -36,7 +35,7 @@ final class ClientUpdateData extends Data
         public ?string $city,
         #[Nullable, Max(16)]
         public ?string $postal_code,
-        #[Required, Size(2)]
+        #[Required, Max(255)]
         public string $country,
         #[Nullable]
         public ?string $note,

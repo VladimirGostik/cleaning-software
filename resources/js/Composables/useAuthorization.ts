@@ -1,3 +1,5 @@
+import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useCapabilitiesStore } from '@/stores/capabilities';
 
 /**
@@ -8,13 +10,15 @@ import { useCapabilitiesStore } from '@/stores/capabilities';
  * templates because they read Pinia getter values which are reactive.
  *
  * Usage:
- *   const { can, hasFeature, allows } = useAuthorization();
+ *   const { can, hasFeature, allows, canCreateTenant } = useAuthorization();
  *   can('view clients')          → true if user has the permission
  *   hasFeature('clients')        → true if tenant plan includes the feature
  *   allows('view clients', 'clients') → AND of both checks
+ *   canCreateTenant              → true if plan allows more tenants (null = unlimited)
  */
 export function useAuthorization() {
     const store = useCapabilitiesStore();
+    const { remainingTenantSlots } = storeToRefs(store);
 
     function can(permission: App.Enums.PermissionEnum): boolean {
         return store.hasPermission(permission);
@@ -28,5 +32,9 @@ export function useAuthorization() {
         return can(permission) && hasFeature(feature);
     }
 
-    return { can, hasFeature, allows };
+    const canCreateTenant = computed(
+        () => remainingTenantSlots.value === null || remainingTenantSlots.value > 0,
+    );
+
+    return { can, hasFeature, allows, canCreateTenant };
 }

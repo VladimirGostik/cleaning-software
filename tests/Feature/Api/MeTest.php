@@ -26,8 +26,9 @@ final class MeTest extends TestCase
 
     public function test_returns_200_with_permissions_and_features_for_authenticated_user_with_active_tenant(): void
     {
-        // Arrange — Účtovníčka on a Pro tenant
-        $tenant = Tenant::factory()->pro()->create();
+        // Arrange — Účtovníčka on a Pro-owned tenant
+        $owner = User::factory()->pro()->create();
+        $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->actingAsTenantUser('Účtovníčka', $tenant);
 
         $expectedFeatures = config('subscription.plans.' . SubscriptionPlanEnum::Pro->value . '.features');
@@ -43,6 +44,8 @@ final class MeTest extends TestCase
             'activeTenantId',
             'permissions',
             'features',
+            'accountPlan',
+            'remainingTenantSlots',
         ]);
 
         $response->assertJsonPath('activeTenantId', $tenant->id);
@@ -67,8 +70,9 @@ final class MeTest extends TestCase
 
     public function test_permissions_reflect_active_tenant_role_assignments(): void
     {
-        // Arrange — Vlastník (all permissions)
-        $tenant = Tenant::factory()->pro()->create();
+        // Arrange — Vlastník (all permissions) on a Pro-owned tenant
+        $owner = User::factory()->pro()->create();
+        $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->actingAsTenantUser('Vlastník', $tenant);
 
         // Act
@@ -88,6 +92,70 @@ final class MeTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // happy: accountPlan + remainingTenantSlots in payload
+    // -------------------------------------------------------------------------
+
+    public function test_returns_account_plan_and_remaining_slots_for_pro_user(): void
+    {
+        // Arrange — Pro user owns 1 tenant; Pro limit = 3 → remaining = 2
+        $owner = User::factory()->pro()->create();
+        $tenant = Tenant::factory()->forOwner($owner)->create();
+
+        $this->actingAs($owner);
+        session(['active_tenant_id' => $tenant->id]);
+        app()->instance('current_tenant_id', $tenant->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+
+        // Act
+        $response = $this->getJson(route('api.me'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertJsonPath('accountPlan', 'pro');
+        $response->assertJsonPath('remainingTenantSlots', 2);
+    }
+
+    public function test_returns_null_remaining_slots_for_enterprise_user(): void
+    {
+        // Arrange — Enterprise user = unlimited
+        $owner = User::factory()->enterprise()->create();
+        $tenant = Tenant::factory()->forOwner($owner)->create();
+
+        $this->actingAs($owner);
+        session(['active_tenant_id' => $tenant->id]);
+        app()->instance('current_tenant_id', $tenant->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+
+        // Act
+        $response = $this->getJson(route('api.me'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertJsonPath('accountPlan', 'enterprise');
+        $response->assertJsonPath('remainingTenantSlots', null);
+    }
+
+    public function test_returns_zero_remaining_slots_for_free_user_at_limit(): void
+    {
+        // Arrange — Free user owns 1 tenant (limit 1) → remaining = 0
+        $owner = User::factory()->create(); // default Free
+        $tenant = Tenant::factory()->forOwner($owner)->create();
+
+        $this->actingAs($owner);
+        session(['active_tenant_id' => $tenant->id]);
+        app()->instance('current_tenant_id', $tenant->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+
+        // Act
+        $response = $this->getJson(route('api.me'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertJsonPath('accountPlan', 'free');
+        $response->assertJsonPath('remainingTenantSlots', 0);
+    }
+
+    // -------------------------------------------------------------------------
     // failure: unauthenticated → 401
     // -------------------------------------------------------------------------
 
@@ -104,10 +172,11 @@ final class MeTest extends TestCase
     // edge: Free plan tenant → features is empty array
     // -------------------------------------------------------------------------
 
-    public function test_features_is_empty_array_for_free_plan_tenant(): void
+    public function test_features_is_empty_array_for_free_plan_owner_tenant(): void
     {
-        // Arrange — Tenant::factory() default = Free plan
-        $tenant = Tenant::factory()->create(['subscription_plan' => SubscriptionPlanEnum::Free->value]);
+        // Arrange — default User = Free plan; tenant owned by that user
+        $owner = User::factory()->create();
+        $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->actingAsTenantUser('Upratovačka', $tenant);
 
         // Act
@@ -130,8 +199,10 @@ final class MeTest extends TestCase
     public function test_permissions_reflect_only_active_tenant_not_second_tenant(): void
     {
         // Arrange — same user, member of two tenants with different roles
-        $tenantA = Tenant::factory()->create();
-        $tenantB = Tenant::factory()->create();
+        $ownerA = User::factory()->create();
+        $ownerB = User::factory()->create();
+        $tenantA = Tenant::factory()->forOwner($ownerA)->create();
+        $tenantB = Tenant::factory()->forOwner($ownerB)->create();
 
         // Seed permissions first (shared global set)
         $this->seed(PermissionSeeder::class);

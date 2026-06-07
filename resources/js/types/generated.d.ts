@@ -14,6 +14,16 @@ userId: string,
 activeTenantId: string | null,
 permissions: string[],
 features: string[],
+accountPlan: string,
+remainingTenantSlots: number | null,
+};
+export type RegisterData = {
+name: string,
+email: string,
+password: string,
+terms_accepted: boolean,
+company: App.Data.Tenants.CompanyData,
+invites: App.Data.Tenants.InviteData[],
 };
 export type ResetPasswordData = {
 token: string,
@@ -101,6 +111,36 @@ contacts: App.Data.Clients.ClientContactData[],
 };
 }
 namespace Tenants {
+export type AddTenantData = {
+name: string,
+ico: string,
+color: App.Enums.TenantColorEnum | null,
+copy_settings: boolean,
+leader_email: string | null,
+};
+export type CompanyData = {
+name: string,
+ico: string,
+dic: string | null,
+vat_number: string | null,
+is_vat_payer: boolean,
+address_line: string,
+city: string,
+postal_code: string,
+country: string,
+};
+export type IcoLookupData = {
+name: string,
+dic: string | null,
+vat_number: string | null,
+address_line: string,
+city: string,
+postal_code: string,
+};
+export type InviteData = {
+email: string,
+role_name: string,
+};
 export type TenantListItemData = {
 id: string,
 name: string,
@@ -111,8 +151,10 @@ is_active: boolean,
 namespace Enums {
 export type ClientTypeEnum = "corporate" | "private";
 export type FeatureEnum = "clients" | "objects" | "quotes" | "contracts" | "schedule" | "invoices" | "employees" | "reports" | "mobile_access" | "multi_user";
+export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
 export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
 export type SubscriptionPlanEnum = "free" | "starter" | "pro" | "enterprise";
 export type SupportedLanguage = "sk" | "en" | "uk";
+export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";
 }
 }

@@ -240,7 +240,13 @@ Granular flat permission strings (`view clients`, `create clients`, …) + a Pol
 
 ## Demo credentials (seeded)
 
-`admin@example.com` / `password` — Vlastník role on tenant `Demo Cleaning s.r.o.` (IČO 12345678, VAT payer SK1234567890).
+Five demo accounts, each owns ≥1 tenant with demo clients seeded:
+
+1. `admin@example.com` / `password` — **Pro plan** → owns `Demo Cleaning s.r.o.` (IČO 12345678, VAT payer SK1234567890). Vlastník role. (Original admin account, extended to Pro tier.)
+2. `free@demo.sk` / `password` — **Free plan** (max 1 tenant) → owns `Demo Free s.r.o.` (IČO 10000001, non-VAT payer).
+3. `starter@demo.sk` / `password` — **Starter plan** (max 2 tenants, Clients + Objects) → owns `Demo Starter s.r.o.` (IČO 10000002, non-VAT payer).
+4. `pro@demo.sk` / `password` — **Pro plan** (max 3 tenants, full features) → owns `Demo Pro s.r.o.` (IČO 10000003, non-VAT payer).
+5. `enterprise@demo.sk` / `password` — **Enterprise plan** (unlimited tenants) → owns `Demo Enterprise s.r.o.` (IČO 10000004, VAT payer SK9999999999).
 
 ## Working with this repo
 
@@ -293,8 +299,13 @@ lint.notes: |
 
 - **Auth** — login / forgot-password / reset-password (Inertia + Spatie permission teams).
 - **Landing** — public marketing page at `/` (Inertia `Pages/Landing.vue`). Auth users redirect to `/dashboard`. Visual design source: `docs/design-handoff/project/screens/landing.jsx`. Tailwind 4 + heroicons; no DaisyUI utilities (custom marketing palette: blue-600 primary, slate neutrals).
+- **Register / Onboarding** — 3-step wizard (account credentials + company IČO/address/VAT + co-founder invites). Atomic `POST /register` transaction via `RegistrationService::register()` with `DB::transaction`. Email auto-verified (no verification flow exists). New tenant defaults to Free plan. RegistrationService calls shared `bootstrapTenant()` (also used by add-tenant flow) which seeds `RoleTemplatesSeeder::seedForTenant()` (now static method). FE: `Pages/Auth/Register.vue` 3-step state machine, `useIcoLookup` composable (debounced 400ms lookup), `ColorSwatchPicker` for tenant color choice, `PasswordStrengthBar`. Dashboard welcome overlay (via flash `justRegistered` boolean) → Option C (no separate route).
+- **Add tenant** — POST `/tenants` (auth-only, no TenantPolicy — deliberate D4a exception, self-service, new tenant has no roles at creation → circular RBAC problem). Switches active tenant. Can copy tenant color from current. Optional leader email creates TenantInvitation. AppLayout tenant dropdown + "Pridať novú firmu" affordance.
+- **Tenant invitations** — TenantInvitation model (Pending status, soft-delete, partial unique (tenant_id,email) WHERE status='pending'), sits at tenant level. Created at register (co-founders) and add-tenant (optional leader). Accept flow deliberately deferred (separate /feature). Token + email + role_name stored; expires in 7d. Logged via `LogsActivity`.
+- **Tenant settings** — TenantInterface 1:1 model (bigint PK, NOT UUID — deliberate: settings never in URLs/DTOs) stores tenant color (TenantColorEnum, 8 hex presets). Cascades on delete. Tenant->interface() HasOne. Shared to FE in `tenantColors` Inertia prop.
+- **IČO lookup** — `GET /api/icos/{ico}` (guest-accessible, throttled) mock service → hardcoded SKMap (TODO swap for ARES/FinStat). Returns company name + VAT status. FE: `IcoLookupService.ts` + `useIcoLookup` composable (debounced, cancellable).
 - **Clients** — CRUD (list + detail/edit via side drawer). Soft-delete. Multi-contact with primary flag (email/phone on contacts, not client model). Type enum (Corporate/Private). Permission-gated. QueryBuilder filters (search, type). Pagination. Generic `EmptyState` + `PageHeader` components.
-- **Subscription plans / Feature gating** — per-tenant entitlement engine (4 tiers: Free/Starter/Pro/Enterprise). `config/subscription.php` matrix + `SubscriptionPlanEnum` + `FeatureEnum` + `ChecksFeatures` interface + `ConfigFeatureChecker` impl. Middleware `RequiresTenantFeature` gates routes. Distinct layer from Spatie RBAC permissions (plan-level vs. user-level).
+- **Subscription plans / Feature gating** — per-account entitlement engine (4 tiers: Free/Starter/Pro/Enterprise). User holds `subscription_plan` field. Tenant resolves features through owner's plan via `ConfigFeatureChecker::planConfig($tenant)` (loads owner eagerly). `config/subscription.php` matrix + `SubscriptionPlanEnum` + `FeatureEnum` + `ChecksFeatures` interface + `ConfigFeatureChecker` impl. Middleware `RequiresTenantFeature` gates routes. Tenant-creation quota: each account can own `max_tenants[plan]` tenants (Free=1, Starter=2, Pro=3, Enterprise=null). `ChecksFeatures::canCreateTenant(User)` checks before POST /tenants. Distinct layer from Spatie RBAC permissions (plan-level vs. user-level).
 - **Capabilities system** — two-axis authorization (user/permission axis AND plan/feature axis). `GET /api/me` returns MeData (permissions, features). FE: Pinia store + `useAuthorization()` composable + `Can` component for declarative UI gating. `can(permission)` + `hasFeature(feature)` + `allows(permission, feature)` AND semantics.
 
 ## Out of scope for v0.1 base scaffold (defer to /feature)
@@ -306,7 +317,10 @@ lint.notes: |
 - `app:demo` artisan command
 - Generic `useFilters`, `useDeleteConfirm`, `useToast` composables
 - Domain modules: Object, Quote, Contract, Schedule, Invoice, Employee, Template, Notification, etc.
+- Invitation ACCEPT flow (accept route, email link routing, user upsert, membership auto-activation).
 - (Capabilities system — DONE: /api/me endpoint, FE store + composable + Can component, two-axis AND auth.)
+- (Registration / Onboarding — DONE: wizard, atomic register, add-tenant, invitations table.)
+- (IČO lookup service — DONE: mock endpoint, FE composable, TODO swap mock for ARES API.)
 
 ## Rules for agents
 

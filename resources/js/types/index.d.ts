@@ -13,11 +13,17 @@ export interface SupportedLanguageOption {
     flag: string;
 }
 
+export interface TenantColorOption {
+    value: string;
+    label: string;
+}
+
 export interface FlashMessages {
     success: string | null;
     error: string | null;
     info: string | null;
     status: string | null;
+    justRegistered: boolean;
 }
 
 export interface SharedProps {
@@ -29,6 +35,7 @@ export interface SharedProps {
     translations: Record<string, string>;
     locale: string;
     languages: SupportedLanguageOption[];
+    tenantColors: TenantColorOption[];
     canResetPassword: boolean;
 }
 

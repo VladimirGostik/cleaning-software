@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Data\Tenants\TenantListItemData;
 use App\Enums\PermissionEnum;
 use App\Enums\SupportedLanguage;
+use App\Enums\TenantColorEnum;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -46,6 +47,7 @@ final class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('flash.error'),
                 'info' => $request->session()->get('flash.info'),
                 'status' => $request->session()->get('status'),
+                'justRegistered' => $request->session()->get('justRegistered', false),
             ],
 
             'translations' => fn () => Arr::dot((array) trans('app')),
@@ -53,6 +55,8 @@ final class HandleInertiaRequests extends Middleware
             'locale' => fn () => app()->getLocale(),
 
             'languages' => fn () => SupportedLanguage::options(),
+
+            'tenantColors' => fn () => TenantColorEnum::options(),
 
             'canResetPassword' => fn () => Route::has('password.request'),
         ];

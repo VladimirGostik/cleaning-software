@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('street', 255)->nullable();
             $table->string('city', 255)->nullable();
             $table->string('postal_code', 16)->nullable();
-            $table->char('country', 2)->default('SK');
+            $table->string('country', 255)->default('SK');
             $table->text('note')->nullable();
             $table->timestamps();
             $table->softDeletes();

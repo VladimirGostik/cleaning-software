@@ -7,18 +7,20 @@ namespace App\Models;
 use App\Concerns\HasUuids;
 use App\Contracts\ChecksFeatures;
 use App\Enums\FeatureEnum;
-use App\Enums\SubscriptionPlanEnum;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable([
+    'owner_id',
     'name',
     'ico',
     'dic',
@@ -33,7 +35,6 @@ use Spatie\Activitylog\Support\LogOptions;
     'country',
     'contact_email',
     'contact_phone',
-    'subscription_plan',
     'is_active',
 ])]
 final class Tenant extends Model
@@ -50,7 +51,6 @@ final class Tenant extends Model
             'is_vat_payer' => 'boolean',
             'is_active' => 'boolean',
             'vat_rate' => 'decimal:2',
-            'subscription_plan' => SubscriptionPlanEnum::class,
         ];
     }
 
@@ -58,8 +58,8 @@ final class Tenant extends Model
     {
         return LogOptions::defaults()
             ->logOnly([
-                'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
-                'vat_rate', 'iban', 'subscription_plan', 'is_active',
+                'owner_id', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
+                'vat_rate', 'iban', 'is_active',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
@@ -68,6 +68,16 @@ final class Tenant extends Model
     public function hasFeature(FeatureEnum $feature): bool
     {
         return app(ChecksFeatures::class)->hasFeature($this, $feature);
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function interface(): HasOne
+    {
+        return $this->hasOne(TenantInterface::class);
     }
 
     public function memberships(): HasMany

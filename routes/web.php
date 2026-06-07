@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -22,6 +24,9 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function (): void {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+
+    Route::get('register', [RegisterController::class, 'showRegister'])->name('register');
+    Route::post('register', [RegisterController::class, 'register'])->middleware('throttle:register');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email')->middleware('throttle:password-reset');
@@ -53,6 +58,9 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/clients/{client}', [ClientController::class, 'show'])->name('clients.show');
     Route::match(['PUT', 'PATCH'], '/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
     Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
+
+    // Tenants — self-service; auth middleware is the only gate (D4a).
+    Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
 });
 
 Route::get('language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');

@@ -14,17 +14,11 @@ use Illuminate\Support\ServiceProvider;
 
 final class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         $this->app->bind(ChecksFeatures::class, ConfigFeatureChecker::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         Model::preventLazyLoading(! app()->isProduction());
@@ -41,6 +35,13 @@ final class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        RateLimiter::for('register', function (Request $r): array {
+            return [
+                Limit::perMinute(3)->by('ip:' . get_client_ip()),
+                Limit::perMinute(3)->by('email:' . $r->input('email')),
+            ];
+        });
+
         RateLimiter::for('password-reset', function (Request $r): array {
             return [
                 Limit::perMinute(3)->by('email:' . $r->input('email')),
@@ -50,6 +51,10 @@ final class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('password-reset-confirm', function (): Limit {
             return Limit::perMinute(10)->by(get_client_ip());
+        });
+
+        RateLimiter::for('ico-lookup', function (): Limit {
+            return Limit::perMinute(30)->by('ip:' . get_client_ip());
         });
     }
 }

@@ -19,5 +19,7 @@ final class MeData extends Data
         public ?string $activeTenantId,
         public array $permissions,
         public array $features,
+        public string $accountPlan,
+        public ?int $remainingTenantSlots,
     ) {}
 }
