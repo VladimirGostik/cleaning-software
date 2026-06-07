@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,15 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/clients/{client}', [ClientController::class, 'show'])->name('clients.show');
     Route::match(['PUT', 'PATCH'], '/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
     Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
+
+    // Objects — feature-gated (plan axis: objects feature must be enabled).
+    Route::middleware('feature:objects')->group(function (): void {
+        Route::get('/objects', [ObjectController::class, 'index'])->name('objects.index');
+        Route::post('/objects', [ObjectController::class, 'store'])->name('objects.store');
+        Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('objects.show')->whereUuid('object');
+        Route::match(['PUT', 'PATCH'], '/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->whereUuid('object');
+        Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('objects.destroy')->whereUuid('object');
+    });
 
     // Tenants — self-service; auth middleware is the only gate (D4a).
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');

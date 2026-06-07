@@ -307,6 +307,7 @@ lint.notes: |
 - **Clients** — CRUD (list + detail/edit via side drawer). Soft-delete. Multi-contact with primary flag (email/phone on contacts, not client model). Type enum (Corporate/Private). Permission-gated. QueryBuilder filters (search, type). Pagination. Generic `EmptyState` + `PageHeader` components.
 - **Subscription plans / Feature gating** — per-account entitlement engine (4 tiers: Free/Starter/Pro/Enterprise). User holds `subscription_plan` field. Tenant resolves features through owner's plan via `ConfigFeatureChecker::planConfig($tenant)` (loads owner eagerly). `config/subscription.php` matrix + `SubscriptionPlanEnum` + `FeatureEnum` + `ChecksFeatures` interface + `ConfigFeatureChecker` impl. Middleware `RequiresTenantFeature` gates routes. Tenant-creation quota: each account can own `max_tenants[plan]` tenants (Free=1, Starter=2, Pro=3, Enterprise=null). `ChecksFeatures::canCreateTenant(User)` checks before POST /tenants. Distinct layer from Spatie RBAC permissions (plan-level vs. user-level).
 - **Capabilities system** — two-axis authorization (user/permission axis AND plan/feature axis). `GET /api/me` returns MeData (permissions, features). FE: Pinia store + `useAuthorization()` composable + `Can` component for declarative UI gating. `can(permission)` + `hasFeature(feature)` + `allows(permission, feature)` AND semantics.
+- **Objects** — CRUD (list + detail/edit via side drawer). Soft-delete. Physical cleaning location (office/apartment/house/common areas). Central entity in client → object → (quote → contract → invoice) chain. Access info (codes, keys), special instructions, area, floor. Feature-gated (`objects` plan). Type enum (ObjectTypeEnum). Permission-gated via ObjectPolicy. QueryBuilder filters (search, type, client_id, is_active). Pagination. Generic components reused from Clients module.
 
 ## Out of scope for v0.1 base scaffold (defer to /feature)
 
@@ -316,8 +317,9 @@ lint.notes: |
 - Scribe API docs route + lockdown
 - `app:demo` artisan command
 - Generic `useFilters`, `useDeleteConfirm`, `useToast` composables
-- Domain modules: Object, Quote, Contract, Schedule, Invoice, Employee, Template, Notification, etc.
+- Domain modules: Quote, Contract, Schedule, Invoice, Employee, Template, Notification, etc.
 - Invitation ACCEPT flow (accept route, email link routing, user upsert, membership auto-activation).
+- (Objects — DONE: CRUD, side-drawer form, soft-delete, polymorphic address, access info, client FK, feature-gated.)
 - (Capabilities system — DONE: /api/me endpoint, FE store + composable + Can component, two-axis AND auth.)
 - (Registration / Onboarding — DONE: wizard, atomic register, add-tenant, invitations table.)
 - (IČO lookup service — DONE: mock endpoint, FE composable, TODO swap mock for ARES API.)

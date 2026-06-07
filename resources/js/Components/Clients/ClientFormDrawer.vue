@@ -56,7 +56,9 @@
         <aside
             class="fixed top-0 right-0 z-50 h-full w-full md:w-[640px] bg-base-100 shadow-xl overflow-y-auto flex flex-col"
         >
-            <header class="sticky top-0 bg-base-100 border-b border-base-300 px-6 py-4 flex justify-between items-center">
+            <header
+                class="sticky top-0 bg-base-100 border-b border-base-300 px-6 py-4 flex justify-between items-center"
+            >
                 <h2 class="text-lg font-semibold">
                     {{ t(isEdit ? 'clients.form.edit_title' : 'clients.form.create_title') }}
                 </h2>
@@ -144,7 +146,11 @@
                         </div>
 
                         <label class="flex items-center gap-3 cursor-pointer">
-                            <input v-model="form.is_vat_payer" type="checkbox" class="toggle toggle-primary" />
+                            <input
+                                v-model="form.is_vat_payer"
+                                type="checkbox"
+                                class="toggle toggle-primary"
+                            />
                             <span class="text-sm">{{ t('clients.form.is_vat_payer') }}</span>
                         </label>
                     </div>
@@ -223,7 +229,7 @@
                         <textarea
                             v-model="form.note"
                             rows="4"
-                            class="textarea textarea-bordered w-full"
+                            class="textarea w-full"
                             :class="{ 'textarea-error': form.errors.note }"
                         />
                         <span v-if="form.errors.note" class="fieldset-label text-error">
@@ -239,12 +245,7 @@
                 <button type="button" class="btn btn-ghost" @click="emit('close')">
                     {{ t('clients.form.cancel') }}
                 </button>
-                <button
-                    type="submit"
-                    form="client-form"
-                    class="btn btn-primary"
-                    :disabled="form.processing"
-                >
+                <button type="submit" form="client-form" class="btn btn-primary" :disabled="form.processing">
                     <span v-if="form.processing" class="loading loading-spinner loading-xs" />
                     {{ t('clients.form.save') }}
                 </button>

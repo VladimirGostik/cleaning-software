@@ -110,6 +110,80 @@ note: string | null,
 contacts: App.Data.Clients.ClientContactData[],
 };
 }
+namespace Objects {
+export type ObjectDetailData = {
+id: string,
+client_id: string,
+client_name: string | null,
+type: App.Enums.ObjectTypeEnum,
+name: string,
+street: string | null,
+city: string | null,
+postal_code: string | null,
+country: string,
+access_code: string | null,
+key_box_code: string | null,
+key_count: number | null,
+special_instructions: string | null,
+area_sqm: string | null,
+floor: number | null,
+is_active: boolean,
+created_at: string,
+updated_at: string,
+};
+export type ObjectIndexFilterData = {
+search: string | null,
+type: App.Enums.ObjectTypeEnum | null,
+client_id: string | null,
+is_active: boolean | null,
+sort: string,
+page: number,
+per_page: number,
+};
+export type ObjectListItemData = {
+id: string,
+type: App.Enums.ObjectTypeEnum,
+name: string,
+city: string | null,
+is_active: boolean,
+client_id: string,
+client_name: string | null,
+area_sqm: string | null,
+created_at: string,
+};
+export type ObjectStoreData = {
+client_id: string,
+type: App.Enums.ObjectTypeEnum,
+name: string,
+street: string | null,
+city: string | null,
+postal_code: string | null,
+country: string,
+access_code: string | null,
+key_box_code: string | null,
+key_count: number | null,
+special_instructions: string | null,
+area_sqm: number | null,
+floor: number | null,
+is_active: boolean,
+};
+export type ObjectUpdateData = {
+client_id: string,
+type: App.Enums.ObjectTypeEnum,
+name: string,
+street: string | null,
+city: string | null,
+postal_code: string | null,
+country: string,
+access_code: string | null,
+key_box_code: string | null,
+key_count: number | null,
+special_instructions: string | null,
+area_sqm: number | null,
+floor: number | null,
+is_active: boolean,
+};
+}
 namespace Tenants {
 export type AddTenantData = {
 name: string,
@@ -152,6 +226,7 @@ namespace Enums {
 export type ClientTypeEnum = "corporate" | "private";
 export type FeatureEnum = "clients" | "objects" | "quotes" | "contracts" | "schedule" | "invoices" | "employees" | "reports" | "mobile_access" | "multi_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
+export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
 export type SubscriptionPlanEnum = "free" | "starter" | "pro" | "enterprise";
 export type SupportedLanguage = "sk" | "en" | "uk";

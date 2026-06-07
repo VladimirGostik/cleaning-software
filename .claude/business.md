@@ -21,6 +21,7 @@ Cleaning company **owner** (Vlastník). One owner can run multiple cleaning comp
 - **Register new company** — non-authenticated user submits email + password + company details (IČO, name, address, VAT payer) + list of co-founder invites (email+role). Registration service spins up new Tenant (Free plan), bootstraps permissions, sends invitations (email link / token TBD). Registrant auto-verified, auto-logged-in, sees welcome overlay on Dashboard.
 - **Add another company** — authenticated Vlastník clicks "Pridať novú firmu", enters name + IČO + optional leader email, creates new Tenant (Free plan). Can copy color settings from previous company. Switches active tenant (session-bound `active_tenant_id`).
 - **Look up company by IČO** — register form auto-fills company name + VAT status from registry (currently mock; TODO ARES). User can override before submitting.
+- **Manage cleaning objects** — Sekretárka (full CRUD) and Vedúca (view) manage physical locations (office/apartment/house/common areas) assigned to each client. Each object holds access info (codes, key box, key count), special instructions, area/floor metadata, and active flag. Objects are the **central entity** in the quotes → contracts → invoicing chain. Feature-gated (Starter/Pro/Enterprise tiers).
 
 ## Roles (defaults — owner can customize per tenant)
 
@@ -42,6 +43,7 @@ Flat Spatie permission strings, **scoped per tenant** (teams = `tenant_id`). For
 **Implemented:**
 
 - `view clients` / `create clients` / `edit clients` / `delete clients` — Vlastník (all), Sekretárka (all), Účtovníčka (view only). Enforced by `ClientPolicy` + `#[Authorize]` on `ClientController`.
+- `view objects` / `create objects` / `edit objects` / `delete objects` — Vlastník (all), Sekretárka (full CRUD), Vedúca upratovačka (view only), Upratovačka (view only). Enforced by `ObjectPolicy` + `#[Authorize]` on `ObjectController`. Feature-gated `objects` plan.
 
 **Seeded (no-op role bundles, UI not yet built):**
 

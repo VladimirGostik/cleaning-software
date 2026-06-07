@@ -25,11 +25,14 @@ final class DaisyUI5FormPatternTest extends TestCase
     {
         parent::setUp();
 
-        $base = dirname(__DIR__, 2) . '/resources/js/Components/Clients';
+        $clientsBase = dirname(__DIR__, 2) . '/resources/js/Components/Clients';
+        $objectsBase = dirname(__DIR__, 2) . '/resources/js/Components/Objects';
 
         $this->sources = [
-            'ClientFormDrawer.vue' => (string) file_get_contents($base . '/ClientFormDrawer.vue'),
-            'ContactsListField.vue' => (string) file_get_contents($base . '/ContactsListField.vue'),
+            'ClientFormDrawer.vue' => (string) file_get_contents($clientsBase . '/ClientFormDrawer.vue'),
+            'ContactsListField.vue' => (string) file_get_contents($clientsBase . '/ContactsListField.vue'),
+            'ObjectFormDrawer.vue' => (string) file_get_contents($objectsBase . '/ObjectFormDrawer.vue'),
+            'ObjectFiltersBar.vue' => (string) file_get_contents($objectsBase . '/ObjectFiltersBar.vue'),
         ];
     }
 
@@ -157,21 +160,50 @@ final class DaisyUI5FormPatternTest extends TestCase
         $this->assertGreaterThan(0, (int) filesize($path), 'ContactsListField.vue must not be empty.');
     }
 
+    public function test_object_form_drawer_source_file_is_readable(): void
+    {
+        // Arrange
+        $path = dirname(__DIR__, 2) . '/resources/js/Components/Objects/ObjectFormDrawer.vue';
+
+        // Act & Assert
+        $this->assertFileExists($path, 'ObjectFormDrawer.vue source file must exist.');
+        $this->assertGreaterThan(0, (int) filesize($path), 'ObjectFormDrawer.vue must not be empty.');
+    }
+
+    public function test_object_filters_bar_source_file_is_readable(): void
+    {
+        // Arrange
+        $path = dirname(__DIR__, 2) . '/resources/js/Components/Objects/ObjectFiltersBar.vue';
+
+        // Act & Assert
+        $this->assertFileExists($path, 'ObjectFiltersBar.vue source file must exist.');
+        $this->assertGreaterThan(0, (int) filesize($path), 'ObjectFiltersBar.vue must not be empty.');
+    }
+
     /**
      * @return array<string, array{string, string}>
      */
     public static function formComponentProvider(): array
     {
-        $base = dirname(__DIR__, 2) . '/resources/js/Components/Clients';
+        $clientsBase = dirname(__DIR__, 2) . '/resources/js/Components/Clients';
+        $objectsBase = dirname(__DIR__, 2) . '/resources/js/Components/Objects';
 
         return [
             'ClientFormDrawer.vue' => [
                 'ClientFormDrawer.vue',
-                (string) file_get_contents($base . '/ClientFormDrawer.vue'),
+                (string) file_get_contents($clientsBase . '/ClientFormDrawer.vue'),
             ],
             'ContactsListField.vue' => [
                 'ContactsListField.vue',
-                (string) file_get_contents($base . '/ContactsListField.vue'),
+                (string) file_get_contents($clientsBase . '/ContactsListField.vue'),
+            ],
+            'ObjectFormDrawer.vue' => [
+                'ObjectFormDrawer.vue',
+                (string) file_get_contents($objectsBase . '/ObjectFormDrawer.vue'),
+            ],
+            'ObjectFiltersBar.vue' => [
+                'ObjectFiltersBar.vue',
+                (string) file_get_contents($objectsBase . '/ObjectFiltersBar.vue'),
             ],
         ];
     }

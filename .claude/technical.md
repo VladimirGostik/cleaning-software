@@ -110,9 +110,27 @@ First implemented business domain layer (CRUD, filtering, soft-delete, multi-con
 - **Flow (list):** `GET /clients` → `ClientController@index` (`#[Authorize('viewAny', Client)]`) → `ClientService::paginate` (Spatie QueryBuilder: filters search/type, sorts name/created_at) → `ClientListItemData::collect(..., PaginatedDataCollection)` → Inertia `Clients/Index`.
 - **Flow (write):** `POST|PUT /clients` → `ClientController@store|update` (DTO) → `ClientService` in `DB::transaction` → `syncContacts` diff-apply (eager-load, diff incoming IDs, soft-delete missing, update/create matched) → redirect with `flash.success`.
 - **Depends on:** `identity-tenancy` (tenant_id FK, permission gate).
-- **Depended on by (planned):** Object → Quote → Contract → Invoice all FK to Client (not yet built).
-- **If you change Core, check:** `ClientController` (5 actions), `ClientPolicy`, `routes/web.php` (explicit routes: `clients.index`, `clients.show`, `clients.store`, `clients.update`, `clients.destroy`), `lang/{sk,en,uk}/app.php` `clients.*` keys.
+- **Depended on by:** `objects` (Client HasMany CleaningObject via `client_id` FK). Quote → Contract → Invoice will also FK to Client (not yet built).
+- **If you change Core, check:** `ClientController` (5 actions), `ClientPolicy`, `routes/web.php` (explicit routes: `clients.index`, `clients.show`, `clients.store`, `clients.update`, `clients.destroy`), `lang/{sk,en,uk}/app.php` `clients.*` keys, `objects` domain if Client model changes relation shape.
 - **Keywords:** klient, kontakt, IČO, DIČ, IČ DPH, Corporate, Private, primary contact.
+
+### objects
+
+Physical cleaning locations (office/apartment/house/common areas), assigned to clients. Central entity in the chain client → object → (quote → contract → invoice). Holds access info and metadata.
+
+- **Core:** `App\Models\CleaningObject` (PHP class name avoids `Object` global collision; table = `objects`). UUIDv7, tenant_id FK, BelongsToTenant, SoftDeletes, LogsActivity. Direct `client_id` FK (restrictOnDelete; soft-cascade in ClientService::delete via explicit soft-delete call). Reassignable client_id via ObjectUpdateData. Fields: name, type (ObjectTypeEnum: office/apartment/house/common_areas), address (street/city/postal_code/country), access info (access_code/key_box_code/key_count), special_instructions, area_sqm, floor, is_active. GPS columns (gps_lat/gps_lng) reserved in migration for Phase 2, NOT exposed in DTOs. `App\Services\ObjectService` — paginate/create/update/delete, Spatie QueryBuilder filters (search/type/client_id/is_active).
+- **Satellites:**
+  - `App\Enums\ObjectTypeEnum` — Office | Apartment | House | CommonAreas. `#[TypeScript]`. Methods: `label()` (i18n key), `options()` (select list).
+  - `App\Data\Objects\*` — `ObjectIndexFilterData` (filters: search, type, client_id, is_active, per_page), `ObjectListItemData` (row data), `ObjectDetailData` (full object + client relation), `ObjectStoreData` (client_id via `Rule::exists(...)->where('tenant_id', $tenantId)` — closes cross-tenant leak), `ObjectUpdateData` (incl client_id reassignment).
+  - `App\Policies\ObjectPolicy` — gates viewAny/view/create/update/delete on `view|create|edit|delete objects` permissions (references `PermissionEnum`).
+  - FE: `Objects/Index` + `Objects/Show` Inertia pages, shared `ObjectFormDrawer` (side-drawer create/edit, no separate routes), `useObjectFilters` composable (state mgmt for filter input), `ObjectTypeBadge` component.
+  - Routes feature-gated `feature:objects` (plan axis): objects.index/show/store/update/destroy.
+- **Flow (list):** `GET /objects` (middleware `feature:objects` checks plan) → `ObjectController@index` (`#[Authorize('viewAny', CleaningObject)]`) → `ObjectService::paginate` (Spatie QueryBuilder: filters search/type/client_id/is_active, sorts name/created_at, eager-loads client) → `ObjectListItemData::collect(...)` → Inertia `Objects/Index`.
+- **Flow (write):** `POST|PUT /objects` (middleware `feature:objects`) → `ObjectController@store|update` (DTO) → `ObjectService` in `DB::transaction` → update + load client → `ObjectDetailData` render or redirect with `flash.success`.
+- **Depends on:** `identity-tenancy` (tenant_id FK, permission gate), `subscription-plans` (route middleware `feature:objects` checks plan).
+- **Depended on by (planned):** Quote FK to Object (and Client) — generates work breakdown. Contract may polymorphically bind to Object (future). Schedule/Job binds to Object. Invoice references Job (via Object).
+- **If you change Core, check:** `ObjectController` (5 actions), `ObjectPolicy`, `routes/web.php` (feature:objects middleware + 5 named routes), `lang/{sk,en,uk}/app.php` `object_type.*` keys, `RoleTemplatesSeeder` (Sekretárka/Vedúca/Upratovačka/Účtovníčka object perms), Client::destroy soft-delete logic (if it cascade-deletes objects), `AppServiceProvider` explicit policy binding (CleaningObject → ObjectPolicy).
+- **Keywords:** lokality, umiestnenie, prístupové kódy, pristup, office, apartment, house, common_areas, access_code, key_box_code, gps (reserved), client FK, central entity, feature:objects.
 
 ### capabilities
 
@@ -169,6 +187,8 @@ Client-side authorization + entitlement layer. Queries server for runtime permis
 - **`usePageProps()` cast** — Inertia v3 augmentation didn't type-check reliably across imports, so we cast once inside the composable (`usePage().props as unknown as SharedProps`). Revisit if Inertia typing improves.
 - **IČO lookup mock is hardcoded** — `IcoLookupService::lookup()` currently checks a static SKMap. Replace with ARES API when ready (flag says `// TODO swap for ARES API`). No unit tests on the mock; API integration tests will be needed post-swap.
 - **Subscription plan moved from Tenant to User** — Tenant no longer has a `subscription_plan` column. Plans belong to the **account** (User). Each Tenant has an `owner_id` FK to the User who created it. Feature gating via `$tenant->owner->subscription_plan`, not `$tenant->subscription_plan`. `ConfigFeatureChecker::hasFeature($tenant, $feature)` eagerly loads owner and reads its plan. Tenant quota (max tenants) checked via `ChecksFeatures::canCreateTenant($user)` before POST /tenants. ON DELETE CASCADE when owner is deleted.
+- **CleaningObject PHP class name avoids `Object` global** — the model is `CleaningObject` (not `Object`) to avoid collision with PHP's `Object` builtin. The DB table is `objects`, routes use `objects`, permissions use `objects`, only the PHP class name differs. Explicit `Gate::policy(CleaningObject::class, ObjectPolicy::class)` in `AppServiceProvider` required because auto-discovery looks for `CleaningObjectPolicy`, not `ObjectPolicy`.
+- **Rule::exists tenant-scope on ObjectStoreData** — `client_id` field includes `Rule::exists('clients', 'id')->where('tenant_id', $tenantId)` in `rules()` method. This closes the cross-tenant leak: a user from tenant A cannot POST `/objects` with a client_id from tenant B, because the Exists rule filters by the resolved `$tenantId` (from `app('current_tenant_id')`). TenantScope applies at query time; DTO validation applies at HTTP boundary.
 
 ## Why these versions / decisions
 
@@ -203,8 +223,7 @@ Not deployed (`CLAUDE.md › Deployment Status`). Re-run `migrate:fresh --seed` 
 
 1. **Tenant CRUD** — list/create/edit/switch. Touches AppLayout tenant switcher.
 2. **User invite + Profile + change-password.**
-3. **Object** — CRUD, polymorphic address, access info, special instructions, FK to Client. The central entity (client → object → quote → contract → invoice).
-4. **Quote** — line items, status enum, PDF, send-to-client, auto work breakdown.
+3. **Quote** — line items, status enum, PDF, send-to-client, auto work breakdown.
 5. **Contract** — polymorphic (`contractable`), change log, expiry notifications (30/14/7d), employee-contract child.
 6. **Schedule + Job** — calendar, drag-drop, recurrence from work breakdown.
 7. **Absence** — cleaner-reported, scheduling-impact notification.
@@ -218,6 +237,6 @@ Not deployed (`CLAUDE.md › Deployment Status`). Re-run `migrate:fresh --seed` 
 ## Verification status
 
 - Last full scan: 2026-06-05 (`/init` full re-init — schema + routes via Boost MCP, source grep)
-- Last delta: 2026-06-07 (feat: per-account subscription migration — subscription_plan moved from Tenant to User, User gains subscription_plan SubscriptionPlanEnum + ownedTenants() HasMany, Tenant gains owner_id FK to User ON DELETE CASCADE, ConfigFeatureChecker::planConfig loads tenant->owner, ChecksFeatures interface gains maxTenants(User) + canCreateTenant(User), config/subscription.php matrix adds max_tenants per tier, MeData gains accountPlan + remainingTenantSlots, TenantController@store checks canCreateTenant before creating, capabilities store + useAuthorization composable + AppLayout tenant dropdown updated for add-tenant quota, FE canCreateTenant() returns remainingTenantSlots > 0, UserSeeder creates 5 demo accounts with different subscription tiers + owned tenants)
+- Last delta: 2026-06-07 (feat: Objects (lokality) module — CleaningObject model UUID + tenant_id + BelongsToTenant + SoftDeletes + LogsActivity, ObjectTypeEnum (office/apartment/house/common_areas), ObjectService CRUD + QueryBuilder filters (search/type/client_id/is_active), ObjectPolicy #[Authorize] gates on permissions, routes feature:objects middleware plan-gated (Starter+), DTOs ObjectStoreData/ObjectUpdateData/ObjectDetailData/ObjectListItemData/ObjectIndexFilterData with Rule::exists tenant-scope for client_id validation, FE Objects/Index + Objects/Show pages + ObjectFormDrawer side-drawer + useObjectFilters composable + ObjectTypeBadge component, RoleTemplatesSeeder assigns object perms to Vlastník/Sekretárka/Vedúca/Upratovačka/Účtovníčka, explicit Gate::policy binding in AppServiceProvider for CleaningObject→ObjectPolicy naming mismatch, i18n keys for object_type enum labels)
 - Open `TODO verify`: 1 (IČO lookup service mock — ARES API swap pending)
 - Reference inventory: `.claude/inventory.md` (not generated; opt-in via `/spec-sync --full --with-inventory`)

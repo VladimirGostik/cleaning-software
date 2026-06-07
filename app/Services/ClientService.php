@@ -8,6 +8,7 @@ use App\Data\Clients\ClientContactData;
 use App\Data\Clients\ClientIndexFilterData;
 use App\Data\Clients\ClientStoreData;
 use App\Data\Clients\ClientUpdateData;
+use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\ClientContact;
 use Illuminate\Database\DatabaseManager;
@@ -79,10 +80,11 @@ final readonly class ClientService
 
     public function delete(Client $client): void
     {
-        $client->load('contacts');
+        $client->load(['contacts', 'objects']);
 
         $this->db->transaction(function () use ($client): void {
             $client->contacts->each(fn (ClientContact $contact) => $contact->delete());
+            $client->objects->each(fn (CleaningObject $object) => $object->delete());
             $client->delete();
         });
     }

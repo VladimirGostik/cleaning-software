@@ -28,9 +28,12 @@ final class UserSeeder extends Seeder
                 'email_verified_at' => now(),
                 'locale' => 'sk',
                 'is_active' => true,
-                'subscription_plan' => SubscriptionPlanEnum::Pro->value,
             ],
         );
+
+        if ($admin->wasRecentlyCreated) {
+            $admin->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
+        }
 
         // 4 demo-tier accounts, each owns exactly 1 tenant
         /** @var array<int, array{email: string, name: string, plan: SubscriptionPlanEnum, ico: string, tenant_name: string, is_vat_payer: bool, vat_number: string|null, contact_email: string}> $demoAccounts */
@@ -86,9 +89,12 @@ final class UserSeeder extends Seeder
                     'email_verified_at' => now(),
                     'locale' => 'sk',
                     'is_active' => true,
-                    'subscription_plan' => $account['plan']->value,
                 ],
             );
+
+            if ($demoUser->wasRecentlyCreated) {
+                $demoUser->forceFill(['subscription_plan' => $account['plan']->value])->save();
+            }
 
             $tenant = Tenant::query()->firstOrCreate(
                 ['ico' => $account['ico']],

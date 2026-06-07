@@ -18,7 +18,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'locale', 'is_active', 'subscription_plan'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'locale', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 final class User extends Authenticatable
 {

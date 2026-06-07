@@ -69,15 +69,20 @@ final class RoleTemplatesSeederTest extends TestCase
         // Act
         RoleTemplatesSeeder::seedForTenant($tenant);
 
-        // Assert — spot-check a few roles
+        // Assert — Upratovačka: ViewSchedule + ViewObjects (added in objects module)
         /** @var Role $upratovacka */
         $upratovacka = Role::where('name', 'Upratovačka')->where('tenant_id', $tenant->id)->firstOrFail();
-        $this->assertSame(1, $upratovacka->permissions()->count());
-        $this->assertSame('view schedule', $upratovacka->permissions()->first()->name);
+        $this->assertSame(2, $upratovacka->permissions()->count());
+        $upratovackaPerms = $upratovacka->permissions()->pluck('name')->sort()->values()->all();
+        $this->assertContains('view schedule', $upratovackaPerms);
+        $this->assertContains('view objects', $upratovackaPerms);
 
+        // Assert — Zákazník: ViewSchedule + ViewPhotos + ViewComplaints + ViewObjects (added in objects module)
         /** @var Role $zakaznik */
         $zakaznik = Role::where('name', 'Zákazník')->where('tenant_id', $tenant->id)->firstOrFail();
-        $this->assertSame(3, $zakaznik->permissions()->count());
+        $this->assertSame(4, $zakaznik->permissions()->count());
+        $zakaznikPerms = $zakaznik->permissions()->pluck('name')->sort()->values()->all();
+        $this->assertContains('view objects', $zakaznikPerms);
     }
 
     public function test_seed_for_tenant_is_idempotent(): void

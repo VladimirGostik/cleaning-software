@@ -30,7 +30,7 @@ final class TenantControllerTest extends TestCase
     {
         // Arrange — actingAsTenantUser creates a Free user by default; upgrade to Pro so limit ≥ 2
         $user = $this->actingAsTenantUser('Vlastník');
-        $user->update(['subscription_plan' => SubscriptionPlanEnum::Pro->value]);
+        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
 
         // Act
         $response = $this->post(route('tenants.store'), [
@@ -62,7 +62,7 @@ final class TenantControllerTest extends TestCase
     {
         // Arrange
         $user = $this->actingAsTenantUser('Vlastník');
-        $user->update(['subscription_plan' => SubscriptionPlanEnum::Pro->value]);
+        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
 
         // Act
         $this->post(route('tenants.store'), [
@@ -81,7 +81,7 @@ final class TenantControllerTest extends TestCase
     {
         // Arrange
         $user = $this->actingAsTenantUser('Vlastník');
-        $user->update(['subscription_plan' => SubscriptionPlanEnum::Pro->value]);
+        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
         $activeTenantId = session('active_tenant_id');
 
         TenantInterface::firstOrCreate(
@@ -106,7 +106,7 @@ final class TenantControllerTest extends TestCase
     {
         // Arrange
         $user = $this->actingAsTenantUser('Vlastník');
-        $user->update(['subscription_plan' => SubscriptionPlanEnum::Pro->value]);
+        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
 
         // Act
         $this->post(route('tenants.store'), [
@@ -130,7 +130,7 @@ final class TenantControllerTest extends TestCase
     {
         // Arrange — Pro limit 3; user owns existing tenant (from actingAsTenantUser) + 1 more
         $user = $this->actingAsTenantUser('Vlastník');
-        $user->update(['subscription_plan' => SubscriptionPlanEnum::Pro->value]);
+        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
 
         // Create a second owned tenant directly (simulating user already has 2)
         Tenant::factory()->forOwner($user)->create();
@@ -167,7 +167,7 @@ final class TenantControllerTest extends TestCase
     {
         // Arrange — Enterprise = unlimited
         $user = $this->actingAsTenantUser('Vlastník');
-        $user->update(['subscription_plan' => SubscriptionPlanEnum::Enterprise->value]);
+        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Enterprise->value])->save();
 
         // Pre-create many owned tenants to push well past any finite limit
         Tenant::factory()->count(10)->forOwner($user)->create();

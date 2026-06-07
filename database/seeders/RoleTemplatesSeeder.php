@@ -31,6 +31,7 @@ final class RoleTemplatesSeeder extends Seeder
         return [
             'Vlastník' => [], // empty = all permissions assigned at runtime
             'Vedúca' => [
+                PermissionEnum::ViewObjects->value,
                 PermissionEnum::ViewSchedule->value,
                 PermissionEnum::CreateSchedule->value,
                 PermissionEnum::EditSchedule->value,
@@ -42,10 +43,10 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::RejectComplaints->value,
                 PermissionEnum::ViewPhotos->value,
                 PermissionEnum::ReviewPhotos->value,
-                PermissionEnum::ViewObjects->value,
             ],
             'Upratovačka' => [
                 PermissionEnum::ViewSchedule->value,
+                PermissionEnum::ViewObjects->value,
             ],
             'Sekretárka' => [
                 PermissionEnum::ViewClients->value,
@@ -74,12 +75,14 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::CancelInvoices->value,
                 PermissionEnum::ViewContracts->value,
                 PermissionEnum::ViewClients->value,
+                PermissionEnum::ViewObjects->value,
                 PermissionEnum::ManageBillingSettings->value,
             ],
             'Zákazník' => [
                 PermissionEnum::ViewSchedule->value,
                 PermissionEnum::ViewPhotos->value,
                 PermissionEnum::ViewComplaints->value,
+                PermissionEnum::ViewObjects->value,
             ],
         ];
     }
