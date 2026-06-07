@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Clients;
 
+use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\ClientContact;
 use App\Models\Tenant;
@@ -34,9 +35,33 @@ final class ClientShowTest extends TestCase
                 ->component('Clients/Show')
                 ->has('client.id')
                 ->has('client.contacts', 1)
-                ->where('client.objects', [])
                 ->where('client.contracts', [])
-                ->where('client.invoices', []),
+                ->where('client.invoices', [])
+                ->has('objects', 0),
+        );
+    }
+
+    public function test_show_returns_objects_for_client(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        CleaningObject::factory()->count(2)->for($client)->create(['tenant_id' => $tenant->id]);
+
+        // Act
+        $response = $this->get(route('clients.show', $client));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Clients/Show')
+                ->has('objects', 2)
+                ->has('objects.0.id')
+                ->has('objects.0.name')
+                ->has('objects.0.type'),
         );
     }
 

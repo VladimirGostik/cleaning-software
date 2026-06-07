@@ -14,6 +14,7 @@
         UsersIcon,
         DocumentDuplicateIcon,
         ReceiptPercentIcon,
+        PlusIcon,
     } from '@heroicons/vue/24/outline';
     import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -21,13 +22,17 @@
 
     import PageHeader from '@/Components/PageHeader.vue';
     import EmptyState from '@/Components/EmptyState.vue';
+    import Can from '@/Components/Can.vue';
     import ClientTypeBadge from '@/Components/Clients/ClientTypeBadge.vue';
     import ClientFormDrawer from '@/Components/Clients/ClientFormDrawer.vue';
+    import ObjectTypeBadge from '@/Components/Objects/ObjectTypeBadge.vue';
+    import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
 
     interface Props {
         client: App.Data.Clients.ClientDetailData;
+        objects: App.Data.Objects.ObjectListItemData[];
     }
 
     const props = defineProps<Props>();
@@ -39,7 +44,11 @@
 
     const primaryContact = computed(() => props.client.contacts?.find((c) => c.is_primary) ?? null);
 
-    const ui = reactive({ editDrawerOpen: false, deleteConfirmOpen: false });
+    const ui = reactive({
+        editDrawerOpen: false,
+        deleteConfirmOpen: false,
+        objectDrawerOpen: false,
+    });
 
     const localeTag = computed(() => {
         const map: Record<string, string> = { sk: 'sk-SK', en: 'en-GB', uk: 'uk-UA' };
@@ -61,6 +70,11 @@
     function onDrawerSaved() {
         ui.editDrawerOpen = false;
         router.reload({ only: ['client'] });
+    }
+
+    function onObjectDrawerSaved() {
+        ui.objectDrawerOpen = false;
+        router.reload({ only: ['objects'] });
     }
 
     function confirmDelete() {
@@ -109,10 +123,22 @@
                         {{ t('clients.detail.create_quote') }}
                     </button>
 
-                    <button type="button" class="btn btn-ghost" disabled>
-                        <BuildingOffice2Icon class="w-4 h-4" />
-                        {{ t('clients.detail.add_object') }}
-                    </button>
+                    <Can permission="create objects" feature="objects">
+                        <button
+                            type="button"
+                            class="btn btn-ghost"
+                            @click="ui.objectDrawerOpen = true"
+                        >
+                            <PlusIcon class="w-4 h-4" />
+                            {{ t('clients.detail.add_object') }}
+                        </button>
+                        <template #fallback>
+                            <button type="button" class="btn btn-ghost" disabled>
+                                <BuildingOffice2Icon class="w-4 h-4" />
+                                {{ t('clients.detail.add_object') }}
+                            </button>
+                        </template>
+                    </Can>
 
                     <div v-if="can.deleteClients" class="dropdown dropdown-end">
                         <div tabindex="0" role="button" class="btn btn-ghost btn-square">
@@ -145,7 +171,52 @@
                     <div class="card bg-base-100 shadow-sm">
                         <div class="card-body">
                             <h2 class="card-title">{{ t('clients.detail.objects') }}</h2>
+                            <div v-if="objects.length" class="overflow-x-auto">
+                                <table class="table table-zebra w-full">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ t('objects.col.name') }}</th>
+                                            <th>{{ t('objects.col.type') }}</th>
+                                            <th>{{ t('objects.col.area') }}</th>
+                                            <th>{{ t('objects.col.active') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="obj in objects"
+                                            :key="obj.id"
+                                            class="hover"
+                                        >
+                                            <td>
+                                                <Link
+                                                    :href="`/objects/${obj.id}`"
+                                                    class="font-medium link link-hover"
+                                                >
+                                                    {{ obj.name }}
+                                                </Link>
+                                                <p v-if="obj.city" class="text-xs opacity-60">{{ obj.city }}</p>
+                                            </td>
+                                            <td>
+                                                <ObjectTypeBadge :type="obj.type" />
+                                            </td>
+                                            <td>{{ obj.area_sqm ?? t('common.empty_dash') }}</td>
+                                            <td>
+                                                <span
+                                                    v-if="obj.is_active"
+                                                    class="badge badge-success badge-sm"
+                                                >
+                                                    {{ t('objects.active') }}
+                                                </span>
+                                                <span v-else class="badge badge-ghost badge-sm">
+                                                    {{ t('objects.inactive') }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                             <EmptyState
+                                v-else
                                 :title="t('clients.detail.no_objects')"
                                 :icon="BuildingOffice2Icon"
                             />
@@ -288,6 +359,15 @@
                 :client="client"
                 @close="ui.editDrawerOpen = false"
                 @saved="onDrawerSaved"
+            />
+
+            <!-- Object create drawer -->
+            <ObjectFormDrawer
+                v-if="ui.objectDrawerOpen"
+                mode="create"
+                :clients="[{ id: client.id, name: client.name }]"
+                @close="ui.objectDrawerOpen = false"
+                @saved="onObjectDrawerSaved"
             />
 
             <!-- Delete confirm modal -->

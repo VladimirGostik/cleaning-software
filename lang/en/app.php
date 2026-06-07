@@ -315,4 +315,8 @@ return [
     'tenant.add.copy_settings' => 'Copy settings from current company',
     'tenant.add.leader_email' => 'Manager email (optional)',
     'tenant.add.submit' => 'Create company',
+    'auth.logout_confirm_title' => 'Sign out',
+    'auth.logout_confirm_body' => 'Are you sure you want to sign out?',
+    'nav.profile' => 'Profile',
+    'common.cancel' => 'Cancel',
 ];

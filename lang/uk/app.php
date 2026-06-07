@@ -180,7 +180,6 @@ return [
     'objects.form.save' => 'Зберегти',
     'objects.form.cancel' => 'Скасувати',
 
-
     'object_type.office' => 'Офіс',
     'object_type.apartment' => 'Квартира',
     'object_type.house' => 'Будинок',
@@ -316,4 +315,8 @@ return [
     'tenant.add.copy_settings' => 'Скопіювати налаштування з поточної компанії',
     'tenant.add.leader_email' => 'E-mail керівника (необов\'язково)',
     'tenant.add.submit' => 'Створити компанію',
+    'auth.logout_confirm_title' => 'Вийти',
+    'auth.logout_confirm_body' => 'Ви дійсно хочете вийти?',
+    'nav.profile' => 'Профіль',
+    'common.cancel' => 'Скасувати',
 ];

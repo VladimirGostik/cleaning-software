@@ -44,6 +44,10 @@
     const isTenantMenuOpen = ref(false);
     // eslint-disable-next-line no-restricted-syntax -- imperative UI toggle: add tenant modal
     const isAddTenantOpen = ref(false);
+    // eslint-disable-next-line no-restricted-syntax -- imperative UI toggle: user menu dropdown
+    const isUserMenuOpen = ref(false);
+    // eslint-disable-next-line no-restricted-syntax -- imperative UI toggle: logout confirm modal
+    const isLogoutConfirmOpen = ref(false);
 
     interface NavItem {
         key: string;
@@ -70,7 +74,7 @@
             href: '/objects',
             icon: BuildingOfficeIcon,
             can: 'viewObjects',
-            implemented: false,
+            implemented: true,
         },
         {
             key: 'quotes',
@@ -153,7 +157,7 @@
     }
 
     function switchLocale(code: string) {
-        router.get(`/language/${code}`, {}, { preserveState: false });
+        router.get(`/language/${code}`, {}, { preserveScroll: true });
     }
 
     function openAddTenant() {
@@ -237,19 +241,48 @@
             </button>
 
             <!-- User -->
-            <button
-                type="button"
-                class="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 hover:bg-slate-100 transition"
-                @click="logout"
-            >
-                <span
-                    class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-white flex-shrink-0"
+            <div class="relative">
+                <button
+                    type="button"
+                    class="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 hover:bg-slate-100 transition"
+                    :aria-expanded="isUserMenuOpen"
+                    aria-haspopup="true"
+                    @click="isUserMenuOpen = !isUserMenuOpen"
                 >
-                    {{ user?.name?.charAt(0)?.toUpperCase() ?? 'U' }}
-                </span>
-                <span class="text-[13px] font-semibold text-slate-800">{{ user?.name }}</span>
-                <ChevronDownIcon class="h-3 w-3 text-slate-400" />
-            </button>
+                    <span
+                        class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-white flex-shrink-0"
+                    >
+                        {{ user?.name?.charAt(0)?.toUpperCase() ?? 'U' }}
+                    </span>
+                    <span class="text-[13px] font-semibold text-slate-800">{{ user?.name }}</span>
+                    <ChevronDownIcon class="h-3 w-3 text-slate-400" />
+                </button>
+
+                <!-- User dropdown -->
+                <Transition name="dropdown">
+                    <div
+                        v-if="isUserMenuOpen"
+                        class="absolute right-0 top-full mt-1 z-30 min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg py-1"
+                    >
+                        <div
+                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-400 cursor-not-allowed opacity-50"
+                            aria-disabled="true"
+                        >
+                            {{ t('nav.profile') }}
+                        </div>
+                        <button
+                            type="button"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                            @click="isUserMenuOpen = false; isLogoutConfirmOpen = true"
+                        >
+                            {{ t('logout') }}
+                        </button>
+                    </div>
+                </Transition>
+
+                <!-- Click-outside overlay -->
+                <div v-if="isUserMenuOpen" class="fixed inset-0 z-20" @click="isUserMenuOpen = false" />
+            </div>
         </header>
 
         <!-- Sidebar -->
@@ -356,6 +389,23 @@
 
     <!-- Add tenant modal — mounted outside app-shell grid -->
     <AddTenantModal v-model:open="isAddTenantOpen" :colors="tenantColors" @close="isAddTenantOpen = false" />
+
+    <!-- Logout confirm modal -->
+    <dialog class="modal" :open="isLogoutConfirmOpen">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">{{ t('auth.logout_confirm_title') }}</h3>
+            <p class="py-4">{{ t('auth.logout_confirm_body') }}</p>
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" @click="isLogoutConfirmOpen = false">
+                    {{ t('common.cancel') }}
+                </button>
+                <button type="button" class="btn btn-error" @click="logout">
+                    {{ t('logout') }}
+                </button>
+            </div>
+        </div>
+        <div class="modal-backdrop" @click="isLogoutConfirmOpen = false" />
+    </dialog>
 </template>
 
 <style scoped>

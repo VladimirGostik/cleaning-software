@@ -9,6 +9,7 @@ use App\Data\Clients\ClientIndexFilterData;
 use App\Data\Clients\ClientListItemData;
 use App\Data\Clients\ClientStoreData;
 use App\Data\Clients\ClientUpdateData;
+use App\Data\Objects\ObjectListItemData;
 use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use App\Services\ClientService;
@@ -16,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\LaravelData\DataCollection;
 use Spatie\LaravelData\PaginatedDataCollection;
 
 final class ClientController extends Controller
@@ -37,8 +39,11 @@ final class ClientController extends Controller
     {
         $client->load('contacts');
 
+        $objects = $client->objects()->with('client')->get();
+
         return Inertia::render('Clients/Show', [
             'client' => ClientDetailData::from($client),
+            'objects' => ObjectListItemData::collect($objects, DataCollection::class),
         ]);
     }
 

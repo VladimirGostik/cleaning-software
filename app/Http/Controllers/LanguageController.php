@@ -27,6 +27,18 @@ final class LanguageController extends Controller
 
         $cookie = Cookie::create('locale', $locale, now()->addDays(30)->getTimestamp());
 
-        return back()->withCookie($cookie);
+        $previous = url()->previous();
+        $appHost = parse_url(config('app.url'), PHP_URL_HOST);
+
+        if ($appHost === null || empty($previous) || str_contains($previous, '/language/')) {
+            $previous = '/dashboard';
+        } else {
+            $prevHost = parse_url($previous, PHP_URL_HOST);
+            if ($prevHost !== $appHost) {
+                $previous = '/dashboard';
+            }
+        }
+
+        return redirect()->to($previous)->withCookie($cookie);
     }
 }

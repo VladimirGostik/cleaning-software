@@ -315,4 +315,8 @@ return [
     'tenant.add.copy_settings' => 'Skopírovať nastavenia z aktuálnej firmy',
     'tenant.add.leader_email' => 'E-mail správcu (voliteľné)',
     'tenant.add.submit' => 'Vytvoriť firmu',
+    'auth.logout_confirm_title' => 'Odhlásiť sa',
+    'auth.logout_confirm_body' => 'Naozaj sa chcete odhlásiť?',
+    'nav.profile' => 'Profil',
+    'common.cancel' => 'Zrušiť',
 ];
