@@ -1,7 +1,8 @@
 <script setup lang="ts">
-    import { reactive, watch, useId } from 'vue';
+    import { ref, useId } from 'vue';
     import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
     import { useTranslate } from '@/Composables/useTranslate';
+    import TextInput from '@/Components/Forms/TextInput.vue';
 
     const props = defineProps<{
         modelValue: App.Data.Clients.ClientContactData[];
@@ -15,53 +16,48 @@
     const { t } = useTranslate();
     const uid = useId();
 
-    const items = reactive<App.Data.Clients.ClientContactData[]>(
+    // Single source of truth: local clone of the prop (no watch mirror).
+    // All mutations operate here and immediately emit the full array.
+    // eslint-disable-next-line no-restricted-syntax -- local mutable array for dynamic contact rows; not app/cross-component state
+    const items = ref<App.Data.Clients.ClientContactData[]>(
         props.modelValue.map((c) => ({ ...c })),
     );
 
-    watch(
-        () => props.modelValue,
-        (newVal) => {
-            if (newVal.length !== items.length) {
-                items.splice(0, items.length, ...newVal.map((c) => ({ ...c })));
-            }
-        },
-    );
-
-    function notifyParent() {
-        emit('update:modelValue', [...items]);
+    function notify() {
+        emit('update:modelValue', items.value.map((c) => ({ ...c })));
     }
 
     function add() {
-        items.push({
+        items.value.push({
             id: null,
             name: '',
             position: null,
             email: null,
             phone: null,
-            is_primary: items.length === 0,
+            is_primary: items.value.length === 0,
         });
-        notifyParent();
+        notify();
     }
 
     function remove(idx: number) {
-        const wasPrimary = items[idx].is_primary;
-        items.splice(idx, 1);
-        if (wasPrimary && items.length > 0) {
-            items[0].is_primary = true;
+        const wasPrimary = items.value[idx].is_primary;
+        items.value.splice(idx, 1);
+        if (wasPrimary && items.value.length > 0) {
+            items.value[0].is_primary = true;
         }
-        notifyParent();
+        notify();
     }
 
     function setPrimary(idx: number) {
-        items.forEach((item, i) => {
+        items.value.forEach((item, i) => {
             item.is_primary = i === idx;
         });
-        notifyParent();
+        notify();
     }
 
-    function onFieldChange() {
-        notifyParent();
+    function onFieldChange(idx: number, field: keyof App.Data.Clients.ClientContactData, value: string) {
+        (items.value[idx] as Record<string, unknown>)[field] = value === '' ? null : value;
+        notify();
     }
 </script>
 
@@ -85,37 +81,32 @@
                 </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                    <input
-                        v-model="c.name"
-                        :placeholder="t('clients.form.contact.name')"
-                        class="input input-sm w-full"
-                        :class="{ 'input-error': errors[`contacts.${i}.name`] }"
-                        @input="onFieldChange"
-                    />
-                    <p v-if="errors[`contacts.${i}.name`]" class="text-error text-xs">
-                        {{ errors[`contacts.${i}.name`] }}
-                    </p>
-                </div>
-                <input
-                    v-model="c.position"
+                <TextInput
+                    :model-value="c.name ?? ''"
+                    :placeholder="t('clients.form.contact.name')"
+                    :aria-label="t('clients.form.contact.name')"
+                    :error="errors[`contacts.${i}.name`]"
+                    @update:model-value="onFieldChange(i, 'name', $event)"
+                />
+                <TextInput
+                    :model-value="c.position ?? ''"
                     :placeholder="t('clients.form.contact.position')"
-                    class="input input-sm w-full"
-                    @input="onFieldChange"
+                    :aria-label="t('clients.form.contact.position')"
+                    @update:model-value="onFieldChange(i, 'position', $event)"
                 />
-                <input
-                    v-model="c.email"
+                <TextInput
                     type="email"
+                    :model-value="c.email ?? ''"
                     :placeholder="t('clients.form.contact.email')"
-                    class="input input-sm w-full"
-                    @input="onFieldChange"
+                    :aria-label="t('clients.form.contact.email')"
+                    @update:model-value="onFieldChange(i, 'email', $event)"
                 />
-                <input
-                    v-model="c.phone"
+                <TextInput
                     type="tel"
+                    :model-value="c.phone ?? ''"
                     :placeholder="t('clients.form.contact.phone')"
-                    class="input input-sm w-full"
-                    @input="onFieldChange"
+                    :aria-label="t('clients.form.contact.phone')"
+                    @update:model-value="onFieldChange(i, 'phone', $event)"
                 />
             </div>
         </div>

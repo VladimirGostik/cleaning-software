@@ -1,6 +1,6 @@
 <script setup lang="ts">
     /* eslint-disable vue/no-mutating-props -- InertiaForm is an intentionally mutable reactive object; step components bind to it directly */
-     
+
     import { ref } from 'vue';
     import type { InertiaForm } from '@inertiajs/vue3';
     import { EyeIcon, EyeSlashIcon, CheckIcon } from '@heroicons/vue/24/outline';
@@ -73,7 +73,7 @@
                 <button
                     type="button"
                     class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
-                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                    :aria-label="showPassword ? t('auth.toggle_password_hide') : t('auth.toggle_password_show')"
                     @click="showPassword = !showPassword"
                 >
                     <EyeSlashIcon v-if="showPassword" class="h-4 w-4" />
@@ -106,7 +106,7 @@
                 <button
                     type="button"
                     class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
-                    :aria-label="showConfirm ? 'Hide password' : 'Show password'"
+                    :aria-label="showConfirm ? t('auth.toggle_password_hide') : t('auth.toggle_password_show')"
                     @click="showConfirm = !showConfirm"
                 >
                     <EyeSlashIcon v-if="showConfirm" class="h-4 w-4" />

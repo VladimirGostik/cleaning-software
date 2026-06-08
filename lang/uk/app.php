@@ -45,6 +45,7 @@ return [
     'nav.settings' => 'Налаштування',
     'nav.add_tenant' => '+ Додати нову компанію',
     'nav.coming_soon' => 'Незабаром',
+    'nav.admin_section' => 'Адміністрування',
 
     'auth.hero.title_1' => 'Уся ваша компанія',
     'auth.hero.title_2' => 'під контролем.',
@@ -54,6 +55,8 @@ return [
     'auth.hero.feature_support' => 'Підтримка SK',
     'auth.back_home' => 'На головну',
     'auth.welcome_back' => 'Ласкаво просимо. Введіть свої дані.',
+    'auth.toggle_password_show' => 'Показати пароль',
+    'auth.toggle_password_hide' => 'Приховати пароль',
 
     'clients.created' => 'Клієнта успішно створено.',
     'clients.updated' => 'Клієнта успішно оновлено.',

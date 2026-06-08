@@ -45,6 +45,7 @@ return [
     'nav.settings' => 'Nastavenia',
     'nav.add_tenant' => '+ Pridať novú firmu',
     'nav.coming_soon' => 'Čoskoro',
+    'nav.admin_section' => 'Administrácia',
 
     'auth.hero.title_1' => 'Celá vaša firma',
     'auth.hero.title_2' => 'pod kontrolou.',
@@ -54,6 +55,8 @@ return [
     'auth.hero.feature_support' => 'SK podpora',
     'auth.back_home' => 'Späť na hlavnú',
     'auth.welcome_back' => 'Vitajte späť. Zadajte svoje údaje.',
+    'auth.toggle_password_show' => 'Zobraziť heslo',
+    'auth.toggle_password_hide' => 'Skryť heslo',
 
     'clients.created' => 'Klient bol úspešne vytvorený.',
     'clients.updated' => 'Klient bol úspešne aktualizovaný.',

@@ -86,42 +86,42 @@ final class DaisyUI5FormPatternTest extends TestCase
         );
     }
 
-    public function test_client_form_drawer_uses_fieldset_element(): void
+    public function test_client_form_drawer_delegates_daisy5_pattern_to_forms_library(): void
     {
-        // Arrange
+        // ClientFormDrawer now uses FormProvider + TextInput/SelectInput etc. which delegate
+        // <fieldset class="fieldset"> / <legend class="fieldset-legend"> to FormField.vue.
+        // Verify the delegation — not the inline pattern — is present.
         $source = $this->sources['ClientFormDrawer.vue'];
 
-        // Act & Assert
+        $this->assertStringContainsString(
+            'FormProvider',
+            $source,
+            'ClientFormDrawer.vue must use FormProvider from the Forms library; DaisyUI 5 fieldset pattern is applied inside FormField.vue.',
+        );
+    }
+
+    public function test_forms_library_field_component_uses_fieldset_pattern(): void
+    {
+        $source = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/resources/js/Components/Forms/FormField.vue',
+        );
+
         $this->assertMatchesRegularExpression(
             '/<fieldset\b/',
             $source,
-            'ClientFormDrawer.vue must contain at least one <fieldset> element (DaisyUI 5 form pattern).',
+            'FormField.vue must contain a <fieldset> element (DaisyUI 5 form pattern).',
         );
-    }
 
-    public function test_client_form_drawer_uses_fieldset_legend_class(): void
-    {
-        // Arrange
-        $source = $this->sources['ClientFormDrawer.vue'];
-
-        // Act & Assert
         $this->assertStringContainsString(
             'fieldset-legend',
             $source,
-            "ClientFormDrawer.vue must use 'fieldset-legend' class on <legend> elements (DaisyUI 5).",
+            "FormField.vue must use 'fieldset-legend' class on <legend> elements (DaisyUI 5).",
         );
-    }
 
-    public function test_client_form_drawer_fieldset_utility_class_present(): void
-    {
-        // Arrange
-        $source = $this->sources['ClientFormDrawer.vue'];
-
-        // Act & Assert
         $this->assertMatchesRegularExpression(
             '/class="fieldset/',
             $source,
-            "ClientFormDrawer.vue must apply the 'fieldset' utility class to <fieldset> elements.",
+            "FormField.vue must apply the 'fieldset' utility class to <fieldset> elements.",
         );
     }
 

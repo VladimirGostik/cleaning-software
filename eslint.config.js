@@ -27,6 +27,8 @@ export default [
         },
     },
     {
+        // TypeScript handles undefined references; no-undef duplicates TS type checking
+        // and does not know about DOM globals (Event, HTMLInputElement, etc.)
         files: ['**/*.{ts,vue}'],
         languageOptions: {
             globals: {
@@ -35,6 +37,7 @@ export default [
             },
         },
         rules: {
+            'no-undef': 'off',
             '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
             'vue/multi-word-component-names': 'off',
             'vue/no-v-html': 'warn',

@@ -25,20 +25,20 @@
     import { useCapabilitiesStore } from '@/stores/capabilities';
     import { useAuthorization } from '@/Composables/useAuthorization';
     import AddTenantModal from '@/Pages/Tenants/AddTenantModal.vue';
+    import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
     const props = usePageProps();
     const { t } = useTranslate();
-    const page = usePage();
+    const page = usePage(); // kept for page.component (transition key) and page.url only
     const capabilitiesStore = useCapabilitiesStore();
-    const { canCreateTenant } = useAuthorization();
+    const { can, canCreateTenant } = useAuthorization();
 
     const user = computed(() => props.auth?.user);
     const tenant = computed(() => props.tenant?.active);
-    const can = computed(() => props.can ?? {});
     const languages = computed(() => props.languages ?? []);
     const currentLocale = computed(() => props.locale ?? 'sk');
     const tenantColors = computed(() => props.tenantColors ?? []);
-    const pageComponent = computed(() => `${page.component}::${(page.props.locale as string) ?? 'sk'}`);
+    const pageComponent = computed(() => `${page.component}::${props.locale ?? 'sk'}`);
 
     // eslint-disable-next-line no-restricted-syntax -- imperative UI toggle: tenant dropdown
     const isTenantMenuOpen = ref(false);
@@ -54,7 +54,7 @@
         label: string;
         href: string;
         icon: unknown;
-        can?: string;
+        can?: App.Enums.PermissionEnum;
         implemented: boolean;
     }
 
@@ -65,7 +65,7 @@
             label: 'nav.clients',
             href: '/clients',
             icon: UsersIcon,
-            can: 'viewClients',
+            can: 'view clients',
             implemented: true,
         },
         {
@@ -73,7 +73,7 @@
             label: 'nav.objects',
             href: '/objects',
             icon: BuildingOfficeIcon,
-            can: 'viewObjects',
+            can: 'view objects',
             implemented: true,
         },
         {
@@ -81,7 +81,7 @@
             label: 'nav.quotes',
             href: '/quotes',
             icon: DocumentTextIcon,
-            can: 'viewQuotes',
+            can: 'view quotes',
             implemented: false,
         },
         {
@@ -89,7 +89,7 @@
             label: 'nav.contracts',
             href: '/contracts',
             icon: ClipboardDocumentListIcon,
-            can: 'viewContracts',
+            can: 'view contracts',
             implemented: false,
         },
         {
@@ -97,7 +97,7 @@
             label: 'nav.schedule',
             href: '/schedule',
             icon: CalendarDaysIcon,
-            can: 'viewSchedule',
+            can: 'view schedule',
             implemented: false,
         },
         {
@@ -105,7 +105,7 @@
             label: 'nav.employees',
             href: '/employees',
             icon: UserGroupIcon,
-            can: 'viewEmployees',
+            can: 'view employees',
             implemented: false,
         },
         {
@@ -113,7 +113,7 @@
             label: 'nav.invoices',
             href: '/invoices',
             icon: ReceiptPercentIcon,
-            can: 'viewInvoices',
+            can: 'view invoices',
             implemented: false,
         },
         {
@@ -121,7 +121,7 @@
             label: 'nav.templates',
             href: '/templates',
             icon: FolderIcon,
-            can: 'viewTemplates',
+            can: 'view templates',
             implemented: false,
         },
     ];
@@ -144,7 +144,7 @@
     ];
 
     const visibleNav = computed(() =>
-        navItems.filter((item) => !item.can || can.value[item.can as keyof typeof can.value]),
+        navItems.filter((item) => !item.can || can(item.can)),
     );
 
     function isActive(href: string): boolean {
@@ -333,7 +333,7 @@
                         <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
                         <span>{{ t(item.label) }}</span>
                         <span
-                            class="ml-auto text-[10px] font-medium text-slate-500 bg-slate-700 rounded px-1.5 py-0.5 leading-tight"
+                            class="ml-auto text-[10px] font-medium nav-coming-soon-badge rounded px-1.5 py-0.5 leading-tight"
                         >
                             {{ t('nav.coming_soon') }}
                         </span>
@@ -343,8 +343,8 @@
 
             <!-- Admin section -->
             <div class="mt-4 border-t border-white/[0.06] pt-3 px-2">
-                <div class="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Administrácia
+                <div class="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] nav-section-label">
+                    {{ t('nav.admin_section') }}
                 </div>
                 <nav class="flex flex-col gap-0.5">
                     <template v-for="item in adminNavItems" :key="item.key">
@@ -365,7 +365,7 @@
                             <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
                             <span>{{ t(item.label) }}</span>
                             <span
-                                class="ml-auto text-[10px] font-medium text-slate-500 bg-slate-700 rounded px-1.5 py-0.5 leading-tight"
+                                class="ml-auto text-[10px] font-medium nav-coming-soon-badge rounded px-1.5 py-0.5 leading-tight"
                             >
                                 {{ t('nav.coming_soon') }}
                             </span>
@@ -391,21 +391,16 @@
     <AddTenantModal v-model:open="isAddTenantOpen" :colors="tenantColors" @close="isAddTenantOpen = false" />
 
     <!-- Logout confirm modal -->
-    <dialog class="modal" :open="isLogoutConfirmOpen">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg">{{ t('auth.logout_confirm_title') }}</h3>
-            <p class="py-4">{{ t('auth.logout_confirm_body') }}</p>
-            <div class="modal-action">
-                <button type="button" class="btn btn-ghost" @click="isLogoutConfirmOpen = false">
-                    {{ t('common.cancel') }}
-                </button>
-                <button type="button" class="btn btn-error" @click="logout">
-                    {{ t('logout') }}
-                </button>
-            </div>
-        </div>
-        <div class="modal-backdrop" @click="isLogoutConfirmOpen = false" />
-    </dialog>
+    <ConfirmDialog
+        :open="isLogoutConfirmOpen"
+        :title="t('auth.logout_confirm_title')"
+        :body="t('auth.logout_confirm_body')"
+        :confirm-label="t('logout')"
+        :cancel-label="t('common.cancel')"
+        confirm-variant="error"
+        @confirm="logout"
+        @cancel="isLogoutConfirmOpen = false"
+    />
 </template>
 
 <style scoped>
@@ -423,13 +418,13 @@
         align-items: center;
         gap: 12px;
         padding: 0 20px;
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
+        background: var(--color-base-100);
+        border-bottom: 1px solid var(--color-base-300);
         z-index: 10;
     }
 
     .app-sidebar {
-        background: #0f172a;
+        background: var(--color-neutral);
         display: flex;
         flex-direction: column;
         padding: 16px 0;
@@ -438,7 +433,7 @@
     }
 
     .app-content {
-        background: #f8fafc;
+        background: var(--color-base-200);
         overflow-y: auto;
         padding: 28px;
     }
@@ -456,22 +451,31 @@
     }
 
     .nav-item-idle {
-        color: #94a3b8;
+        color: color-mix(in oklch, var(--color-neutral-content) 60%, transparent);
     }
 
     .nav-item-idle:hover {
         background: rgba(255, 255, 255, 0.05);
-        color: #e2e8f0;
+        color: var(--color-neutral-content);
     }
 
     .nav-item-active {
-        background: #a16207;
-        color: #ffffff;
-        box-shadow: 0 1px 3px rgba(161, 98, 7, 0.35);
+        background: var(--color-primary);
+        color: var(--color-primary-content);
+        box-shadow: 0 1px 3px color-mix(in oklch, var(--color-primary) 35%, transparent);
     }
 
     .nav-item-active:hover {
-        background: #713f12;
+        background: color-mix(in oklch, var(--color-primary) 80%, black);
+    }
+
+    .nav-section-label {
+        color: color-mix(in oklch, var(--color-neutral-content) 40%, transparent);
+    }
+
+    .nav-coming-soon-badge {
+        color: color-mix(in oklch, var(--color-neutral-content) 60%, transparent);
+        background: color-mix(in oklch, var(--color-neutral-content) 10%, transparent);
     }
 
     .dropdown-enter-active,

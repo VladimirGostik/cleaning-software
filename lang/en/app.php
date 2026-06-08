@@ -45,6 +45,7 @@ return [
     'nav.settings' => 'Settings',
     'nav.add_tenant' => '+ Add new company',
     'nav.coming_soon' => 'Coming soon',
+    'nav.admin_section' => 'Administration',
 
     'auth.hero.title_1' => 'Your entire company',
     'auth.hero.title_2' => 'under control.',
@@ -54,6 +55,8 @@ return [
     'auth.hero.feature_support' => 'SK support',
     'auth.back_home' => 'Back to home',
     'auth.welcome_back' => 'Welcome back. Enter your details.',
+    'auth.toggle_password_show' => 'Show password',
+    'auth.toggle_password_hide' => 'Hide password',
 
     'clients.created' => 'Client created successfully.',
     'clients.updated' => 'Client updated successfully.',

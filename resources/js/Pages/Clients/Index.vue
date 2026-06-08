@@ -8,9 +8,11 @@
 
     import PageHeader from '@/Components/PageHeader.vue';
     import EmptyState from '@/Components/EmptyState.vue';
+    import Can from '@/Components/Can.vue';
     import ClientTypeBadge from '@/Components/Clients/ClientTypeBadge.vue';
     import ClientFiltersBar from '@/Components/Clients/ClientFiltersBar.vue';
     import ClientFormDrawer from '@/Components/Clients/ClientFormDrawer.vue';
+    import Pagination from '@/Components/Pagination.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
     import { useClientFilters } from '@/Composables/useClientFilters';
@@ -26,7 +28,6 @@
 
     const { t } = useTranslate();
     const pageProps = usePageProps();
-    const can = computed(() => pageProps.can ?? {});
     const flash = computed(() => pageProps.flash);
 
     const { state: filterState } = useClientFilters(props.filters);
@@ -78,15 +79,16 @@
 
             <PageHeader :title="t('clients.title')" :subtitle="subtitle">
                 <template #actions>
-                    <button
-                        v-if="can.createClients"
-                        type="button"
-                        class="btn btn-primary"
-                        @click="openCreate"
-                    >
-                        <PlusIcon class="w-4 h-4" />
-                        {{ t('clients.add') }}
-                    </button>
+                    <Can permission="create clients">
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            @click="openCreate"
+                        >
+                            <PlusIcon class="w-4 h-4" />
+                            {{ t('clients.add') }}
+                        </button>
+                    </Can>
                 </template>
             </PageHeader>
 
@@ -138,13 +140,14 @@
                                 </td>
                                 <td>{{ row.primary_contact_email ?? t('common.empty_dash') }}</td>
                                 <td @click.stop>
-                                    <Link
-                                        v-if="can.editClients"
-                                        :href="`/clients/${row.id}`"
-                                        class="btn btn-ghost btn-xs"
-                                    >
-                                        <PencilSquareIcon class="w-4 h-4" />
-                                    </Link>
+                                    <Can permission="edit clients">
+                                        <Link
+                                            :href="`/clients/${row.id}`"
+                                            class="btn btn-ghost btn-xs"
+                                        >
+                                            <PencilSquareIcon class="w-4 h-4" />
+                                        </Link>
+                                    </Can>
                                 </td>
                             </tr>
                         </tbody>
@@ -185,43 +188,21 @@
                 :icon="UsersIcon"
             >
                 <template #cta>
-                    <button
-                        v-if="can.createClients"
-                        type="button"
-                        class="btn btn-primary"
-                        @click="openCreate"
-                    >
-                        <PlusIcon class="w-4 h-4" />
-                        {{ t('clients.add') }}
-                    </button>
+                    <Can permission="create clients">
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            @click="openCreate"
+                        >
+                            <PlusIcon class="w-4 h-4" />
+                            {{ t('clients.add') }}
+                        </button>
+                    </Can>
                 </template>
             </EmptyState>
 
             <!-- Pagination -->
-            <div v-if="clients.data.length > 0" class="flex justify-between items-center mt-4 flex-wrap gap-2">
-                <span class="text-sm text-base-content/60">
-                    {{ meta.from ?? 0 }}–{{ meta.to ?? 0 }} / {{ meta.total }}
-                </span>
-                <div class="join">
-                    <Link
-                        :href="links.prev ?? '#'"
-                        :class="['join-item btn btn-sm', !links.prev && 'btn-disabled pointer-events-none']"
-                        preserve-scroll
-                    >
-                        &laquo;
-                    </Link>
-                    <span class="join-item btn btn-sm btn-disabled pointer-events-none">
-                        {{ meta.current_page }} / {{ meta.last_page }}
-                    </span>
-                    <Link
-                        :href="links.next ?? '#'"
-                        :class="['join-item btn btn-sm', !links.next && 'btn-disabled pointer-events-none']"
-                        preserve-scroll
-                    >
-                        &raquo;
-                    </Link>
-                </div>
-            </div>
+            <Pagination v-if="clients.data.length > 0" :meta="meta" :links="links" />
 
             <ClientFormDrawer
                 v-if="drawerState.open"

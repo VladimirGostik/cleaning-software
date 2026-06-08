@@ -18,7 +18,7 @@
 
 <template>
     <div class="flex flex-col md:flex-row gap-3 mb-4">
-        <label class="input input-bordered flex items-center gap-2 flex-1">
+        <label class="input flex items-center gap-2 flex-1">
             <MagnifyingGlassIcon class="w-4 h-4 opacity-60" />
             <input
                 type="text"

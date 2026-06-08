@@ -57,13 +57,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="alert alert-info mt-6">
-                <span>
-                    Base scaffold ready. Domain modules (Clients, Objects, Quotes, Contracts, Schedule,
-                    Invoices) will be added next via <code>/feature</code>.
-                </span>
-            </div>
         </div>
     </template>
 </template>

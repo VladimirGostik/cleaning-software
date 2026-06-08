@@ -12,6 +12,7 @@
     import ObjectTypeBadge from '@/Components/Objects/ObjectTypeBadge.vue';
     import ObjectFiltersBar from '@/Components/Objects/ObjectFiltersBar.vue';
     import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
+    import Pagination from '@/Components/Pagination.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
     import { useObjectFilters } from '@/Composables/useObjectFilters';
@@ -195,30 +196,7 @@
         </EmptyState>
 
         <!-- Pagination -->
-        <div v-if="objects.data.length > 0" class="flex justify-between items-center mt-4 flex-wrap gap-2">
-            <span class="text-sm text-base-content/60">
-                {{ meta.from ?? 0 }}–{{ meta.to ?? 0 }} / {{ meta.total }}
-            </span>
-            <div class="join">
-                <Link
-                    :href="links.prev ?? '#'"
-                    :class="['join-item btn btn-sm', !links.prev && 'btn-disabled pointer-events-none']"
-                    preserve-scroll
-                >
-                    &laquo;
-                </Link>
-                <span class="join-item btn btn-sm btn-disabled pointer-events-none">
-                    {{ meta.current_page }} / {{ meta.last_page }}
-                </span>
-                <Link
-                    :href="links.next ?? '#'"
-                    :class="['join-item btn btn-sm', !links.next && 'btn-disabled pointer-events-none']"
-                    preserve-scroll
-                >
-                    &raquo;
-                </Link>
-            </div>
-        </div>
+        <Pagination v-if="objects.data.length > 0" :meta="meta" :links="links" />
 
         <ObjectFormDrawer
             v-if="drawerState.open"

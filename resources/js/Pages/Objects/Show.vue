@@ -15,10 +15,12 @@
 
     import PageHeader from '@/Components/PageHeader.vue';
     import Can from '@/Components/Can.vue';
+    import ConfirmDialog from '@/Components/ConfirmDialog.vue';
     import ObjectTypeBadge from '@/Components/Objects/ObjectTypeBadge.vue';
     import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
+    import { useLocalizedDate } from '@/Composables/useLocalizedDate';
 
     interface Props {
         object: App.Data.Objects.ObjectDetailData;
@@ -29,22 +31,10 @@
 
     const { t } = useTranslate();
     const pageProps = usePageProps();
+    const { formatDate } = useLocalizedDate();
     const flash = computed(() => pageProps.flash);
 
     const ui = reactive({ editDrawerOpen: false, deleteConfirmOpen: false });
-
-    const localeTag = computed(() => {
-        const map: Record<string, string> = { sk: 'sk-SK', en: 'en-GB', uk: 'uk-UA' };
-        return map[pageProps.locale] ?? 'sk-SK';
-    });
-
-    function formatDate(dateStr: string): string {
-        return new Date(dateStr).toLocaleDateString(localeTag.value, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-    }
 
     const subtitle = computed(() =>
         t('objects.detail.created').replace('{date}', formatDate(props.object.created_at)),
@@ -248,22 +238,15 @@
         />
 
         <!-- Delete confirm modal -->
-        <dialog class="modal" :open="ui.deleteConfirmOpen">
-            <div class="modal-box">
-                <h3 class="font-bold text-lg">{{ t('objects.delete') }}</h3>
-                <p class="py-4">
-                    {{ t('objects.delete_confirm').replace('{name}', object.name) }}
-                </p>
-                <div class="modal-action">
-                    <button type="button" class="btn btn-ghost" @click="ui.deleteConfirmOpen = false">
-                        {{ t('objects.form.cancel') }}
-                    </button>
-                    <button type="button" class="btn btn-error" @click="confirmDelete">
-                        {{ t('objects.delete') }}
-                    </button>
-                </div>
-            </div>
-            <div class="modal-backdrop" @click="ui.deleteConfirmOpen = false" />
-        </dialog>
+        <ConfirmDialog
+            :open="ui.deleteConfirmOpen"
+            :title="t('objects.delete')"
+            :body="t('objects.delete_confirm').replace('{name}', object.name)"
+            :confirm-label="t('objects.delete')"
+            :cancel-label="t('objects.form.cancel')"
+            confirm-variant="error"
+            @confirm="confirmDelete"
+            @cancel="ui.deleteConfirmOpen = false"
+        />
     </div>
 </template>

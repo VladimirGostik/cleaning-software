@@ -2,6 +2,10 @@
     import { useForm } from '@inertiajs/vue3';
     import { XMarkIcon } from '@heroicons/vue/24/outline';
     import { useTranslate } from '@/Composables/useTranslate';
+    import FormProvider from '@/Components/Forms/FormProvider.vue';
+    import TextInput from '@/Components/Forms/TextInput.vue';
+    import ToggleInput from '@/Components/Forms/ToggleInput.vue';
+    import FormActions from '@/Components/Forms/FormActions.vue';
     import ColorSwatchPicker from '@/Components/Forms/ColorSwatchPicker.vue';
     import type { TenantColorOption } from '@/types';
 
@@ -25,7 +29,7 @@
 
     const { t } = useTranslate();
 
-    const form = useForm<AddTenantFormData>({
+    const form = useForm<AddTenantFormData>('post', '/tenants', {
         name: '',
         ico: '',
         color: null,
@@ -39,7 +43,7 @@
     }
 
     function submit() {
-        form.post('/tenants', {
+        form.submit({
             onSuccess: () => {
                 close();
             },
@@ -84,91 +88,43 @@
                     </header>
 
                     <!-- Body -->
-                    <form
-                        id="add-tenant-form"
-                        class="p-6 space-y-4 overflow-y-auto"
-                        novalidate
-                        @submit.prevent="submit"
-                    >
-                        <!-- Name -->
-                        <fieldset class="fieldset w-full">
-                            <legend class="fieldset-legend">
-                                {{ t('tenant.add.name') }} <span class="text-error">*</span>
-                            </legend>
-                            <input
-                                v-model="form.name"
-                                type="text"
-                                class="input w-full"
-                                :class="{ 'input-error': form.errors.name }"
-                                autofocus
-                            />
-                            <span v-if="form.errors.name" class="fieldset-label text-error">
-                                {{ form.errors.name }}
-                            </span>
-                        </fieldset>
-
-                        <!-- IČO -->
-                        <fieldset class="fieldset w-full">
-                            <legend class="fieldset-legend">
-                                {{ t('tenant.add.ico') }} <span class="text-error">*</span>
-                            </legend>
-                            <input
-                                v-model="form.ico"
-                                type="text"
-                                inputmode="numeric"
-                                maxlength="8"
-                                class="input w-full"
-                                :class="{ 'input-error': form.errors.ico }"
-                            />
-                            <span v-if="form.errors.ico" class="fieldset-label text-error">
-                                {{ form.errors.ico }}
-                            </span>
-                        </fieldset>
-
-                        <!-- Color swatch picker -->
-                        <ColorSwatchPicker
-                            v-model="form.color"
-                            :colors="colors"
-                            :label="t('tenant.add.color')"
-                            :error="form.errors.color"
-                        />
-
-                        <!-- Copy settings toggle -->
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input v-model="form.copy_settings" type="checkbox" class="toggle toggle-primary" />
-                            <span class="text-sm">{{ t('tenant.add.copy_settings') }}</span>
-                        </label>
-
-                        <!-- Leader email -->
-                        <fieldset class="fieldset w-full">
-                            <legend class="fieldset-legend">{{ t('tenant.add.leader_email') }}</legend>
-                            <input
-                                v-model="form.leader_email"
-                                type="email"
-                                class="input w-full"
-                                :class="{ 'input-error': form.errors.leader_email }"
-                            />
-                            <span v-if="form.errors.leader_email" class="fieldset-label text-error">
-                                {{ form.errors.leader_email }}
-                            </span>
-                        </fieldset>
-                    </form>
-
-                    <!-- Footer -->
-                    <footer class="flex justify-end gap-2 px-6 py-4 border-t border-base-300">
-                        <button type="button" class="btn btn-ghost" @click="close">
-                            {{ t('cancel') }}
-                        </button>
-                        <button
-                            type="submit"
-                            form="add-tenant-form"
-                            class="btn btn-primary"
-                            :disabled="form.processing"
+                    <FormProvider :form="form">
+                        <form
+                            id="add-tenant-form"
+                            class="p-6 space-y-4 overflow-y-auto"
+                            novalidate
+                            @submit.prevent="submit"
                         >
-                            <span v-if="form.processing" class="loading loading-spinner loading-xs" />
-                            {{ t('tenant.add.submit') }}
-                        </button>
-                    </footer>
+                            <TextInput field="name" :label="t('tenant.add.name')" required />
+
+                            <TextInput field="ico" :label="t('tenant.add.ico')" required />
+
+                            <ColorSwatchPicker
+                                v-model="form.color"
+                                :colors="colors"
+                                :label="t('tenant.add.color')"
+                                :error="form.errors.color"
+                            />
+
+                            <ToggleInput field="copy_settings" :label="t('tenant.add.copy_settings')" />
+
+                            <TextInput
+                                field="leader_email"
+                                type="email"
+                                :label="t('tenant.add.leader_email')"
+                            />
+
+                            <!-- Footer inside form so submit button works -->
+                            <div class="flex justify-end gap-2 pt-2 border-t border-base-300">
+                                <FormActions
+                                    :processing="form.processing"
+                                    :cancel-label="t('cancel')"
+                                    :submit-label="t('tenant.add.submit')"
+                                    @cancel="close"
+                                />
+                            </div>
+                        </form>
+                    </FormProvider>
                 </div>
             </div>
         </Transition>

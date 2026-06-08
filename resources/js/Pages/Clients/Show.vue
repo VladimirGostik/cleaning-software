@@ -23,12 +23,14 @@
     import PageHeader from '@/Components/PageHeader.vue';
     import EmptyState from '@/Components/EmptyState.vue';
     import Can from '@/Components/Can.vue';
+    import ConfirmDialog from '@/Components/ConfirmDialog.vue';
     import ClientTypeBadge from '@/Components/Clients/ClientTypeBadge.vue';
     import ClientFormDrawer from '@/Components/Clients/ClientFormDrawer.vue';
     import ObjectTypeBadge from '@/Components/Objects/ObjectTypeBadge.vue';
     import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
+    import { useLocalizedDate } from '@/Composables/useLocalizedDate';
 
     interface Props {
         client: App.Data.Clients.ClientDetailData;
@@ -39,7 +41,7 @@
 
     const { t } = useTranslate();
     const pageProps = usePageProps();
-    const can = computed(() => pageProps.can ?? {});
+    const { formatDate } = useLocalizedDate();
     const flash = computed(() => pageProps.flash);
 
     const primaryContact = computed(() => props.client.contacts?.find((c) => c.is_primary) ?? null);
@@ -49,19 +51,6 @@
         deleteConfirmOpen: false,
         objectDrawerOpen: false,
     });
-
-    const localeTag = computed(() => {
-        const map: Record<string, string> = { sk: 'sk-SK', en: 'en-GB', uk: 'uk-UA' };
-        return map[pageProps.locale] ?? 'sk-SK';
-    });
-
-    function formatDate(dateStr: string): string {
-        return new Date(dateStr).toLocaleDateString(localeTag.value, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-    }
 
     const subtitle = computed(() =>
         t('clients.detail.customer_since').replace('{date}', formatDate(props.client.created_at)),
@@ -108,15 +97,16 @@
                     </span>
                 </template>
                 <template #actions>
-                    <button
-                        v-if="can.editClients"
-                        type="button"
-                        class="btn btn-primary"
-                        @click="ui.editDrawerOpen = true"
-                    >
-                        <PencilSquareIcon class="w-4 h-4" />
-                        {{ t('clients.edit') }}
-                    </button>
+                    <Can permission="edit clients">
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            @click="ui.editDrawerOpen = true"
+                        >
+                            <PencilSquareIcon class="w-4 h-4" />
+                            {{ t('clients.edit') }}
+                        </button>
+                    </Can>
 
                     <button type="button" class="btn btn-ghost" disabled>
                         <DocumentTextIcon class="w-4 h-4" />
@@ -140,26 +130,28 @@
                         </template>
                     </Can>
 
-                    <div v-if="can.deleteClients" class="dropdown dropdown-end">
-                        <div tabindex="0" role="button" class="btn btn-ghost btn-square">
-                            <EllipsisVerticalIcon class="w-5 h-5" />
+                    <Can permission="delete clients">
+                        <div class="dropdown dropdown-end">
+                            <div tabindex="0" role="button" class="btn btn-ghost btn-square">
+                                <EllipsisVerticalIcon class="w-5 h-5" />
+                            </div>
+                            <ul
+                                tabindex="0"
+                                class="dropdown-content menu bg-base-100 rounded-box z-10 w-40 p-2 shadow"
+                            >
+                                <li>
+                                    <button
+                                        type="button"
+                                        class="text-error"
+                                        @click="ui.deleteConfirmOpen = true"
+                                    >
+                                        <TrashIcon class="w-4 h-4" />
+                                        {{ t('clients.delete') }}
+                                    </button>
+                                </li>
+                            </ul>
                         </div>
-                        <ul
-                            tabindex="0"
-                            class="dropdown-content menu bg-base-100 rounded-box z-10 w-40 p-2 shadow"
-                        >
-                            <li>
-                                <button
-                                    type="button"
-                                    class="text-error"
-                                    @click="ui.deleteConfirmOpen = true"
-                                >
-                                    <TrashIcon class="w-4 h-4" />
-                                    {{ t('clients.delete') }}
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
+                    </Can>
                 </template>
             </PageHeader>
 
@@ -371,22 +363,15 @@
             />
 
             <!-- Delete confirm modal -->
-            <dialog class="modal" :open="ui.deleteConfirmOpen">
-                <div class="modal-box">
-                    <h3 class="font-bold text-lg">{{ t('clients.delete') }}</h3>
-                    <p class="py-4">
-                        {{ t('clients.delete_confirm').replace('{name}', client.name) }}
-                    </p>
-                    <div class="modal-action">
-                        <button type="button" class="btn btn-ghost" @click="ui.deleteConfirmOpen = false">
-                            {{ t('clients.form.cancel') }}
-                        </button>
-                        <button type="button" class="btn btn-error" @click="confirmDelete">
-                            {{ t('clients.delete') }}
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-backdrop" @click="ui.deleteConfirmOpen = false" />
-            </dialog>
+            <ConfirmDialog
+                :open="ui.deleteConfirmOpen"
+                :title="t('clients.delete')"
+                :body="t('clients.delete_confirm').replace('{name}', client.name)"
+                :confirm-label="t('clients.delete')"
+                :cancel-label="t('clients.form.cancel')"
+                confirm-variant="error"
+                @confirm="confirmDelete"
+                @cancel="ui.deleteConfirmOpen = false"
+            />
         </div>
 </template>
