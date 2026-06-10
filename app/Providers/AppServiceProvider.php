@@ -63,5 +63,9 @@ final class AppServiceProvider extends ServiceProvider
         RateLimiter::for('ico-lookup', function (): Limit {
             return Limit::perMinute(30)->by('ip:' . get_client_ip());
         });
+
+        RateLimiter::for('invitation-accept', function (Request $r): Limit {
+            return Limit::perMinute(5)->by('ip:' . get_client_ip());
+        });
     }
 }

@@ -110,6 +110,12 @@ note: string | null,
 contacts: App.Data.Clients.ClientContactData[],
 };
 }
+namespace Invitations {
+export type AcceptInvitationData = {
+password: string,
+name: string | null,
+};
+}
 namespace Objects {
 export type ObjectDetailData = {
 id: string,

@@ -55,4 +55,19 @@ final class TenantInvitation extends Model
     {
         return $this->belongsTo(User::class, 'invited_by_user_id');
     }
+
+    public function isAcceptable(): bool
+    {
+        return $this->status === InvitationStatusEnum::Pending
+            && $this->expires_at !== null
+            && $this->expires_at->isFuture();
+    }
+
+    public function markAccepted(): void
+    {
+        $this->forceFill([
+            'status' => InvitationStatusEnum::Accepted,
+            'accepted_at' => now(),
+        ])->save();
+    }
 }

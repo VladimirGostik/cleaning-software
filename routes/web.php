@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\TenantController;
@@ -72,5 +73,17 @@ Route::middleware('auth')->group(function (): void {
     // Tenants — self-service; auth middleware is the only gate (D4a).
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
 });
+
+// Invitations — token IS the gate; accessible to guests AND authenticated users (D4a exception).
+// GET serves the accept page (shows form or handles same-email auto-accept).
+// POST submits the accept form.
+Route::get('/invitations/{token}', [InvitationController::class, 'show'])
+    ->name('invitations.show')
+    ->whereAlphaNumeric('token');
+
+Route::post('/invitations/{token}', [InvitationController::class, 'accept'])
+    ->name('invitations.accept')
+    ->whereAlphaNumeric('token')
+    ->middleware('throttle:invitation-accept');
 
 Route::get('language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');
