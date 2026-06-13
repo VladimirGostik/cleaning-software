@@ -31,7 +31,7 @@
     const { t } = useTranslate();
     const page = usePage(); // kept for page.component (transition key) and page.url only
     const capabilitiesStore = useCapabilitiesStore();
-    const { can, canCreateTenant } = useAuthorization();
+    const { can, hasFeature, canCreateTenant } = useAuthorization();
 
     const user = computed(() => props.auth?.user);
     const tenant = computed(() => props.tenant?.active);
@@ -55,6 +55,7 @@
         href: string;
         icon: unknown;
         can?: App.Enums.PermissionEnum;
+        feature?: App.Enums.FeatureEnum;
         implemented: boolean;
     }
 
@@ -114,7 +115,8 @@
             href: '/invoices',
             icon: ReceiptPercentIcon,
             can: 'view invoices',
-            implemented: false,
+            feature: 'invoices',
+            implemented: true,
         },
         {
             key: 'templates',
@@ -144,7 +146,7 @@
     ];
 
     const visibleNav = computed(() =>
-        navItems.filter((item) => !item.can || can(item.can)),
+        navItems.filter((item) => (!item.can || can(item.can)) && (!item.feature || hasFeature(item.feature))),
     );
 
     function isActive(href: string): boolean {

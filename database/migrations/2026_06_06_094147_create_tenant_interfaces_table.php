@@ -14,6 +14,7 @@ return new class extends Migration
             $table->id();
             $table->foreignUuid('tenant_id')->unique()->constrained('tenants')->cascadeOnDelete();
             $table->string('color', 20)->nullable();
+            $table->string('invoice_template')->default('classic');
             $table->timestamps();
         });
     }

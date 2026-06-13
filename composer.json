@@ -7,6 +7,9 @@
     "license": "MIT",
     "require": {
         "php": "^8.5",
+        "bacon/bacon-qr-code": "^3.0",
+        "chrome-php/chrome": "^1.0",
+        "engazan/pay-by-square": "^1.1",
         "inertiajs/inertia-laravel": "^3.0",
         "knuckleswtf/scribe": "^5.9",
         "laravel/framework": "^13.0",
@@ -14,6 +17,7 @@
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-data": "^4.22",
         "spatie/laravel-medialibrary": "^11.22",
+        "spatie/laravel-pdf": "^2.12",
         "spatie/laravel-permission": "^7.4",
         "spatie/laravel-query-builder": "^7.3",
         "spatie/laravel-typescript-transformer": "^3.0"

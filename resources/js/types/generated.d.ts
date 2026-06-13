@@ -81,6 +81,10 @@ primary_contact_email: string | null,
 primary_contact_phone: string | null,
 created_at: string,
 };
+export type ClientOptionData = {
+id: string,
+name: string,
+};
 export type ClientStoreData = {
 type: App.Enums.ClientTypeEnum,
 name: string,
@@ -114,6 +118,123 @@ namespace Invitations {
 export type AcceptInvitationData = {
 password: string,
 name: string | null,
+};
+}
+namespace Invoices {
+export type InvoiceDetailData = {
+id: string,
+client_id: string | null,
+cleaning_object_id: string | null,
+credited_invoice_id: string | null,
+type: App.Enums.InvoiceTypeEnum,
+status: App.Enums.InvoiceStatusEnum,
+template: App.Enums.InvoiceTemplateEnum,
+number: string | null,
+variable_symbol: string | null,
+period_from: string | null,
+period_to: string | null,
+issue_date: string,
+delivery_date: string,
+due_date: string,
+issued_at: string | null,
+sent_at: string | null,
+paid_at: string | null,
+cancelled_at: string | null,
+is_vat_payer: boolean,
+vat_rate: string | null,
+subtotal: string,
+vat_amount: string,
+total: string,
+customer_name: string,
+customer_ico: string | null,
+customer_dic: string | null,
+customer_vat_number: string | null,
+customer_street: string | null,
+customer_city: string | null,
+customer_postal_code: string | null,
+customer_country: string | null,
+customer_email: string | null,
+object_name: string | null,
+object_street: string | null,
+object_city: string | null,
+object_postal_code: string | null,
+note: string | null,
+supplier: App.Data.Invoices.InvoiceSupplierData,
+items: App.Data.Invoices.InvoiceItemData[],
+qr_available: boolean,
+qr_data_uri: string | null,
+};
+export type InvoiceIndexFilterData = {
+search: string | null,
+status: App.Enums.InvoiceStatusEnum | null,
+type: App.Enums.InvoiceTypeEnum | null,
+client_id: string | null,
+per_page: number,
+};
+export type InvoiceIssueData = {
+number: string | null,
+};
+export type InvoiceItemData = {
+id: string | null,
+description: string,
+quantity: number,
+unit: string | null,
+unit_price: number,
+total: number | null,
+};
+export type InvoiceListItemData = {
+id: string,
+number: string | null,
+status: App.Enums.InvoiceStatusEnum,
+type: App.Enums.InvoiceTypeEnum,
+customer_name: string,
+total: string,
+issue_date: string,
+due_date: string,
+client_id: string | null,
+};
+export type InvoiceSettingsData = {
+invoice_template: App.Enums.InvoiceTemplateEnum,
+invoice_number_format: string,
+iban: string | null,
+vat_rate: number | null,
+registration_info: string | null,
+};
+export type InvoiceSupplierData = {
+name: string,
+ico: string | null,
+dic: string | null,
+vat_number: string | null,
+iban: string | null,
+address_line: string | null,
+city: string | null,
+postal_code: string | null,
+country: string | null,
+contact_email: string | null,
+contact_phone: string | null,
+registration_info: string | null,
+};
+export type InvoiceUpsertData = {
+client_id: string | null,
+cleaning_object_id: string | null,
+type: App.Enums.InvoiceTypeEnum,
+template: App.Enums.InvoiceTemplateEnum | null,
+issue_date: string,
+delivery_date: string,
+due_date: string,
+period_from: string | null,
+period_to: string | null,
+customer_name: string | null,
+customer_ico: string | null,
+customer_dic: string | null,
+customer_vat_number: string | null,
+customer_street: string | null,
+customer_city: string | null,
+customer_postal_code: string | null,
+customer_country: string | null,
+customer_email: string | null,
+note: string | null,
+items: App.Data.Invoices.InvoiceItemData[],
 };
 }
 namespace Objects {
@@ -232,6 +353,9 @@ namespace Enums {
 export type ClientTypeEnum = "corporate" | "private";
 export type FeatureEnum = "clients" | "objects" | "quotes" | "contracts" | "schedule" | "invoices" | "employees" | "reports" | "mobile_access" | "multi_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
+export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";
+export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
+export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
 export type SubscriptionPlanEnum = "free" | "starter" | "pro" | "enterprise";

@@ -19,6 +19,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @property TenantInterface|null $interface
+ */
 #[Fillable([
     'owner_id',
     'name',
@@ -29,6 +32,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'vat_rate',
     'iban',
     'invoice_number_format',
+    'registration_info',
     'address_line',
     'city',
     'postal_code',

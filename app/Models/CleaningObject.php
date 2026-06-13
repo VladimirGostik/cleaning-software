@@ -19,6 +19,13 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @property string $name
+ * @property string|null $street
+ * @property string|null $city
+ * @property string|null $postal_code
+ * @property string|null $country
+ */
 #[Table('objects')]
 #[Fillable([
     'client_id', 'type', 'name', 'street', 'city', 'postal_code', 'country',

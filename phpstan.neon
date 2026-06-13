@@ -10,6 +10,7 @@ parameters:
     excludePaths:
         - database/migrations/2026_05_03_194335_create_permission_tables.php
         - database/migrations/2026_05_03_194336_create_media_table.php
+    treatPhpDocTypesAsCertain: false
     ignoreErrors:
         -
             identifier: missingType.generics

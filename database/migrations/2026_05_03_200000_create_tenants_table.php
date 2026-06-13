@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('vat_rate', 5, 2)->default(23);
             $table->string('iban')->nullable();
             $table->string('invoice_number_format')->default('FA-{YYYY}-{XXXX}');
+            $table->string('registration_info')->nullable();
 
             $table->string('address_line')->nullable();
             $table->string('city')->nullable();

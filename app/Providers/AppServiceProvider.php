@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\ChecksFeatures;
+use App\Contracts\GeneratesPaymentQr;
+use App\Contracts\RendersInvoicePdf;
 use App\Models\CleaningObject;
 use App\Policies\ObjectPolicy;
 use App\Services\ConfigFeatureChecker;
+use App\Services\Pdf\InvoicePdfService;
+use App\Services\Pdf\PayBySquareService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -20,6 +24,8 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ChecksFeatures::class, ConfigFeatureChecker::class);
+        $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);
+        $this->app->bind(RendersInvoicePdf::class, InvoicePdfService::class);
     }
 
     public function boot(): void

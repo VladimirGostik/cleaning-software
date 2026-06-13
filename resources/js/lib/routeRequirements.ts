@@ -30,7 +30,8 @@ export const routeRequirements: Record<string, RouteRequirement> = {
     '/contracts': { permission: 'view contracts' },
     '/schedule': { permission: 'view schedule' },
     '/employees': { permission: 'view employees' },
-    '/invoices': { permission: 'view invoices' },
+    '/invoices': { permission: 'view invoices', feature: 'invoices' },
+    '/settings/invoicing': { permission: 'manage billing settings', feature: 'invoices' },
     '/templates': { permission: 'view templates' },
 };
 

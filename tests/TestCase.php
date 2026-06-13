@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Enums\SubscriptionPlanEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
@@ -12,6 +13,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
@@ -74,5 +76,13 @@ abstract class TestCase extends BaseTestCase
         app()->instance('current_tenant_id', $tenant->id);
 
         return $user;
+    }
+
+    /**
+     * Upgrade a user's subscription plan using a raw DB update (bypasses mass-assignment protection).
+     */
+    protected function setUserPlan(User $user, SubscriptionPlanEnum $plan): void
+    {
+        DB::table('users')->where('id', $user->id)->update(['subscription_plan' => $plan->value]);
     }
 }
