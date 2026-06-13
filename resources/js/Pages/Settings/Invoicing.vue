@@ -10,7 +10,7 @@
     import FormActions from '@/Components/Forms/FormActions.vue';
     import TextInput from '@/Components/Forms/TextInput.vue';
     import TextareaInput from '@/Components/Forms/TextareaInput.vue';
-    import FormField from '@/Components/Forms/FormField.vue';
+    import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
     import NumberInput from '@/Components/Forms/NumberInput.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
@@ -27,7 +27,6 @@
 
     const { t } = useTranslate();
     const pageProps = usePageProps();
-    const flash = computed(() => pageProps.flash);
 
     interface InvoiceSettingsFormData {
         invoice_template: App.Enums.InvoiceTemplateEnum;
@@ -67,6 +66,11 @@
         })),
     );
 
+    const presetOptions = computed<SelectOption[]>(() => [
+        ...presets.map((p) => ({ value: p.value, label: p.label })),
+        { value: 'custom', label: t('invoice_settings.custom_format') },
+    ]);
+
     const selectedPreset = computed({
         get() {
             if (form.custom_format) return 'custom';
@@ -102,8 +106,8 @@
 
 <template>
     <div class="max-w-3xl mx-auto">
-        <div v-if="flash.success" class="alert alert-success mb-4">
-            <span>{{ flash.success }}</span>
+        <div v-if="pageProps.flash.success" class="alert alert-success mb-4">
+            <span>{{ pageProps.flash.success }}</span>
         </div>
 
         <PageHeader
@@ -168,20 +172,12 @@
                                 {{ t('invoice_settings.number_format_hint') }}
                             </p>
 
-                            <FormField :label="t('invoice_settings.number_format')">
-                                <select
-                                    :value="selectedPreset"
-                                    class="select w-full"
-                                    :class="{ 'select-error': form.errors.invoice_number_format }"
-                                    :aria-invalid="form.errors.invoice_number_format ? 'true' : undefined"
-                                    @change="selectedPreset = ($event.target as HTMLSelectElement).value"
-                                >
-                                    <option v-for="p in presets" :key="p.value" :value="p.value">
-                                        {{ p.label }}
-                                    </option>
-                                    <option value="custom">{{ t('invoice_settings.custom_format') }}</option>
-                                </select>
-                            </FormField>
+                            <SelectInput
+                                v-model="selectedPreset"
+                                :options="presetOptions"
+                                :label="t('invoice_settings.number_format')"
+                                :error="form.errors.invoice_number_format"
+                            />
 
                             <div v-if="form.custom_format" class="mt-3">
                                 <TextInput

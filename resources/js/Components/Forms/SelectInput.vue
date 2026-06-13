@@ -63,7 +63,7 @@ function onChange(event: Event): void {
             :disabled="disabled"
             :aria-required="required ? 'true' : undefined"
             :aria-invalid="resolvedError ? 'true' : undefined"
-            class="select w-full"
+            class="select select-bordered w-full"
             :class="{ 'select-error': resolvedError }"
             @change="onChange"
         >

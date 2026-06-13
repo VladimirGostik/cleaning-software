@@ -1,3 +1,86 @@
+# CleanMaster
+
+Multi-tenant SaaS pre upratovacie firmy (SK/CZ trh). Laravel 13 + Inertia 3 + Vue 3 + PostgreSQL 18, beží cez Laravel Sail (Docker).
+
+## URL
+
+| Služba | URL |
+|---|---|
+| Aplikácia | http://localhost |
+| Vite dev (HMR) | http://localhost:5173 |
+| Mailpit (e-maily) | http://localhost:8025 |
+| MinIO (úložisko) | http://localhost:8900 (sail / password) |
+
+**Demo prihlásenie:** `admin@example.com` / `password` (Pro plán, nasadené demo dáta).
+
+## Docker (Laravel Sail)
+
+Voliteľný alias (pridaj do `~/.zshrc`), aby si nemusel písať `./vendor/bin/sail`:
+
+```bash
+alias sail='./vendor/bin/sail'
+```
+
+```bash
+# Naštartovať celý stack (laravel.test, pgsql, mailpit, minio)
+./vendor/bin/sail up -d
+
+# Zastaviť stack
+./vendor/bin/sail down
+
+# Stav kontajnerov
+./vendor/bin/sail ps
+
+# Pripojiť sa do shellu kontajnera aplikácie
+./vendor/bin/sail shell          # alebo: sail root-shell (ako root)
+
+# Sledovať logy
+./vendor/bin/sail logs -f
+```
+
+> Pozn.: host port Postgresu je presmerovaný na **5433** (nie 5432) — `FORWARD_DB_PORT=5433` v `.env`.
+
+## Build aplikácie
+
+Všetky príkazy bežia **vnútri kontajnera** cez `sail`:
+
+```bash
+# Závislosti
+./vendor/bin/sail composer install
+./vendor/bin/sail pnpm install
+
+# Frontend build (produkčný — potrebný, ak nebeží `pnpm dev`)
+./vendor/bin/sail pnpm build
+
+# Frontend dev server s HMR (pre vývoj)
+./vendor/bin/sail pnpm dev
+
+# Databáza — čistá schéma + seed demo dát
+./vendor/bin/sail artisan migrate:fresh --seed
+
+# TypeScript typy z app/Data + app/Enums
+./vendor/bin/sail artisan typescript:transform
+
+# Testy
+./vendor/bin/sail artisan test --compact
+
+# Lint / formátovanie
+./vendor/bin/sail pnpm exec vue-tsc --noEmit
+./vendor/bin/sail vendor/bin/pint
+```
+
+### Rebuild Docker image (po zmene Dockerfile)
+
+```bash
+# Build context = ./docker/8.5 (obsahuje arm64 Chromium pre PDF generovanie)
+./vendor/bin/sail build --no-cache
+./vendor/bin/sail up -d
+```
+
+> Ak v prehliadači nevidíš FE zmeny → spusti `./vendor/bin/sail pnpm build` alebo `./vendor/bin/sail pnpm dev`.
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

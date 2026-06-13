@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { computed, watch } from 'vue';
     import { router } from '@inertiajs/vue3';
-    import FormField from '@/Components/Forms/FormField.vue';
+    import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
     import TextInput from '@/Components/Forms/TextInput.vue';
     import { useTranslate } from '@/Composables/useTranslate';
 
@@ -70,6 +70,14 @@
     const currentMode = computed(() => props.modelValue.mode);
     const currentClientId = computed(() => props.modelValue.client_id);
 
+    const clientOptions = computed<SelectOption[]>(() =>
+        props.clients.map((c) => ({ value: c.id, label: c.name })),
+    );
+
+    const objectOptions = computed<SelectOption[]>(() =>
+        (props.objects ?? []).map((o) => ({ value: o.id, label: o.name })),
+    );
+
     function setMode(mode: 'client' | 'object' | 'standalone') {
         if (mode === 'standalone') {
             emit('update:modelValue', {
@@ -96,21 +104,22 @@
         }
     }
 
-    function setClientId(id: string) {
+    function setClientId(id: string | number) {
+        const idStr = String(id);
         emit('update:modelValue', {
             ...props.modelValue,
-            client_id: id || null,
+            client_id: idStr || null,
             cleaning_object_id: null,
         });
-        if (id && currentMode.value === 'object') {
-            router.reload({ only: ['objects'], data: { client_id: id } });
+        if (idStr && currentMode.value === 'object') {
+            router.reload({ only: ['objects'], data: { client_id: idStr } });
         }
     }
 
-    function setObjectId(id: string) {
+    function setObjectId(id: string | number) {
         emit('update:modelValue', {
             ...props.modelValue,
-            cleaning_object_id: id || null,
+            cleaning_object_id: String(id) || null,
         });
     }
 
@@ -152,39 +161,27 @@
 
         <!-- Client mode -->
         <template v-if="currentMode === 'client' || currentMode === 'object'">
-            <FormField :label="t('invoices.subject.client')" :error="errors['client_id']" required>
-                <select
-                    :value="modelValue.client_id ?? ''"
-                    class="select w-full"
-                    :class="{ 'select-error': errors['client_id'] }"
-                    :aria-required="'true'"
-                    :aria-invalid="errors['client_id'] ? 'true' : undefined"
-                    @change="setClientId(($event.target as HTMLSelectElement).value)"
-                >
-                    <option value="" disabled>{{ t('invoices.subject.client_placeholder') }}</option>
-                    <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
-                </select>
-            </FormField>
+            <SelectInput
+                :model-value="modelValue.client_id ?? ''"
+                :options="clientOptions"
+                :label="t('invoices.subject.client')"
+                :error="errors['client_id']"
+                :placeholder="t('invoices.subject.client_placeholder')"
+                required
+                @update:model-value="setClientId($event)"
+            />
 
-            <FormField
+            <SelectInput
                 v-if="currentMode === 'object'"
+                :model-value="modelValue.cleaning_object_id ?? ''"
+                :options="objectOptions"
                 :label="t('invoices.subject.object')"
                 :error="errors['cleaning_object_id']"
+                :placeholder="t('invoices.subject.object_placeholder')"
+                :disabled="!modelValue.client_id"
                 required
-            >
-                <select
-                    :value="modelValue.cleaning_object_id ?? ''"
-                    :disabled="!modelValue.client_id"
-                    class="select w-full"
-                    :class="{ 'select-error': errors['cleaning_object_id'] }"
-                    :aria-required="'true'"
-                    :aria-invalid="errors['cleaning_object_id'] ? 'true' : undefined"
-                    @change="setObjectId(($event.target as HTMLSelectElement).value)"
-                >
-                    <option value="" disabled>{{ t('invoices.subject.object_placeholder') }}</option>
-                    <option v-for="o in (objects ?? [])" :key="o.id" :value="o.id">{{ o.name }}</option>
-                </select>
-            </FormField>
+                @update:model-value="setObjectId($event)"
+            />
         </template>
 
         <!-- Standalone mode — manual customer fields -->

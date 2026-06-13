@@ -37,7 +37,7 @@
         <label :aria-label="t('objects.col.type')" class="sr-only">{{ t('objects.col.type') }}</label>
         <select
             :value="type ?? ''"
-            class="select select-sm"
+            class="select select-bordered select-sm"
             :aria-label="t('objects.col.type')"
             @change="
                 emit(
@@ -54,7 +54,7 @@
 
         <select
             :value="client_id ?? ''"
-            class="select select-sm"
+            class="select select-bordered select-sm"
             :aria-label="t('objects.col.client')"
             @change="emit('update:client_id', ($event.target as HTMLSelectElement).value || undefined)"
         >
@@ -64,7 +64,7 @@
 
         <select
             :value="is_active === undefined ? '' : String(is_active)"
-            class="select select-sm"
+            class="select select-bordered select-sm"
             :aria-label="t('objects.col.active')"
             @change="
                 emit(

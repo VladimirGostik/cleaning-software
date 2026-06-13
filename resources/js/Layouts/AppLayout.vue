@@ -176,32 +176,32 @@
             <div class="relative">
                 <button
                     type="button"
-                    class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-200 transition select-none"
+                    class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-base-200 border border-base-300 text-sm font-medium text-base-content cursor-pointer hover:bg-base-300 transition select-none"
                     :aria-expanded="isTenantMenuOpen"
                     aria-haspopup="true"
                     @click="isTenantMenuOpen = !isTenantMenuOpen"
                 >
-                    <span class="h-2 w-2 rounded-full bg-amber-600 flex-shrink-0" />
+                    <span class="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
                     <span class="max-w-[200px] truncate">{{ tenant?.name ?? t('app_name') }}</span>
-                    <ChevronUpDownIcon class="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <ChevronUpDownIcon class="h-3.5 w-3.5 text-base-content/40 flex-shrink-0" />
                 </button>
 
                 <!-- Dropdown -->
                 <Transition name="dropdown">
                     <div
                         v-if="isTenantMenuOpen"
-                        class="absolute left-0 top-full mt-1 z-30 min-w-[220px] rounded-lg border border-slate-200 bg-white shadow-lg py-1"
+                        class="absolute left-0 top-full mt-1 z-30 min-w-[220px] rounded-lg border border-base-300 bg-base-100 shadow-lg py-1"
                     >
                         <button
                             type="button"
-                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-base-content hover:bg-base-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             :disabled="!canCreateTenant"
                             @click="openAddTenant"
                         >
-                            <PlusIcon class="h-4 w-4 text-slate-400" />
+                            <PlusIcon class="h-4 w-4 text-base-content/40" />
                             {{ t('nav.add_tenant') }}
                         </button>
-                        <p v-if="!canCreateTenant" class="px-3 py-1 text-xs text-slate-500">
+                        <p v-if="!canCreateTenant" class="px-3 py-1 text-xs text-base-content/50">
                             {{ t('tenant.limit_reached') }}
                         </p>
                     </div>
@@ -214,7 +214,7 @@
             <div class="flex-1" />
 
             <!-- Lang switcher -->
-            <div class="flex items-center gap-0.5 rounded-md bg-slate-100 p-[3px]">
+            <div class="flex items-center gap-0.5 rounded-md bg-base-200 p-[3px]">
                 <button
                     v-for="lang in languages"
                     :key="lang.code"
@@ -222,8 +222,8 @@
                     class="rounded px-2 py-[3px] text-[11px] font-semibold uppercase transition"
                     :class="
                         lang.code === currentLocale
-                            ? 'bg-white text-slate-900 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700'
+                            ? 'bg-base-100 text-base-content shadow-sm'
+                            : 'text-base-content/60 hover:text-base-content'
                     "
                     @click="switchLocale(lang.code)"
                 >
@@ -234,11 +234,11 @@
             <!-- Bell -->
             <button
                 type="button"
-                class="relative flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
+                class="relative flex h-8 w-8 items-center justify-center rounded-md text-base-content/70 hover:bg-base-200 hover:text-base-content transition"
             >
                 <BellIcon class="h-5 w-5" />
                 <span
-                    class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 border-2 border-white"
+                    class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-error border-2 border-base-100"
                 />
             </button>
 
@@ -246,35 +246,35 @@
             <div class="relative">
                 <button
                     type="button"
-                    class="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 hover:bg-slate-100 transition"
+                    class="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 hover:bg-base-200 transition"
                     :aria-expanded="isUserMenuOpen"
                     aria-haspopup="true"
                     @click="isUserMenuOpen = !isUserMenuOpen"
                 >
                     <span
-                        class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-white flex-shrink-0"
+                        class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-content flex-shrink-0"
                     >
                         {{ user?.name?.charAt(0)?.toUpperCase() ?? 'U' }}
                     </span>
-                    <span class="text-[13px] font-semibold text-slate-800">{{ user?.name }}</span>
-                    <ChevronDownIcon class="h-3 w-3 text-slate-400" />
+                    <span class="text-[13px] font-semibold text-base-content">{{ user?.name }}</span>
+                    <ChevronDownIcon class="h-3 w-3 text-base-content/40" />
                 </button>
 
                 <!-- User dropdown -->
                 <Transition name="dropdown">
                     <div
                         v-if="isUserMenuOpen"
-                        class="absolute right-0 top-full mt-1 z-30 min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg py-1"
+                        class="absolute right-0 top-full mt-1 z-30 min-w-[180px] rounded-lg border border-base-300 bg-base-100 shadow-lg py-1"
                     >
                         <div
-                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-400 cursor-not-allowed opacity-50"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-base-content/40 cursor-not-allowed opacity-50"
                             aria-disabled="true"
                         >
                             {{ t('nav.profile') }}
                         </div>
                         <button
                             type="button"
-                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-base-content hover:bg-base-200 transition"
                             @click="isUserMenuOpen = false; isLogoutConfirmOpen = true"
                         >
                             {{ t('logout') }}
@@ -296,7 +296,7 @@
                     class="flex items-center gap-2 text-white hover:opacity-90 transition"
                 >
                     <span
-                        class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-[#A16207] to-[#713F12] flex-shrink-0"
+                        class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary/80 to-primary flex-shrink-0"
                     >
                         <svg
                             viewBox="0 0 24 24"
