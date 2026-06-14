@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Data\Invoices\InvoiceSettingsData;
 use App\Enums\InvoiceTemplateEnum;
+use App\Enums\RecurringDefaultStateEnum;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use Illuminate\Database\DatabaseManager;
@@ -30,18 +31,25 @@ final readonly class InvoiceSettingsService
 
             $tenant->update($attributes);
 
-            $this->upsertInterface($tenant, $data->invoice_template);
+            $this->upsertInterface($tenant, $data->invoice_template, $data->recurring_default_state);
         });
     }
 
-    private function upsertInterface(Tenant $tenant, InvoiceTemplateEnum $template): void
-    {
+    private function upsertInterface(
+        Tenant $tenant,
+        InvoiceTemplateEnum $template,
+        RecurringDefaultStateEnum $recurringDefaultState,
+    ): void {
         if ($tenant->interface !== null) {
-            $tenant->interface->update(['invoice_template' => $template]);
+            $tenant->interface->update([
+                'invoice_template' => $template,
+                'recurring_default_state' => $recurringDefaultState,
+            ]);
         } else {
             TenantInterface::create([
                 'tenant_id' => $tenant->id,
                 'invoice_template' => $template,
+                'recurring_default_state' => $recurringDefaultState,
             ]);
         }
     }

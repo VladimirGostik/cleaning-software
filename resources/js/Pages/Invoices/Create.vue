@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { Link } from '@inertiajs/vue3';
     import AppLayout from '@/Layouts/AppLayout.vue';
 
     defineOptions({ layout: AppLayout });
@@ -16,6 +17,7 @@
     interface ObjectOption {
         id: string;
         name: string;
+        client_id: string;
     }
 
     interface Props {
@@ -37,7 +39,17 @@
 </script>
 
 <template>
-    <div class="max-w-4xl mx-auto">
+    <div class="page-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumbs text-sm mb-4">
+            <ul>
+                <li>
+                    <Link href="/invoices">{{ t('invoices.title') }}</Link>
+                </li>
+                <li>{{ t('invoices.add') }}</li>
+            </ul>
+        </div>
+
         <PageHeader :title="t('invoices.add')" />
 
         <InvoiceForm

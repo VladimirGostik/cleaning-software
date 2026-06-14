@@ -7,16 +7,21 @@ namespace App\Services;
 use App\Data\Invoices\InvoiceIndexFilterData;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoiceItemData;
+use App\Data\Invoices\InvoiceStatsData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
+use App\Enums\InvoiceTypeEnum;
+use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\RecurringInvoice;
 use App\Models\Tenant;
 use App\Scopes\TenantScope;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -35,21 +40,90 @@ final readonly class InvoiceService
      */
     public function paginate(InvoiceIndexFilterData $filter): LengthAwarePaginator
     {
-        return QueryBuilder::for(Invoice::class)
-            ->allowedFilters(
-                AllowedFilter::scope('search'),
-                AllowedFilter::exact('status'),
-                AllowedFilter::exact('type'),
-                AllowedFilter::exact('client_id'),
-            )
-            ->allowedSorts(
-                AllowedSort::field('created_at'),
-                AllowedSort::field('due_date'),
-                AllowedSort::field('issue_date'),
-            )
-            ->defaultSort('-created_at')
+        return $this->buildFilteredQuery($filter)
             ->paginate($filter->per_page)
             ->appends(request()->query());
+    }
+
+    /**
+     * @return Builder<Invoice>
+     */
+    public function exportQuery(InvoiceIndexFilterData $filter): Builder
+    {
+        return $this->buildFilteredQuery($filter)->getEloquentBuilder();
+    }
+
+    /**
+     * @param  array<int, string>  $ids
+     * @return array{succeeded: int, failed: int, errors: array<int, string>}
+     */
+    public function bulkMarkPaid(array $ids): array
+    {
+        $invoices = Invoice::whereIn('id', $ids)->get();
+
+        $foundIds = $invoices->pluck('id')->all();
+        $missingIds = array_diff($ids, $foundIds);
+
+        $succeeded = 0;
+        $failed = count($missingIds);
+        $errors = array_values(array_map(
+            fn (string $id) => $id . ': ' . __('app.invoices.not_found'),
+            $missingIds,
+        ));
+
+        foreach ($invoices as $invoice) {
+            try {
+                $this->db->transaction(fn () => $this->markPaid($invoice));
+                $succeeded++;
+            } catch (ValidationException $e) {
+                $failed++;
+                $firstError = collect($e->errors())->flatten()->first() ?? __('app.invoices.cannot_mark_paid');
+                $errors[] = ($invoice->number ?? $invoice->id) . ': ' . $firstError;
+            }
+        }
+
+        return compact('succeeded', 'failed', 'errors');
+    }
+
+    public function stats(): InvoiceStatsData
+    {
+        $base = Invoice::query();
+
+        $issuedMonth = (clone $base)
+            ->whereIn('status', [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue, InvoiceStatusEnum::Paid])
+            ->whereYear('issue_date', now()->year)
+            ->whereMonth('issue_date', now()->month);
+
+        $overdue = (clone $base)->where('status', InvoiceStatusEnum::Overdue);
+
+        $pending = (clone $base)->where('status', InvoiceStatusEnum::Issued);
+
+        $recurring = (clone $base)
+            ->where('type', InvoiceTypeEnum::Monthly)
+            ->whereIn('status', [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Paid]);
+
+        return InvoiceStatsData::fromAggregates(
+            (float) ($issuedMonth->sum('total') ?? 0), $issuedMonth->count(),
+            (float) ($overdue->sum('total') ?? 0), $overdue->count(),
+            (float) ($pending->sum('total') ?? 0), $pending->count(),
+            (float) ($recurring->sum('total') ?? 0), $recurring->count(),
+        );
+    }
+
+    /**
+     * @return array{all: int, all_issued: int, recurring: int, drafts: int, overdue: int}
+     */
+    public function tabCounts(): array
+    {
+        $base = Invoice::query();
+
+        return [
+            'all' => (clone $base)->where('status', '!=', InvoiceStatusEnum::Cancelled)->count(),
+            'all_issued' => (clone $base)->whereIn('status', [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue, InvoiceStatusEnum::Paid])->count(),
+            'recurring' => RecurringInvoice::query()->whereNotIn('status', [RecurringInvoiceStatusEnum::Cancelled])->count(),
+            'drafts' => (clone $base)->where('status', InvoiceStatusEnum::Draft)->count(),
+            'overdue' => (clone $base)->where('status', InvoiceStatusEnum::Overdue)->count(),
+        ];
     }
 
     public function create(InvoiceUpsertData $data): Invoice
@@ -219,6 +293,7 @@ final readonly class InvoiceService
                 'vat_amount' => -1 * (float) $invoice->vat_amount,
                 'total' => -1 * (float) $invoice->total,
                 'customer_name' => $invoice->customer_name,
+                'customer_representative' => $invoice->customer_representative,
                 'customer_ico' => $invoice->customer_ico,
                 'customer_dic' => $invoice->customer_dic,
                 'customer_vat_number' => $invoice->customer_vat_number,
@@ -290,6 +365,7 @@ final readonly class InvoiceService
                 'vat_amount' => $invoice->vat_amount,
                 'total' => $invoice->total,
                 'customer_name' => $invoice->customer_name,
+                'customer_representative' => $invoice->customer_representative,
                 'customer_ico' => $invoice->customer_ico,
                 'customer_dic' => $invoice->customer_dic,
                 'customer_vat_number' => $invoice->customer_vat_number,
@@ -346,6 +422,47 @@ final readonly class InvoiceService
         $this->db->transaction(function () use ($invoice): void {
             $invoice->delete();
         });
+    }
+
+    private function buildFilteredQuery(InvoiceIndexFilterData $filter): QueryBuilder
+    {
+        $query = QueryBuilder::for(Invoice::class)
+            ->allowedFilters(
+                AllowedFilter::scope('search'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::exact('type'),
+                AllowedFilter::exact('client_id'),
+            )
+            ->allowedSorts(
+                AllowedSort::field('created_at'),
+                AllowedSort::field('due_date'),
+                AllowedSort::field('issue_date'),
+            )
+            ->defaultSort('-created_at');
+
+        if ($filter->tab === 'all_issued') {
+            $query->whereIn('status', [
+                InvoiceStatusEnum::Issued,
+                InvoiceStatusEnum::Overdue,
+                InvoiceStatusEnum::Paid,
+            ]);
+        }
+
+        if ($filter->month !== null) {
+            $year = (int) substr($filter->month, 0, 4);
+            $month = (int) substr($filter->month, 5, 2);
+            $query->whereYear('issue_date', $year)->whereMonth('issue_date', $month);
+        }
+
+        $query
+            ->when($filter->issued_from, fn ($q, $v) => $q->whereDate('issue_date', '>=', $v))
+            ->when($filter->issued_to, fn ($q, $v) => $q->whereDate('issue_date', '<=', $v))
+            ->when($filter->due_from, fn ($q, $v) => $q->whereDate('due_date', '>=', $v))
+            ->when($filter->due_to, fn ($q, $v) => $q->whereDate('due_date', '<=', $v))
+            ->when($filter->total_min, fn ($q, $v) => $q->where('total', '>=', $v))
+            ->when($filter->total_max, fn ($q, $v) => $q->where('total', '<=', $v));
+
+        return $query;
     }
 
     /**
@@ -416,6 +533,7 @@ final readonly class InvoiceService
             'is_vat_payer' => $tenant->is_vat_payer,
             'vat_rate' => $tenant->is_vat_payer ? $tenant->vat_rate : null,
             'customer_name' => $customerName,
+            'customer_representative' => $data->customer_representative,
             'customer_ico' => $client !== null ? $client->ico : $data->customer_ico,
             'customer_dic' => $client !== null ? $client->dic : $data->customer_dic,
             'customer_vat_number' => $client !== null ? $client->vat_number : $data->customer_vat_number,

@@ -49,6 +49,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'client_id',
     'cleaning_object_id',
     'credited_invoice_id',
+    'recurring_invoice_id',
     'type',
     'status',
     'template',
@@ -69,6 +70,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'vat_amount',
     'total',
     'customer_name',
+    'customer_representative',
     'customer_ico',
     'customer_dic',
     'customer_vat_number',
@@ -157,6 +159,11 @@ final class Invoice extends Model
     public function creditNote(): HasOne
     {
         return $this->hasOne(Invoice::class, 'credited_invoice_id');
+    }
+
+    public function recurringInvoice(): BelongsTo
+    {
+        return $this->belongsTo(RecurringInvoice::class);
     }
 
     public function isEditable(): bool

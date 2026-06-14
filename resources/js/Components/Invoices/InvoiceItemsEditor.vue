@@ -1,7 +1,8 @@
 <script setup lang="ts">
-    import { computed } from 'vue';
+    import { computed, toRef } from 'vue';
     import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
     import { useTranslate } from '@/Composables/useTranslate';
+    import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 
     interface ItemRow {
         id?: string | null;
@@ -31,25 +32,15 @@
 
     const { t } = useTranslate();
 
-    // Mirror BE InvoiceService::syncItems — each row total rounded to 2 decimals
+    const itemsRef = computed(() => props.modelValue);
+    const isVatPayerRef = toRef(props, 'isVatPayer');
+    const vatRateRef = toRef(props, 'vatRate');
+
+    const { subtotal, vatAmount, total } = useInvoiceTotals(itemsRef, isVatPayerRef, vatRateRef);
+
     function rowTotal(row: ItemRow): number {
         return Math.round(row.quantity * row.unit_price * 100) / 100;
     }
-
-    // Mirror BE InvoiceService::computeTotals — sum already-rounded row totals
-    const subtotal = computed<number>(() =>
-        props.modelValue.reduce((sum, row) => sum + rowTotal(row), 0),
-    );
-
-    // Mirror BE: vatAmount = round(subtotal * rate / 100, 2)
-    const vatAmount = computed<number>(() => {
-        if (!props.isVatPayer || !props.vatRate) return 0;
-        const rate = parseFloat(props.vatRate);
-        return isNaN(rate) ? 0 : Math.round(subtotal.value * (rate / 100) * 100) / 100;
-    });
-
-    // Mirror BE: total = round(subtotal + vatAmount, 2)
-    const total = computed<number>(() => Math.round((subtotal.value + vatAmount.value) * 100) / 100);
 
     function removeRowLabel(index: number): string {
         return t('invoices.items.remove_row').replace('{index}', String(index + 1));
@@ -87,9 +78,9 @@
                 <thead>
                     <tr>
                         <th class="w-[40%]">{{ t('invoices.items.description') }}</th>
-                        <th class="w-[10%]">{{ t('invoices.items.quantity') }}</th>
+                        <th class="w-[10%] text-right">{{ t('invoices.items.quantity') }}</th>
                         <th class="w-[12%]">{{ t('invoices.items.unit') }}</th>
-                        <th class="w-[15%]">{{ t('invoices.items.unit_price') }}</th>
+                        <th class="w-[15%] text-right">{{ t('invoices.items.unit_price') }}</th>
                         <th class="w-[15%] text-right">{{ t('invoices.items.total') }}</th>
                         <th class="w-[8%]" />
                     </tr>
@@ -116,7 +107,7 @@
                                 :value="row.quantity"
                                 min="0"
                                 step="0.01"
-                                class="input input-sm w-full"
+                                class="input input-sm w-full font-mono text-right"
                                 :aria-label="t('invoices.items.quantity')"
                                 @input="updateRow(index, 'quantity', parseFloat(($event.target as HTMLInputElement).value) || 0)"
                             />
@@ -137,12 +128,12 @@
                                 :value="row.unit_price"
                                 min="0"
                                 step="0.01"
-                                class="input input-sm w-full"
+                                class="input input-sm w-full font-mono text-right"
                                 :aria-label="t('invoices.items.unit_price')"
                                 @input="updateRow(index, 'unit_price', parseFloat(($event.target as HTMLInputElement).value) || 0)"
                             />
                         </td>
-                        <td class="text-right font-medium">
+                        <td class="text-right font-mono font-medium">
                             {{ formatCurrency(rowTotal(row)) }}
                         </td>
                         <td>
@@ -172,7 +163,7 @@
             <dl class="space-y-1 text-sm min-w-[220px]">
                 <div class="flex justify-between gap-4">
                     <dt class="text-base-content/60">{{ t('invoices.items.subtotal') }}</dt>
-                    <dd class="font-medium">{{ formatCurrency(subtotal) }}</dd>
+                    <dd class="font-mono font-medium">{{ formatCurrency(subtotal) }}</dd>
                 </div>
                 <template v-if="isVatPayer">
                     <div class="flex justify-between gap-4">
@@ -180,12 +171,12 @@
                             {{ t('invoices.items.vat') }}
                             <span v-if="vatRate">({{ vatRate }}%)</span>
                         </dt>
-                        <dd>{{ formatCurrency(vatAmount) }}</dd>
+                        <dd class="font-mono">{{ formatCurrency(vatAmount) }}</dd>
                     </div>
                 </template>
                 <div class="flex justify-between gap-4 border-t border-base-300 pt-1 font-semibold">
                     <dt>{{ t('invoices.items.total') }}</dt>
-                    <dd>{{ formatCurrency(total) }}</dd>
+                    <dd class="font-mono">{{ formatCurrency(total) }}</dd>
                 </div>
             </dl>
         </div>

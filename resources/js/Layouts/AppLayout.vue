@@ -381,7 +381,7 @@
 
         <!-- Content with content-only transition -->
         <main class="app-content">
-            <Transition name="content" mode="out-in">
+            <Transition name="content">
                 <div :key="pageComponent">
                     <slot />
                 </div>

@@ -40,6 +40,11 @@ final class InvoicePolicy
         return $user->can(PermissionEnum::EditInvoices->value);
     }
 
+    public function bulkMarkPaid(User $user): bool
+    {
+        return $user->can(PermissionEnum::EditInvoices->value);
+    }
+
     public function cancel(User $user, Invoice $invoice): bool
     {
         return $user->can(PermissionEnum::CancelInvoices->value);

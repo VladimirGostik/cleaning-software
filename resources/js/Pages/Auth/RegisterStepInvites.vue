@@ -1,10 +1,11 @@
 <script setup lang="ts">
-     
+    import { computed } from 'vue';
     import type { InertiaForm } from '@inertiajs/vue3';
     import { useTranslate } from '@/Composables/useTranslate';
     import type { RegisterFormData } from '@/Pages/Auth/Register.vue';
+    import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 
-    defineProps<{
+    const props = defineProps<{
         form: InertiaForm<RegisterFormData>;
         roles: string[];
     }>();
@@ -15,6 +16,10 @@
     }>();
 
     const { t } = useTranslate();
+
+    const roleOptions = computed<SelectOption[]>(() =>
+        props.roles.map((r) => ({ value: r, label: r })),
+    );
 </script>
 
 <template>
@@ -42,24 +47,16 @@
                     }"
                     :aria-label="`${t('register.invite_email')} ${index + 1}`"
                 />
-                <select
-                    :id="`reg-invite-role-${index}`"
+                <SelectInput
                     v-model="invite.role_name"
-                    class="rounded-lg border border-slate-200 bg-white py-2.5 px-3 text-sm text-slate-900 outline-none transition auth-input min-w-[130px]"
-                    :class="{
-                        'border-red-400': form.errors[`invites.${index}.role_name`],
-                    }"
-                    :aria-label="`${t('register.invite_role')} ${index + 1}`"
-                >
-                    <option value="">{{ t('register.invite_role') }}</option>
-                    <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
-                </select>
+                    :options="roleOptions"
+                    :placeholder="t('register.invite_role')"
+                    :error="(form.errors as Record<string, string>)[`invites.${index}.role_name`]"
+                    :label="`${t('register.invite_role')} ${index + 1}`"
+                />
             </div>
             <p v-if="form.errors[`invites.${index}.email`]" class="text-xs text-red-500">
                 {{ form.errors[`invites.${index}.email`] }}
-            </p>
-            <p v-if="form.errors[`invites.${index}.role_name`]" class="text-xs text-red-500">
-                {{ form.errors[`invites.${index}.role_name`] }}
             </p>
         </div>
 

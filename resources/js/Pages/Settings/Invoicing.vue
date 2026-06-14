@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed } from 'vue';
+    import { computed, reactive } from 'vue';
     import { useForm } from '@inertiajs/vue3';
     import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -12,6 +12,7 @@
     import TextareaInput from '@/Components/Forms/TextareaInput.vue';
     import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
     import NumberInput from '@/Components/Forms/NumberInput.vue';
+    import InvoiceTemplatePicker from '@/Components/Invoices/InvoiceTemplatePicker.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
 
@@ -19,14 +20,29 @@
         settings: App.Data.Invoices.InvoiceSettingsData;
         templateOptions: Array<{ value: string; label: string }>;
         nextNumberPreview?: string | null;
+        isVatPayer?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         nextNumberPreview: null,
+        isVatPayer: undefined,
     });
 
     const { t } = useTranslate();
     const pageProps = usePageProps();
+
+    type SectionKey = 'basic' | 'vat' | 'templates' | 'numbering' | 'recurring' | 'reminders';
+
+    const nav = reactive<{ section: SectionKey }>({ section: 'basic' });
+
+    const sections: Array<{ key: SectionKey; label: string }> = [
+        { key: 'basic', label: t('invoice_settings.section.basic') },
+        { key: 'vat', label: t('invoice_settings.section.vat') },
+        { key: 'templates', label: t('invoice_settings.section.templates') },
+        { key: 'numbering', label: t('invoice_settings.section.numbering') },
+        { key: 'recurring', label: t('invoice_settings.section.recurring') },
+        { key: 'reminders', label: t('invoice_settings.section.reminders') },
+    ];
 
     interface InvoiceSettingsFormData {
         invoice_template: App.Enums.InvoiceTemplateEnum;
@@ -35,6 +51,7 @@
         iban: string | null;
         vat_rate: number | null;
         registration_info: string | null;
+        recurring_default_state: App.Enums.RecurringDefaultStateEnum;
     }
 
     const presets = [
@@ -56,19 +73,18 @@
             iban: props.settings.iban ?? null,
             vat_rate: props.settings.vat_rate ?? null,
             registration_info: props.settings.registration_info ?? null,
+            recurring_default_state: props.settings.recurring_default_state,
         },
-    );
-
-    const templateCards = computed(() =>
-        props.templateOptions.map((opt) => ({
-            value: opt.value as App.Enums.InvoiceTemplateEnum,
-            label: opt.label,
-        })),
     );
 
     const presetOptions = computed<SelectOption[]>(() => [
         ...presets.map((p) => ({ value: p.value, label: p.label })),
         { value: 'custom', label: t('invoice_settings.custom_format') },
+    ]);
+
+    const defaultStateOptions = computed<SelectOption[]>(() => [
+        { value: 'draft', label: t('recurring_invoices.settings.state_draft') },
+        { value: 'issued', label: t('recurring_invoices.settings.state_issued') },
     ]);
 
     const selectedPreset = computed({
@@ -95,17 +111,13 @@
             .replace(/\{(X+)\}/g, (_, xs: string) => '1'.padStart(xs.length, '0'));
     });
 
-    function selectTemplate(val: App.Enums.InvoiceTemplateEnum) {
-        form.invoice_template = val;
-    }
-
     function submit() {
         form.submit();
     }
 </script>
 
 <template>
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-5xl mx-auto">
         <div v-if="pageProps.flash.success" class="alert alert-success mb-4">
             <span>{{ pageProps.flash.success }}</span>
         </div>
@@ -115,128 +127,181 @@
             :subtitle="t('invoice_settings.subtitle')"
         />
 
-        <FormProvider :form="form">
-            <form novalidate @submit.prevent="submit">
-                <div class="space-y-6">
-                    <!-- Template picker -->
-                    <div class="card bg-base-100 shadow-sm">
-                        <div class="card-body">
-                            <h2 class="card-title text-base">{{ t('invoice_settings.template') }}</h2>
-                            <p v-if="form.errors.invoice_template" class="text-error text-sm">
-                                {{ form.errors.invoice_template }}
-                            </p>
-                            <div
-                                class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2"
-                                role="radiogroup"
-                                :aria-label="t('invoice_settings.template')"
-                            >
-                                <button
-                                    v-for="card in templateCards"
-                                    :key="card.value"
-                                    type="button"
-                                    role="radio"
-                                    :aria-checked="form.invoice_template === card.value"
-                                    :class="[
-                                        'border-2 rounded-lg p-4 text-left transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary',
-                                        form.invoice_template === card.value
-                                            ? 'border-primary bg-primary/5'
-                                            : 'border-base-300 hover:border-base-content/30',
-                                    ]"
-                                    @click="selectTemplate(card.value)"
-                                    @keydown.enter.prevent="selectTemplate(card.value)"
-                                    @keydown.space.prevent="selectTemplate(card.value)"
-                                >
-                                    <!-- Template visual preview placeholder -->
-                                    <div class="h-20 bg-base-200 rounded mb-2 flex items-center justify-center">
-                                        <span class="text-xs text-base-content/40 uppercase tracking-wide">
-                                            {{ card.label }}
-                                        </span>
+        <div class="grid grid-cols-[200px_1fr] gap-6">
+            <!-- Left nav -->
+            <div>
+                <ul class="menu menu-sm bg-base-100 rounded-box shadow-sm p-2 gap-0.5">
+                    <li v-for="section in sections" :key="section.key">
+                        <button
+                            type="button"
+                            :class="{ 'active': nav.section === section.key }"
+                            @click="nav.section = section.key"
+                        >
+                            {{ section.label }}
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right content -->
+            <div>
+                <FormProvider :form="form">
+                    <form novalidate @submit.prevent="submit">
+                        <!-- Základné (IBAN + registration info) -->
+                        <div v-if="nav.section === 'basic'" class="space-y-6">
+                            <div class="card bg-base-100 shadow-sm">
+                                <div class="card-body">
+                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.basic') }}</h2>
+                                    <TextInput
+                                        field="iban"
+                                        :label="t('invoice_settings.iban')"
+                                        placeholder="SK0000000000000000000000"
+                                    />
+                                    <TextareaInput
+                                        field="registration_info"
+                                        :label="t('invoice_settings.registration_info')"
+                                        :placeholder="t('invoice_settings.registration_info_hint')"
+                                        :rows="2"
+                                    />
+                                </div>
+                            </div>
+                            <FormActions
+                                cancel-href="/dashboard"
+                                :cancel-label="t('cancel')"
+                                :submit-label="t('invoice_settings.save')"
+                                :processing="form.processing"
+                            />
+                        </div>
+
+                        <!-- DPH -->
+                        <div v-if="nav.section === 'vat'" class="space-y-6">
+                            <div class="card bg-base-100 shadow-sm">
+                                <div class="card-body">
+                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.vat') }}</h2>
+
+                                    <!-- VAT status info card -->
+                                    <div class="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
+                                        <p class="font-medium mb-0.5">{{ t('invoice_settings.vat_status_label') }}</p>
+                                        <p v-if="isVatPayer === true" class="text-base-content/70">
+                                            {{ t('invoice_settings.vat_payer_yes') }}
+                                        </p>
+                                        <p v-else-if="isVatPayer === false" class="text-base-content/70">
+                                            {{ t('invoice_settings.vat_payer_no') }}
+                                        </p>
+                                        <p v-else class="text-base-content/50 italic">
+                                            {{ t('invoice_settings.vat_payer_unknown') }}
+                                        </p>
                                     </div>
-                                    <p class="text-sm font-medium">{{ card.label }}</p>
-                                    <p
-                                        v-if="form.invoice_template === card.value"
-                                        class="text-xs text-primary mt-0.5"
-                                    >
-                                        {{ t('invoice_settings.template_selected') }}
+
+                                    <NumberInput
+                                        v-model="form.vat_rate"
+                                        :label="t('invoice_settings.vat_rate')"
+                                        :min="0"
+                                        :max="100"
+                                        :step="0.01"
+                                        :error="(form.errors as Record<string, string>)['vat_rate']"
+                                    />
+                                </div>
+                            </div>
+                            <FormActions
+                                cancel-href="/dashboard"
+                                :cancel-label="t('cancel')"
+                                :submit-label="t('invoice_settings.save')"
+                                :processing="form.processing"
+                            />
+                        </div>
+
+                        <!-- Šablóny -->
+                        <div v-if="nav.section === 'templates'" class="space-y-6">
+                            <div class="card bg-base-100 shadow-sm">
+                                <div class="card-body">
+                                    <h2 class="card-title text-base">{{ t('invoice_settings.template') }}</h2>
+                                    <InvoiceTemplatePicker
+                                        v-model="form.invoice_template"
+                                        :options="templateOptions"
+                                        :error="form.errors.invoice_template"
+                                    />
+                                </div>
+                            </div>
+                            <FormActions
+                                cancel-href="/dashboard"
+                                :cancel-label="t('cancel')"
+                                :submit-label="t('invoice_settings.save')"
+                                :processing="form.processing"
+                            />
+                        </div>
+
+                        <!-- Číslovanie -->
+                        <div v-if="nav.section === 'numbering'" class="space-y-6">
+                            <div class="card bg-base-100 shadow-sm">
+                                <div class="card-body">
+                                    <h2 class="card-title text-base">{{ t('invoice_settings.number_format') }}</h2>
+                                    <p class="text-xs text-base-content/60 mb-3">
+                                        {{ t('invoice_settings.number_format_hint') }}
                                     </p>
-                                </button>
+
+                                    <SelectInput
+                                        v-model="selectedPreset"
+                                        :options="presetOptions"
+                                        :label="t('invoice_settings.number_format')"
+                                        :error="form.errors.invoice_number_format"
+                                    />
+
+                                    <div v-if="form.custom_format" class="mt-3">
+                                        <TextInput
+                                            field="invoice_number_format"
+                                            :label="t('invoice_settings.custom_format_label')"
+                                            placeholder="FA-{YYYY}-{XXXX}"
+                                            required
+                                        />
+                                    </div>
+
+                                    <!-- Live preview -->
+                                    <div class="mt-3 p-3 bg-base-200 rounded text-sm">
+                                        <span class="text-base-content/60">{{ t('invoice_settings.preview') }}: </span>
+                                        <span class="font-mono font-medium">{{ previewNumber }}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Number format -->
-                    <div class="card bg-base-100 shadow-sm">
-                        <div class="card-body">
-                            <h2 class="card-title text-base">{{ t('invoice_settings.number_format') }}</h2>
-                            <p class="text-xs text-base-content/60 mb-3">
-                                {{ t('invoice_settings.number_format_hint') }}
-                            </p>
-
-                            <SelectInput
-                                v-model="selectedPreset"
-                                :options="presetOptions"
-                                :label="t('invoice_settings.number_format')"
-                                :error="form.errors.invoice_number_format"
-                            />
-
-                            <div v-if="form.custom_format" class="mt-3">
-                                <TextInput
-                                    field="invoice_number_format"
-                                    :label="t('invoice_settings.custom_format_label')"
-                                    placeholder="FA-{YYYY}-{XXXX}"
-                                    required
-                                />
-                            </div>
-
-                            <!-- Live preview -->
-                            <div class="mt-3 p-3 bg-base-200 rounded text-sm">
-                                <span class="text-base-content/60">{{ t('invoice_settings.preview') }}: </span>
-                                <span class="font-mono font-medium">{{ previewNumber }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- IBAN + VAT -->
-                    <div class="card bg-base-100 shadow-sm">
-                        <div class="card-body">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <TextInput
-                                    field="iban"
-                                    :label="t('invoice_settings.iban')"
-                                    placeholder="SK0000000000000000000000"
-                                />
-                                <NumberInput
-                                    v-model="form.vat_rate"
-                                    :label="t('invoice_settings.vat_rate')"
-                                    :min="0"
-                                    :max="100"
-                                    :step="0.01"
-                                    :error="(form.errors as Record<string, string>)['vat_rate']"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Registration info -->
-                    <div class="card bg-base-100 shadow-sm">
-                        <div class="card-body">
-                            <TextareaInput
-                                field="registration_info"
-                                :label="t('invoice_settings.registration_info')"
-                                :placeholder="t('invoice_settings.registration_info_hint')"
-                                :rows="2"
+                            <FormActions
+                                cancel-href="/dashboard"
+                                :cancel-label="t('cancel')"
+                                :submit-label="t('invoice_settings.save')"
+                                :processing="form.processing"
                             />
                         </div>
-                    </div>
 
-                    <FormActions
-                        cancel-href="/dashboard"
-                        :cancel-label="t('cancel')"
-                        :submit-label="t('invoice_settings.save')"
-                        :processing="form.processing"
-                    />
-                </div>
-            </form>
-        </FormProvider>
+                        <!-- Opakované faktúry -->
+                        <div v-if="nav.section === 'recurring'" class="space-y-6">
+                            <div class="card bg-base-100 shadow-sm">
+                                <div class="card-body">
+                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.recurring') }}</h2>
+                                    <SelectInput
+                                        field="recurring_default_state"
+                                        :label="t('recurring_invoices.settings.default_state')"
+                                        :options="defaultStateOptions"
+                                    />
+                                </div>
+                            </div>
+                            <FormActions
+                                cancel-href="/dashboard"
+                                :cancel-label="t('cancel')"
+                                :submit-label="t('invoice_settings.save')"
+                                :processing="form.processing"
+                            />
+                        </div>
+
+                        <!-- Upomienky (placeholder) -->
+                        <div v-if="nav.section === 'reminders'">
+                            <div class="card bg-base-100 shadow-sm">
+                                <div class="card-body items-center text-center py-12">
+                                    <p class="text-base-content/50 text-sm">{{ t('invoice_settings.section.coming_soon') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </FormProvider>
+            </div>
+        </div>
     </div>
 </template>

@@ -17,6 +17,7 @@
     interface ObjectOption {
         id: string;
         name: string;
+        client_id: string;
     }
 
     interface Props {
@@ -39,7 +40,7 @@
 </script>
 
 <template>
-    <div class="max-w-4xl mx-auto">
+    <div class="page-container">
         <!-- Breadcrumb -->
         <div class="breadcrumbs text-sm mb-4">
             <ul>

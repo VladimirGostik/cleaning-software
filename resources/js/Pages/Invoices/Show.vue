@@ -8,7 +8,8 @@
         CheckCircleIcon,
         XCircleIcon,
         DocumentDuplicateIcon,
-        EllipsisVerticalIcon,
+        UserIcon,
+        BuildingOfficeIcon,
     } from '@heroicons/vue/24/outline';
     import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -92,7 +93,7 @@
 </script>
 
 <template>
-    <div class="max-w-5xl mx-auto">
+    <div class="page-container">
         <div v-if="flash.success" class="alert alert-success mb-4">
             <span>{{ flash.success }}</span>
         </div>
@@ -103,7 +104,7 @@
                 <li>
                     <Link href="/invoices">{{ t('invoices.title') }}</Link>
                 </li>
-                <li>{{ invoice.number ?? t('invoices.draft_number') }}</li>
+                <li class="font-mono">{{ invoice.number ?? t('invoices.draft_number') }}</li>
             </ul>
         </div>
 
@@ -113,103 +114,9 @@
         >
             <template #badges>
                 <InvoiceStatusBadge :status="invoice.status" />
-            </template>
-            <template #actions>
-                <!-- Edit (Draft only) -->
-                <Can permission="edit invoices" feature="invoices">
-                    <Link
-                        v-if="isDraft"
-                        :href="`/invoices/${invoice.id}/edit`"
-                        class="btn btn-primary btn-sm"
-                    >
-                        <PencilSquareIcon class="w-4 h-4" />
-                        {{ t('invoices.action.edit') }}
-                    </Link>
-                </Can>
-
-                <!-- Issue (Draft only) -->
-                <Can permission="edit invoices" feature="invoices">
-                    <button
-                        v-if="isDraft"
-                        type="button"
-                        class="btn btn-success btn-sm"
-                        @click="ui.issueDialogOpen = true"
-                    >
-                        {{ t('invoices.action.issue') }}
-                    </button>
-                </Can>
-
-                <!-- Mark paid -->
-                <Can permission="edit invoices" feature="invoices">
-                    <button
-                        v-if="canMarkPaid"
-                        type="button"
-                        class="btn btn-success btn-sm"
-                        @click="markPaid"
-                    >
-                        <CheckCircleIcon class="w-4 h-4" />
-                        {{ t('invoices.action.mark_paid') }}
-                    </button>
-                </Can>
-
-                <!-- Download PDF -->
-                <a :href="`/invoices/${invoice.id}/pdf`" class="btn btn-ghost btn-sm" target="_blank">
-                    <DocumentArrowDownIcon class="w-4 h-4" />
-                    {{ t('invoices.action.download_pdf') }}
-                </a>
-
-                <!-- More actions dropdown -->
-                <div class="dropdown dropdown-end">
-                    <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
-                        <EllipsisVerticalIcon class="w-5 h-5" />
-                    </div>
-                    <ul
-                        tabindex="0"
-                        class="dropdown-content menu bg-base-100 rounded-box z-10 w-48 p-2 shadow"
-                    >
-                        <!-- Send email -->
-                        <Can permission="edit invoices" feature="invoices">
-                            <li v-if="isIssued">
-                                <button
-                                    type="button"
-                                    :disabled="!canSend"
-                                    :title="!invoice.customer_email ? t('invoices.no_customer_email') : undefined"
-                                    @click="canSend && (ui.sendConfirmOpen = true)"
-                                >
-                                    <EnvelopeIcon class="w-4 h-4" />
-                                    {{ t('invoices.action.send_email') }}
-                                </button>
-                            </li>
-                        </Can>
-
-                        <!-- Duplicate -->
-                        <li>
-                            <button type="button" @click="duplicateInvoice">
-                                <DocumentDuplicateIcon class="w-4 h-4" />
-                                {{ t('invoices.action.duplicate') }}
-                            </button>
-                        </li>
-
-                        <!-- Storno -->
-                        <Can permission="cancel invoices" feature="invoices">
-                            <li v-if="canCancel">
-                                <button type="button" class="text-warning" @click="ui.cancelConfirmOpen = true">
-                                    <XCircleIcon class="w-4 h-4" />
-                                    {{ t('invoices.action.cancel') }}
-                                </button>
-                            </li>
-                        </Can>
-
-                        <!-- Delete (Draft) -->
-                        <Can permission="cancel invoices" feature="invoices">
-                            <li v-if="isDraft">
-                                <button type="button" class="text-error" @click="ui.deleteConfirmOpen = true">
-                                    {{ t('invoices.action.delete') }}
-                                </button>
-                            </li>
-                        </Can>
-                    </ul>
-                </div>
+                <span class="badge badge-ghost badge-sm">
+                    {{ t('invoice_type.' + invoice.type) }}
+                </span>
             </template>
         </PageHeader>
 
@@ -226,219 +133,322 @@
             </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Left: 2/3 -->
-            <div class="md:col-span-2 space-y-6">
-                <!-- Customer info -->
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.section.customer') }}</h2>
-                        <dl class="space-y-1.5 text-sm mt-2">
-                            <div class="flex gap-2">
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.customer_name') }}</dt>
-                                <dd class="font-medium">{{ invoice.customer_name }}</dd>
-                            </div>
-                            <div v-if="invoice.customer_ico" class="flex gap-2">
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.ico') }}</dt>
-                                <dd>{{ invoice.customer_ico }}</dd>
-                            </div>
-                            <div v-if="invoice.customer_dic" class="flex gap-2">
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.dic') }}</dt>
-                                <dd>{{ invoice.customer_dic }}</dd>
-                            </div>
-                            <div v-if="invoice.customer_vat_number" class="flex gap-2">
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.vat_number') }}</dt>
-                                <dd>{{ invoice.customer_vat_number }}</dd>
-                            </div>
-                            <div v-if="invoice.customer_email" class="flex gap-2">
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.email') }}</dt>
-                                <dd>{{ invoice.customer_email }}</dd>
-                            </div>
-                            <div
-                                v-if="invoice.customer_street || invoice.customer_city"
-                                class="flex gap-2"
+        <!-- Two-column layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+            <!-- LEFT: invoice document card -->
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body gap-6">
+                    <!-- Header row: supplier left, QR + customer right -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Supplier block -->
+                        <div>
+                            <p class="font-semibold text-base">{{ invoice.supplier.name }}</p>
+                            <p v-if="invoice.supplier.address_line" class="text-sm text-base-content/70">
+                                {{ invoice.supplier.address_line }}
+                            </p>
+                            <p
+                                v-if="invoice.supplier.postal_code || invoice.supplier.city"
+                                class="text-sm text-base-content/70"
                             >
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.address') }}</dt>
-                                <dd>
+                                <span v-if="invoice.supplier.postal_code">{{ invoice.supplier.postal_code }} </span>
+                                <span v-if="invoice.supplier.city">{{ invoice.supplier.city }}</span>
+                            </p>
+                            <p v-if="invoice.supplier.ico" class="text-sm text-base-content/60 mt-1">
+                                {{ t('invoices.detail.ico') }}: {{ invoice.supplier.ico }}
+                            </p>
+                            <p v-if="invoice.supplier.dic" class="text-sm text-base-content/60">
+                                {{ t('invoices.detail.dic') }}: {{ invoice.supplier.dic }}
+                            </p>
+                            <p v-if="invoice.supplier.vat_number" class="text-sm text-base-content/60">
+                                {{ t('invoices.detail.vat_number') }}: {{ invoice.supplier.vat_number }}
+                            </p>
+                        </div>
+
+                        <!-- QR + customer block -->
+                        <div class="flex gap-4 sm:justify-end">
+                            <img
+                                v-if="invoice.qr_data_uri"
+                                :src="invoice.qr_data_uri"
+                                :alt="t('invoices.section.qr')"
+                                class="w-20 h-20 shrink-0"
+                            />
+                            <div>
+                                <p class="text-xs text-base-content/50 uppercase tracking-wide mb-1">
+                                    {{ t('invoices.section.customer') }}
+                                </p>
+                                <p class="font-medium">{{ invoice.customer_name }}</p>
+                                <p v-if="invoice.customer_ico" class="text-sm text-base-content/60">
+                                    {{ t('invoices.detail.ico') }}: {{ invoice.customer_ico }}
+                                </p>
+                                <p v-if="invoice.customer_dic" class="text-sm text-base-content/60">
+                                    {{ t('invoices.detail.dic') }}: {{ invoice.customer_dic }}
+                                </p>
+                                <p v-if="invoice.customer_vat_number" class="text-sm text-base-content/60">
+                                    {{ t('invoices.detail.vat_number') }}: {{ invoice.customer_vat_number }}
+                                </p>
+                                <p
+                                    v-if="invoice.customer_street || invoice.customer_city"
+                                    class="text-sm text-base-content/70"
+                                >
                                     <span v-if="invoice.customer_street">{{ invoice.customer_street }}, </span>
                                     <span v-if="invoice.customer_postal_code">{{ invoice.customer_postal_code }} </span>
                                     <span v-if="invoice.customer_city">{{ invoice.customer_city }}</span>
-                                </dd>
+                                </p>
                             </div>
-                        </dl>
-                    </div>
-                </div>
-
-                <!-- Object info (when linked) -->
-                <div v-if="invoice.object_name" class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.section.object') }}</h2>
-                        <dl class="space-y-1.5 text-sm mt-2">
-                            <div class="flex gap-2">
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.object_name') }}</dt>
-                                <dd class="font-medium">{{ invoice.object_name }}</dd>
-                            </div>
-                            <div v-if="invoice.object_street || invoice.object_city" class="flex gap-2">
-                                <dt class="text-base-content/60 w-32 shrink-0">{{ t('invoices.detail.address') }}</dt>
-                                <dd>
-                                    <span v-if="invoice.object_street">{{ invoice.object_street }}, </span>
-                                    <span v-if="invoice.object_postal_code">{{ invoice.object_postal_code }} </span>
-                                    <span v-if="invoice.object_city">{{ invoice.object_city }}</span>
-                                </dd>
-                            </div>
-                        </dl>
-                    </div>
-                </div>
-
-                <!-- Items table -->
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.section.items') }}</h2>
-                        <div class="overflow-x-auto mt-2">
-                            <table class="table table-sm w-full">
-                                <thead>
-                                    <tr>
-                                        <th class="w-[45%]">{{ t('invoices.items.description') }}</th>
-                                        <th>{{ t('invoices.items.quantity') }}</th>
-                                        <th>{{ t('invoices.items.unit') }}</th>
-                                        <th class="text-right">{{ t('invoices.items.unit_price') }}</th>
-                                        <th class="text-right">{{ t('invoices.items.total') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="item in invoice.items" :key="item.id ?? item.description">
-                                        <td>{{ item.description }}</td>
-                                        <td>{{ item.quantity }}</td>
-                                        <td>{{ item.unit ?? t('common.empty_dash') }}</td>
-                                        <td class="text-right">{{ item.unit_price }}</td>
-                                        <td class="text-right font-medium">{{ item.total ?? (item.quantity * item.unit_price).toFixed(2) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
                         </div>
+                    </div>
 
-                        <!-- Totals -->
-                        <div class="flex justify-end mt-4">
-                            <dl class="space-y-1 text-sm min-w-[220px]">
-                                <div class="flex justify-between gap-4">
-                                    <dt class="text-base-content/60">{{ t('invoices.detail.subtotal') }}</dt>
-                                    <dd>{{ invoice.subtotal }}</dd>
-                                </div>
-                                <template v-if="invoice.is_vat_payer">
-                                    <div class="flex justify-between gap-4">
-                                        <dt class="text-base-content/60">
-                                            {{ t('invoices.detail.vat') }}
-                                            <span v-if="invoice.vat_rate">({{ invoice.vat_rate }}%)</span>
-                                        </dt>
-                                        <dd>{{ invoice.vat_amount }}</dd>
-                                    </div>
-                                </template>
-                                <div class="flex justify-between gap-4 border-t border-base-300 pt-1 font-semibold text-base">
-                                    <dt>{{ t('invoices.detail.total') }}</dt>
-                                    <dd>{{ invoice.total }}</dd>
-                                </div>
-                            </dl>
+                    <!-- 4-up date grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.col.issue_date') }}</p>
+                            <p class="font-mono">{{ formatDate(invoice.issue_date) }}</p>
                         </div>
+                        <div>
+                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.delivery_date') }}</p>
+                            <p class="font-mono">{{ formatDate(invoice.delivery_date) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.col.due_date') }}</p>
+                            <p
+                                class="font-mono"
+                                :class="{ 'text-error font-medium': invoice.status === 'overdue' }"
+                            >
+                                {{ formatDate(invoice.due_date) }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.payment_method') }}</p>
+                            <p>{{ t('invoices.detail.payment_transfer') }}</p>
+                        </div>
+                    </div>
 
-                        <!-- Non-VAT payer clause -->
-                        <p v-if="!invoice.is_vat_payer" class="text-xs text-base-content/60 mt-2">
-                            {{ t('invoices.pdf.non_vat_payer_clause') }}
+                    <!-- Period row (when applicable) -->
+                    <div v-if="invoice.period_from" class="text-sm">
+                        <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.period') }}</p>
+                        <p class="font-mono">{{ formatDate(invoice.period_from) }} – {{ formatDate(invoice.period_to) }}</p>
+                    </div>
+
+                    <!-- Object info -->
+                    <div v-if="invoice.object_name" class="text-sm bg-base-200/50 rounded-lg p-3">
+                        <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.section.object') }}</p>
+                        <p class="font-medium">{{ invoice.object_name }}</p>
+                        <p
+                            v-if="invoice.object_street || invoice.object_city"
+                            class="text-base-content/60"
+                        >
+                            <span v-if="invoice.object_street">{{ invoice.object_street }}, </span>
+                            <span v-if="invoice.object_postal_code">{{ invoice.object_postal_code }} </span>
+                            <span v-if="invoice.object_city">{{ invoice.object_city }}</span>
                         </p>
                     </div>
-                </div>
 
-                <!-- Note -->
-                <div v-if="invoice.note" class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.detail.note') }}</h2>
-                        <p class="whitespace-pre-wrap text-sm mt-2">{{ invoice.note }}</p>
+                    <!-- Items table -->
+                    <div class="overflow-x-auto">
+                        <table class="table table-sm w-full">
+                            <thead>
+                                <tr>
+                                    <th class="w-[45%]">{{ t('invoices.items.description') }}</th>
+                                    <th class="text-right">{{ t('invoices.items.quantity') }}</th>
+                                    <th>{{ t('invoices.items.unit') }}</th>
+                                    <th class="text-right">{{ t('invoices.items.unit_price') }}</th>
+                                    <th class="text-right">{{ t('invoices.items.total') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in invoice.items" :key="item.id ?? item.description">
+                                    <td class="font-medium">{{ item.description }}</td>
+                                    <td class="font-mono text-right">{{ item.quantity }}</td>
+                                    <td>{{ item.unit ?? t('common.empty_dash') }}</td>
+                                    <td class="font-mono text-right">{{ item.unit_price }}</td>
+                                    <td class="font-mono text-right font-medium">
+                                        {{ item.total ?? (item.quantity * item.unit_price).toFixed(2) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Summary totals -->
+                    <div class="flex justify-end">
+                        <dl class="space-y-1 text-sm min-w-[220px]">
+                            <div class="flex justify-between gap-4">
+                                <dt class="text-base-content/60">{{ t('invoices.detail.subtotal') }}</dt>
+                                <dd class="font-mono">{{ invoice.subtotal }}</dd>
+                            </div>
+                            <template v-if="invoice.is_vat_payer">
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-base-content/60">
+                                        {{ t('invoices.detail.vat') }}
+                                        <span v-if="invoice.vat_rate">({{ invoice.vat_rate }}%)</span>
+                                    </dt>
+                                    <dd class="font-mono">{{ invoice.vat_amount }}</dd>
+                                </div>
+                            </template>
+                            <div class="flex justify-between gap-4 border-t border-base-300 pt-1 font-semibold text-base">
+                                <dt>{{ t('invoices.detail.total') }}</dt>
+                                <dd class="font-mono">{{ invoice.total }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Non-VAT payer clause -->
+                    <p v-if="!invoice.is_vat_payer" class="text-xs text-base-content/60">
+                        {{ t('invoices.pdf.non_vat_payer_clause') }}
+                    </p>
+
+                    <!-- Pay block -->
+                    <div
+                        v-if="invoice.supplier.iban || invoice.variable_symbol"
+                        class="bg-base-200/50 rounded-lg p-4 text-sm"
+                    >
+                        <p class="font-medium mb-2">{{ t('invoices.section.qr') }}</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div v-if="invoice.supplier.iban">
+                                <p class="text-base-content/50 text-xs">{{ t('invoices.pdf.iban') }}</p>
+                                <p class="font-mono">{{ invoice.supplier.iban }}</p>
+                            </div>
+                            <div v-if="invoice.variable_symbol">
+                                <p class="text-base-content/50 text-xs">{{ t('invoices.pdf.variable_symbol') }}</p>
+                                <p class="font-mono">{{ invoice.variable_symbol }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div v-if="invoice.note">
+                        <p class="text-xs text-base-content/50 uppercase tracking-wide mb-1">
+                            {{ t('invoices.detail.note') }}
+                        </p>
+                        <p class="whitespace-pre-wrap text-sm">{{ invoice.note }}</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: 1/3 -->
-            <div class="space-y-6">
-                <!-- Dates & metadata -->
+            <!-- RIGHT sidebar -->
+            <div class="space-y-4">
+                <!-- Akcie card -->
                 <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.section.details') }}</h2>
-                        <dl class="space-y-2 text-sm mt-2">
-                            <div class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.detail.type') }}</dt>
-                                <dd>
-                                    <span class="badge badge-ghost badge-sm">
-                                        {{ t('invoice_type.' + invoice.type) }}
-                                    </span>
-                                </dd>
-                            </div>
-                            <div class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.col.issue_date') }}</dt>
-                                <dd>{{ formatDate(invoice.issue_date) }}</dd>
-                            </div>
-                            <div class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.detail.delivery_date') }}</dt>
-                                <dd>{{ formatDate(invoice.delivery_date) }}</dd>
-                            </div>
-                            <div class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.col.due_date') }}</dt>
-                                <dd :class="{ 'text-error font-medium': invoice.status === 'overdue' }">
-                                    {{ formatDate(invoice.due_date) }}
-                                </dd>
-                            </div>
-                            <template v-if="invoice.period_from">
-                                <div class="flex justify-between">
-                                    <dt class="text-base-content/60">{{ t('invoices.detail.period') }}</dt>
-                                    <dd>{{ formatDate(invoice.period_from) }} – {{ formatDate(invoice.period_to) }}</dd>
-                                </div>
-                            </template>
-                            <div v-if="invoice.issued_at" class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.detail.issued_at') }}</dt>
-                                <dd>{{ formatDate(invoice.issued_at) }}</dd>
-                            </div>
-                            <div v-if="invoice.sent_at" class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.detail.sent_at') }}</dt>
-                                <dd>{{ formatDate(invoice.sent_at) }}</dd>
-                            </div>
-                            <div v-if="invoice.paid_at" class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.detail.paid_at') }}</dt>
-                                <dd class="text-success">{{ formatDate(invoice.paid_at) }}</dd>
-                            </div>
-                            <div v-if="invoice.cancelled_at" class="flex justify-between">
-                                <dt class="text-base-content/60">{{ t('invoices.detail.cancelled_at') }}</dt>
-                                <dd>{{ formatDate(invoice.cancelled_at) }}</dd>
-                            </div>
-                        </dl>
+                    <div class="card-body gap-2">
+                        <h2 class="card-title text-sm">{{ t('invoices.section.actions') }}</h2>
+
+                        <!-- Edit (Draft only) -->
+                        <Can permission="edit invoices" feature="invoices">
+                            <Link
+                                v-if="isDraft"
+                                :href="`/invoices/${invoice.id}/edit`"
+                                class="btn btn-primary btn-sm w-full justify-start"
+                            >
+                                <PencilSquareIcon class="w-4 h-4" />
+                                {{ t('invoices.action.edit') }}
+                            </Link>
+                        </Can>
+
+                        <!-- Issue (Draft only) -->
+                        <Can permission="edit invoices" feature="invoices">
+                            <button
+                                v-if="isDraft"
+                                type="button"
+                                class="btn btn-success btn-sm w-full justify-start"
+                                @click="ui.issueDialogOpen = true"
+                            >
+                                {{ t('invoices.action.issue') }}
+                            </button>
+                        </Can>
+
+                        <!-- Mark paid -->
+                        <Can permission="edit invoices" feature="invoices">
+                            <button
+                                v-if="canMarkPaid"
+                                type="button"
+                                class="btn btn-success btn-sm w-full justify-start"
+                                @click="markPaid"
+                            >
+                                <CheckCircleIcon class="w-4 h-4" />
+                                {{ t('invoices.action.mark_paid') }}
+                            </button>
+                        </Can>
+
+                        <!-- Download PDF -->
+                        <a
+                            :href="`/invoices/${invoice.id}/pdf`"
+                            class="btn btn-ghost btn-sm w-full justify-start"
+                            target="_blank"
+                        >
+                            <DocumentArrowDownIcon class="w-4 h-4" />
+                            {{ t('invoices.action.download_pdf') }}
+                        </a>
+
+                        <!-- Send email -->
+                        <Can permission="edit invoices" feature="invoices">
+                            <button
+                                v-if="isIssued"
+                                type="button"
+                                class="btn btn-ghost btn-sm w-full justify-start"
+                                :disabled="!canSend"
+                                :title="!invoice.customer_email ? t('invoices.no_customer_email') : undefined"
+                                @click="canSend && (ui.sendConfirmOpen = true)"
+                            >
+                                <EnvelopeIcon class="w-4 h-4" />
+                                {{ t('invoices.action.send_email') }}
+                            </button>
+                        </Can>
+
+                        <!-- Duplicate -->
+                        <button
+                            type="button"
+                            class="btn btn-ghost btn-sm w-full justify-start"
+                            @click="duplicateInvoice"
+                        >
+                            <DocumentDuplicateIcon class="w-4 h-4" />
+                            {{ t('invoices.action.duplicate') }}
+                        </button>
+
+                        <!-- Storno -->
+                        <Can permission="cancel invoices" feature="invoices">
+                            <button
+                                v-if="canCancel"
+                                type="button"
+                                class="btn btn-ghost btn-sm w-full justify-start text-warning"
+                                @click="ui.cancelConfirmOpen = true"
+                            >
+                                <XCircleIcon class="w-4 h-4" />
+                                {{ t('invoices.action.cancel') }}
+                            </button>
+                        </Can>
+
+                        <!-- Delete (Draft) -->
+                        <Can permission="cancel invoices" feature="invoices">
+                            <button
+                                v-if="isDraft"
+                                type="button"
+                                class="btn btn-ghost btn-sm w-full justify-start text-error"
+                                @click="ui.deleteConfirmOpen = true"
+                            >
+                                {{ t('invoices.action.delete') }}
+                            </button>
+                        </Can>
                     </div>
                 </div>
 
-                <!-- Supplier info -->
+                <!-- Prepojenia card -->
                 <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.section.supplier') }}</h2>
-                        <dl class="space-y-1.5 text-sm mt-2">
-                            <div class="font-medium">{{ invoice.supplier.name }}</div>
-                            <div v-if="invoice.supplier.ico" class="text-base-content/60">
-                                {{ t('invoices.detail.ico') }}: {{ invoice.supplier.ico }}
-                            </div>
-                            <div v-if="invoice.supplier.iban" class="font-mono text-xs">
-                                {{ invoice.supplier.iban }}
-                            </div>
-                            <div v-if="invoice.variable_symbol" class="text-base-content/60 text-xs">
-                                VS: {{ invoice.variable_symbol }}
-                            </div>
-                        </dl>
-                    </div>
-                </div>
+                    <div class="card-body gap-2">
+                        <h2 class="card-title text-sm">{{ t('invoices.section.links') }}</h2>
 
-                <!-- QR code -->
-                <div v-if="invoice.qr_data_uri" class="card bg-base-100 shadow-sm">
-                    <div class="card-body items-center">
-                        <h2 class="card-title text-base">{{ t('invoices.section.qr') }}</h2>
-                        <img
-                            :src="invoice.qr_data_uri"
-                            :alt="t('invoices.section.qr')"
-                            class="w-32 h-32 mt-2"
-                        />
+                        <!-- Client link -->
+                        <div v-if="invoice.client_id" class="flex items-center gap-2 text-sm">
+                            <UserIcon class="w-4 h-4 text-base-content/40 shrink-0" />
+                            <Link :href="`/clients/${invoice.client_id}`" class="link link-hover">
+                                {{ t('invoices.links.client') }}
+                            </Link>
+                        </div>
+
+                        <!-- Object link (Track B: no route yet, show name as text) -->
+                        <div v-if="invoice.object_name" class="flex items-center gap-2 text-sm">
+                            <BuildingOfficeIcon class="w-4 h-4 text-base-content/40 shrink-0" />
+                            <span class="text-base-content/70">{{ invoice.object_name }}</span>
+                        </div>
                     </div>
                 </div>
             </div>

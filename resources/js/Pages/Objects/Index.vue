@@ -75,7 +75,7 @@
 </script>
 
 <template>
-    <div class="max-w-7xl mx-auto">
+    <div class="page-container">
         <div v-if="flash.success" class="alert alert-success mb-4">
             <span>{{ flash.success }}</span>
         </div>

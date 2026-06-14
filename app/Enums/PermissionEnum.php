@@ -52,6 +52,12 @@ enum PermissionEnum: string
     case EditInvoices = 'edit invoices';
     case CancelInvoices = 'cancel invoices';
 
+    // Recurring Invoices
+    case ViewRecurringInvoices = 'view recurring_invoices';
+    case CreateRecurringInvoices = 'create recurring_invoices';
+    case EditRecurringInvoices = 'edit recurring_invoices';
+    case DeleteRecurringInvoices = 'delete recurring_invoices';
+
     // Templates
     case ViewTemplates = 'view templates';
     case UploadTemplates = 'upload templates';

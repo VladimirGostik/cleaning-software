@@ -42,7 +42,7 @@ final readonly class ClientService
                 AllowedSort::field('created_at'),
             )
             ->defaultSort('name')
-            ->withCount('contacts')
+            ->withCount(['contacts', 'objects'])
             ->with(['contacts' => fn ($q) => $q->where('is_primary', true)])
             ->paginate($filter->per_page)
             ->appends(request()->query());

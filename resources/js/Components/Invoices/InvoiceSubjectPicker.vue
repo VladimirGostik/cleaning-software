@@ -1,6 +1,5 @@
 <script setup lang="ts">
-    import { computed, watch } from 'vue';
-    import { router } from '@inertiajs/vue3';
+    import { computed } from 'vue';
     import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
     import TextInput from '@/Components/Forms/TextInput.vue';
     import { useTranslate } from '@/Composables/useTranslate';
@@ -18,6 +17,7 @@
         customer_postal_code: string | null;
         customer_country: string | null;
         customer_email: string | null;
+        customer_representative: string | null;
     }
 
     interface ClientOption {
@@ -28,6 +28,7 @@
     interface ObjectOption {
         id: string;
         name: string;
+        client_id: string;
     }
 
     const props = withDefaults(
@@ -65,17 +66,19 @@
         customer_postal_code: null,
         customer_country: null,
         customer_email: null,
+        customer_representative: null,
     } satisfies Partial<SubjectValue>;
 
     const currentMode = computed(() => props.modelValue.mode);
-    const currentClientId = computed(() => props.modelValue.client_id);
 
     const clientOptions = computed<SelectOption[]>(() =>
         props.clients.map((c) => ({ value: c.id, label: c.name })),
     );
 
     const objectOptions = computed<SelectOption[]>(() =>
-        (props.objects ?? []).map((o) => ({ value: o.id, label: o.name })),
+        (props.objects ?? [])
+            .filter((o) => o.client_id === props.modelValue.client_id)
+            .map((o) => ({ value: o.id, label: o.name })),
     );
 
     function setMode(mode: 'client' | 'object' | 'standalone') {
@@ -111,9 +114,6 @@
             client_id: idStr || null,
             cleaning_object_id: null,
         });
-        if (idStr && currentMode.value === 'object') {
-            router.reload({ only: ['objects'], data: { client_id: idStr } });
-        }
     }
 
     function setObjectId(id: string | number) {
@@ -129,14 +129,6 @@
             [field]: value || null,
         });
     }
-
-    // When object mode selected and client_id already set, reload objects list
-    watch(currentMode, (mode) => {
-        if (mode !== 'object') return;
-        if (currentClientId.value) {
-            router.reload({ only: ['objects'], data: { client_id: currentClientId.value } });
-        }
-    });
 </script>
 
 <template>
@@ -194,6 +186,15 @@
                         :error="errors['customer_name']"
                         required
                         @update:model-value="setCustomerField('customer_name', $event)"
+                    />
+                </div>
+                <div class="md:col-span-2">
+                    <TextInput
+                        :model-value="modelValue.customer_representative ?? ''"
+                        :label="t('invoices.subject.customer_representative')"
+                        :placeholder="t('invoices.subject.customer_representative_placeholder')"
+                        :error="errors['customer_representative']"
+                        @update:model-value="setCustomerField('customer_representative', $event)"
                     />
                 </div>
                 <TextInput

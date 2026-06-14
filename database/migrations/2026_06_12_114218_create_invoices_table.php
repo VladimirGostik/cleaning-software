@@ -47,6 +47,7 @@ return new class extends Migration
 
             // Customer snapshot
             $table->string('customer_name');
+            $table->string('customer_representative')->nullable();
             $table->string('customer_ico')->nullable();
             $table->string('customer_dic')->nullable();
             $table->string('customer_vat_number')->nullable();

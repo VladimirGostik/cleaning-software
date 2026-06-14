@@ -19,7 +19,7 @@ final class ClientListItemData extends Data
         public ?string $ico,
         public ?string $city,
         public int $contacts_count,
-        public int $objects_count,         // TODO: replace with real count when objects module lands
+        public int $objects_count,
         public int $active_contracts_count, // TODO: replace with real count when contracts module lands
         public ?string $primary_contact_email,
         public ?string $primary_contact_phone,
@@ -40,7 +40,7 @@ final class ClientListItemData extends Data
             ico: $client->ico,
             city: $client->city,
             contacts_count: (int) ($client->contacts_count ?? 0),
-            objects_count: 0,
+            objects_count: (int) ($client->objects_count ?? 0),
             active_contracts_count: 0,
             primary_contact_email: $primaryContact?->email,
             primary_contact_phone: $primaryContact?->phone,

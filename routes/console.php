@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('app:mark-overdue-invoices')->daily();
+Schedule::command('app:generate-recurring-invoices')->daily();

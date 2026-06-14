@@ -8,8 +8,9 @@
     import FormField from '@/Components/Forms/FormField.vue';
     import InvoiceSubjectPicker from './InvoiceSubjectPicker.vue';
     import InvoiceItemsEditor from './InvoiceItemsEditor.vue';
-    import type { SubjectValue } from './InvoiceSubjectPicker.vue';
     import { useTranslate } from '@/Composables/useTranslate';
+    import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
+    import type { SubjectValue } from './InvoiceSubjectPicker.vue';
     import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
 
     interface ClientOption {
@@ -20,6 +21,7 @@
     interface ObjectOption {
         id: string;
         name: string;
+        client_id: string;
     }
 
     interface InvoiceFormData {
@@ -41,6 +43,7 @@
         customer_postal_code: string | null;
         customer_country: string | null;
         customer_email: string | null;
+        customer_representative: string | null;
         note: string | null;
         items: App.Data.Invoices.InvoiceItemData[];
         _subject_mode: 'client' | 'object' | 'standalone';
@@ -99,6 +102,7 @@
             customer_postal_code: props.invoice?.customer_postal_code ?? null,
             customer_country: props.invoice?.customer_country ?? null,
             customer_email: props.invoice?.customer_email ?? null,
+            customer_representative: props.invoice?.customer_representative ?? null,
             note: props.invoice?.note ?? null,
             items: props.invoice?.items ?? [{ id: null, description: '', quantity: 1, unit: null, unit_price: 0, total: null }],
             _subject_mode: resolveInitialMode(),
@@ -120,6 +124,7 @@
                 customer_postal_code: form.customer_postal_code,
                 customer_country: form.customer_country,
                 customer_email: form.customer_email,
+                customer_representative: form.customer_representative,
             };
         },
         set(val: SubjectValue) {
@@ -135,6 +140,7 @@
             form.customer_postal_code = val.customer_postal_code;
             form.customer_country = val.customer_country;
             form.customer_email = val.customer_email;
+            form.customer_representative = val.customer_representative;
         },
     });
 
@@ -153,6 +159,7 @@
             'customer_postal_code',
             'customer_country',
             'customer_email',
+            'customer_representative',
         ] as const;
         const out: Record<string, string> = {};
         for (const k of keys) {
@@ -170,6 +177,21 @@
         return out;
     });
 
+    // Preview totals via shared composable
+    const itemsRef = computed(() => form.items);
+    const isVatPayerRef = computed(() => props.isVatPayer);
+    const vatRateRef = computed(() => props.vatRate);
+    const { subtotal: previewSubtotal, total: previewTotal } = useInvoiceTotals(
+        itemsRef,
+        isVatPayerRef,
+        vatRateRef,
+    );
+
+    const typeLabel = computed(() => {
+        const opt = props.typeOptions.find((o) => o.value === form.type);
+        return opt ? opt.label : form.type;
+    });
+
     function submit() {
         form.submit();
     }
@@ -178,142 +200,223 @@
 <template>
     <FormProvider :form="form">
         <form novalidate @submit.prevent="submit">
-            <div class="space-y-6">
-                <!-- Subject -->
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.form.subject') }}</h2>
-                        <InvoiceSubjectPicker
-                            v-model="subjectValue"
-                            :clients="clients"
-                            :objects="objects"
-                            :errors="subjectErrors"
-                        />
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+                <!-- Left column: form cards -->
+                <div class="space-y-6">
+                    <!-- Subject -->
+                    <div class="card bg-base-100 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="card-title text-base">{{ t('invoices.form.subject') }}</h2>
+                            <InvoiceSubjectPicker
+                                v-model="subjectValue"
+                                :clients="clients"
+                                :objects="objects"
+                                :errors="subjectErrors"
+                            />
+                        </div>
                     </div>
+
+                    <!-- Dates + type + template -->
+                    <div class="card bg-base-100 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="card-title text-base">{{ t('invoices.form.details') }}</h2>
+                            <div class="space-y-4">
+                                <!-- Type segmented control (3 values: monthly / one_off / special) -->
+                                <FormField :label="t('invoices.form.type')" required>
+                                    <div
+                                        class="flex flex-wrap gap-2"
+                                        role="radiogroup"
+                                        :aria-label="t('invoices.form.type')"
+                                    >
+                                        <button
+                                            v-for="opt in typeOptions"
+                                            :key="opt.value"
+                                            type="button"
+                                            role="radio"
+                                            :aria-checked="form.type === opt.value"
+                                            :class="[
+                                                'btn btn-sm',
+                                                form.type === opt.value
+                                                    ? 'btn-primary'
+                                                    : 'btn-ghost border border-base-300',
+                                            ]"
+                                            @click="form.type = opt.value as App.Enums.InvoiceTypeEnum"
+                                        >
+                                            {{ opt.label }}
+                                        </button>
+                                    </div>
+                                    <p v-if="form.errors.type" class="text-error text-xs mt-0.5">
+                                        {{ form.errors.type }}
+                                    </p>
+                                </FormField>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <SelectInput
+                                        field="template"
+                                        :label="t('invoices.form.template')"
+                                        :options="templateOptions"
+                                    />
+
+                                    <FormField :label="t('invoices.form.issue_date')" required>
+                                        <input
+                                            v-model="form.issue_date"
+                                            type="date"
+                                            required
+                                            class="input w-full"
+                                            :class="{ 'input-error': form.errors.issue_date }"
+                                            :aria-required="'true'"
+                                            :aria-invalid="form.errors.issue_date ? 'true' : undefined"
+                                        />
+                                        <p v-if="form.errors.issue_date" class="text-error text-xs mt-0.5">
+                                            {{ form.errors.issue_date }}
+                                        </p>
+                                    </FormField>
+
+                                    <FormField :label="t('invoices.form.delivery_date')" required>
+                                        <input
+                                            v-model="form.delivery_date"
+                                            type="date"
+                                            required
+                                            class="input w-full"
+                                            :class="{ 'input-error': form.errors.delivery_date }"
+                                            :aria-required="'true'"
+                                            :aria-invalid="form.errors.delivery_date ? 'true' : undefined"
+                                        />
+                                        <p v-if="form.errors.delivery_date" class="text-error text-xs mt-0.5">
+                                            {{ form.errors.delivery_date }}
+                                        </p>
+                                    </FormField>
+
+                                    <FormField :label="t('invoices.form.due_date')" required>
+                                        <input
+                                            v-model="form.due_date"
+                                            type="date"
+                                            required
+                                            class="input w-full"
+                                            :class="{ 'input-error': form.errors.due_date }"
+                                            :aria-required="'true'"
+                                            :aria-invalid="form.errors.due_date ? 'true' : undefined"
+                                        />
+                                        <p v-if="form.errors.due_date" class="text-error text-xs mt-0.5">
+                                            {{ form.errors.due_date }}
+                                        </p>
+                                    </FormField>
+
+                                    <template v-if="showPeriodFields">
+                                        <FormField :label="t('invoices.form.period_from')">
+                                            <input
+                                                v-model="(form as unknown as Record<string, string | null>)['period_from']"
+                                                type="date"
+                                                class="input w-full"
+                                                :class="{ 'input-error': form.errors.period_from }"
+                                                :aria-invalid="form.errors.period_from ? 'true' : undefined"
+                                            />
+                                            <p v-if="form.errors.period_from" class="text-error text-xs mt-0.5">
+                                                {{ form.errors.period_from }}
+                                            </p>
+                                        </FormField>
+                                        <FormField :label="t('invoices.form.period_to')">
+                                            <input
+                                                v-model="(form as unknown as Record<string, string | null>)['period_to']"
+                                                type="date"
+                                                class="input w-full"
+                                                :class="{ 'input-error': form.errors.period_to }"
+                                                :aria-invalid="form.errors.period_to ? 'true' : undefined"
+                                            />
+                                            <p v-if="form.errors.period_to" class="text-error text-xs mt-0.5">
+                                                {{ form.errors.period_to }}
+                                            </p>
+                                        </FormField>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items -->
+                    <div class="card bg-base-100 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="card-title text-base">{{ t('invoices.form.items') }}</h2>
+                            <InvoiceItemsEditor
+                                v-model="form.items"
+                                :is-vat-payer="isVatPayer"
+                                :vat-rate="vatRate"
+                                :errors="itemErrors"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div class="card bg-base-100 shadow-sm">
+                        <div class="card-body">
+                            <TextareaInput
+                                field="note"
+                                :label="t('invoices.form.note')"
+                                :rows="3"
+                            />
+                        </div>
+                    </div>
+
+                    <FormActions
+                        cancel-href="/invoices"
+                        :cancel-label="t('cancel')"
+                        :submit-label="isEditing ? t('save') : t('invoices.add')"
+                        :processing="form.processing"
+                    />
                 </div>
 
-                <!-- Dates + type + template -->
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.form.details') }}</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <SelectInput
-                                field="type"
-                                :label="t('invoices.form.type')"
-                                :options="typeOptions"
-                                required
-                            />
-                            <SelectInput
-                                field="template"
-                                :label="t('invoices.form.template')"
-                                :options="templateOptions"
-                            />
+                <!-- Right column: sticky preview -->
+                <div class="hidden lg:block">
+                    <div class="sticky top-4">
+                        <div class="card bg-base-100 shadow-sm">
+                            <div class="card-body gap-3">
+                                <h2 class="card-title text-sm text-base-content/60 uppercase tracking-wide font-medium">
+                                    {{ t('invoices.preview.title') }}
+                                </h2>
 
-                            <FormField :label="t('invoices.form.issue_date')" required>
-                                <input
-                                    v-model="form.issue_date"
-                                    type="date"
-                                    required
-                                    class="input w-full"
-                                    :class="{ 'input-error': form.errors.issue_date }"
-                                    :aria-required="'true'"
-                                    :aria-invalid="form.errors.issue_date ? 'true' : undefined"
-                                />
-                                <p v-if="form.errors.issue_date" class="text-error text-xs mt-0.5">
-                                    {{ form.errors.issue_date }}
-                                </p>
-                            </FormField>
-
-                            <FormField :label="t('invoices.form.delivery_date')" required>
-                                <input
-                                    v-model="form.delivery_date"
-                                    type="date"
-                                    required
-                                    class="input w-full"
-                                    :class="{ 'input-error': form.errors.delivery_date }"
-                                    :aria-required="'true'"
-                                    :aria-invalid="form.errors.delivery_date ? 'true' : undefined"
-                                />
-                                <p v-if="form.errors.delivery_date" class="text-error text-xs mt-0.5">
-                                    {{ form.errors.delivery_date }}
-                                </p>
-                            </FormField>
-
-                            <FormField :label="t('invoices.form.due_date')" required>
-                                <input
-                                    v-model="form.due_date"
-                                    type="date"
-                                    required
-                                    class="input w-full"
-                                    :class="{ 'input-error': form.errors.due_date }"
-                                    :aria-required="'true'"
-                                    :aria-invalid="form.errors.due_date ? 'true' : undefined"
-                                />
-                                <p v-if="form.errors.due_date" class="text-error text-xs mt-0.5">
-                                    {{ form.errors.due_date }}
-                                </p>
-                            </FormField>
-
-                            <template v-if="showPeriodFields">
-                                <FormField :label="t('invoices.form.period_from')">
-                                    <input
-                                        v-model="(form as unknown as Record<string, string | null>)['period_from']"
-                                        type="date"
-                                        class="input w-full"
-                                        :class="{ 'input-error': form.errors.period_from }"
-                                        :aria-invalid="form.errors.period_from ? 'true' : undefined"
-                                    />
-                                    <p v-if="form.errors.period_from" class="text-error text-xs mt-0.5">
-                                        {{ form.errors.period_from }}
+                                <!-- Number placeholder -->
+                                <div>
+                                    <p class="text-xs text-base-content/50 mb-0.5">{{ t('invoices.col.number') }}</p>
+                                    <p class="font-mono text-sm font-medium text-base-content/40">
+                                        {{ t('invoices.draft_number') }}
                                     </p>
-                                </FormField>
-                                <FormField :label="t('invoices.form.period_to')">
-                                    <input
-                                        v-model="(form as unknown as Record<string, string | null>)['period_to']"
-                                        type="date"
-                                        class="input w-full"
-                                        :class="{ 'input-error': form.errors.period_to }"
-                                        :aria-invalid="form.errors.period_to ? 'true' : undefined"
-                                    />
-                                    <p v-if="form.errors.period_to" class="text-error text-xs mt-0.5">
-                                        {{ form.errors.period_to }}
-                                    </p>
-                                </FormField>
-                            </template>
+                                </div>
+
+                                <!-- Type -->
+                                <div>
+                                    <p class="text-xs text-base-content/50 mb-0.5">{{ t('invoices.form.type') }}</p>
+                                    <span class="badge badge-ghost badge-sm">{{ typeLabel }}</span>
+                                </div>
+
+                                <!-- Dates -->
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                        <p class="text-base-content/50 mb-0.5">{{ t('invoices.form.issue_date') }}</p>
+                                        <p class="font-mono">{{ form.issue_date }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-base-content/50 mb-0.5">{{ t('invoices.form.due_date') }}</p>
+                                        <p class="font-mono">{{ form.due_date }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="divider my-0" />
+
+                                <!-- Totals -->
+                                <dl class="space-y-1 text-sm">
+                                    <div class="flex justify-between gap-2">
+                                        <dt class="text-base-content/60">{{ t('invoices.detail.subtotal') }}</dt>
+                                        <dd class="font-mono">{{ previewSubtotal.toFixed(2) }}</dd>
+                                    </div>
+                                    <div class="flex justify-between gap-2 font-semibold">
+                                        <dt>{{ t('invoices.detail.total') }}</dt>
+                                        <dd class="font-mono">{{ previewTotal.toFixed(2) }}</dd>
+                                    </div>
+                                </dl>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Items -->
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoices.form.items') }}</h2>
-                        <InvoiceItemsEditor
-                            v-model="form.items"
-                            :is-vat-payer="isVatPayer"
-                            :vat-rate="vatRate"
-                            :errors="itemErrors"
-                        />
-                    </div>
-                </div>
-
-                <!-- Note -->
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <TextareaInput
-                            field="note"
-                            :label="t('invoices.form.note')"
-                            :rows="3"
-                        />
-                    </div>
-                </div>
-
-                <FormActions
-                    cancel-href="/invoices"
-                    :cancel-label="t('cancel')"
-                    :submit-label="isEditing ? t('save') : t('invoices.add')"
-                    :processing="form.processing"
-                />
             </div>
         </form>
     </FormProvider>

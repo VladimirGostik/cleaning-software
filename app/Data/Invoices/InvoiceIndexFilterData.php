@@ -9,6 +9,8 @@ use App\Enums\InvoiceTypeEnum;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
+use Spatie\LaravelData\Attributes\Validation\Numeric;
+use Spatie\LaravelData\Attributes\Validation\Rule;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -24,6 +26,22 @@ final class InvoiceIndexFilterData extends Data
         public ?InvoiceTypeEnum $type = null,
         #[Nullable]
         public ?string $client_id = null,
+        #[Nullable, Max(10)]
+        public ?string $tab = null,
+        #[Nullable, Rule('date_format:Y-m')]
+        public ?string $month = null,
+        #[Nullable, Rule('date_format:Y-m-d')]
+        public ?string $issued_from = null,
+        #[Nullable, Rule('date_format:Y-m-d')]
+        public ?string $issued_to = null,
+        #[Nullable, Rule('date_format:Y-m-d')]
+        public ?string $due_from = null,
+        #[Nullable, Rule('date_format:Y-m-d')]
+        public ?string $due_to = null,
+        #[Nullable, Numeric, Min(0)]
+        public ?string $total_min = null,
+        #[Nullable, Numeric, Min(0)]
+        public ?string $total_max = null,
         #[Nullable, Min(1), Max(100)]
         public int $per_page = 20,
     ) {}

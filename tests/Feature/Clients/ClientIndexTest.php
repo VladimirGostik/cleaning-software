@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Clients;
 
 use App\Enums\ClientTypeEnum;
+use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\ClientContact;
 use App\Models\Tenant;
@@ -234,6 +235,96 @@ final class ClientIndexTest extends TestCase
                 ->component('Clients/Index')
                 ->where('clients.data.0.primary_contact_email', null)
                 ->where('clients.data.0.primary_contact_phone', null),
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Regression: objects_count per client (Fix A)
+    // Previously ClientListItemData::fromModel always returned 0 for objects_count.
+    // ClientService::paginate now eager-loads withCount(['contacts', 'objects']).
+    // -------------------------------------------------------------------------
+
+    public function test_objects_count_reflects_actual_cleaning_objects_linked_to_client(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        $clientWithObjects = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Alpha']);
+        CleaningObject::factory()->count(2)->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $clientWithObjects->id,
+        ]);
+
+        $clientWithoutObjects = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Beta']);
+
+        // Act
+        $response = $this->get(route('clients.index'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(function (AssertableInertia $page) {
+            $page->component('Clients/Index');
+
+            /** @var array<int, array<string, mixed>> $data */
+            $data = $page->toArray()['props']['clients']['data'];
+
+            $byName = [];
+            foreach ($data as $row) {
+                $byName[$row['name']] = $row;
+            }
+
+            $this->assertSame(2, $byName['Alpha']['objects_count'], 'Client with 2 objects must have objects_count=2');
+            $this->assertSame(0, $byName['Beta']['objects_count'], 'Client with 0 objects must have objects_count=0');
+        });
+    }
+
+    public function test_objects_count_is_zero_when_no_objects_exist(): void
+    {
+        // Arrange
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenant);
+
+        Client::factory()->create(['tenant_id' => $tenant->id]);
+
+        // Act
+        $response = $this->get(route('clients.index'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Clients/Index')
+                ->where('clients.data.0.objects_count', 0),
+        );
+    }
+
+    public function test_objects_from_other_tenant_not_counted(): void
+    {
+        // Arrange
+        $tenantA = Tenant::factory()->create();
+        $tenantB = Tenant::factory()->create();
+
+        $this->actingAsTenantUser('Vlastník', $tenantA);
+
+        $client = Client::factory()->create(['tenant_id' => $tenantA->id]);
+
+        // Object belongs to tenantB's client — should not inflate tenantA client's count
+        $otherClient = Client::factory()->create(['tenant_id' => $tenantB->id]);
+        CleaningObject::factory()->count(3)->create([
+            'tenant_id' => $tenantB->id,
+            'client_id' => $otherClient->id,
+        ]);
+
+        // Act
+        $response = $this->get(route('clients.index'));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Clients/Index')
+                ->where('clients.data.0.objects_count', 0),
         );
     }
 }

@@ -1,8 +1,10 @@
 <script setup lang="ts">
+    import { computed } from 'vue';
     import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
     import { useTranslate } from '@/Composables/useTranslate';
+    import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 
-    defineProps<{
+    const props = defineProps<{
         search: string;
         type: App.Enums.ObjectTypeEnum | undefined;
         client_id: string | undefined;
@@ -19,10 +21,54 @@
     }>();
 
     const { t } = useTranslate();
+
+    const typeValue = computed<string>({
+        get: () => props.type ?? '',
+        set: (val: string | number) => {
+            const str = String(val);
+            emit('update:type', str ? (str as App.Enums.ObjectTypeEnum) : undefined);
+        },
+    });
+
+    const clientValue = computed<string>({
+        get: () => props.client_id ?? '',
+        set: (val: string | number) => {
+            const str = String(val);
+            emit('update:client_id', str || undefined);
+        },
+    });
+
+    const activeValue = computed<string>({
+        get: () => (props.is_active === undefined ? '' : String(props.is_active)),
+        set: (val: string | number) => {
+            const str = String(val);
+            if (str === '') {
+                emit('update:is_active', undefined);
+            } else {
+                emit('update:is_active', str === 'true');
+            }
+        },
+    });
+
+    const typeOptions = computed<SelectOption[]>(() => [
+        { value: '', label: t('objects.filter.all_types') },
+        ...props.types.map((opt) => ({ value: opt.value, label: opt.label })),
+    ]);
+
+    const clientOptions = computed<SelectOption[]>(() => [
+        { value: '', label: t('objects.filter.all_clients') },
+        ...props.clients.map((c) => ({ value: c.id, label: c.name })),
+    ]);
+
+    const activeOptions = computed<SelectOption[]>(() => [
+        { value: '', label: t('objects.filter.all_states') },
+        { value: 'true', label: t('objects.filter.active') },
+        { value: 'false', label: t('objects.filter.inactive') },
+    ]);
 </script>
 
 <template>
-    <div class="flex flex-col md:flex-row gap-3 mb-4 flex-wrap">
+    <div class="flex flex-wrap gap-3 mb-4 items-end">
         <label class="input flex items-center gap-2 flex-1 min-w-48">
             <MagnifyingGlassIcon class="w-4 h-4 opacity-60" />
             <input
@@ -34,50 +80,28 @@
             />
         </label>
 
-        <label :aria-label="t('objects.col.type')" class="sr-only">{{ t('objects.col.type') }}</label>
-        <select
-            :value="type ?? ''"
-            class="select select-bordered select-sm"
-            :aria-label="t('objects.col.type')"
-            @change="
-                emit(
-                    'update:type',
-                    ($event.target as HTMLSelectElement).value
-                        ? (($event.target as HTMLSelectElement).value as App.Enums.ObjectTypeEnum)
-                        : undefined,
-                )
-            "
-        >
-            <option value="">{{ t('objects.filter.all_types') }}</option>
-            <option v-for="opt in types" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-        </select>
+        <div class="flex-1 min-w-44">
+            <SelectInput
+                v-model="typeValue"
+                :options="typeOptions"
+                :label="t('objects.col.type')"
+            />
+        </div>
 
-        <select
-            :value="client_id ?? ''"
-            class="select select-bordered select-sm"
-            :aria-label="t('objects.col.client')"
-            @change="emit('update:client_id', ($event.target as HTMLSelectElement).value || undefined)"
-        >
-            <option value="">{{ t('objects.filter.all_clients') }}</option>
-            <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
+        <div class="flex-1 min-w-44">
+            <SelectInput
+                v-model="clientValue"
+                :options="clientOptions"
+                :label="t('objects.col.client')"
+            />
+        </div>
 
-        <select
-            :value="is_active === undefined ? '' : String(is_active)"
-            class="select select-bordered select-sm"
-            :aria-label="t('objects.col.active')"
-            @change="
-                emit(
-                    'update:is_active',
-                    ($event.target as HTMLSelectElement).value === ''
-                        ? undefined
-                        : ($event.target as HTMLSelectElement).value === 'true',
-                )
-            "
-        >
-            <option value="">{{ t('objects.filter.all_states') }}</option>
-            <option value="true">{{ t('objects.filter.active') }}</option>
-            <option value="false">{{ t('objects.filter.inactive') }}</option>
-        </select>
+        <div class="flex-1 min-w-44">
+            <SelectInput
+                v-model="activeValue"
+                :options="activeOptions"
+                :label="t('objects.col.active')"
+            />
+        </div>
     </div>
 </template>

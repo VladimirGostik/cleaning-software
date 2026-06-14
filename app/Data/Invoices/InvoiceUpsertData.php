@@ -42,6 +42,8 @@ final class InvoiceUpsertData extends Data
         #[Nullable]
         public ?string $customer_name,
         #[Nullable]
+        public ?string $customer_representative,
+        #[Nullable]
         public ?string $customer_ico,
         #[Nullable]
         public ?string $customer_dic,

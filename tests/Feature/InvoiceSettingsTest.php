@@ -46,11 +46,12 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => 'SK3112000000198742637541',
             'vat_rate' => 23.0,
             'registration_info' => 'Zapísaná v OR OS Bratislava I, odd. Sro, vl. č. 12345/B',
+            'recurring_default_state' => 'draft',
         ];
 
         $response = $this->put(route('settings.invoicing.update'), $payload);
 
-        $response->assertRedirect(route('settings.invoicing'));
+        $response->assertRedirect(route('invoices.index'));
 
         $tenant->refresh();
         $this->assertSame('FA-{YYYY}-{XXXX}', $tenant->invoice_number_format);
@@ -72,6 +73,7 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => null,
             'vat_rate' => null,
             'registration_info' => null,
+            'recurring_default_state' => 'draft',
         ]);
 
         $tenant->refresh();
@@ -90,6 +92,7 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => null,
             'vat_rate' => 23.0,
             'registration_info' => 'Zapísaná v OR OS Košice, odd. Sro, vl. č. 99999/V',
+            'recurring_default_state' => 'draft',
         ]);
 
         $tenant->refresh();
@@ -134,6 +137,7 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => null,
             'vat_rate' => null,
             'registration_info' => null,
+            'recurring_default_state' => 'draft',
         ]);
 
         $response->assertSessionHasErrors('invoice_number_format');
@@ -150,6 +154,7 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => 'not-an-iban',
             'vat_rate' => null,
             'registration_info' => null,
+            'recurring_default_state' => 'draft',
         ]);
 
         $response->assertSessionHasErrors('iban');
@@ -166,6 +171,7 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => null,
             'vat_rate' => 150.0,
             'registration_info' => null,
+            'recurring_default_state' => 'draft',
         ]);
 
         $response->assertSessionHasErrors('vat_rate');
@@ -182,6 +188,7 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => null,
             'vat_rate' => null,
             'registration_info' => str_repeat('a', 256),
+            'recurring_default_state' => 'draft',
         ]);
 
         $response->assertSessionHasErrors('registration_info');
@@ -202,9 +209,10 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => null,
             'vat_rate' => null,
             'registration_info' => null,
+            'recurring_default_state' => 'draft',
         ]);
 
-        $response->assertRedirect(route('settings.invoicing'));
+        $response->assertRedirect(route('invoices.index'));
     }
 
     public function test_vat_rate_zero_is_valid(): void
@@ -219,6 +227,7 @@ final class InvoiceSettingsTest extends TestCase
             'iban' => null,
             'vat_rate' => 0,
             'registration_info' => null,
+            'recurring_default_state' => 'draft',
         ]);
 
         $tenant->refresh();

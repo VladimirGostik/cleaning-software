@@ -121,6 +121,10 @@ name: string | null,
 };
 }
 namespace Invoices {
+export type BulkInvoiceData = {
+action: string,
+ids: string[],
+};
 export type InvoiceDetailData = {
 id: string,
 client_id: string | null,
@@ -146,6 +150,7 @@ subtotal: string,
 vat_amount: string,
 total: string,
 customer_name: string,
+customer_representative: string | null,
 customer_ico: string | null,
 customer_dic: string | null,
 customer_vat_number: string | null,
@@ -169,6 +174,14 @@ search: string | null,
 status: App.Enums.InvoiceStatusEnum | null,
 type: App.Enums.InvoiceTypeEnum | null,
 client_id: string | null,
+tab: string | null,
+month: string | null,
+issued_from: string | null,
+issued_to: string | null,
+due_from: string | null,
+due_to: string | null,
+total_min: string | null,
+total_max: string | null,
 per_page: number,
 };
 export type InvoiceIssueData = {
@@ -188,6 +201,7 @@ number: string | null,
 status: App.Enums.InvoiceStatusEnum,
 type: App.Enums.InvoiceTypeEnum,
 customer_name: string,
+object_name: string | null,
 total: string,
 issue_date: string,
 due_date: string,
@@ -199,6 +213,17 @@ invoice_number_format: string,
 iban: string | null,
 vat_rate: number | null,
 registration_info: string | null,
+recurring_default_state: App.Enums.RecurringDefaultStateEnum,
+};
+export type InvoiceStatCardData = {
+amount: string,
+count: number,
+};
+export type InvoiceStatsData = {
+issued_this_month: App.Data.Invoices.InvoiceStatCardData,
+overdue: App.Data.Invoices.InvoiceStatCardData,
+pending: App.Data.Invoices.InvoiceStatCardData,
+recurring_monthly: App.Data.Invoices.InvoiceStatCardData,
 };
 export type InvoiceSupplierData = {
 name: string,
@@ -225,6 +250,7 @@ due_date: string,
 period_from: string | null,
 period_to: string | null,
 customer_name: string | null,
+customer_representative: string | null,
 customer_ico: string | null,
 customer_dic: string | null,
 customer_vat_number: string | null,
@@ -235,6 +261,13 @@ customer_country: string | null,
 customer_email: string | null,
 note: string | null,
 items: App.Data.Invoices.InvoiceItemData[],
+};
+export type TabCountsData = {
+readonly all: number | null,
+readonly all_issued: number,
+readonly recurring: number,
+readonly drafts: number,
+readonly overdue: number,
 };
 }
 namespace Objects {
@@ -278,6 +311,11 @@ client_name: string | null,
 area_sqm: string | null,
 created_at: string,
 };
+export type ObjectOptionData = {
+id: string,
+name: string,
+client_id: string,
+};
 export type ObjectStoreData = {
 client_id: string,
 type: App.Enums.ObjectTypeEnum,
@@ -309,6 +347,97 @@ special_instructions: string | null,
 area_sqm: number | null,
 floor: number | null,
 is_active: boolean,
+};
+}
+namespace RecurringInvoices {
+export type RecurringInvoiceDetailData = {
+id: string,
+name: string,
+status: App.Enums.RecurringInvoiceStatusEnum,
+frequency: App.Enums.RecurringFrequencyEnum,
+type: App.Enums.InvoiceTypeEnum,
+template: App.Enums.InvoiceTemplateEnum | null,
+client_id: string | null,
+cleaning_object_id: string | null,
+day_of_month: number,
+auto_issue: boolean,
+start_date: string,
+end_date: string | null,
+occurrences_limit: number | null,
+occurrences_generated: number,
+next_run_at: string | null,
+last_generated_at: string | null,
+due_days: number,
+period_from: string | null,
+period_to: string | null,
+customer_name: string | null,
+customer_representative: string | null,
+customer_ico: string | null,
+customer_dic: string | null,
+customer_vat_number: string | null,
+customer_street: string | null,
+customer_city: string | null,
+customer_postal_code: string | null,
+customer_country: string | null,
+customer_email: string | null,
+note: string | null,
+items: App.Data.RecurringInvoices.RecurringInvoiceItemData[],
+};
+export type RecurringInvoiceIndexFilterData = {
+search: string | null,
+status: App.Enums.RecurringInvoiceStatusEnum | null,
+frequency: App.Enums.RecurringFrequencyEnum | null,
+client_id: string | null,
+per_page: number,
+};
+export type RecurringInvoiceItemData = {
+description: string,
+quantity: number,
+unit: string | null,
+unit_price: number,
+};
+export type RecurringInvoiceListItemData = {
+id: string,
+name: string,
+status: App.Enums.RecurringInvoiceStatusEnum,
+frequency: App.Enums.RecurringFrequencyEnum,
+client_id: string | null,
+customer_name: string | null,
+day_of_month: number,
+next_run_at: string | null,
+occurrences_generated: number,
+occurrences_limit: number | null,
+auto_issue: boolean,
+start_date: string,
+end_date: string | null,
+};
+export type RecurringInvoiceUpsertData = {
+client_id: string | null,
+cleaning_object_id: string | null,
+name: string,
+type: App.Enums.InvoiceTypeEnum,
+template: App.Enums.InvoiceTemplateEnum | null,
+frequency: App.Enums.RecurringFrequencyEnum,
+day_of_month: number,
+auto_issue: boolean,
+start_date: string,
+end_date: string | null,
+occurrences_limit: number | null,
+due_days: number,
+period_from: string | null,
+period_to: string | null,
+customer_name: string | null,
+customer_representative: string | null,
+customer_ico: string | null,
+customer_dic: string | null,
+customer_vat_number: string | null,
+customer_street: string | null,
+customer_city: string | null,
+customer_postal_code: string | null,
+customer_country: string | null,
+customer_email: string | null,
+note: string | null,
+items: App.Data.RecurringInvoices.RecurringInvoiceItemData[],
 };
 }
 namespace Tenants {
@@ -357,7 +486,10 @@ export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cance
 export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
-export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
+export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
+export type RecurringDefaultStateEnum = "draft" | "issued";
+export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" | "semi_annually" | "annually";
+export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";
 export type SubscriptionPlanEnum = "free" | "starter" | "pro" | "enterprise";
 export type SupportedLanguage = "sk" | "en" | "uk";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";

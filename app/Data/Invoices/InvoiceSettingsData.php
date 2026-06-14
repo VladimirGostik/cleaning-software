@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Data\Invoices;
 
 use App\Enums\InvoiceTemplateEnum;
+use App\Enums\RecurringDefaultStateEnum;
 use App\Models\Tenant;
+use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Regex;
@@ -29,6 +31,7 @@ final class InvoiceSettingsData extends Data
         #[Nullable]
         #[Max(255)]
         public ?string $registration_info,
+        public RecurringDefaultStateEnum $recurring_default_state,
     ) {}
 
     public static function fromTenant(Tenant $tenant): self
@@ -39,6 +42,7 @@ final class InvoiceSettingsData extends Data
             iban: $tenant->iban,
             vat_rate: $tenant->vat_rate !== null ? (float) $tenant->vat_rate : null,
             registration_info: $tenant->registration_info,
+            recurring_default_state: $tenant->interface?->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
         );
     }
 
@@ -52,6 +56,7 @@ final class InvoiceSettingsData extends Data
             'iban' => ['nullable', 'string', 'max:34', 'regex:/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/'],
             'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'registration_info' => ['nullable', 'string', 'max:255'],
+            'recurring_default_state' => ['required', Rule::enum(RecurringDefaultStateEnum::class)],
         ];
     }
 }

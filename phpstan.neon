@@ -18,3 +18,22 @@ parameters:
         -
             identifier: trait.unused
             reportUnmatched: false
+        -
+            # Larastan cannot infer Invoice-typed generic from Spatie QueryBuilder::for(Invoice::class).
+            identifier: return.type
+            path: app/Services/InvoiceService.php
+            reportUnmatched: false
+        -
+            # Larastan infers HasOne relation non-null after eager-loading with('interface'),
+            # but the relation IS nullable at DB level — nullsafe access is correct.
+            identifier: nullsafe.neverNull
+            path: app/Http/Controllers
+            reportUnmatched: false
+        -
+            identifier: nullsafe.neverNull
+            path: app/Data/Invoices/InvoiceSettingsData.php
+            reportUnmatched: false
+        -
+            identifier: nullsafe.neverNull
+            path: app/Listeners/AuthEventListener.php
+            reportUnmatched: false

@@ -6,19 +6,23 @@ namespace App\Http\Controllers;
 
 use App\Data\Invoices\InvoiceSettingsData;
 use App\Enums\InvoiceTemplateEnum;
+use App\Enums\RecurringDefaultStateEnum;
+use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Services\InvoiceSettingsService;
+use App\Services\Pdf\InvoicePreviewData;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 
 final class InvoiceSettingsController extends Controller
 {
     public function __construct(private readonly InvoiceSettingsService $settings) {}
 
     #[Authorize('manage billing settings')]
-    public function show(): Response
+    public function show(): InertiaResponse
     {
         $tenantId = app('current_tenant_id');
 
@@ -28,6 +32,7 @@ final class InvoiceSettingsController extends Controller
         return Inertia::render('Settings/Invoicing', [
             'settings' => InvoiceSettingsData::fromTenant($tenant),
             'templates' => InvoiceTemplateEnum::options(),
+            'recurringStateOptions' => RecurringDefaultStateEnum::options(),
         ]);
     }
 
@@ -41,6 +46,15 @@ final class InvoiceSettingsController extends Controller
 
         $this->settings->update($tenant, $data);
 
-        return to_route('settings.invoicing')->with('flash.success', __('app.invoice_settings.saved'));
+        return to_route('invoices.index')->with('flash.success', __('app.invoice_settings.saved'));
+    }
+
+    #[Authorize('viewAny', Invoice::class)]
+    public function preview(InvoiceTemplateEnum $template): Response
+    {
+        $invoice = InvoicePreviewData::make($template);
+        $html = view($template->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+
+        return response($html)->header('Content-Type', 'text/html');
     }
 }

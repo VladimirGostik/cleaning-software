@@ -29,8 +29,8 @@
     --color-accent: oklch(70% 0.18 150);
     --color-accent-content: oklch(15% 0.04 150);
 
-    --color-neutral: oklch(35% 0.02 250);
-    --color-neutral-content: oklch(98% 0.005 250);
+    --color-neutral: oklch(21% 0.04 265);
+    --color-neutral-content: oklch(87% 0.025 256);
 
     --color-info: oklch(72% 0.15 230);
     --color-info-content: oklch(15% 0.04 230);
@@ -57,6 +57,7 @@
 @theme {
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --width-8xl: 88rem;
 }
 
 @layer base {
@@ -119,15 +120,21 @@
     background-color: var(--auth-gradient-to);
 }
 
+/* Page container — standard content width for all main pages */
+@utility page-container {
+    max-width: var(--width-8xl);
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .content-enter-active,
 .content-leave-active {
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition: opacity 0.18s ease;
 }
 
 .content-enter-from,
 .content-leave-to {
     opacity: 0;
-    transform: translateY(4px);
 }
 
 .page-enter-active,

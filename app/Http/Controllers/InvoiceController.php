@@ -6,19 +6,25 @@ namespace App\Http\Controllers;
 
 use App\Contracts\RendersInvoicePdf;
 use App\Data\Clients\ClientOptionData;
+use App\Data\Invoices\BulkInvoiceData;
 use App\Data\Invoices\InvoiceDetailData;
 use App\Data\Invoices\InvoiceIndexFilterData;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoiceListItemData;
+use App\Data\Invoices\InvoiceSettingsData;
 use App\Data\Invoices\InvoiceUpsertData;
+use App\Data\Invoices\TabCountsData;
+use App\Data\Objects\ObjectOptionData;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Jobs\SendInvoiceEmail;
+use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Services\InvoiceService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -27,6 +33,7 @@ use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Spatie\LaravelData\DataCollection;
 use Spatie\LaravelData\PaginatedDataCollection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class InvoiceController extends Controller
 {
@@ -37,15 +44,76 @@ final class InvoiceController extends Controller
     {
         $paginator = $this->invoices->paginate($filter);
 
+        /** @var Tenant $tenant */
+        $tenant = Tenant::withoutGlobalScopes()->with('interface')->findOrFail(app('current_tenant_id'));
+
         return Inertia::render('Invoices/Index', [
             'invoices' => InvoiceListItemData::collect(
                 $paginator->through(fn (Invoice $invoice) => InvoiceListItemData::fromModel($invoice)),
                 PaginatedDataCollection::class,
             ),
             'filters' => $filter,
-            'statuses' => InvoiceStatusEnum::options(),
-            'types' => InvoiceTypeEnum::options(),
+            'statusOptions' => InvoiceStatusEnum::options(),
+            'typeOptions' => InvoiceTypeEnum::options(),
+            'clients' => ClientOptionData::collect(
+                Client::query()->select(['id', 'name'])->orderBy('name')->get(),
+                DataCollection::class,
+            ),
+            'invoiceSettings' => InvoiceSettingsData::fromTenant($tenant),
+            'settingsTemplateOptions' => InvoiceTemplateEnum::options(),
+            'settingsCompanyName' => $tenant->name,
+            'settingsIsVatPayer' => $tenant->is_vat_payer,
+            'nextNumberPreview' => null,
+            'tabCounts' => TabCountsData::from($this->invoices->tabCounts()),
+            'invoiceStats' => $this->invoices->stats(),
         ]);
+    }
+
+    #[Authorize('viewAny', Invoice::class)]
+    public function export(InvoiceIndexFilterData $filter): StreamedResponse
+    {
+        $query = $this->invoices->exportQuery($filter);
+
+        $filename = 'invoices-' . now()->format('Y-m-d') . '.csv';
+
+        return response()->stream(function () use ($query): void {
+            $handle = fopen('php://output', 'w');
+
+            if ($handle === false) {
+                return;
+            }
+
+            // UTF-8 BOM for Excel SK locale compatibility
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, ['number', 'customer_name', 'object_name', 'type', 'issue_date', 'due_date', 'total', 'status']);
+
+            $query->lazy()->each(function (Invoice $invoice) use ($handle): void {
+                fputcsv($handle, [
+                    $invoice->number ?? '',
+                    $invoice->customer_name,
+                    $invoice->object_name ?? '',
+                    $invoice->type->label(),
+                    $invoice->issue_date->toDateString(),
+                    $invoice->due_date->toDateString(),
+                    $invoice->total,
+                    $invoice->status->label(),
+                ]);
+            });
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    #[Authorize('bulkMarkPaid', Invoice::class)]
+    public function bulk(BulkInvoiceData $data): JsonResponse
+    {
+        $result = $this->invoices->bulkMarkPaid($data->ids);
+
+        return response()->json($result);
     }
 
     #[Authorize('create', Invoice::class)]
@@ -54,13 +122,15 @@ final class InvoiceController extends Controller
         /** @var Tenant $tenant */
         $tenant = Tenant::withoutGlobalScopes()->findOrFail(app('current_tenant_id'));
 
-        $clients = ClientOptionData::collect(
-            Client::query()->orderBy('name')->get(),
-            DataCollection::class,
-        );
-
         return Inertia::render('Invoices/Create', [
-            'clients' => $clients,
+            'clients' => ClientOptionData::collect(
+                Client::query()->select(['id', 'name'])->orderBy('name')->get(),
+                DataCollection::class,
+            ),
+            'objects' => ObjectOptionData::collect(
+                CleaningObject::query()->select(['id', 'name', 'client_id'])->orderBy('name')->get(),
+                DataCollection::class,
+            ),
             'typeOptions' => InvoiceTypeEnum::options(),
             'templateOptions' => InvoiceTemplateEnum::options(),
             'statusOptions' => InvoiceStatusEnum::options(),
@@ -95,14 +165,16 @@ final class InvoiceController extends Controller
         /** @var Tenant $tenant */
         $tenant = Tenant::withoutGlobalScopes()->findOrFail(app('current_tenant_id'));
 
-        $clients = ClientOptionData::collect(
-            Client::query()->orderBy('name')->get(),
-            DataCollection::class,
-        );
-
         return Inertia::render('Invoices/Edit', [
             'invoice' => InvoiceDetailData::fromModel($invoice),
-            'clients' => $clients,
+            'clients' => ClientOptionData::collect(
+                Client::query()->select(['id', 'name'])->orderBy('name')->get(),
+                DataCollection::class,
+            ),
+            'objects' => ObjectOptionData::collect(
+                CleaningObject::query()->select(['id', 'name', 'client_id'])->orderBy('name')->get(),
+                DataCollection::class,
+            ),
             'typeOptions' => InvoiceTypeEnum::options(),
             'templateOptions' => InvoiceTemplateEnum::options(),
             'statusOptions' => InvoiceStatusEnum::options(),
