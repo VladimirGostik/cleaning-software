@@ -37,3 +37,13 @@ parameters:
             identifier: nullsafe.neverNull
             path: app/Listeners/AuthEventListener.php
             reportUnmatched: false
+        -
+            # Larastan infers BelongsTo client/cleaningObject relations as non-null,
+            # but both FKs are nullable — nullsafe access is correct.
+            identifier: nullsafe.neverNull
+            path: app/Data/RecurringInvoices/RecurringInvoiceDetailData.php
+            reportUnmatched: false
+        -
+            identifier: nullsafe.neverNull
+            path: app/Data/RecurringInvoices/RecurringInvoiceListItemData.php
+            reportUnmatched: false

@@ -41,6 +41,7 @@ final class RecurringInvoiceDetailData extends Data
         public ?string $period_from,
         public ?string $period_to,
         public ?string $customer_name,
+        public ?string $customer_display_name,
         public ?string $customer_representative,
         public ?string $customer_ico,
         public ?string $customer_dic,
@@ -65,7 +66,7 @@ final class RecurringInvoiceDetailData extends Data
 
     public static function fromModel(RecurringInvoice $ri): self
     {
-        $ri->loadMissing('items');
+        $ri->loadMissing(['items', 'client', 'cleaningObject.client']);
 
         $items = [];
         /** @var RecurringInvoiceItem $item */
@@ -101,6 +102,7 @@ final class RecurringInvoiceDetailData extends Data
             period_from: $ri->period_from?->toDateString(),
             period_to: $ri->period_to?->toDateString(),
             customer_name: $ri->customer_name,
+            customer_display_name: $ri->client?->name ?? $ri->cleaningObject?->client?->name ?? $ri->customer_name,
             customer_representative: $ri->customer_representative,
             customer_ico: $ri->customer_ico,
             customer_dic: $ri->customer_dic,

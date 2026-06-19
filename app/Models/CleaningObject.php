@@ -25,6 +25,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $city
  * @property string|null $postal_code
  * @property string|null $country
+ * @property Client|null $client
  */
 #[Table('objects')]
 #[Fillable([

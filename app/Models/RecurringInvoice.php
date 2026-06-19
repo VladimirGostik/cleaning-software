@@ -46,6 +46,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property int $occurrences_generated
  * @property int $due_days
  * @property string $deposit
+ * @property Client|null $client
+ * @property CleaningObject|null $cleaningObject
  */
 #[Fillable([
     'tenant_id',

@@ -92,7 +92,7 @@
                     <div class="card-body gap-4">
                         <h2 class="card-title text-base">{{ t('invoices.section.customer') }}</h2>
                         <div class="text-sm space-y-1">
-                            <p class="font-medium">{{ recurring.customer_name ?? t('recurring_invoices.no_customer') }}</p>
+                            <p class="font-medium">{{ recurring.customer_display_name ?? t('recurring_invoices.no_customer') }}</p>
                             <p v-if="recurring.customer_representative" class="text-base-content/60">
                                 {{ recurring.customer_representative }}
                             </p>

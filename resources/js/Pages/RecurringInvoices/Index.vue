@@ -103,7 +103,7 @@
                         >
                             <td>
                                 <p class="font-medium">{{ row.name }}</p>
-                                <p v-if="row.customer_name" class="text-xs text-base-content/50">{{ row.customer_name }}</p>
+                                <p v-if="row.customer_display_name" class="text-xs text-base-content/50">{{ row.customer_display_name }}</p>
                                 <p v-else class="text-xs text-base-content/40 italic">{{ t('recurring_invoices.no_customer') }}</p>
                             </td>
                             <td>
@@ -148,7 +148,7 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="font-medium">{{ row.name }}</p>
-                            <p v-if="row.customer_name" class="text-sm text-base-content/60">{{ row.customer_name }}</p>
+                            <p v-if="row.customer_display_name" class="text-sm text-base-content/60">{{ row.customer_display_name }}</p>
                             <p v-else class="text-sm text-base-content/40 italic">{{ t('recurring_invoices.no_customer') }}</p>
                         </div>
                         <RecurringStatusBadge :status="row.status" />

@@ -48,6 +48,7 @@ final readonly class RecurringInvoiceService
                 AllowedSort::field('name'),
             )
             ->defaultSort('-created_at')
+            ->with(['client', 'cleaningObject.client'])
             ->paginate($filter->per_page)
             ->appends(request()->query());
     }
