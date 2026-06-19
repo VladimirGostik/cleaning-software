@@ -19,7 +19,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'quantity',
     'unit',
     'unit_price',
-    'total',
+    'discount_percent',
+    'vat_rate',
+    'line_base',
+    'line_vat',
+    'line_total',
     'position',
 ])]
 final class InvoiceItem extends Model
@@ -35,7 +39,11 @@ final class InvoiceItem extends Model
         return [
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
-            'total' => 'decimal:2',
+            'discount_percent' => 'decimal:2',
+            'vat_rate' => 'decimal:2',
+            'line_base' => 'decimal:2',
+            'line_vat' => 'decimal:2',
+            'line_total' => 'decimal:2',
             'position' => 'integer',
         ];
     }

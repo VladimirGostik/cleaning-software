@@ -712,4 +712,58 @@ return [
     'recurring_invoices.settings.default_state' => 'Predvolený stav novej faktúry',
     'recurring_invoices.settings.state_draft' => 'Koncept',
     'recurring_invoices.settings.state_issued' => 'Vystavená',
+
+    // Part A — per-item VAT, discount, deposit i18n
+    'invoices.items.discount' => 'Zľava',
+    'invoices.items.vat_rate' => 'Sadzba DPH',
+    'invoices.detail.deposit' => 'Záloha',
+    'invoices.detail.balance_due' => 'Zostatok na úhradu',
+    'invoices.vat_recap.title' => 'Rekapitulácia DPH',
+    'invoices.vat_recap.rate' => 'Sadzba',
+    'invoices.vat_recap.base' => 'Základ',
+    'invoices.vat_recap.vat' => 'DPH',
+    'invoices.vat_recap.total' => 'Spolu',
+    'invoices.pdf.discount' => 'Zľava',
+    'invoices.pdf.vat_recap' => 'DPH celkom',
+    'invoices.pdf.deposit' => 'Záloha',
+    'invoices.pdf.balance_due' => 'Zostatok na úhradu',
+
+    // Part B — SK-standard fields (payment_type, currency, rounding_mode, PDF labels, settings)
+    'payment_type.transfer' => 'Bankový prevod',
+    'payment_type.cash' => 'Hotovosť',
+    'payment_type.card' => 'Karta',
+    'payment_type.cod' => 'Dobierka',
+    'payment_type.other' => 'Iné',
+
+    'currency.EUR' => 'Euro (EUR)',
+    'currency.CZK' => 'Česká koruna (CZK)',
+    'currency.USD' => 'Americký dolár (USD)',
+
+    'rounding_mode.none' => 'Bez zaokrúhlenia',
+    'rounding_mode.document' => 'Na celé euro',
+    'rounding_mode.cash_005' => 'Na 5 centov (hotovosť)',
+
+    'invoices.pdf.payment_type' => 'Forma úhrady',
+    'invoices.pdf.swift' => 'SWIFT / BIC',
+    'invoices.pdf.constant_symbol' => 'KS',
+    'invoices.pdf.specific_symbol' => 'ŠS',
+    'invoices.pdf.rounding' => 'Zaokrúhlenie',
+
+    'invoice_settings.swift_bic' => 'SWIFT / BIC',
+    'invoice_settings.swift_bic_hint' => 'Napr. TATRSKBX alebo GIBASKBX',
+    'invoice_settings.default_payment_type' => 'Predvolená forma úhrady',
+    'invoice_settings.default_currency' => 'Predvolená mena',
+    'invoice_settings.default_rounding' => 'Predvolené zaokrúhlenie',
+    'invoice_settings.default_constant_symbol' => 'Predvolený konštantný symbol',
+
+    // Part B additions — invoices.detail.* missing keys + invoice_settings.section.defaults
+    'invoices.detail.constant_symbol' => 'Konštantný symbol',
+    'invoices.detail.specific_symbol' => 'Špecifický symbol',
+    'invoices.detail.header_text' => 'Úvodný text',
+    'invoices.detail.footer_text' => 'Záverečný text',
+    'invoices.detail.rounding' => 'Zaokrúhlenie',
+    'invoices.detail.swift' => 'SWIFT / BIC',
+    'invoices.detail.currency' => 'Mena',
+    'invoices.detail.payment_type' => 'Spôsob úhrady',
+    'invoice_settings.section.defaults' => 'Predvolené hodnoty faktúry',
 ];

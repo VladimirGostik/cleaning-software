@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Pdf;
 
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Illuminate\Support\Carbon;
@@ -27,10 +30,25 @@ final readonly class InvoicePreviewData
             'delivery_date' => Carbon::now(),
             'due_date' => Carbon::now()->addDays(14),
             'is_vat_payer' => true,
-            'vat_rate' => '20.00',
-            'subtotal' => '100.00',
-            'vat_amount' => '20.00',
-            'total' => '120.00',
+            'vat_rate' => '23.00',
+            // item1: qty=2 × 30 −10% → base=54.00 @23%; item2: qty=1 × 40 @19% → base=40.00
+            'subtotal' => '94.00',
+            'vat_amount' => '20.02',
+            'total' => '114.02',
+            'deposit' => '20.00',
+            'rounding_amount' => '0.00',
+            'vat_breakdown' => [
+                ['rate' => 23.0, 'base' => 54.0, 'vat' => 12.42, 'total' => 66.42],
+                ['rate' => 19.0, 'base' => 40.0, 'vat' => 7.60, 'total' => 47.60],
+            ],
+            'constant_symbol' => '0308',
+            'specific_symbol' => null,
+            'payment_type' => PaymentTypeEnum::Transfer,
+            'currency' => CurrencyEnum::EUR,
+            'rounding_mode' => RoundingModeEnum::None,
+            'header_text' => null,
+            'footer_text' => null,
+            'supplier_swift' => 'TATRSKBX',
             'customer_name' => 'Vzorový Zákazník s.r.o.',
             'customer_ico' => '12345678',
             'customer_dic' => '2012345678',
@@ -60,7 +78,11 @@ final readonly class InvoicePreviewData
             'quantity' => '2.00',
             'unit' => 'hod',
             'unit_price' => '30.00',
-            'total' => '60.00',
+            'discount_percent' => '10.00',
+            'vat_rate' => '23.00',
+            'line_base' => '54.00',
+            'line_vat' => '12.42',
+            'line_total' => '66.42',
             'position' => 1,
         ]);
 
@@ -69,7 +91,11 @@ final readonly class InvoicePreviewData
             'quantity' => '1.00',
             'unit' => 'ks',
             'unit_price' => '40.00',
-            'total' => '40.00',
+            'discount_percent' => '0.00',
+            'vat_rate' => '19.00',
+            'line_base' => '40.00',
+            'line_vat' => '7.60',
+            'line_total' => '47.60',
             'position' => 2,
         ]);
 

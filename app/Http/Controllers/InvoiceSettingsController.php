@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Invoices\InvoiceSettingsData;
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
+use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Services\InvoiceSettingsService;
@@ -33,6 +36,9 @@ final class InvoiceSettingsController extends Controller
             'settings' => InvoiceSettingsData::fromTenant($tenant),
             'templates' => InvoiceTemplateEnum::options(),
             'recurringStateOptions' => RecurringDefaultStateEnum::options(),
+            'paymentTypeOptions' => PaymentTypeEnum::options(),
+            'currencyOptions' => CurrencyEnum::options(),
+            'roundingModeOptions' => RoundingModeEnum::options(),
         ]);
     }
 

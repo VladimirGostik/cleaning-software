@@ -21,11 +21,17 @@
         templateOptions: Array<{ value: string; label: string }>;
         nextNumberPreview?: string | null;
         isVatPayer?: boolean;
+        paymentTypeOptions?: SelectOption[];
+        currencyOptions?: SelectOption[];
+        roundingModeOptions?: SelectOption[];
     }
 
     const props = withDefaults(defineProps<Props>(), {
         nextNumberPreview: null,
         isVatPayer: undefined,
+        paymentTypeOptions: () => [],
+        currencyOptions: () => [],
+        roundingModeOptions: () => [],
     });
 
     const { t } = useTranslate();
@@ -49,9 +55,14 @@
         invoice_number_format: string;
         custom_format: boolean;
         iban: string | null;
+        swift_bic: string | null;
         vat_rate: number | null;
         registration_info: string | null;
         recurring_default_state: App.Enums.RecurringDefaultStateEnum;
+        default_constant_symbol: string | null;
+        default_payment_type: App.Enums.PaymentTypeEnum;
+        default_currency: App.Enums.CurrencyEnum;
+        default_rounding_mode: App.Enums.RoundingModeEnum;
     }
 
     const presets = [
@@ -71,9 +82,14 @@
             invoice_number_format: props.settings.invoice_number_format,
             custom_format: !isPreset(props.settings.invoice_number_format),
             iban: props.settings.iban ?? null,
+            swift_bic: props.settings.swift_bic ?? null,
             vat_rate: props.settings.vat_rate ?? null,
             registration_info: props.settings.registration_info ?? null,
             recurring_default_state: props.settings.recurring_default_state,
+            default_constant_symbol: props.settings.default_constant_symbol ?? null,
+            default_payment_type: props.settings.default_payment_type,
+            default_currency: props.settings.default_currency,
+            default_rounding_mode: props.settings.default_rounding_mode,
         },
     );
 
@@ -147,7 +163,7 @@
             <div>
                 <FormProvider :form="form">
                     <form novalidate @submit.prevent="submit">
-                        <!-- Základné (IBAN + registration info) -->
+                        <!-- Základné (IBAN + SWIFT + registration info + defaults) -->
                         <div v-if="nav.section === 'basic'" class="space-y-6">
                             <div class="card bg-base-100 shadow-sm">
                                 <div class="card-body">
@@ -157,6 +173,11 @@
                                         :label="t('invoice_settings.iban')"
                                         placeholder="SK0000000000000000000000"
                                     />
+                                    <TextInput
+                                        field="swift_bic"
+                                        :label="t('invoice_settings.swift_bic')"
+                                        :placeholder="t('invoice_settings.swift_bic_hint')"
+                                    />
                                     <TextareaInput
                                         field="registration_info"
                                         :label="t('invoice_settings.registration_info')"
@@ -165,6 +186,35 @@
                                     />
                                 </div>
                             </div>
+
+                            <!-- Invoice defaults sub-card -->
+                            <div class="card bg-base-100 shadow-sm">
+                                <div class="card-body">
+                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.defaults') }}</h2>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <TextInput
+                                            field="default_constant_symbol"
+                                            :label="t('invoice_settings.default_constant_symbol')"
+                                        />
+                                        <SelectInput
+                                            field="default_payment_type"
+                                            :label="t('invoice_settings.default_payment_type')"
+                                            :options="paymentTypeOptions"
+                                        />
+                                        <SelectInput
+                                            field="default_currency"
+                                            :label="t('invoice_settings.default_currency')"
+                                            :options="currencyOptions"
+                                        />
+                                        <SelectInput
+                                            field="default_rounding_mode"
+                                            :label="t('invoice_settings.default_rounding')"
+                                            :options="roundingModeOptions"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <FormActions
                                 cancel-href="/dashboard"
                                 :cancel-label="t('cancel')"

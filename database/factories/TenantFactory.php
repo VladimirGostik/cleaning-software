@@ -30,6 +30,7 @@ final class TenantFactory extends Factory
             'is_vat_payer' => true,
             'vat_rate' => 23,
             'iban' => 'SK' . fake()->numerify('##########################'),
+            'swift_bic' => null,
             'address_line' => fake()->streetAddress(),
             'city' => fake()->city(),
             'postal_code' => fake()->postcode(),

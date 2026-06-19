@@ -47,6 +47,7 @@ return new class extends Migration
             $table->date('period_to')->nullable();
 
             $table->unsignedSmallInteger('due_days')->default(14);
+            $table->decimal('deposit', 12, 2)->default(0);
             $table->text('note')->nullable();
 
             $table->timestamps();

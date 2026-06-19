@@ -19,6 +19,7 @@
     import Can from '@/Components/Can.vue';
     import ConfirmDialog from '@/Components/ConfirmDialog.vue';
     import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
+    import InvoiceVatRecap from '@/Components/Invoices/InvoiceVatRecap.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
 
@@ -46,6 +47,9 @@
     const canMarkPaid = computed(() => isIssued.value || isOverdue.value);
     const canCancel = computed(() => isIssued.value || isOverdue.value);
     const canSend = computed(() => isIssued.value && !!props.invoice.customer_email);
+
+    const hasDeposit = computed(() => parseFloat(props.invoice.deposit) > 0);
+    const hasRounding = computed(() => parseFloat(props.invoice.rounding_amount) !== 0);
 
     function issueInvoice() {
         router.post(
@@ -89,6 +93,11 @@
     function formatDate(d: string | null): string {
         if (!d) return t('common.empty_dash');
         return new Date(d).toLocaleDateString('sk-SK');
+    }
+
+    function itemNet(item: App.Data.Invoices.InvoiceItemData): string {
+        const n = item.line_base ?? (item.quantity * item.unit_price);
+        return n.toFixed(2);
     }
 </script>
 
@@ -198,7 +207,7 @@
                         </div>
                     </div>
 
-                    <!-- 4-up date grid -->
+                    <!-- 4-up date grid + payment fields -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                         <div>
                             <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.col.issue_date') }}</p>
@@ -219,7 +228,15 @@
                         </div>
                         <div>
                             <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.payment_method') }}</p>
-                            <p>{{ t('invoices.detail.payment_transfer') }}</p>
+                            <p>{{ t('payment_type.' + invoice.payment_type) }}</p>
+                        </div>
+                        <div v-if="invoice.constant_symbol">
+                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.pdf.constant_symbol') }}</p>
+                            <p class="font-mono">{{ invoice.constant_symbol }}</p>
+                        </div>
+                        <div v-if="invoice.specific_symbol">
+                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.pdf.specific_symbol') }}</p>
+                            <p class="font-mono">{{ invoice.specific_symbol }}</p>
                         </div>
                     </div>
 
@@ -243,6 +260,11 @@
                         </p>
                     </div>
 
+                    <!-- Header text (intro above items) -->
+                    <div v-if="invoice.header_text" class="text-sm">
+                        <p class="whitespace-pre-wrap text-base-content/80">{{ invoice.header_text }}</p>
+                    </div>
+
                     <!-- Items table -->
                     <div class="overflow-x-auto">
                         <table class="table table-sm w-full">
@@ -262,7 +284,7 @@
                                     <td>{{ item.unit ?? t('common.empty_dash') }}</td>
                                     <td class="font-mono text-right">{{ item.unit_price }}</td>
                                     <td class="font-mono text-right font-medium">
-                                        {{ item.total ?? (item.quantity * item.unit_price).toFixed(2) }}
+                                        {{ itemNet(item) }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -271,25 +293,38 @@
 
                     <!-- Summary totals -->
                     <div class="flex justify-end">
-                        <dl class="space-y-1 text-sm min-w-[220px]">
+                        <dl class="space-y-1 text-sm min-w-[260px]">
                             <div class="flex justify-between gap-4">
                                 <dt class="text-base-content/60">{{ t('invoices.detail.subtotal') }}</dt>
-                                <dd class="font-mono">{{ invoice.subtotal }}</dd>
+                                <dd class="font-mono">{{ invoice.subtotal }} {{ invoice.currency }}</dd>
                             </div>
-                            <template v-if="invoice.is_vat_payer">
-                                <div class="flex justify-between gap-4">
-                                    <dt class="text-base-content/60">
-                                        {{ t('invoices.detail.vat') }}
-                                        <span v-if="invoice.vat_rate">({{ invoice.vat_rate }}%)</span>
-                                    </dt>
-                                    <dd class="font-mono">{{ invoice.vat_amount }}</dd>
-                                </div>
-                            </template>
+                            <div v-if="invoice.is_vat_payer" class="py-1">
+                                <InvoiceVatRecap :breakdown="invoice.vat_breakdown" />
+                            </div>
+                            <div v-if="hasRounding" class="flex justify-between gap-4">
+                                <dt class="text-base-content/60">{{ t('invoices.pdf.rounding') }}</dt>
+                                <dd class="font-mono">{{ invoice.rounding_amount }} {{ invoice.currency }}</dd>
+                            </div>
                             <div class="flex justify-between gap-4 border-t border-base-300 pt-1 font-semibold text-base">
                                 <dt>{{ t('invoices.detail.total') }}</dt>
-                                <dd class="font-mono">{{ invoice.total }}</dd>
+                                <dd class="font-mono">{{ invoice.total }} {{ invoice.currency }}</dd>
                             </div>
+                            <template v-if="hasDeposit">
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-base-content/60">{{ t('invoices.detail.deposit') }}</dt>
+                                    <dd class="font-mono">{{ invoice.deposit }} {{ invoice.currency }}</dd>
+                                </div>
+                                <div class="flex justify-between gap-4 font-semibold">
+                                    <dt>{{ t('invoices.detail.balance_due') }}</dt>
+                                    <dd class="font-mono">{{ invoice.balance_due }} {{ invoice.currency }}</dd>
+                                </div>
+                            </template>
                         </dl>
+                    </div>
+
+                    <!-- Footer text (closing text below totals) -->
+                    <div v-if="invoice.footer_text" class="text-sm">
+                        <p class="whitespace-pre-wrap text-base-content/80">{{ invoice.footer_text }}</p>
                     </div>
 
                     <!-- Non-VAT payer clause -->
@@ -307,6 +342,10 @@
                             <div v-if="invoice.supplier.iban">
                                 <p class="text-base-content/50 text-xs">{{ t('invoices.pdf.iban') }}</p>
                                 <p class="font-mono">{{ invoice.supplier.iban }}</p>
+                            </div>
+                            <div v-if="invoice.supplier.swift">
+                                <p class="text-base-content/50 text-xs">{{ t('invoices.pdf.swift') }}</p>
+                                <p class="font-mono">{{ invoice.supplier.swift }}</p>
                             </div>
                             <div v-if="invoice.variable_symbol">
                                 <p class="text-base-content/50 text-xs">{{ t('invoices.pdf.variable_symbol') }}</p>
@@ -444,7 +483,7 @@
                             </Link>
                         </div>
 
-                        <!-- Object link (Track B: no route yet, show name as text) -->
+                        <!-- Object link -->
                         <div v-if="invoice.object_name" class="flex items-center gap-2 text-sm">
                             <BuildingOfficeIcon class="w-4 h-4 text-base-content/40 shrink-0" />
                             <span class="text-base-content/70">{{ invoice.object_name }}</span>

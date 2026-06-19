@@ -1,4 +1,4 @@
-{{-- Dates block: issue_date, delivery_date (dátum dodania), due_date --}}
+{{-- Dates block: issue_date, delivery_date (dátum dodania), due_date, payment_type --}}
 <table style="width:100%; margin-bottom:20px; border-collapse:collapse;">
     <tr>
         <td style="padding:4px 8px 4px 0; white-space:nowrap;">
@@ -27,6 +27,16 @@
             {{ $invoice->period_from ? $invoice->period_from->format('d.m.Y') : '—' }}
             –
             {{ $invoice->period_to ? $invoice->period_to->format('d.m.Y') : '—' }}
+        </td>
+    </tr>
+    @endif
+    @if($invoice->payment_type)
+    <tr>
+        <td style="padding:4px 8px 4px 0; white-space:nowrap;">
+            <strong>{{ __('app.invoices.pdf.payment_type') }}:</strong>
+        </td>
+        <td style="padding:4px 0;" colspan="5">
+            {{ $invoice->payment_type->label() }}
         </td>
     </tr>
     @endif

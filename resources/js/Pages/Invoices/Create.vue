@@ -20,6 +20,18 @@
         client_id: string;
     }
 
+    interface VatRateOption {
+        value: number;
+        label: string;
+    }
+
+    interface InvoiceDefaults {
+        constant_symbol?: string | null;
+        payment_type?: App.Enums.PaymentTypeEnum;
+        currency?: App.Enums.CurrencyEnum;
+        rounding_mode?: App.Enums.RoundingModeEnum;
+    }
+
     interface Props {
         clients: ClientOption[];
         objects?: ObjectOption[] | null;
@@ -28,11 +40,21 @@
         statusOptions: SelectOption[];
         isVatPayer: boolean;
         vatRate?: string | null;
+        vatRateOptions?: VatRateOption[];
+        paymentTypeOptions?: SelectOption[];
+        currencyOptions?: SelectOption[];
+        roundingModeOptions?: SelectOption[];
+        invoiceDefaults?: InvoiceDefaults | null;
     }
 
-    withDefaults(defineProps<Props>(), {
+    const props = withDefaults(defineProps<Props>(), {
         objects: null,
         vatRate: null,
+        vatRateOptions: () => [],
+        paymentTypeOptions: () => [],
+        currencyOptions: () => [],
+        roundingModeOptions: () => [],
+        invoiceDefaults: null,
     });
 
     const { t } = useTranslate();
@@ -53,12 +75,17 @@
         <PageHeader :title="t('invoices.add')" />
 
         <InvoiceForm
-            :clients="clients"
-            :objects="objects"
-            :type-options="typeOptions"
-            :template-options="templateOptions"
-            :is-vat-payer="isVatPayer"
-            :vat-rate="vatRate"
+            :clients="props.clients"
+            :objects="props.objects"
+            :type-options="props.typeOptions"
+            :template-options="props.templateOptions"
+            :is-vat-payer="props.isVatPayer"
+            :vat-rate="props.vatRate"
+            :vat-rate-options="props.vatRateOptions"
+            :payment-type-options="props.paymentTypeOptions"
+            :currency-options="props.currencyOptions"
+            :rounding-mode-options="props.roundingModeOptions"
+            :invoice-defaults="props.invoiceDefaults"
         />
     </div>
 </template>

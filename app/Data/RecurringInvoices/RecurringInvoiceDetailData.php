@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Data\RecurringInvoices;
 
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
@@ -48,6 +51,13 @@ final class RecurringInvoiceDetailData extends Data
         public ?string $customer_country,
         public ?string $customer_email,
         public ?string $note,
+        public string $deposit,
+        public PaymentTypeEnum $payment_type,
+        public CurrencyEnum $currency,
+        public RoundingModeEnum $rounding_mode,
+        public ?string $constant_symbol,
+        public ?string $header_text,
+        public ?string $footer_text,
         /** @var RecurringInvoiceItemData[] */
         #[DataCollectionOf(RecurringInvoiceItemData::class)]
         public array $items,
@@ -65,6 +75,8 @@ final class RecurringInvoiceDetailData extends Data
                 quantity: (float) $item->quantity,
                 unit: $item->unit,
                 unit_price: (float) $item->unit_price,
+                discount_percent: (float) $item->discount_percent,
+                vat_rate: (float) $item->vat_rate,
             );
         }
 
@@ -99,6 +111,13 @@ final class RecurringInvoiceDetailData extends Data
             customer_country: $ri->customer_country,
             customer_email: $ri->customer_email,
             note: $ri->note,
+            deposit: $ri->deposit,
+            payment_type: $ri->payment_type,
+            currency: $ri->currency,
+            rounding_mode: $ri->rounding_mode,
+            constant_symbol: $ri->constant_symbol,
+            header_text: $ri->header_text,
+            footer_text: $ri->footer_text,
             items: $items,
         );
     }

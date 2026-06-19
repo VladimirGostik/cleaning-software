@@ -31,6 +31,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'is_vat_payer',
     'vat_rate',
     'iban',
+    'swift_bic',
     'invoice_number_format',
     'registration_info',
     'address_line',

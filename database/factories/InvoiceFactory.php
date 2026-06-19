@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -47,6 +50,17 @@ final class InvoiceFactory extends Factory
             'subtotal' => '100.00',
             'vat_amount' => '0.00',
             'total' => '100.00',
+            'deposit' => '0.00',
+            'vat_breakdown' => null,
+            'rounding_amount' => '0.00',
+            'constant_symbol' => null,
+            'specific_symbol' => null,
+            'payment_type' => PaymentTypeEnum::Transfer,
+            'currency' => CurrencyEnum::EUR,
+            'rounding_mode' => RoundingModeEnum::None,
+            'header_text' => null,
+            'footer_text' => null,
+            'supplier_swift' => null,
             // Standalone customer snapshot
             'customer_name' => fake()->company(),
             'customer_ico' => null,
@@ -155,6 +169,9 @@ final class InvoiceFactory extends Factory
             'vat_rate' => '23.00',
             'vat_amount' => '23.00',
             'total' => '123.00',
+            'vat_breakdown' => [
+                ['rate' => 23.0, 'base' => 100.0, 'vat' => 23.0, 'total' => 123.0],
+            ],
         ]);
     }
 
@@ -163,6 +180,14 @@ final class InvoiceFactory extends Factory
         return $this->state(fn () => [
             'is_vat_payer' => false,
             'vat_amount' => '0.00',
+            'vat_breakdown' => null,
+        ]);
+    }
+
+    public function withDeposit(float $deposit = 50.0): static
+    {
+        return $this->state(fn () => [
+            'deposit' => number_format($deposit, 2, '.', ''),
         ]);
     }
 }

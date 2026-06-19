@@ -44,6 +44,8 @@ return new class extends Migration
             $table->decimal('subtotal', 12, 2)->default(0);
             $table->decimal('vat_amount', 12, 2)->default(0);
             $table->decimal('total', 12, 2)->default(0);
+            $table->decimal('deposit', 12, 2)->default(0);
+            $table->json('vat_breakdown')->nullable();
 
             // Customer snapshot
             $table->string('customer_name');

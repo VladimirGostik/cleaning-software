@@ -15,9 +15,12 @@ use App\Data\Invoices\InvoiceSettingsData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Data\Invoices\TabCountsData;
 use App\Data\Objects\ObjectOptionData;
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
+use App\Enums\RoundingModeEnum;
 use App\Jobs\SendInvoiceEmail;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -120,7 +123,8 @@ final class InvoiceController extends Controller
     public function create(): InertiaResponse
     {
         /** @var Tenant $tenant */
-        $tenant = Tenant::withoutGlobalScopes()->findOrFail(app('current_tenant_id'));
+        $tenant = Tenant::withoutGlobalScopes()->with('interface')->findOrFail(app('current_tenant_id'));
+        $interface = $tenant->interface;
 
         return Inertia::render('Invoices/Create', [
             'clients' => ClientOptionData::collect(
@@ -136,6 +140,21 @@ final class InvoiceController extends Controller
             'statusOptions' => InvoiceStatusEnum::options(),
             'isVatPayer' => $tenant->is_vat_payer,
             'vatRate' => $tenant->vat_rate,
+            'vatRateOptions' => [
+                ['value' => 23, 'label' => '23%'],
+                ['value' => 19, 'label' => '19%'],
+                ['value' => 5, 'label' => '5%'],
+                ['value' => 0, 'label' => '0%'],
+            ],
+            'paymentTypeOptions' => PaymentTypeEnum::options(),
+            'currencyOptions' => CurrencyEnum::options(),
+            'roundingModeOptions' => RoundingModeEnum::options(),
+            'invoiceDefaults' => [
+                'constant_symbol' => $interface?->default_constant_symbol,
+                'payment_type' => ($interface?->default_payment_type ?? PaymentTypeEnum::Transfer)->value,
+                'currency' => ($interface?->default_currency ?? CurrencyEnum::EUR)->value,
+                'rounding_mode' => ($interface?->default_rounding_mode ?? RoundingModeEnum::None)->value,
+            ],
         ]);
     }
 
@@ -163,7 +182,8 @@ final class InvoiceController extends Controller
         $invoice->loadMissing('items');
 
         /** @var Tenant $tenant */
-        $tenant = Tenant::withoutGlobalScopes()->findOrFail(app('current_tenant_id'));
+        $tenant = Tenant::withoutGlobalScopes()->with('interface')->findOrFail(app('current_tenant_id'));
+        $interface = $tenant->interface;
 
         return Inertia::render('Invoices/Edit', [
             'invoice' => InvoiceDetailData::fromModel($invoice),
@@ -180,6 +200,21 @@ final class InvoiceController extends Controller
             'statusOptions' => InvoiceStatusEnum::options(),
             'isVatPayer' => $tenant->is_vat_payer,
             'vatRate' => $tenant->vat_rate,
+            'vatRateOptions' => [
+                ['value' => 23, 'label' => '23%'],
+                ['value' => 19, 'label' => '19%'],
+                ['value' => 5, 'label' => '5%'],
+                ['value' => 0, 'label' => '0%'],
+            ],
+            'paymentTypeOptions' => PaymentTypeEnum::options(),
+            'currencyOptions' => CurrencyEnum::options(),
+            'roundingModeOptions' => RoundingModeEnum::options(),
+            'invoiceDefaults' => [
+                'constant_symbol' => $interface?->default_constant_symbol,
+                'payment_type' => ($interface?->default_payment_type ?? PaymentTypeEnum::Transfer)->value,
+                'currency' => ($interface?->default_currency ?? CurrencyEnum::EUR)->value,
+                'rounding_mode' => ($interface?->default_rounding_mode ?? RoundingModeEnum::None)->value,
+            ],
         ]);
     }
 

@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'quantity',
     'unit',
     'unit_price',
+    'discount_percent',
+    'vat_rate',
     'position',
 ])]
 final class RecurringInvoiceItem extends Model
@@ -34,6 +36,8 @@ final class RecurringInvoiceItem extends Model
         return [
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
+            'discount_percent' => 'decimal:2',
+            'vat_rate' => 'decimal:2',
             'position' => 'integer',
         ];
     }

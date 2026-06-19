@@ -150,9 +150,9 @@ final readonly class InvoiceService
             $attributes = $this->buildAttributes($data, $tenant, $client, $object, $templateDefault);
             $invoice = Invoice::create($attributes);
 
-            $this->syncItems($invoice, $data->items, $tenant->id);
+            $this->syncItems($invoice, $data->items, $tenant->id, $tenant->is_vat_payer);
 
-            $totals = $this->computeTotals($invoice, $tenant->is_vat_payer, (float) $tenant->vat_rate);
+            $totals = $this->computeTotals($invoice);
             $invoice->update($totals);
 
             return $invoice->load('items');
@@ -186,9 +186,9 @@ final readonly class InvoiceService
 
             $invoice->update($attributes);
 
-            $this->syncItems($invoice, $data->items, $tenant->id);
+            $this->syncItems($invoice, $data->items, $tenant->id, $invoice->is_vat_payer);
 
-            $totals = $this->computeTotals($invoice, $invoice->is_vat_payer, (float) $invoice->vat_rate);
+            $totals = $this->computeTotals($invoice);
             $invoice->update($totals);
 
             return $invoice->load('items');
@@ -267,11 +267,21 @@ final readonly class InvoiceService
                 'cancelled_at' => now(),
             ]);
 
-            // Create credit note (dobropis) per D7
             $tenant = Tenant::withoutGlobalScopes()->findOrFail($invoice->tenant_id);
             $creditNumber = $this->numberService->next($tenant, now());
 
             $invoice->loadMissing('items');
+
+            // Negate vat_breakdown entries for the credit note
+            $negatedBreakdown = array_map(
+                fn (array $line) => [
+                    'rate' => $line['rate'],
+                    'base' => -1 * $line['base'],
+                    'vat' => -1 * $line['vat'],
+                    'total' => -1 * $line['total'],
+                ],
+                $invoice->vat_breakdown ?? [],
+            );
 
             $creditNote = Invoice::create([
                 'tenant_id' => $invoice->tenant_id,
@@ -292,6 +302,17 @@ final readonly class InvoiceService
                 'subtotal' => -1 * (float) $invoice->subtotal,
                 'vat_amount' => -1 * (float) $invoice->vat_amount,
                 'total' => -1 * (float) $invoice->total,
+                'deposit' => -1 * (float) $invoice->deposit,
+                'vat_breakdown' => $negatedBreakdown,
+                'rounding_amount' => -1 * (float) $invoice->rounding_amount,
+                'constant_symbol' => $invoice->constant_symbol,
+                'specific_symbol' => $invoice->specific_symbol,
+                'payment_type' => $invoice->payment_type,
+                'currency' => $invoice->currency,
+                'rounding_mode' => $invoice->rounding_mode,
+                'header_text' => $invoice->header_text,
+                'footer_text' => $invoice->footer_text,
+                'supplier_swift' => $invoice->supplier_swift,
                 'customer_name' => $invoice->customer_name,
                 'customer_representative' => $invoice->customer_representative,
                 'customer_ico' => $invoice->customer_ico,
@@ -330,7 +351,11 @@ final readonly class InvoiceService
                     'quantity' => $item->quantity,
                     'unit' => $item->unit,
                     'unit_price' => -1 * (float) $item->unit_price,
-                    'total' => -1 * (float) $item->total,
+                    'discount_percent' => $item->discount_percent,
+                    'vat_rate' => $item->vat_rate,
+                    'line_base' => -1 * (float) $item->line_base,
+                    'line_vat' => -1 * (float) $item->line_vat,
+                    'line_total' => -1 * (float) $item->line_total,
                     'position' => $item->position,
                 ]);
             }
@@ -364,6 +389,17 @@ final readonly class InvoiceService
                 'subtotal' => $invoice->subtotal,
                 'vat_amount' => $invoice->vat_amount,
                 'total' => $invoice->total,
+                'deposit' => $invoice->deposit,
+                'vat_breakdown' => $invoice->vat_breakdown,
+                'rounding_amount' => $invoice->rounding_amount,
+                'constant_symbol' => $invoice->constant_symbol,
+                'specific_symbol' => $invoice->specific_symbol,
+                'payment_type' => $invoice->payment_type,
+                'currency' => $invoice->currency,
+                'rounding_mode' => $invoice->rounding_mode,
+                'header_text' => $invoice->header_text,
+                'footer_text' => $invoice->footer_text,
+                'supplier_swift' => $invoice->supplier_swift,
                 'customer_name' => $invoice->customer_name,
                 'customer_representative' => $invoice->customer_representative,
                 'customer_ico' => $invoice->customer_ico,
@@ -402,7 +438,11 @@ final readonly class InvoiceService
                     'quantity' => $item->quantity,
                     'unit' => $item->unit,
                     'unit_price' => $item->unit_price,
-                    'total' => $item->total,
+                    'discount_percent' => $item->discount_percent,
+                    'vat_rate' => $item->vat_rate,
+                    'line_base' => $item->line_base,
+                    'line_vat' => $item->line_vat,
+                    'line_total' => $item->line_total,
                     'position' => $item->position,
                 ]);
             }
@@ -468,42 +508,74 @@ final readonly class InvoiceService
     /**
      * @param  array<int, InvoiceItemData>  $items
      */
-    private function syncItems(Invoice $invoice, array $items, string $tenantId): void
+    private function syncItems(Invoice $invoice, array $items, string $tenantId, bool $isVatPayer): void
     {
         $invoice->items()->delete();
 
         foreach ($items as $position => $itemData) {
-            $unitPrice = $itemData->unit_price;
-            $quantity = $itemData->quantity;
-            $total = round($unitPrice * $quantity, 2);
+            $rate = $isVatPayer ? $itemData->vat_rate : 0.0;
+            $base = round($itemData->quantity * $itemData->unit_price * (1 - $itemData->discount_percent / 100), 2);
+            $vat = round($base * $rate / 100, 2);
 
             InvoiceItem::create([
                 'tenant_id' => $tenantId,
                 'invoice_id' => $invoice->id,
                 'description' => $itemData->description,
-                'quantity' => $quantity,
+                'quantity' => $itemData->quantity,
                 'unit' => $itemData->unit,
-                'unit_price' => $unitPrice,
-                'total' => $total,
+                'unit_price' => $itemData->unit_price,
+                'discount_percent' => $itemData->discount_percent,
+                'vat_rate' => $itemData->vat_rate,
+                'line_base' => $base,
+                'line_vat' => $vat,
+                'line_total' => round($base + $vat, 2),
                 'position' => $position,
             ]);
         }
     }
 
     /**
-     * @return array<string, float>
+     * @return array<string, mixed>
      */
-    private function computeTotals(Invoice $invoice, bool $isVatPayer, float $vatRate): array
+    private function computeTotals(Invoice $invoice): array
     {
         $invoice->loadMissing('items');
-        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => (float) $item->total);
-        $vatAmount = $isVatPayer ? round($subtotal * ($vatRate / 100), 2) : 0.0;
-        $total = round($subtotal + $vatAmount, 2);
+
+        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => (float) $item->line_base);
+        $vatAmount = $invoice->items->sum(fn (InvoiceItem $item) => (float) $item->line_vat);
+        $totalPre = round($subtotal + $vatAmount, 2);
+
+        $roundingMode = $invoice->rounding_mode;
+        $total = round($roundingMode->round($totalPre), 2);
+        $roundingAmount = round($total - $totalPre, 2);
+
+        // Build vat_breakdown grouped by rate, ordered desc
+        $groups = [];
+        /** @var InvoiceItem $item */
+        foreach ($invoice->items as $item) {
+            $rate = (float) $item->vat_rate;
+            $key = (string) $rate;
+            if (! isset($groups[$key])) {
+                $groups[$key] = ['rate' => $rate, 'base' => 0.0, 'vat' => 0.0, 'total' => 0.0];
+            }
+
+            $groups[$key]['base'] = round($groups[$key]['base'] + (float) $item->line_base, 2);
+            $groups[$key]['vat'] = round($groups[$key]['vat'] + (float) $item->line_vat, 2);
+            $groups[$key]['total'] = round($groups[$key]['total'] + (float) $item->line_total, 2);
+        }
+
+        // Filter out zero-rate entries when not a vat payer (all rates will be 0)
+        $vatBreakdown = $invoice->is_vat_payer ? array_values($groups) : [];
+
+        // Sort desc by rate
+        usort($vatBreakdown, fn (array $a, array $b) => $b['rate'] <=> $a['rate']);
 
         return [
             'subtotal' => $subtotal,
             'vat_amount' => $vatAmount,
             'total' => $total,
+            'rounding_amount' => $roundingAmount,
+            'vat_breakdown' => $vatBreakdown ?: null,
         ];
     }
 
@@ -532,6 +604,14 @@ final readonly class InvoiceService
             'due_date' => $data->due_date,
             'is_vat_payer' => $tenant->is_vat_payer,
             'vat_rate' => $tenant->is_vat_payer ? $tenant->vat_rate : null,
+            'deposit' => $data->deposit,
+            'constant_symbol' => $data->constant_symbol,
+            'specific_symbol' => $data->specific_symbol,
+            'payment_type' => $data->payment_type,
+            'currency' => $data->currency,
+            'rounding_mode' => $data->rounding_mode,
+            'header_text' => $data->header_text,
+            'footer_text' => $data->footer_text,
             'customer_name' => $customerName,
             'customer_representative' => $data->customer_representative,
             'customer_ico' => $client !== null ? $client->ico : $data->customer_ico,
@@ -551,6 +631,7 @@ final readonly class InvoiceService
             'supplier_dic' => $tenant->dic,
             'supplier_vat_number' => $tenant->vat_number,
             'supplier_iban' => $tenant->iban,
+            'supplier_swift' => $tenant->swift_bic,
             'supplier_address_line' => $tenant->address_line,
             'supplier_city' => $tenant->city,
             'supplier_postal_code' => $tenant->postal_code,

@@ -4,8 +4,10 @@
     import FormProvider from '@/Components/Forms/FormProvider.vue';
     import FormActions from '@/Components/Forms/FormActions.vue';
     import SelectInput from '@/Components/Forms/SelectInput.vue';
+    import TextInput from '@/Components/Forms/TextInput.vue';
     import TextareaInput from '@/Components/Forms/TextareaInput.vue';
     import FormField from '@/Components/Forms/FormField.vue';
+    import NumberInput from '@/Components/Forms/NumberInput.vue';
     import InvoiceSubjectPicker from './InvoiceSubjectPicker.vue';
     import InvoiceItemsEditor from './InvoiceItemsEditor.vue';
     import { useTranslate } from '@/Composables/useTranslate';
@@ -22,6 +24,18 @@
         id: string;
         name: string;
         client_id: string;
+    }
+
+    interface VatRateOption {
+        value: number;
+        label: string;
+    }
+
+    interface InvoiceDefaults {
+        constant_symbol?: string | null;
+        payment_type?: App.Enums.PaymentTypeEnum;
+        currency?: App.Enums.CurrencyEnum;
+        rounding_mode?: App.Enums.RoundingModeEnum;
     }
 
     interface InvoiceFormData {
@@ -46,6 +60,14 @@
         customer_representative: string | null;
         note: string | null;
         items: App.Data.Invoices.InvoiceItemData[];
+        deposit: number;
+        constant_symbol: string | null;
+        specific_symbol: string | null;
+        payment_type: App.Enums.PaymentTypeEnum;
+        currency: App.Enums.CurrencyEnum;
+        rounding_mode: App.Enums.RoundingModeEnum;
+        header_text: string | null;
+        footer_text: string | null;
         _subject_mode: 'client' | 'object' | 'standalone';
     }
 
@@ -58,11 +80,21 @@
             templateOptions: SelectOption[];
             isVatPayer: boolean;
             vatRate?: string | null;
+            vatRateOptions?: VatRateOption[];
+            paymentTypeOptions?: SelectOption[];
+            currencyOptions?: SelectOption[];
+            roundingModeOptions?: SelectOption[];
+            invoiceDefaults?: InvoiceDefaults | null;
         }>(),
         {
             invoice: null,
             objects: null,
             vatRate: null,
+            vatRateOptions: () => [],
+            paymentTypeOptions: () => [],
+            currencyOptions: () => [],
+            roundingModeOptions: () => [],
+            invoiceDefaults: null,
         },
     );
 
@@ -76,6 +108,12 @@
         if (props.invoice.client_id) return 'client';
         return 'standalone';
     }
+
+    const defaultVatRateValue = computed<number>(() => {
+        if (!props.vatRate) return 0;
+        const n = parseFloat(props.vatRate);
+        return isNaN(n) ? 0 : n;
+    });
 
     const today = new Date().toISOString().slice(0, 10);
     const in14days = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
@@ -104,7 +142,28 @@
             customer_email: props.invoice?.customer_email ?? null,
             customer_representative: props.invoice?.customer_representative ?? null,
             note: props.invoice?.note ?? null,
-            items: props.invoice?.items ?? [{ id: null, description: '', quantity: 1, unit: null, unit_price: 0, total: null }],
+            items: props.invoice?.items ?? [
+                {
+                    id: null,
+                    description: '',
+                    quantity: 1,
+                    unit: null,
+                    unit_price: 0,
+                    discount_percent: 0,
+                    vat_rate: defaultVatRateValue.value,
+                    line_base: null,
+                    line_vat: null,
+                    line_total: null,
+                },
+            ],
+            deposit: parseFloat(props.invoice?.deposit ?? '0') || 0,
+            constant_symbol: props.invoice?.constant_symbol ?? props.invoiceDefaults?.constant_symbol ?? null,
+            specific_symbol: props.invoice?.specific_symbol ?? null,
+            payment_type: props.invoice?.payment_type ?? props.invoiceDefaults?.payment_type ?? 'transfer',
+            currency: props.invoice?.currency ?? props.invoiceDefaults?.currency ?? 'EUR',
+            rounding_mode: props.invoice?.rounding_mode ?? props.invoiceDefaults?.rounding_mode ?? 'none',
+            header_text: props.invoice?.header_text ?? null,
+            footer_text: props.invoice?.footer_text ?? null,
             _subject_mode: resolveInitialMode(),
         },
     );
@@ -180,17 +239,21 @@
     // Preview totals via shared composable
     const itemsRef = computed(() => form.items);
     const isVatPayerRef = computed(() => props.isVatPayer);
-    const vatRateRef = computed(() => props.vatRate);
-    const { subtotal: previewSubtotal, total: previewTotal } = useInvoiceTotals(
+    const depositRef = computed(() => form.deposit);
+    const { subtotal: previewSubtotal, total: previewTotal, balanceDue: previewBalanceDue } = useInvoiceTotals(
         itemsRef,
         isVatPayerRef,
-        vatRateRef,
+        depositRef,
     );
 
     const typeLabel = computed(() => {
         const opt = props.typeOptions.find((o) => o.value === form.type);
         return opt ? opt.label : form.type;
     });
+
+    function onDepositChange(val: number | null): void {
+        form.deposit = val ?? 0;
+    }
 
     function submit() {
         form.submit();
@@ -216,12 +279,12 @@
                         </div>
                     </div>
 
-                    <!-- Dates + type + template -->
+                    <!-- Dates + type + template + payment fields -->
                     <div class="card bg-base-100 shadow-sm">
                         <div class="card-body">
                             <h2 class="card-title text-base">{{ t('invoices.form.details') }}</h2>
                             <div class="space-y-4">
-                                <!-- Type segmented control (3 values: monthly / one_off / special) -->
+                                <!-- Type segmented control -->
                                 <FormField :label="t('invoices.form.type')" required>
                                     <div
                                         class="flex flex-wrap gap-2"
@@ -328,8 +391,62 @@
                                             </p>
                                         </FormField>
                                     </template>
+
+                                    <!-- Deposit -->
+                                    <NumberInput
+                                        :model-value="form.deposit"
+                                        :label="t('invoices.detail.deposit')"
+                                        :min="0"
+                                        :step="0.01"
+                                        :error="(form.errors as Record<string, string>)['deposit']"
+                                        @update:model-value="onDepositChange"
+                                    />
+
+                                    <!-- Constant symbol / Specific symbol -->
+                                    <TextInput
+                                        field="constant_symbol"
+                                        :label="t('invoices.detail.constant_symbol')"
+                                    />
+                                    <TextInput
+                                        field="specific_symbol"
+                                        :label="t('invoices.detail.specific_symbol')"
+                                    />
+
+                                    <!-- Payment type -->
+                                    <SelectInput
+                                        field="payment_type"
+                                        :label="t('invoices.detail.payment_method')"
+                                        :options="paymentTypeOptions"
+                                    />
+
+                                    <!-- Currency -->
+                                    <SelectInput
+                                        field="currency"
+                                        :label="t('invoices.detail.currency')"
+                                        :options="currencyOptions"
+                                    />
+
+                                    <!-- Rounding mode -->
+                                    <div class="md:col-span-2">
+                                        <SelectInput
+                                            field="rounding_mode"
+                                            :label="t('invoices.detail.rounding')"
+                                            :options="roundingModeOptions"
+                                        />
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Header text (intro above items) -->
+                    <div class="card bg-base-100 shadow-sm">
+                        <div class="card-body">
+                            <TextareaInput
+                                field="header_text"
+                                :label="t('invoices.detail.header_text')"
+                                :rows="2"
+                            />
                         </div>
                     </div>
 
@@ -340,8 +457,20 @@
                             <InvoiceItemsEditor
                                 v-model="form.items"
                                 :is-vat-payer="isVatPayer"
-                                :vat-rate="vatRate"
+                                :vat-rate-options="vatRateOptions"
+                                :default-vat-rate="defaultVatRateValue"
                                 :errors="itemErrors"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Footer text (closing text below totals) -->
+                    <div class="card bg-base-100 shadow-sm">
+                        <div class="card-body">
+                            <TextareaInput
+                                field="footer_text"
+                                :label="t('invoices.detail.footer_text')"
+                                :rows="2"
                             />
                         </div>
                     </div>
@@ -406,12 +535,22 @@
                                 <dl class="space-y-1 text-sm">
                                     <div class="flex justify-between gap-2">
                                         <dt class="text-base-content/60">{{ t('invoices.detail.subtotal') }}</dt>
-                                        <dd class="font-mono">{{ previewSubtotal.toFixed(2) }}</dd>
+                                        <dd class="font-mono">{{ previewSubtotal.toFixed(2) }} {{ form.currency }}</dd>
                                     </div>
                                     <div class="flex justify-between gap-2 font-semibold">
                                         <dt>{{ t('invoices.detail.total') }}</dt>
-                                        <dd class="font-mono">{{ previewTotal.toFixed(2) }}</dd>
+                                        <dd class="font-mono">{{ previewTotal.toFixed(2) }} {{ form.currency }}</dd>
                                     </div>
+                                    <template v-if="form.deposit > 0">
+                                        <div class="flex justify-between gap-2">
+                                            <dt class="text-base-content/60">{{ t('invoices.detail.deposit') }}</dt>
+                                            <dd class="font-mono">{{ form.deposit.toFixed(2) }} {{ form.currency }}</dd>
+                                        </div>
+                                        <div class="flex justify-between gap-2 font-semibold">
+                                            <dt>{{ t('invoices.detail.balance_due') }}</dt>
+                                            <dd class="font-mono">{{ previewBalanceDue.toFixed(2) }} {{ form.currency }}</dd>
+                                        </div>
+                                    </template>
                                 </dl>
                             </div>
                         </div>

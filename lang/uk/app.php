@@ -712,4 +712,58 @@ return [
     'recurring_invoices.settings.default_state' => 'Стан нового рахунку за замовчуванням',
     'recurring_invoices.settings.state_draft' => 'Чернетка',
     'recurring_invoices.settings.state_issued' => 'Виставлений',
+
+    // Part A — per-item VAT, discount, deposit i18n
+    'invoices.items.discount' => 'Знижка',
+    'invoices.items.vat_rate' => 'Ставка ПДВ',
+    'invoices.detail.deposit' => 'Аванс',
+    'invoices.detail.balance_due' => 'Залишок до сплати',
+    'invoices.vat_recap.title' => 'Розбивка ПДВ',
+    'invoices.vat_recap.rate' => 'Ставка',
+    'invoices.vat_recap.base' => 'База',
+    'invoices.vat_recap.vat' => 'ПДВ',
+    'invoices.vat_recap.total' => 'Разом',
+    'invoices.pdf.discount' => 'Знижка',
+    'invoices.pdf.vat_recap' => 'ПДВ разом',
+    'invoices.pdf.deposit' => 'Аванс',
+    'invoices.pdf.balance_due' => 'Залишок до сплати',
+
+    // Part B — SK-standard fields (payment_type, currency, rounding_mode, PDF labels, settings)
+    'payment_type.transfer' => 'Банківський переказ',
+    'payment_type.cash' => 'Готівка',
+    'payment_type.card' => 'Картка',
+    'payment_type.cod' => 'Накладний платіж',
+    'payment_type.other' => 'Інше',
+
+    'currency.EUR' => 'Євро (EUR)',
+    'currency.CZK' => 'Чеська крона (CZK)',
+    'currency.USD' => 'Долар США (USD)',
+
+    'rounding_mode.none' => 'Без округлення',
+    'rounding_mode.document' => 'До цілого євро',
+    'rounding_mode.cash_005' => 'До 5 центів (готівка)',
+
+    'invoices.pdf.payment_type' => 'Спосіб оплати',
+    'invoices.pdf.swift' => 'SWIFT / BIC',
+    'invoices.pdf.constant_symbol' => 'КС',
+    'invoices.pdf.specific_symbol' => 'ШС',
+    'invoices.pdf.rounding' => 'Округлення',
+
+    'invoice_settings.swift_bic' => 'SWIFT / BIC',
+    'invoice_settings.swift_bic_hint' => 'Напр. TATRSKBX або GIBASKBX',
+    'invoice_settings.default_payment_type' => 'Спосіб оплати за замовчуванням',
+    'invoice_settings.default_currency' => 'Валюта за замовчуванням',
+    'invoice_settings.default_rounding' => 'Округлення за замовчуванням',
+    'invoice_settings.default_constant_symbol' => 'Константний символ за замовчуванням',
+
+    // Part B additions — invoices.detail.* missing keys + invoice_settings.section.defaults
+    'invoices.detail.constant_symbol' => 'Константний символ',
+    'invoices.detail.specific_symbol' => 'Специфічний символ',
+    'invoices.detail.header_text' => 'Вступний текст',
+    'invoices.detail.footer_text' => 'Заключний текст',
+    'invoices.detail.rounding' => 'Округлення',
+    'invoices.detail.swift' => 'SWIFT / BIC',
+    'invoices.detail.currency' => 'Валюта',
+    'invoices.detail.payment_type' => 'Спосіб оплати',
+    'invoice_settings.section.defaults' => 'Типові значення рахунку',
 ];

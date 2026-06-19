@@ -88,7 +88,14 @@ final readonly class RecurringInvoiceService
                 'period_from' => $data->period_from,
                 'period_to' => $data->period_to,
                 'due_days' => $data->due_days,
+                'deposit' => $data->deposit,
                 'note' => $data->note,
+                'constant_symbol' => $data->constant_symbol,
+                'payment_type' => $data->payment_type,
+                'currency' => $data->currency,
+                'rounding_mode' => $data->rounding_mode,
+                'header_text' => $data->header_text,
+                'footer_text' => $data->footer_text,
             ]);
 
             $this->syncItems($ri, $data->items);
@@ -136,7 +143,14 @@ final readonly class RecurringInvoiceService
                 'period_from' => $data->period_from,
                 'period_to' => $data->period_to,
                 'due_days' => $data->due_days,
+                'deposit' => $data->deposit,
                 'note' => $data->note,
+                'constant_symbol' => $data->constant_symbol,
+                'payment_type' => $data->payment_type,
+                'currency' => $data->currency,
+                'rounding_mode' => $data->rounding_mode,
+                'header_text' => $data->header_text,
+                'footer_text' => $data->footer_text,
             ]);
 
             $this->syncItems($ri, $data->items);
@@ -169,7 +183,6 @@ final readonly class RecurringInvoiceService
             ]);
         }
 
-        // Use the later of now() or start_date as the base for next run computation
         $today = now()->startOfDay();
         $base = $today->gt($ri->start_date) ? $today : $ri->start_date->copy()->startOfDay();
         $nextRunAt = $ri->frequency->nextRunDate($base, $ri->day_of_month);
@@ -229,7 +242,11 @@ final readonly class RecurringInvoiceService
                 'quantity' => (float) $item->quantity,
                 'unit' => $item->unit,
                 'unit_price' => (float) $item->unit_price,
-                'total' => null,
+                'discount_percent' => (float) $item->discount_percent,
+                'vat_rate' => (float) $item->vat_rate,
+                'line_base' => null,
+                'line_vat' => null,
+                'line_total' => null,
             ]);
         }
 
@@ -254,6 +271,14 @@ final readonly class RecurringInvoiceService
             'customer_country' => $ri->customer_country,
             'customer_email' => $ri->customer_email,
             'note' => $ri->note,
+            'deposit' => (float) $ri->deposit,
+            'constant_symbol' => $ri->constant_symbol,
+            'specific_symbol' => null,
+            'payment_type' => $ri->payment_type->value,
+            'currency' => $ri->currency->value,
+            'rounding_mode' => $ri->rounding_mode->value,
+            'header_text' => $ri->header_text,
+            'footer_text' => $ri->footer_text,
             'items' => $items,
         ]);
 
@@ -283,24 +308,19 @@ final readonly class RecurringInvoiceService
         $today = now()->startOfDay();
 
         if ($startDate->gt($today)) {
-            // Future start: clamp to day_of_month within start_date's month
             $maxDay = min($data->day_of_month, $startDate->daysInMonth);
             $startDate->setDay($maxDay);
 
             return $startDate;
         }
 
-        // start_date is today or in the past — find the soonest date on/after today
-        // whose day-of-month equals day_of_month
         $base = $today->copy();
         $maxDay = min($data->day_of_month, $base->daysInMonth);
 
         if ($maxDay >= $today->day) {
-            // Target day still ahead this month (or is today)
             return $base->setDay($maxDay);
         }
 
-        // Target day already passed this month — advance one interval from today
         return $data->frequency->nextRunDate($today, $data->day_of_month);
     }
 
@@ -319,6 +339,8 @@ final readonly class RecurringInvoiceService
                 'quantity' => $itemData->quantity,
                 'unit' => $itemData->unit,
                 'unit_price' => $itemData->unit_price,
+                'discount_percent' => $itemData->discount_percent,
+                'vat_rate' => $itemData->vat_rate,
                 'position' => $position,
             ]);
         }

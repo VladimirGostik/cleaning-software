@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\RecurringInvoice;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -48,7 +51,14 @@ final class RecurringInvoiceFactory extends Factory
             'period_from' => null,
             'period_to' => null,
             'due_days' => 14,
+            'deposit' => '0.00',
             'note' => null,
+            'constant_symbol' => null,
+            'payment_type' => PaymentTypeEnum::Transfer,
+            'currency' => CurrencyEnum::EUR,
+            'rounding_mode' => RoundingModeEnum::None,
+            'header_text' => null,
+            'footer_text' => null,
         ];
     }
 
@@ -87,6 +97,13 @@ final class RecurringInvoiceFactory extends Factory
         return $this->state(fn () => [
             'status' => RecurringInvoiceStatusEnum::Active,
             'next_run_at' => now()->toDateString(),
+        ]);
+    }
+
+    public function withDeposit(float $deposit = 50.0): static
+    {
+        return $this->state(fn () => [
+            'deposit' => number_format($deposit, 2, '.', ''),
         ]);
     }
 }

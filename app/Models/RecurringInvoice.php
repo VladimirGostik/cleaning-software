@@ -6,10 +6,13 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
+use App\Enums\RoundingModeEnum;
 use Database\Factories\RecurringInvoiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,6 +31,9 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property RecurringFrequencyEnum $frequency
  * @property InvoiceTypeEnum $type
  * @property InvoiceTemplateEnum|null $template
+ * @property PaymentTypeEnum $payment_type
+ * @property CurrencyEnum $currency
+ * @property RoundingModeEnum $rounding_mode
  * @property bool $auto_issue
  * @property int $day_of_month
  * @property Carbon $start_date
@@ -39,6 +45,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property int|null $occurrences_limit
  * @property int $occurrences_generated
  * @property int $due_days
+ * @property string $deposit
  */
 #[Fillable([
     'tenant_id',
@@ -70,7 +77,14 @@ use Spatie\Activitylog\Support\LogOptions;
     'period_from',
     'period_to',
     'due_days',
+    'deposit',
     'note',
+    'constant_symbol',
+    'payment_type',
+    'currency',
+    'rounding_mode',
+    'header_text',
+    'footer_text',
 ])]
 final class RecurringInvoice extends Model
 {
@@ -87,6 +101,9 @@ final class RecurringInvoice extends Model
             'template' => InvoiceTemplateEnum::class,
             'frequency' => RecurringFrequencyEnum::class,
             'status' => RecurringInvoiceStatusEnum::class,
+            'payment_type' => PaymentTypeEnum::class,
+            'currency' => CurrencyEnum::class,
+            'rounding_mode' => RoundingModeEnum::class,
             'auto_issue' => 'boolean',
             'day_of_month' => 'integer',
             'start_date' => 'date',
@@ -98,6 +115,7 @@ final class RecurringInvoice extends Model
             'occurrences_limit' => 'integer',
             'occurrences_generated' => 'integer',
             'due_days' => 'integer',
+            'deposit' => 'decimal:2',
         ];
     }
 

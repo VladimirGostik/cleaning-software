@@ -1,4 +1,8 @@
-{{-- Invoice header: supplier + customer blocks --}}
+{{-- Invoice header: optional header_text + supplier + customer blocks --}}
+@if($invoice->header_text)
+<div style="margin-bottom:16px; font-size:12px; color:#444;">{{ $invoice->header_text }}</div>
+@endif
+
 <table style="width:100%; margin-bottom:20px;">
     <tr>
         <td style="width:50%; vertical-align:top; padding-right:20px;">

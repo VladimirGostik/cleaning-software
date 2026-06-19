@@ -11,11 +11,14 @@ use App\Data\RecurringInvoices\RecurringInvoiceDetailData;
 use App\Data\RecurringInvoices\RecurringInvoiceIndexFilterData;
 use App\Data\RecurringInvoices\RecurringInvoiceListItemData;
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -59,6 +62,7 @@ final class RecurringInvoiceController extends Controller
     {
         /** @var Tenant $tenant */
         $tenant = Tenant::withoutGlobalScopes()->with('interface')->findOrFail(app('current_tenant_id'));
+        $interface = $tenant->interface;
 
         return Inertia::render('RecurringInvoices/Create', [
             'clients' => ClientOptionData::collect(
@@ -74,9 +78,24 @@ final class RecurringInvoiceController extends Controller
             'frequencyOptions' => RecurringFrequencyEnum::options(),
             'statusOptions' => RecurringInvoiceStatusEnum::options(),
             'recurringStateOptions' => RecurringDefaultStateEnum::options(),
-            'recurringDefaultState' => $tenant->interface?->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
+            'recurringDefaultState' => $interface?->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
             'isVatPayer' => $tenant->is_vat_payer,
             'vatRate' => $tenant->vat_rate,
+            'vatRateOptions' => [
+                ['value' => 23, 'label' => '23%'],
+                ['value' => 19, 'label' => '19%'],
+                ['value' => 5, 'label' => '5%'],
+                ['value' => 0, 'label' => '0%'],
+            ],
+            'paymentTypeOptions' => PaymentTypeEnum::options(),
+            'currencyOptions' => CurrencyEnum::options(),
+            'roundingModeOptions' => RoundingModeEnum::options(),
+            'invoiceDefaults' => [
+                'constant_symbol' => $interface?->default_constant_symbol,
+                'payment_type' => ($interface?->default_payment_type ?? PaymentTypeEnum::Transfer)->value,
+                'currency' => ($interface?->default_currency ?? CurrencyEnum::EUR)->value,
+                'rounding_mode' => ($interface?->default_rounding_mode ?? RoundingModeEnum::None)->value,
+            ],
         ]);
     }
 
@@ -115,6 +134,7 @@ final class RecurringInvoiceController extends Controller
 
         /** @var Tenant $tenant */
         $tenant = Tenant::withoutGlobalScopes()->with('interface')->findOrFail(app('current_tenant_id'));
+        $interface = $tenant->interface;
 
         return Inertia::render('RecurringInvoices/Edit', [
             'recurringInvoice' => RecurringInvoiceDetailData::fromModel($recurringInvoice),
@@ -131,9 +151,24 @@ final class RecurringInvoiceController extends Controller
             'frequencyOptions' => RecurringFrequencyEnum::options(),
             'statusOptions' => RecurringInvoiceStatusEnum::options(),
             'recurringStateOptions' => RecurringDefaultStateEnum::options(),
-            'recurringDefaultState' => $tenant->interface?->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
+            'recurringDefaultState' => $interface?->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
             'isVatPayer' => $tenant->is_vat_payer,
             'vatRate' => $tenant->vat_rate,
+            'vatRateOptions' => [
+                ['value' => 23, 'label' => '23%'],
+                ['value' => 19, 'label' => '19%'],
+                ['value' => 5, 'label' => '5%'],
+                ['value' => 0, 'label' => '0%'],
+            ],
+            'paymentTypeOptions' => PaymentTypeEnum::options(),
+            'currencyOptions' => CurrencyEnum::options(),
+            'roundingModeOptions' => RoundingModeEnum::options(),
+            'invoiceDefaults' => [
+                'constant_symbol' => $interface?->default_constant_symbol,
+                'payment_type' => ($interface?->default_payment_type ?? PaymentTypeEnum::Transfer)->value,
+                'currency' => ($interface?->default_currency ?? CurrencyEnum::EUR)->value,
+                'rounding_mode' => ($interface?->default_rounding_mode ?? RoundingModeEnum::None)->value,
+            ],
         ]);
     }
 

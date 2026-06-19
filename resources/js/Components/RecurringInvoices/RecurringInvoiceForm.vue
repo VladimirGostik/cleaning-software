@@ -26,6 +26,18 @@
         client_id: string;
     }
 
+    interface VatRateOption {
+        value: number;
+        label: string;
+    }
+
+    interface InvoiceDefaults {
+        constant_symbol?: string | null;
+        payment_type?: App.Enums.PaymentTypeEnum;
+        currency?: App.Enums.CurrencyEnum;
+        rounding_mode?: App.Enums.RoundingModeEnum;
+    }
+
     type EndMode = 'forever' | 'until_date' | 'count';
 
     interface RecurringInvoiceFormData {
@@ -55,6 +67,13 @@
         customer_email: string | null;
         note: string | null;
         items: App.Data.RecurringInvoices.RecurringInvoiceItemData[];
+        deposit: number;
+        constant_symbol: string | null;
+        payment_type: App.Enums.PaymentTypeEnum;
+        currency: App.Enums.CurrencyEnum;
+        rounding_mode: App.Enums.RoundingModeEnum;
+        header_text: string | null;
+        footer_text: string | null;
         _subject_mode: 'client' | 'object' | 'standalone';
         _end_mode: EndMode;
     }
@@ -69,11 +88,21 @@
             frequencyOptions: SelectOption[];
             isVatPayer: boolean;
             defaultAutoIssue?: boolean;
+            vatRateOptions?: VatRateOption[];
+            paymentTypeOptions?: SelectOption[];
+            currencyOptions?: SelectOption[];
+            roundingModeOptions?: SelectOption[];
+            invoiceDefaults?: InvoiceDefaults | null;
         }>(),
         {
             recurring: null,
             objects: null,
             defaultAutoIssue: false,
+            vatRateOptions: () => [],
+            paymentTypeOptions: () => [],
+            currencyOptions: () => [],
+            roundingModeOptions: () => [],
+            invoiceDefaults: null,
         },
     );
 
@@ -126,7 +155,16 @@
             customer_country: props.recurring?.customer_country ?? null,
             customer_email: props.recurring?.customer_email ?? null,
             note: props.recurring?.note ?? null,
-            items: props.recurring?.items ?? [{ description: '', quantity: 1, unit: null, unit_price: 0 }],
+            items: props.recurring?.items ?? [
+                { description: '', quantity: 1, unit: null, unit_price: 0, discount_percent: 0, vat_rate: 0 },
+            ],
+            deposit: parseFloat(props.recurring?.deposit ?? '0') || 0,
+            constant_symbol: props.recurring?.constant_symbol ?? props.invoiceDefaults?.constant_symbol ?? null,
+            payment_type: props.recurring?.payment_type ?? props.invoiceDefaults?.payment_type ?? 'transfer',
+            currency: props.recurring?.currency ?? props.invoiceDefaults?.currency ?? 'EUR',
+            rounding_mode: props.recurring?.rounding_mode ?? props.invoiceDefaults?.rounding_mode ?? 'none',
+            header_text: props.recurring?.header_text ?? null,
+            footer_text: props.recurring?.footer_text ?? null,
             _subject_mode: resolveInitialSubjectMode(),
             _end_mode: resolveEndMode(),
         },
@@ -210,6 +248,10 @@
         } else {
             form.end_date = null;
         }
+    }
+
+    function onDepositChange(val: number | null): void {
+        form.deposit = val ?? 0;
     }
 
     function submit(): void {
@@ -437,13 +479,79 @@
                     </div>
                 </div>
 
+                <!-- Payment fields -->
+                <div class="card bg-base-100 shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title text-base">{{ t('invoices.detail.payment_method') }}</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <TextInput
+                                field="constant_symbol"
+                                :label="t('invoices.detail.constant_symbol')"
+                            />
+                            <SelectInput
+                                field="payment_type"
+                                :label="t('invoices.detail.payment_method')"
+                                :options="paymentTypeOptions"
+                            />
+                            <SelectInput
+                                field="currency"
+                                :label="t('invoices.detail.currency')"
+                                :options="currencyOptions"
+                            />
+                            <SelectInput
+                                field="rounding_mode"
+                                :label="t('invoices.detail.rounding')"
+                                :options="roundingModeOptions"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Header text -->
+                <div class="card bg-base-100 shadow-sm">
+                    <div class="card-body">
+                        <TextareaInput
+                            field="header_text"
+                            :label="t('invoices.detail.header_text')"
+                            :rows="2"
+                        />
+                    </div>
+                </div>
+
                 <!-- Items -->
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">
                         <h2 class="card-title text-base">{{ t('invoices.form.items') }}</h2>
                         <RecurringInvoiceItemsEditor
                             v-model="form.items"
+                            :is-vat-payer="isVatPayer"
+                            :vat-rate-options="vatRateOptions"
                             :errors="itemErrors"
+                        />
+                    </div>
+                </div>
+
+                <!-- Footer text -->
+                <div class="card bg-base-100 shadow-sm">
+                    <div class="card-body">
+                        <TextareaInput
+                            field="footer_text"
+                            :label="t('invoices.detail.footer_text')"
+                            :rows="2"
+                        />
+                    </div>
+                </div>
+
+                <!-- Deposit -->
+                <div class="card bg-base-100 shadow-sm">
+                    <div class="card-body">
+                        <NumberInput
+                            :model-value="form.deposit"
+                            :label="t('invoices.detail.deposit')"
+                            :min="0"
+                            :step="0.01"
+                            :error="(form.errors as Record<string, string>)['deposit']"
+                            @update:model-value="onDepositChange"
                         />
                     </div>
                 </div>

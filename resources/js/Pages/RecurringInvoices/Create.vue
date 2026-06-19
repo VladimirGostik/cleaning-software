@@ -20,6 +20,18 @@
         client_id: string;
     }
 
+    interface VatRateOption {
+        value: number;
+        label: string;
+    }
+
+    interface InvoiceDefaults {
+        constant_symbol?: string | null;
+        payment_type?: App.Enums.PaymentTypeEnum;
+        currency?: App.Enums.CurrencyEnum;
+        rounding_mode?: App.Enums.RoundingModeEnum;
+    }
+
     interface Props {
         clients: ClientOption[];
         objects?: ObjectOption[] | null;
@@ -28,10 +40,20 @@
         frequencyOptions: SelectOption[];
         isVatPayer: boolean;
         defaultState: App.Enums.RecurringDefaultStateEnum;
+        vatRateOptions?: VatRateOption[];
+        paymentTypeOptions?: SelectOption[];
+        currencyOptions?: SelectOption[];
+        roundingModeOptions?: SelectOption[];
+        invoiceDefaults?: InvoiceDefaults | null;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         objects: null,
+        vatRateOptions: () => [],
+        paymentTypeOptions: () => [],
+        currencyOptions: () => [],
+        roundingModeOptions: () => [],
+        invoiceDefaults: null,
     });
 
     const { t } = useTranslate();
@@ -58,6 +80,11 @@
             :frequency-options="props.frequencyOptions"
             :is-vat-payer="props.isVatPayer"
             :default-auto-issue="props.defaultState === 'issued'"
+            :vat-rate-options="props.vatRateOptions"
+            :payment-type-options="props.paymentTypeOptions"
+            :currency-options="props.currencyOptions"
+            :rounding-mode-options="props.roundingModeOptions"
+            :invoice-defaults="props.invoiceDefaults"
         />
     </div>
 </template>

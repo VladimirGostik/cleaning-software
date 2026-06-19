@@ -24,7 +24,19 @@ final class RecurringInvoiceItemFactory extends Factory
             'quantity' => fake()->randomFloat(2, 1, 10),
             'unit' => 'hod',
             'unit_price' => fake()->randomFloat(2, 10, 200),
+            'discount_percent' => 0,
+            'vat_rate' => 0,
             'position' => 0,
         ];
+    }
+
+    public function withVat(float $rate = 23.0): static
+    {
+        return $this->state(fn () => ['vat_rate' => $rate]);
+    }
+
+    public function withDiscount(float $percent = 10.0): static
+    {
+        return $this->state(fn () => ['discount_percent' => $percent]);
     }
 }

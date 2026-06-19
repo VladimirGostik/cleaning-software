@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Data\RecurringInvoices;
 
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\CleaningObject;
 use Closure;
 use Illuminate\Validation\Rule;
@@ -76,6 +79,17 @@ final class RecurringInvoiceUpsertData extends Data
         #[Required, ArrayType, Min(1)]
         #[DataCollectionOf(RecurringInvoiceItemData::class)]
         public array $items,
+        #[Nullable]
+        public ?string $constant_symbol,
+        #[Nullable]
+        public ?string $header_text,
+        #[Nullable]
+        public ?string $footer_text,
+        #[Min(0)]
+        public float $deposit = 0,
+        public PaymentTypeEnum $payment_type = PaymentTypeEnum::Transfer,
+        public CurrencyEnum $currency = CurrencyEnum::EUR,
+        public RoundingModeEnum $rounding_mode = RoundingModeEnum::None,
     ) {}
 
     /**
@@ -136,6 +150,11 @@ final class RecurringInvoiceUpsertData extends Data
             'period_from' => ['required_if:type,monthly,special', 'nullable', 'date'],
             'period_to' => ['required_if:type,monthly,special', 'nullable', 'date', 'after_or_equal:period_from'],
             'items' => ['required', 'array', 'min:1'],
+            'deposit' => ['numeric', 'min:0'],
+            'constant_symbol' => ['nullable', 'string', 'max:10', 'regex:/^\d*$/'],
+            'payment_type' => ['required', Rule::enum(PaymentTypeEnum::class)],
+            'currency' => ['required', Rule::enum(CurrencyEnum::class)],
+            'rounding_mode' => ['required', Rule::enum(RoundingModeEnum::class)],
         ];
     }
 }

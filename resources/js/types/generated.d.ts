@@ -149,6 +149,16 @@ vat_rate: string | null,
 subtotal: string,
 vat_amount: string,
 total: string,
+deposit: string,
+balance_due: string,
+rounding_amount: string,
+payment_type: App.Enums.PaymentTypeEnum,
+currency: App.Enums.CurrencyEnum,
+rounding_mode: App.Enums.RoundingModeEnum,
+constant_symbol: string | null,
+specific_symbol: string | null,
+header_text: string | null,
+footer_text: string | null,
 customer_name: string,
 customer_representative: string | null,
 customer_ico: string | null,
@@ -166,6 +176,7 @@ object_postal_code: string | null,
 note: string | null,
 supplier: App.Data.Invoices.InvoiceSupplierData,
 items: App.Data.Invoices.InvoiceItemData[],
+vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
 qr_available: boolean,
 qr_data_uri: string | null,
 };
@@ -193,7 +204,11 @@ description: string,
 quantity: number,
 unit: string | null,
 unit_price: number,
-total: number | null,
+discount_percent: number,
+vat_rate: number,
+line_base: number | null,
+line_vat: number | null,
+line_total: number | null,
 };
 export type InvoiceListItemData = {
 id: string,
@@ -214,6 +229,11 @@ iban: string | null,
 vat_rate: number | null,
 registration_info: string | null,
 recurring_default_state: App.Enums.RecurringDefaultStateEnum,
+swift_bic: string | null,
+default_constant_symbol: string | null,
+default_payment_type: App.Enums.PaymentTypeEnum,
+default_currency: App.Enums.CurrencyEnum,
+default_rounding_mode: App.Enums.RoundingModeEnum,
 };
 export type InvoiceStatCardData = {
 amount: string,
@@ -231,6 +251,7 @@ ico: string | null,
 dic: string | null,
 vat_number: string | null,
 iban: string | null,
+swift: string | null,
 address_line: string | null,
 city: string | null,
 postal_code: string | null,
@@ -261,6 +282,14 @@ customer_country: string | null,
 customer_email: string | null,
 note: string | null,
 items: App.Data.Invoices.InvoiceItemData[],
+constant_symbol: string | null,
+specific_symbol: string | null,
+header_text: string | null,
+footer_text: string | null,
+deposit: number,
+payment_type: App.Enums.PaymentTypeEnum,
+currency: App.Enums.CurrencyEnum,
+rounding_mode: App.Enums.RoundingModeEnum,
 };
 export type TabCountsData = {
 readonly all: number | null,
@@ -268,6 +297,12 @@ readonly all_issued: number,
 readonly recurring: number,
 readonly drafts: number,
 readonly overdue: number,
+};
+export type VatBreakdownLineData = {
+rate: number,
+base: number,
+vat: number,
+total: number,
 };
 }
 namespace Objects {
@@ -381,6 +416,13 @@ customer_postal_code: string | null,
 customer_country: string | null,
 customer_email: string | null,
 note: string | null,
+deposit: string,
+payment_type: App.Enums.PaymentTypeEnum,
+currency: App.Enums.CurrencyEnum,
+rounding_mode: App.Enums.RoundingModeEnum,
+constant_symbol: string | null,
+header_text: string | null,
+footer_text: string | null,
 items: App.Data.RecurringInvoices.RecurringInvoiceItemData[],
 };
 export type RecurringInvoiceIndexFilterData = {
@@ -395,6 +437,8 @@ description: string,
 quantity: number,
 unit: string | null,
 unit_price: number,
+discount_percent: number,
+vat_rate: number,
 };
 export type RecurringInvoiceListItemData = {
 id: string,
@@ -438,6 +482,13 @@ customer_country: string | null,
 customer_email: string | null,
 note: string | null,
 items: App.Data.RecurringInvoices.RecurringInvoiceItemData[],
+constant_symbol: string | null,
+header_text: string | null,
+footer_text: string | null,
+deposit: number,
+payment_type: App.Enums.PaymentTypeEnum,
+currency: App.Enums.CurrencyEnum,
+rounding_mode: App.Enums.RoundingModeEnum,
 };
 }
 namespace Tenants {
@@ -480,16 +531,19 @@ is_active: boolean,
 }
 namespace Enums {
 export type ClientTypeEnum = "corporate" | "private";
+export type CurrencyEnum = "EUR" | "CZK" | "USD";
 export type FeatureEnum = "clients" | "objects" | "quotes" | "contracts" | "schedule" | "invoices" | "employees" | "reports" | "mobile_access" | "multi_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";
 export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
+export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
 export type RecurringDefaultStateEnum = "draft" | "issued";
 export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" | "semi_annually" | "annually";
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";
+export type RoundingModeEnum = "none" | "document" | "cash_005";
 export type SubscriptionPlanEnum = "free" | "starter" | "pro" | "enterprise";
 export type SupportedLanguage = "sk" | "en" | "uk";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";

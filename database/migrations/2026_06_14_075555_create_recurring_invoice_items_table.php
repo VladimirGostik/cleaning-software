@@ -19,6 +19,8 @@ return new class extends Migration
             $table->decimal('quantity', 10, 2);
             $table->string('unit')->nullable();
             $table->decimal('unit_price', 12, 2);
+            $table->decimal('discount_percent', 5, 2)->default(0);
+            $table->decimal('vat_rate', 5, 2)->default(0);
             $table->smallInteger('position')->default(0);
 
             $table->timestamps();

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Data\Invoices;
 
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
+use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\Tenant;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\Validation\Max;
@@ -32,6 +35,18 @@ final class InvoiceSettingsData extends Data
         #[Max(255)]
         public ?string $registration_info,
         public RecurringDefaultStateEnum $recurring_default_state,
+        #[Nullable]
+        #[Max(11)]
+        #[Regex('/^[A-Z0-9]{8}([A-Z0-9]{3})?$/')]
+        public ?string $swift_bic,
+        #[Nullable]
+        #[Max(10)]
+        #[Regex('/^\d*$/')]
+        public ?string $default_constant_symbol,
+        // New defaults — 'sometimes' rule auto-applied by Spatie when PHP default is set
+        public PaymentTypeEnum $default_payment_type = PaymentTypeEnum::Transfer,
+        public CurrencyEnum $default_currency = CurrencyEnum::EUR,
+        public RoundingModeEnum $default_rounding_mode = RoundingModeEnum::None,
     ) {}
 
     public static function fromTenant(Tenant $tenant): self
@@ -43,6 +58,11 @@ final class InvoiceSettingsData extends Data
             vat_rate: $tenant->vat_rate !== null ? (float) $tenant->vat_rate : null,
             registration_info: $tenant->registration_info,
             recurring_default_state: $tenant->interface?->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
+            swift_bic: $tenant->swift_bic,
+            default_constant_symbol: $tenant->interface?->default_constant_symbol,
+            default_payment_type: $tenant->interface?->default_payment_type ?? PaymentTypeEnum::Transfer,
+            default_currency: $tenant->interface?->default_currency ?? CurrencyEnum::EUR,
+            default_rounding_mode: $tenant->interface?->default_rounding_mode ?? RoundingModeEnum::None,
         );
     }
 

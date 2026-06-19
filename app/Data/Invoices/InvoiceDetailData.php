@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Data\Invoices;
 
 use App\Contracts\GeneratesPaymentQr;
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
@@ -41,6 +44,16 @@ final class InvoiceDetailData extends Data
         public string $subtotal,
         public string $vat_amount,
         public string $total,
+        public string $deposit,
+        public string $balance_due,
+        public string $rounding_amount,
+        public PaymentTypeEnum $payment_type,
+        public CurrencyEnum $currency,
+        public RoundingModeEnum $rounding_mode,
+        public ?string $constant_symbol,
+        public ?string $specific_symbol,
+        public ?string $header_text,
+        public ?string $footer_text,
         public string $customer_name,
         public ?string $customer_representative,
         public ?string $customer_ico,
@@ -60,6 +73,9 @@ final class InvoiceDetailData extends Data
         /** @var InvoiceItemData[] */
         #[DataCollectionOf(InvoiceItemData::class)]
         public array $items,
+        /** @var VatBreakdownLineData[] */
+        #[DataCollectionOf(VatBreakdownLineData::class)]
+        public array $vat_breakdown,
         public bool $qr_available,
         public ?string $qr_data_uri = null,
     ) {}
@@ -92,6 +108,16 @@ final class InvoiceDetailData extends Data
             subtotal: $invoice->subtotal,
             vat_amount: $invoice->vat_amount,
             total: $invoice->total,
+            deposit: $invoice->deposit,
+            balance_due: (string) $invoice->balance_due,
+            rounding_amount: $invoice->rounding_amount,
+            payment_type: $invoice->payment_type,
+            currency: $invoice->currency,
+            rounding_mode: $invoice->rounding_mode,
+            constant_symbol: $invoice->constant_symbol,
+            specific_symbol: $invoice->specific_symbol,
+            header_text: $invoice->header_text,
+            footer_text: $invoice->footer_text,
             customer_name: $invoice->customer_name,
             customer_representative: $invoice->customer_representative,
             customer_ico: $invoice->customer_ico,
@@ -109,6 +135,7 @@ final class InvoiceDetailData extends Data
             note: $invoice->note,
             supplier: InvoiceSupplierData::fromInvoice($invoice),
             items: $invoice->items->map(fn (InvoiceItem $item) => InvoiceItemData::fromModel($item))->all(),
+            vat_breakdown: array_map(fn (array $l) => VatBreakdownLineData::from($l), $invoice->vat_breakdown ?? []),
             qr_available: $invoice->status !== InvoiceStatusEnum::Draft
                 && $invoice->supplier_iban !== null
                 && $invoice->variable_symbol !== null,

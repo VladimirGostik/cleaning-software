@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\RecurringInvoices;
 
+use Spatie\LaravelData\Attributes\Validation\Between;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -22,5 +23,9 @@ final class RecurringInvoiceItemData extends Data
         public ?string $unit,
         #[Required, Min(0)]
         public float $unit_price,
+        #[Min(0), Between(0, 100)]
+        public float $discount_percent = 0,
+        #[Min(0)]
+        public float $vat_rate = 0,
     ) {}
 }

@@ -712,4 +712,58 @@ return [
     'recurring_invoices.settings.default_state' => 'Default state for new invoice',
     'recurring_invoices.settings.state_draft' => 'Draft',
     'recurring_invoices.settings.state_issued' => 'Issued',
+
+    // Part A — per-item VAT, discount, deposit i18n
+    'invoices.items.discount' => 'Discount',
+    'invoices.items.vat_rate' => 'VAT rate',
+    'invoices.detail.deposit' => 'Deposit',
+    'invoices.detail.balance_due' => 'Balance due',
+    'invoices.vat_recap.title' => 'VAT breakdown',
+    'invoices.vat_recap.rate' => 'Rate',
+    'invoices.vat_recap.base' => 'Base',
+    'invoices.vat_recap.vat' => 'VAT',
+    'invoices.vat_recap.total' => 'Total',
+    'invoices.pdf.discount' => 'Discount',
+    'invoices.pdf.vat_recap' => 'VAT total',
+    'invoices.pdf.deposit' => 'Deposit',
+    'invoices.pdf.balance_due' => 'Balance due',
+
+    // Part B — SK-standard fields (payment_type, currency, rounding_mode, PDF labels, settings)
+    'payment_type.transfer' => 'Bank transfer',
+    'payment_type.cash' => 'Cash',
+    'payment_type.card' => 'Card',
+    'payment_type.cod' => 'Cash on delivery',
+    'payment_type.other' => 'Other',
+
+    'currency.EUR' => 'Euro (EUR)',
+    'currency.CZK' => 'Czech koruna (CZK)',
+    'currency.USD' => 'US dollar (USD)',
+
+    'rounding_mode.none' => 'No rounding',
+    'rounding_mode.document' => 'Whole euro',
+    'rounding_mode.cash_005' => 'To 5 cents (cash)',
+
+    'invoices.pdf.payment_type' => 'Payment method',
+    'invoices.pdf.swift' => 'SWIFT / BIC',
+    'invoices.pdf.constant_symbol' => 'CS',
+    'invoices.pdf.specific_symbol' => 'SS',
+    'invoices.pdf.rounding' => 'Rounding',
+
+    'invoice_settings.swift_bic' => 'SWIFT / BIC',
+    'invoice_settings.swift_bic_hint' => 'E.g. TATRSKBX or GIBASKBX',
+    'invoice_settings.default_payment_type' => 'Default payment method',
+    'invoice_settings.default_currency' => 'Default currency',
+    'invoice_settings.default_rounding' => 'Default rounding',
+    'invoice_settings.default_constant_symbol' => 'Default constant symbol',
+
+    // Part B additions — invoices.detail.* missing keys + invoice_settings.section.defaults
+    'invoices.detail.constant_symbol' => 'Constant symbol',
+    'invoices.detail.specific_symbol' => 'Specific symbol',
+    'invoices.detail.header_text' => 'Header text',
+    'invoices.detail.footer_text' => 'Footer text',
+    'invoices.detail.rounding' => 'Rounding',
+    'invoices.detail.swift' => 'SWIFT / BIC',
+    'invoices.detail.currency' => 'Currency',
+    'invoices.detail.payment_type' => 'Payment method',
+    'invoice_settings.section.defaults' => 'Invoice defaults',
 ];

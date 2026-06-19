@@ -6,12 +6,16 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentTypeEnum;
+use App\Enums\RoundingModeEnum;
 use Database\Factories\InvoiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +32,9 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property InvoiceStatusEnum $status
  * @property InvoiceTypeEnum $type
  * @property InvoiceTemplateEnum $template
+ * @property PaymentTypeEnum $payment_type
+ * @property CurrencyEnum $currency
+ * @property RoundingModeEnum $rounding_mode
  * @property bool $is_vat_payer
  * @property Carbon $issue_date
  * @property Carbon $delivery_date
@@ -42,6 +49,10 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $subtotal
  * @property string $vat_amount
  * @property string $total
+ * @property string $deposit
+ * @property string $rounding_amount
+ * @property float $balance_due
+ * @property array<int, array<string, float>>|null $vat_breakdown
  * @property Collection<int, InvoiceItem> $items
  */
 #[Fillable([
@@ -69,6 +80,16 @@ use Spatie\Activitylog\Support\LogOptions;
     'subtotal',
     'vat_amount',
     'total',
+    'deposit',
+    'vat_breakdown',
+    'rounding_amount',
+    'constant_symbol',
+    'specific_symbol',
+    'payment_type',
+    'currency',
+    'rounding_mode',
+    'header_text',
+    'footer_text',
     'customer_name',
     'customer_representative',
     'customer_ico',
@@ -95,6 +116,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'supplier_contact_email',
     'supplier_contact_phone',
     'supplier_registration_info',
+    'supplier_swift',
     'note',
 ])]
 final class Invoice extends Model
@@ -111,6 +133,9 @@ final class Invoice extends Model
             'type' => InvoiceTypeEnum::class,
             'status' => InvoiceStatusEnum::class,
             'template' => InvoiceTemplateEnum::class,
+            'payment_type' => PaymentTypeEnum::class,
+            'currency' => CurrencyEnum::class,
+            'rounding_mode' => RoundingModeEnum::class,
             'period_from' => 'date',
             'period_to' => 'date',
             'issue_date' => 'date',
@@ -125,7 +150,15 @@ final class Invoice extends Model
             'subtotal' => 'decimal:2',
             'vat_amount' => 'decimal:2',
             'total' => 'decimal:2',
+            'deposit' => 'decimal:2',
+            'rounding_amount' => 'decimal:2',
+            'vat_breakdown' => 'array',
         ];
+    }
+
+    protected function balanceDue(): Attribute
+    {
+        return Attribute::get(fn (): float => (float) $this->total - (float) $this->deposit);
     }
 
     public function getActivitylogOptions(): LogOptions

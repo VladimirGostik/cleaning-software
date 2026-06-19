@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Pdf;
 
 use App\Contracts\GeneratesPaymentQr;
+use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Models\Invoice;
 use Engazan\PayBySquare\Exception\PayBySquareException;
@@ -24,15 +25,22 @@ final readonly class PayBySquareService implements GeneratesPaymentQr
             return null;
         }
 
-        if ((float) $invoice->total <= 0) {
+        // Pay-by-Square is a SK EUR-domestic standard — non-EUR invoices skip QR
+        if ($invoice->currency !== CurrencyEnum::EUR) {
+            return null;
+        }
+
+        $balanceDue = (float) $invoice->balance_due;
+
+        if ($balanceDue <= 0) {
             return null;
         }
 
         try {
             $generator = (new Generator)
                 ->setIban($invoice->supplier_iban)
-                ->setAmount((float) $invoice->total)
-                ->setCurrency('EUR')
+                ->setAmount($balanceDue)
+                ->setCurrency($invoice->currency->value)
                 ->setRecipient($invoice->supplier_name ?? '');
 
             if (! empty($invoice->variable_symbol)) {
@@ -41,6 +49,10 @@ final readonly class PayBySquareService implements GeneratesPaymentQr
 
             if ($invoice->due_date !== null) {
                 $generator->setDueDate($invoice->due_date->toDateTime());
+            }
+
+            if (! empty($invoice->supplier_swift)) {
+                $generator->setSwift($invoice->supplier_swift);
             }
 
             return $generator->getDataUri(300);
