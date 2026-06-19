@@ -36,10 +36,11 @@ final class InvoiceStatsTest extends TestCase
             'total' => '150.00',
         ]);
 
-        // 1 Overdue for tenant A
+        // 1 Overdue for tenant A — pin to previous month so it does NOT count in issued_this_month
         Invoice::factory()->overdue()->create([
             'tenant_id' => $tenantA->id,
             'total' => '200.00',
+            'issue_date' => now()->subMonthNoOverflow()->toDateString(),
         ]);
 
         // 1 Monthly + Issued for tenant A (counts in issued_this_month too if this month)
