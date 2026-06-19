@@ -119,7 +119,7 @@ final class RecurringInvoiceController extends Controller
             ->get();
 
         return Inertia::render('RecurringInvoices/Show', [
-            'recurringInvoice' => RecurringInvoiceDetailData::fromModel($recurringInvoice),
+            'recurring' => RecurringInvoiceDetailData::fromModel($recurringInvoice),
             'generatedInvoices' => InvoiceListItemData::collect(
                 $generatedInvoices->map(fn (Invoice $inv) => InvoiceListItemData::fromModel($inv)),
                 DataCollection::class,
