@@ -29,11 +29,9 @@ Thumbs.db
 CLAUDE.md
 cleanmaster-technicka-specifikacia-v1.md.docx
 .claude/technical.md
-CLAUDE.md
-CLAUDE.md
-.claude/technical.md
-.claude/technical.md
-CLAUDE.md
 .claude/business.md
-.claude/technical.md
 cleaning
+playwright/.auth/
+playwright-report/
+test-results/
+.playwright-mcp/
