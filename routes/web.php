@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ContractController;
+use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
@@ -108,6 +110,30 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/settings/invoicing', [InvoiceSettingsController::class, 'show'])->name('settings.invoicing');
         Route::put('/settings/invoicing', [InvoiceSettingsController::class, 'update'])->name('settings.invoicing.update');
         Route::get('/settings/invoicing/preview/{template}', [InvoiceSettingsController::class, 'preview'])->name('settings.invoicing.preview');
+    });
+
+    // Contracts — feature-gated (plan axis: contracts feature must be enabled).
+    Route::middleware('feature:contracts')->group(function (): void {
+        // Contract Templates
+        Route::get('/contract-templates', [ContractTemplateController::class, 'index'])->name('contract-templates.index');
+        Route::get('/contract-templates/create', [ContractTemplateController::class, 'create'])->name('contract-templates.create');
+        Route::post('/contract-templates', [ContractTemplateController::class, 'store'])->name('contract-templates.store');
+        Route::get('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'show'])->name('contract-templates.show')->whereUuid('contractTemplate');
+        Route::get('/contract-templates/{contractTemplate}/edit', [ContractTemplateController::class, 'edit'])->name('contract-templates.edit')->whereUuid('contractTemplate');
+        Route::match(['PUT', 'PATCH'], '/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'update'])->name('contract-templates.update')->whereUuid('contractTemplate');
+        Route::delete('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'destroy'])->name('contract-templates.destroy')->whereUuid('contractTemplate');
+
+        // Contracts — static segments before {contract} wildcard
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
+        Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
+        Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show')->whereUuid('contract');
+        Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->name('contracts.edit')->whereUuid('contract');
+        Route::match(['PUT', 'PATCH'], '/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update')->whereUuid('contract');
+        Route::delete('/contracts/{contract}', [ContractController::class, 'destroy'])->name('contracts.destroy')->whereUuid('contract');
+        Route::post('/contracts/{contract}/sign', [ContractController::class, 'sign'])->name('contracts.sign')->whereUuid('contract');
+        Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate')->whereUuid('contract');
+        Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf')->whereUuid('contract');
     });
 
     // Tenants — self-service; auth middleware is the only gate (D4a).

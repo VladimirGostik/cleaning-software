@@ -91,7 +91,17 @@
             href: '/contracts',
             icon: ClipboardDocumentListIcon,
             can: 'view contracts',
-            implemented: false,
+            feature: 'contracts',
+            implemented: true,
+        },
+        {
+            key: 'contract_templates',
+            label: 'nav.contract_templates',
+            href: '/contract-templates',
+            icon: FolderIcon,
+            can: 'view contract_templates',
+            feature: 'contracts',
+            implemented: true,
         },
         {
             key: 'schedule',

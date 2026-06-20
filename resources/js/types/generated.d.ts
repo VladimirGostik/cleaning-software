@@ -114,6 +114,125 @@ note: string | null,
 contacts: App.Data.Clients.ClientContactData[],
 };
 }
+namespace ContractTemplates {
+export type ContractTemplateDetailData = {
+id: string,
+name: string,
+category: App.Enums.ContractCategoryEnum,
+body: string,
+is_active: boolean,
+created_at: string,
+updated_at: string,
+};
+export type ContractTemplateIndexFilterData = {
+search: string | null,
+category: string | null,
+is_active: boolean | null,
+per_page: number,
+};
+export type ContractTemplateListItemData = {
+id: string,
+name: string,
+body: string,
+category: App.Enums.ContractCategoryEnum,
+is_active: boolean,
+created_at: string,
+};
+export type ContractTemplateStoreData = {
+name: string,
+category: App.Enums.ContractCategoryEnum,
+body: string,
+is_active: boolean,
+};
+}
+namespace Contracts {
+export type ContractDetailData = {
+id: string,
+title: string,
+reference_number: string | null,
+category: App.Enums.ContractCategoryEnum,
+status: App.Enums.ContractStatusEnum,
+term_type: App.Enums.ContractTermTypeEnum,
+body: string,
+valid_from: string,
+end_date: string | null,
+signed_at: string | null,
+terminated_at: string | null,
+termination_reason: string | null,
+notes: string | null,
+contractable_id: string,
+contractable_type: string,
+contractable_display_name: string,
+contract_template_id: string | null,
+contract_template_name: string | null,
+employment: App.Data.Contracts.EmploymentContractData | null,
+is_editable: boolean,
+can_be_signed: boolean,
+can_be_terminated: boolean,
+};
+export type ContractIndexFilterData = {
+search: string | null,
+status: string | null,
+category: string | null,
+term_type: string | null,
+contractable_type: string | null,
+per_page: number,
+};
+export type ContractListItemData = {
+id: string,
+title: string,
+reference_number: string | null,
+category: App.Enums.ContractCategoryEnum,
+status: App.Enums.ContractStatusEnum,
+term_type: App.Enums.ContractTermTypeEnum,
+valid_from: string,
+end_date: string | null,
+contractable_type: string,
+contractable_display_name: string,
+signed_at: string | null,
+terminated_at: string | null,
+};
+export type ContractTerminateData = {
+terminated_at: string,
+termination_reason: string | null,
+};
+export type ContractUpsertData = {
+title: string,
+reference_number: string | null,
+category: App.Enums.ContractCategoryEnum,
+term_type: App.Enums.ContractTermTypeEnum,
+contractable_type: string,
+contractable_id: string,
+contract_template_id: string | null,
+body: string,
+valid_from: string,
+end_date: string | null,
+notes: string | null,
+employment: App.Data.Contracts.EmploymentContractUpsertData | null,
+};
+export type EmploymentContractData = {
+employment_type: App.Enums.EmploymentContractTypeEnum,
+position: string | null,
+hourly_rate: string | null,
+monthly_salary: string | null,
+weekly_hours: string | null,
+probation_end_date: string | null,
+};
+export type EmploymentContractUpsertData = {
+employment_type: App.Enums.EmploymentContractTypeEnum,
+position: string | null,
+hourly_rate: number | null,
+monthly_salary: number | null,
+weekly_hours: number | null,
+probation_end_date: string | null,
+};
+export type MembershipOptionData = {
+id: string,
+user_name: string,
+user_email: string,
+is_active: boolean,
+};
+}
 namespace Invitations {
 export type AcceptInvitationData = {
 password: string,
@@ -533,7 +652,11 @@ is_active: boolean,
 }
 namespace Enums {
 export type ClientTypeEnum = "corporate" | "private";
+export type ContractCategoryEnum = "service_agreement" | "employment" | "nda" | "gdpr" | "other";
+export type ContractStatusEnum = "draft" | "active" | "expired" | "terminated";
+export type ContractTermTypeEnum = "fixed" | "indefinite";
 export type CurrencyEnum = "EUR" | "CZK" | "USD";
+export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type FeatureEnum = "clients" | "objects" | "quotes" | "contracts" | "schedule" | "invoices" | "employees" | "reports" | "mobile_access" | "multi_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";
@@ -541,7 +664,7 @@ export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
-export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
+export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
 export type RecurringDefaultStateEnum = "draft" | "issued";
 export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" | "semi_annually" | "annually";
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";

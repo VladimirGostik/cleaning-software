@@ -280,7 +280,7 @@ final class ObjectControllerTest extends TestCase
         $object = CleaningObject::where('name', 'Test Office')->firstOrFail();
         $this->assertDatabaseHas('activity_log', [
             'subject_id' => $object->id,
-            'subject_type' => CleaningObject::class,
+            'subject_type' => (new CleaningObject)->getMorphClass(),
         ]);
     }
 

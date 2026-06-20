@@ -33,6 +33,13 @@ enum PermissionEnum: string
     case CreateContracts = 'create contracts';
     case EditContracts = 'edit contracts';
     case TerminateContracts = 'terminate contracts';
+    case DeleteContracts = 'delete contracts';
+
+    // Contract Templates
+    case ViewContractTemplates = 'view contract_templates';
+    case CreateContractTemplates = 'create contract_templates';
+    case EditContractTemplates = 'edit contract_templates';
+    case DeleteContractTemplates = 'delete contract_templates';
 
     // Employees
     case ViewEmployees = 'view employees';

@@ -6,14 +6,22 @@ namespace App\Providers;
 
 use App\Contracts\ChecksFeatures;
 use App\Contracts\GeneratesPaymentQr;
+use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Models\CleaningObject;
+use App\Models\Contract;
+use App\Models\ContractTemplate;
+use App\Models\TenantMembership;
+use App\Policies\ContractPolicy;
+use App\Policies\ContractTemplatePolicy;
 use App\Policies\ObjectPolicy;
 use App\Services\ConfigFeatureChecker;
+use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -26,15 +34,26 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChecksFeatures::class, ConfigFeatureChecker::class);
         $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);
         $this->app->bind(RendersInvoicePdf::class, InvoicePdfService::class);
+        $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
     }
 
     public function boot(): void
     {
         Model::preventLazyLoading(! app()->isProduction());
 
+        // Morph map — prevents FQCN stored in contractable_type column
+        Relation::morphMap([
+            'cleaning_object' => CleaningObject::class,
+            'tenant_membership' => TenantMembership::class,
+        ]);
+
         // CleaningObject uses a non-standard class/policy name pair — explicit registration
         // required because auto-discovery expects App\Policies\CleaningObjectPolicy, not ObjectPolicy.
         Gate::policy(CleaningObject::class, ObjectPolicy::class);
+
+        // Explicit policy bindings for contracts (standard name pairs auto-discover but explicit is safer)
+        Gate::policy(Contract::class, ContractPolicy::class);
+        Gate::policy(ContractTemplate::class, ContractTemplatePolicy::class);
 
         RateLimiter::for('api', function (Request $r): Limit {
             return Limit::perMinute(60)
