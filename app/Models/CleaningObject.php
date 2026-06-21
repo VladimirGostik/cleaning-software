@@ -20,6 +20,9 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
+ * @property string $id
+ * @property string $tenant_id
+ * @property string $client_id
  * @property string $name
  * @property string|null $street
  * @property string|null $city

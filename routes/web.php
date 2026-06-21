@@ -14,6 +14,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ObjectController;
+use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Auth;
@@ -73,6 +74,24 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('objects.show')->whereUuid('object');
         Route::match(['PUT', 'PATCH'], '/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->whereUuid('object');
         Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('objects.destroy')->whereUuid('object');
+    });
+
+    // Quotes — feature-gated (plan axis: quotes feature must be enabled).
+    Route::middleware('feature:quotes')->group(function (): void {
+        Route::get('/quotes', [QuoteController::class, 'index'])->name('quotes.index');
+        Route::get('/quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
+        Route::post('/quotes', [QuoteController::class, 'store'])->name('quotes.store');
+        Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->name('quotes.show')->whereUuid('quote');
+        Route::get('/quotes/{quote}/edit', [QuoteController::class, 'edit'])->name('quotes.edit')->whereUuid('quote');
+        Route::match(['PUT', 'PATCH'], '/quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update')->whereUuid('quote');
+        Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy')->whereUuid('quote');
+        Route::post('/quotes/{quote}/send', [QuoteController::class, 'send'])->name('quotes.send')->whereUuid('quote');
+        Route::post('/quotes/{quote}/accept', [QuoteController::class, 'accept'])->name('quotes.accept')->whereUuid('quote');
+        Route::post('/quotes/{quote}/reject', [QuoteController::class, 'reject'])->name('quotes.reject')->whereUuid('quote');
+        Route::post('/quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate')->whereUuid('quote');
+        Route::post('/quotes/{quote}/convert-invoice', [QuoteController::class, 'convertToInvoice'])->name('quotes.convert-invoice')->whereUuid('quote');
+        Route::post('/quotes/{quote}/convert-contract', [QuoteController::class, 'convertToContract'])->name('quotes.convert-contract')->whereUuid('quote');
+        Route::get('/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('quotes.pdf')->whereUuid('quote');
     });
 
     // Invoices — feature-gated (plan axis: invoices feature must be enabled).

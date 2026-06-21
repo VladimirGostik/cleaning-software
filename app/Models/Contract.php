@@ -31,6 +31,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon|null $end_date
  * @property Carbon|null $signed_at
  * @property Carbon|null $terminated_at
+ * @property string|null $quote_id
  * @property CleaningObject|TenantMembership|null $contractable
  * @property ContractTemplate|null $contractTemplate
  * @property EmploymentContract|null $employmentContract
@@ -38,6 +39,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable([
     'tenant_id',
     'contract_template_id',
+    'quote_id',
     'contractable_type',
     'contractable_id',
     'category',
@@ -85,6 +87,11 @@ final class Contract extends Model
     public function contractTemplate(): BelongsTo
     {
         return $this->belongsTo(ContractTemplate::class);
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
     }
 
     public function contractable(): MorphTo

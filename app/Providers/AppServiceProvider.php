@@ -8,17 +8,21 @@ use App\Contracts\ChecksFeatures;
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
+use App\Contracts\RendersQuotePdf;
 use App\Models\CleaningObject;
 use App\Models\Contract;
 use App\Models\ContractTemplate;
+use App\Models\Quote;
 use App\Models\TenantMembership;
 use App\Policies\ContractPolicy;
 use App\Policies\ContractTemplatePolicy;
 use App\Policies\ObjectPolicy;
+use App\Policies\QuotePolicy;
 use App\Services\ConfigFeatureChecker;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
+use App\Services\Pdf\QuotePdfService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -35,6 +39,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);
         $this->app->bind(RendersInvoicePdf::class, InvoicePdfService::class);
         $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
+        $this->app->bind(RendersQuotePdf::class, QuotePdfService::class);
     }
 
     public function boot(): void
@@ -54,6 +59,8 @@ final class AppServiceProvider extends ServiceProvider
         // Explicit policy bindings for contracts (standard name pairs auto-discover but explicit is safer)
         Gate::policy(Contract::class, ContractPolicy::class);
         Gate::policy(ContractTemplate::class, ContractTemplatePolicy::class);
+
+        Gate::policy(Quote::class, QuotePolicy::class);
 
         RateLimiter::for('api', function (Request $r): Limit {
             return Limit::perMinute(60)

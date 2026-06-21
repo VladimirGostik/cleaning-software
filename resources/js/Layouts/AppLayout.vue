@@ -83,7 +83,8 @@
             href: '/quotes',
             icon: DocumentTextIcon,
             can: 'view quotes',
-            implemented: false,
+            feature: 'quotes',
+            implemented: true,
         },
         {
             key: 'contracts',

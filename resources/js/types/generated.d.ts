@@ -503,6 +503,76 @@ floor: number | null,
 is_active: boolean,
 };
 }
+namespace Quotes {
+export type QuoteDetailData = {
+id: string,
+client_id: string,
+cleaning_object_id: string | null,
+status: App.Enums.QuoteStatusEnum,
+number: string | null,
+subject: string | null,
+issue_date: string,
+valid_until: string,
+sent_at: string | null,
+accepted_at: string | null,
+rejected_at: string | null,
+is_vat_payer: boolean,
+vat_rate: string | null,
+currency: App.Enums.CurrencyEnum,
+subtotal: string,
+vat_amount: string,
+total: string,
+note: string | null,
+customer_name: string,
+object_name: string | null,
+items: App.Data.Quotes.QuoteItemData[],
+vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
+};
+export type QuoteIndexFilterData = {
+search: string | null,
+status: App.Enums.QuoteStatusEnum | null,
+client_id: string | null,
+valid_from: string | null,
+valid_to: string | null,
+per_page: number,
+};
+export type QuoteItemData = {
+id: string | null,
+name: string,
+description: string | null,
+frequency: string | null,
+quantity: number,
+unit: string | null,
+unit_price: number,
+discount_percent: number,
+vat_rate: number,
+line_base: number | null,
+line_vat: number | null,
+line_total: number | null,
+};
+export type QuoteListItemData = {
+id: string,
+number: string | null,
+status: App.Enums.QuoteStatusEnum,
+subject: string | null,
+customer_name: string,
+object_name: string | null,
+total: string,
+issue_date: string,
+valid_until: string,
+client_id: string,
+};
+export type QuoteUpsertData = {
+client_id: string,
+cleaning_object_id: string | null,
+subject: string | null,
+issue_date: string,
+valid_until: string,
+note: string | null,
+items: App.Data.Quotes.QuoteItemData[],
+currency: App.Enums.CurrencyEnum,
+};
+}
 namespace RecurringInvoices {
 export type RecurringInvoiceDetailData = {
 id: string,
@@ -664,7 +734,8 @@ export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
-export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
+export type PermissionEnum = "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view employees" | "create employees" | "edit employees" | "assign employees" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view templates" | "upload templates" | "delete templates" | "view complaints" | "resolve complaints" | "reject complaints" | "view photos" | "review photos" | "view notifications" | "configure notifications" | "manage roles" | "manage tenant" | "manage billing settings" | "manage subscription" | "view tenants" | "create tenants" | "edit tenants" | "view audit logs";
+export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type RecurringDefaultStateEnum = "draft" | "issued";
 export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" | "semi_annually" | "annually";
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";

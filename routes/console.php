@@ -13,3 +13,4 @@ Artisan::command('inspire', function () {
 Schedule::command('app:mark-overdue-invoices')->daily();
 Schedule::command('app:generate-recurring-invoices')->daily();
 Schedule::command('app:check-contract-expiry')->daily();
+Schedule::command('app:expire-quotes')->daily();

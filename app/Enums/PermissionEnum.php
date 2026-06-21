@@ -27,6 +27,7 @@ enum PermissionEnum: string
     case EditQuotes = 'edit quotes';
     case SendQuotes = 'send quotes';
     case ApproveQuotes = 'approve quotes';
+    case DeleteQuotes = 'delete quotes';
 
     // Contracts
     case ViewContracts = 'view contracts';

@@ -47,3 +47,13 @@ parameters:
             identifier: nullsafe.neverNull
             path: app/Data/RecurringInvoices/RecurringInvoiceListItemData.php
             reportUnmatched: false
+        -
+            # Larastan infers BelongsTo client/cleaningObject relations as non-null,
+            # but FKs are nullable on quotes — nullsafe access is correct.
+            identifier: nullsafe.neverNull
+            path: app/Data/Quotes/QuoteDetailData.php
+            reportUnmatched: false
+        -
+            identifier: nullsafe.neverNull
+            path: app/Data/Quotes/QuoteListItemData.php
+            reportUnmatched: false

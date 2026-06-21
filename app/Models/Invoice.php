@@ -53,6 +53,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $rounding_amount
  * @property float $balance_due
  * @property array<int, array<string, float>>|null $vat_breakdown
+ * @property string|null $quote_id
  * @property Collection<int, InvoiceItem> $items
  */
 #[Fillable([
@@ -61,6 +62,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'cleaning_object_id',
     'credited_invoice_id',
     'recurring_invoice_id',
+    'quote_id',
     'type',
     'status',
     'template',
@@ -197,6 +199,11 @@ final class Invoice extends Model
     public function recurringInvoice(): BelongsTo
     {
         return $this->belongsTo(RecurringInvoice::class);
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
     }
 
     public function isEditable(): bool
