@@ -121,7 +121,8 @@
             href: '/employees',
             icon: UserGroupIcon,
             can: 'view employees',
-            implemented: false,
+            feature: 'employees',
+            implemented: true,
         },
         {
             key: 'invoices',

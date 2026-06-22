@@ -47,6 +47,7 @@ enum PermissionEnum: string
     case CreateEmployees = 'create employees';
     case EditEmployees = 'edit employees';
     case AssignEmployees = 'assign employees';
+    case DeleteEmployees = 'delete employees';
 
     // Schedule
     case ViewSchedule = 'view schedule';
@@ -99,6 +100,14 @@ enum PermissionEnum: string
 
     // Audit
     case ViewAuditLogs = 'view audit logs';
+
+    /**
+     * @return array<int, string>
+     */
+    public function label(): string
+    {
+        return __('app.permission.' . $this->value);
+    }
 
     /**
      * @return array<int, string>

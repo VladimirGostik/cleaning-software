@@ -20,6 +20,7 @@ use App\Policies\ContractTemplatePolicy;
 use App\Policies\NotificationPolicy;
 use App\Policies\ObjectPolicy;
 use App\Policies\QuotePolicy;
+use App\Policies\TenantMembershipPolicy;
 use App\Services\ConfigFeatureChecker;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
@@ -66,6 +67,9 @@ final class AppServiceProvider extends ServiceProvider
         Gate::policy(ContractTemplate::class, ContractTemplatePolicy::class);
 
         Gate::policy(Quote::class, QuotePolicy::class);
+
+        // TenantMembership — auto-discovery would find TenantMembershipPolicy, but explicit is safer.
+        Gate::policy(TenantMembership::class, TenantMembershipPolicy::class);
 
         // DatabaseNotification is framework-owned — no auto-discovery, must register explicitly.
         Gate::policy(DatabaseNotification::class, NotificationPolicy::class);

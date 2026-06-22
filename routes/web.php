@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractTemplateController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
@@ -154,6 +155,17 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/contracts/{contract}/sign', [ContractController::class, 'sign'])->name('contracts.sign')->whereUuid('contract');
         Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate')->whereUuid('contract');
         Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf')->whereUuid('contract');
+    });
+
+    // Employees — feature-gated (plan axis: employees feature must be enabled).
+    Route::middleware('feature:employees')->group(function (): void {
+        Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
+        Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show')->whereUuid('employee');
+        Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->whereUuid('employee');
+        Route::match(['PUT', 'PATCH'], '/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->whereUuid('employee');
+        Route::post('/employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate')->whereUuid('employee');
     });
 
     // Notifications center and settings.

@@ -16,6 +16,10 @@ return new class extends Migration
             $table->foreignUuid('tenant_id')->constrained()->cascadeOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamp('joined_at')->useCurrent();
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('position')->nullable();
             $table->timestamps();
 
             $table->unique(['user_id', 'tenant_id']);
