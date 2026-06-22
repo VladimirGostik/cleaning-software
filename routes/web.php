@@ -13,6 +13,7 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
@@ -154,6 +155,13 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate')->whereUuid('contract');
         Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf')->whereUuid('contract');
     });
+
+    // Notifications center and settings.
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read')->whereUuid('notification');
+    Route::get('/settings/notifications', [NotificationController::class, 'settings'])->name('settings.notifications');
+    Route::put('/settings/notifications', [NotificationController::class, 'updateSettings'])->name('settings.notifications.update');
 
     // Tenants — self-service; auth middleware is the only gate (D4a).
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');

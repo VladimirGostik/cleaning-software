@@ -14,6 +14,7 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
+use App\Enums\PermissionEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Enums\RoundingModeEnum;
 use App\Models\Contract;
@@ -21,9 +22,11 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
+use App\Notifications\QuoteSent;
 use Carbon\Carbon;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
@@ -36,6 +39,7 @@ final readonly class QuoteService
         private InvoiceService $invoices,
         private ContractService $contracts,
         private DatabaseManager $db,
+        private NotificationRecipientResolver $resolver,
     ) {}
 
     /**
@@ -123,6 +127,9 @@ final readonly class QuoteService
             'status' => QuoteStatusEnum::Sent,
             'sent_at' => now(),
         ]);
+
+        $recipients = $this->resolver->usersWithPermission($quote->tenant_id, PermissionEnum::ViewQuotes);
+        Notification::send($recipients, new QuoteSent($quote->tenant_id, $quote->id));
 
         return $quote;
     }

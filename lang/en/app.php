@@ -1007,4 +1007,58 @@ return [
     'quotes.filter.all_statuses' => 'All statuses',
     'quotes.filter.all_clients' => 'All clients',
 
+    // Notifications
+    'notifications.marked_read' => 'Notification marked as read.',
+    'notifications.all_marked_read' => 'All notifications marked as read.',
+    'notifications.view' => 'View',
+
+    'notifications.invitation.subject' => 'Invitation to :tenant',
+    'notifications.invitation.body' => 'You have been invited to join :tenant as :role.',
+    'notifications.invitation.action' => 'Accept invitation',
+
+    'notification_settings.saved' => 'Notification settings saved.',
+
+    'notification_type.invitation.created' => 'Invitation',
+    'notification_type.invoice.issued' => 'Invoice sent',
+    'notification_type.invoice.overdue' => 'Invoice overdue',
+    'notification_type.contract.expiring' => 'Contract expiring',
+    'notification_type.contract.expired' => 'Contract expired',
+    'notification_type.quote.sent' => 'Quote sent',
+    'notification_type.quote.expiring' => 'Quote expiring',
+    'notification_type.quote.expired' => 'Quote expired',
+
+    'notification_type.invoice.overdue.title' => 'Invoice overdue',
+    'notification_type.invoice.overdue.body' => 'An invoice has passed its due date and has been marked as overdue.',
+    'notification_type.contract.expiring.title' => 'Contract expiring in :days days',
+    'notification_type.contract.expiring.body' => 'A contract will expire in :days days.',
+    'notification_type.contract.expired.title' => 'Contract expired',
+    'notification_type.contract.expired.body' => 'A contract has expired.',
+    'notification_type.quote.sent.title' => 'Quote sent',
+    'notification_type.quote.sent.body' => 'A quote has been successfully sent to the customer.',
+    'notification_type.quote.expiring.title' => 'Quote expiring in :days days',
+    'notification_type.quote.expiring.body' => 'A quote will expire in :days days.',
+    'notification_type.quote.expired.title' => 'Quote expired',
+    'notification_type.quote.expired.body' => 'A quote has expired.',
+
+    // Notification FE chrome keys
+    'notifications.bell_label' => 'Notifications',
+    'notifications.title' => 'Notifications',
+    'notifications.subtitle' => 'Your recent notifications',
+    'notifications.mark_all_read' => 'Mark all as read',
+    'notifications.see_all' => 'See all',
+    'notifications.empty' => 'No notifications',
+    'notifications.empty_hint' => 'When something happens, it will show up here.',
+    'notifications.filter.unread_only' => 'Unread only',
+    'notifications.filter.type' => 'Type',
+    'notifications.filter.all_types' => 'All types',
+    'notification_settings.title' => 'Notification settings',
+    'notification_settings.subtitle' => 'Choose which events you want to receive email alerts for.',
+    'notification_settings.mail_label' => 'Email',
+    'notification_settings.desc.invoice.overdue' => 'Alert when an overdue invoice remains unpaid.',
+    'notification_settings.desc.contract.expiring' => 'Alert before a contract expires.',
+    'notification_settings.desc.contract.expired' => 'Alert when a contract has expired.',
+    'notification_settings.desc.quote.sent' => 'Alert when a quote is sent.',
+    'notification_settings.desc.quote.expiring' => 'Alert before a quote expires.',
+    'notification_settings.desc.quote.expired' => 'Alert when a quote has expired.',
+
 ];

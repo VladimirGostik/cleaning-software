@@ -1007,4 +1007,58 @@ return [
     'quotes.filter.all_statuses' => 'Всі статуси',
     'quotes.filter.all_clients' => 'Всі клієнти',
 
+    // Notifications
+    'notifications.marked_read' => 'Сповіщення позначено як прочитане.',
+    'notifications.all_marked_read' => 'Всі сповіщення позначено як прочитані.',
+    'notifications.view' => 'Переглянути',
+
+    'notifications.invitation.subject' => 'Запрошення до компанії :tenant',
+    'notifications.invitation.body' => 'Вас запрошено до компанії :tenant як :role.',
+    'notifications.invitation.action' => 'Прийняти запрошення',
+
+    'notification_settings.saved' => 'Налаштування сповіщень збережено.',
+
+    'notification_type.invitation.created' => 'Запрошення',
+    'notification_type.invoice.issued' => 'Рахунок надіслано',
+    'notification_type.invoice.overdue' => 'Рахунок прострочено',
+    'notification_type.contract.expiring' => 'Договір закінчується',
+    'notification_type.contract.expired' => 'Договір закінчився',
+    'notification_type.quote.sent' => 'Пропозицію надіслано',
+    'notification_type.quote.expiring' => 'Пропозиція закінчується',
+    'notification_type.quote.expired' => 'Пропозиція закінчилась',
+
+    'notification_type.invoice.overdue.title' => 'Рахунок прострочено',
+    'notification_type.invoice.overdue.body' => 'Рахунок-фактура прострочений і позначений як прострочений.',
+    'notification_type.contract.expiring.title' => 'Договір закінчується через :days днів',
+    'notification_type.contract.expiring.body' => 'Договір закінчується через :days днів.',
+    'notification_type.contract.expired.title' => 'Договір закінчився',
+    'notification_type.contract.expired.body' => 'Термін дії договору закінчився.',
+    'notification_type.quote.sent.title' => 'Пропозицію надіслано',
+    'notification_type.quote.sent.body' => 'Пропозицію успішно надіслано клієнту.',
+    'notification_type.quote.expiring.title' => 'Пропозиція закінчується через :days днів',
+    'notification_type.quote.expiring.body' => 'Термін дії пропозиції закінчується через :days днів.',
+    'notification_type.quote.expired.title' => 'Пропозиція закінчилась',
+    'notification_type.quote.expired.body' => 'Термін дії пропозиції закінчився.',
+
+    // Notification FE chrome keys
+    'notifications.bell_label' => 'Сповіщення',
+    'notifications.title' => 'Сповіщення',
+    'notifications.subtitle' => 'Ваші останні сповіщення',
+    'notifications.mark_all_read' => 'Позначити всі як прочитані',
+    'notifications.see_all' => 'Переглянути всі',
+    'notifications.empty' => 'Немає сповіщень',
+    'notifications.empty_hint' => 'Коли щось станеться, це з\'явиться тут.',
+    'notifications.filter.unread_only' => 'Лише непрочитані',
+    'notifications.filter.type' => 'Тип',
+    'notifications.filter.all_types' => 'Всі типи',
+    'notification_settings.title' => 'Налаштування сповіщень',
+    'notification_settings.subtitle' => 'Оберіть, про які події ви хочете отримувати сповіщення на електронну пошту.',
+    'notification_settings.mail_label' => 'Пошта',
+    'notification_settings.desc.invoice.overdue' => 'Сповіщення, коли прострочений рахунок не оплачено.',
+    'notification_settings.desc.contract.expiring' => 'Сповіщення перед закінченням терміну договору.',
+    'notification_settings.desc.contract.expired' => 'Сповіщення, коли термін договору закінчився.',
+    'notification_settings.desc.quote.sent' => 'Сповіщення, коли пропозицію надіслано.',
+    'notification_settings.desc.quote.expiring' => 'Сповіщення перед закінченням терміну пропозиції.',
+    'notification_settings.desc.quote.expired' => 'Сповіщення, коли термін пропозиції закінчився.',
+
 ];

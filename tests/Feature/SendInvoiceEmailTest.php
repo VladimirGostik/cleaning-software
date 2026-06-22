@@ -7,12 +7,12 @@ namespace Tests\Feature;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\PermissionEnum;
 use App\Enums\SubscriptionPlanEnum;
-use App\Jobs\SendInvoiceEmail;
 use App\Models\Invoice;
 use App\Models\Tenant;
+use App\Notifications\InvoiceIssued;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -24,9 +24,9 @@ final class SendInvoiceEmailTest extends TestCase
     // Happy path
     // -------------------------------------------------------------------------
 
-    public function test_send_action_queues_job_for_issued_invoice_with_email(): void
+    public function test_send_action_dispatches_notification_for_issued_invoice_with_email(): void
     {
-        Queue::fake([SendInvoiceEmail::class]);
+        Notification::fake();
 
         $user = $this->actingAsTenantUser('Vlastník');
         $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
@@ -43,10 +43,11 @@ final class SendInvoiceEmailTest extends TestCase
 
         $response->assertRedirect(route('invoices.show', $invoice));
 
-        Queue::assertPushed(SendInvoiceEmail::class, function (SendInvoiceEmail $job) use ($invoice): bool {
-            return $job->invoiceId === $invoice->id
-                && $job->recipientEmail === 'customer@example.com';
-        });
+        Notification::assertSentOnDemand(
+            InvoiceIssued::class,
+            fn (InvoiceIssued $notification, array $channels, object $notifiable) => $notifiable->routes['mail'] === 'customer@example.com'
+                && $notification->invoiceId === $invoice->id,
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -55,7 +56,7 @@ final class SendInvoiceEmailTest extends TestCase
 
     public function test_send_on_draft_invoice_returns_redirect_with_error(): void
     {
-        Queue::fake([SendInvoiceEmail::class]);
+        Notification::fake();
 
         $user = $this->actingAsTenantUser('Vlastník');
         $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
@@ -72,12 +73,12 @@ final class SendInvoiceEmailTest extends TestCase
         $response = $this->post(route('invoices.send', $invoice));
 
         $response->assertSessionHasErrors('status');
-        Queue::assertNotPushed(SendInvoiceEmail::class);
+        Notification::assertNothingSent();
     }
 
     public function test_send_without_customer_email_returns_redirect_with_error(): void
     {
-        Queue::fake([SendInvoiceEmail::class]);
+        Notification::fake();
 
         $user = $this->actingAsTenantUser('Vlastník');
         $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
@@ -93,12 +94,12 @@ final class SendInvoiceEmailTest extends TestCase
         $response = $this->post(route('invoices.send', $invoice));
 
         $response->assertSessionHasErrors('customer_email');
-        Queue::assertNotPushed(SendInvoiceEmail::class);
+        Notification::assertNothingSent();
     }
 
     public function test_send_on_cancelled_invoice_returns_redirect_with_error(): void
     {
-        Queue::fake([SendInvoiceEmail::class]);
+        Notification::fake();
 
         $user = $this->actingAsTenantUser('Vlastník');
         $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
@@ -114,13 +115,13 @@ final class SendInvoiceEmailTest extends TestCase
         $response = $this->post(route('invoices.send', $invoice));
 
         $response->assertSessionHasErrors('status');
-        Queue::assertNotPushed(SendInvoiceEmail::class);
+        Notification::assertNothingSent();
     }
 
     public function test_send_on_overdue_invoice_returns_redirect_with_error(): void
     {
         // Overdue invoices are NOT Issued — send guard requires status === Issued per plan spec
-        Queue::fake([SendInvoiceEmail::class]);
+        Notification::fake();
 
         $user = $this->actingAsTenantUser('Vlastník');
         $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
@@ -136,7 +137,7 @@ final class SendInvoiceEmailTest extends TestCase
         $response = $this->post(route('invoices.send', $invoice));
 
         $response->assertSessionHasErrors('status');
-        Queue::assertNotPushed(SendInvoiceEmail::class);
+        Notification::assertNothingSent();
     }
 
     public function test_unauthenticated_user_cannot_send(): void
@@ -161,9 +162,7 @@ final class SendInvoiceEmailTest extends TestCase
 
     public function test_user_without_edit_invoices_permission_cannot_send(): void
     {
-        // BUG 2: send() must require update/EditInvoices, not view/ViewInvoices.
-        // A user with ViewInvoices only must be blocked (403).
-        Queue::fake([SendInvoiceEmail::class]);
+        Notification::fake();
 
         $user = $this->actingAsTenantUser('Upratovačka');
         $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
@@ -186,6 +185,6 @@ final class SendInvoiceEmailTest extends TestCase
         $response = $this->post(route('invoices.send', $invoice));
 
         $response->assertForbidden();
-        Queue::assertNotPushed(SendInvoiceEmail::class);
+        Notification::assertNothingSent();
     }
 }

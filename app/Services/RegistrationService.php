@@ -15,9 +15,11 @@ use App\Models\TenantInterface;
 use App\Models\TenantInvitation;
 use App\Models\TenantMembership;
 use App\Models\User;
+use App\Notifications\InvitationCreated;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -166,7 +168,7 @@ final readonly class RegistrationService
     private function createInvitations(Tenant $tenant, User $inviter, array $invites): void
     {
         foreach ($invites as $invite) {
-            TenantInvitation::firstOrCreate(
+            $invitation = TenantInvitation::firstOrCreate(
                 [
                     'tenant_id' => $tenant->id,
                     'email' => $invite->email,
@@ -179,6 +181,9 @@ final readonly class RegistrationService
                     'expires_at' => now()->addDays(7),
                 ],
             );
+
+            Notification::route('mail', $invite->email)
+                ->notify(new InvitationCreated($invitation->token, $tenant->name, $invite->role_name));
         }
     }
 }

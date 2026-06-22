@@ -9,6 +9,7 @@ use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Contracts\RendersQuotePdf;
+use App\Listeners\StampInvoiceSentAt;
 use App\Models\CleaningObject;
 use App\Models\Contract;
 use App\Models\ContractTemplate;
@@ -16,6 +17,7 @@ use App\Models\Quote;
 use App\Models\TenantMembership;
 use App\Policies\ContractPolicy;
 use App\Policies\ContractTemplatePolicy;
+use App\Policies\NotificationPolicy;
 use App\Policies\ObjectPolicy;
 use App\Policies\QuotePolicy;
 use App\Services\ConfigFeatureChecker;
@@ -27,6 +29,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -61,6 +66,13 @@ final class AppServiceProvider extends ServiceProvider
         Gate::policy(ContractTemplate::class, ContractTemplatePolicy::class);
 
         Gate::policy(Quote::class, QuotePolicy::class);
+
+        // DatabaseNotification is framework-owned — no auto-discovery, must register explicitly.
+        Gate::policy(DatabaseNotification::class, NotificationPolicy::class);
+
+        // StampInvoiceSentAt listens to the framework NotificationSent event.
+        // Auto-discovery does not reliably find framework events as targets — register explicitly.
+        Event::listen(NotificationSent::class, StampInvoiceSentAt::class);
 
         RateLimiter::for('api', function (Request $r): Limit {
             return Limit::perMinute(60)

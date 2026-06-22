@@ -21,16 +21,17 @@ use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
-use App\Jobs\SendInvoiceEmail;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Tenant;
+use App\Notifications\InvoiceIssued;
 use App\Services\InvoiceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -296,7 +297,8 @@ final class InvoiceController extends Controller
             ]);
         }
 
-        SendInvoiceEmail::dispatch($invoice->id, $invoice->customer_email)->afterCommit();
+        Notification::route('mail', $invoice->customer_email)
+            ->notify(new InvoiceIssued($invoice->id));
 
         return to_route('invoices.show', $invoice)->with('flash.success', __('app.invoices.send_queued'));
     }

@@ -142,6 +142,7 @@ final class HandleInertiaRequests extends Middleware
             'manageRoles' => PermissionEnum::ManageRoles,
             'manageTenant' => PermissionEnum::ManageTenant,
             'viewAuditLogs' => PermissionEnum::ViewAuditLogs,
+            'viewNotifications' => PermissionEnum::ViewNotifications,
         ];
 
         $result = [];

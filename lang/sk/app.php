@@ -1008,4 +1008,58 @@ return [
     'quotes.filter.all_statuses' => 'Všetky stavy',
     'quotes.filter.all_clients' => 'Všetci klienti',
 
+    // Notifications
+    'notifications.marked_read' => 'Notifikácia označená ako prečítaná.',
+    'notifications.all_marked_read' => 'Všetky notifikácie označené ako prečítané.',
+    'notifications.view' => 'Zobraziť',
+
+    'notifications.invitation.subject' => 'Pozvánka do firmy :tenant',
+    'notifications.invitation.body' => 'Boli ste pozvaný do firmy :tenant ako :role.',
+    'notifications.invitation.action' => 'Prijať pozvánku',
+
+    'notification_settings.saved' => 'Nastavenia notifikácií boli uložené.',
+
+    'notification_type.invitation.created' => 'Pozvánka',
+    'notification_type.invoice.issued' => 'Faktúra odoslaná',
+    'notification_type.invoice.overdue' => 'Faktúra po splatnosti',
+    'notification_type.contract.expiring' => 'Zmluva vyprší',
+    'notification_type.contract.expired' => 'Zmluva vypršala',
+    'notification_type.quote.sent' => 'Ponuka odoslaná',
+    'notification_type.quote.expiring' => 'Ponuka vyprší',
+    'notification_type.quote.expired' => 'Ponuka vypršala',
+
+    'notification_type.invoice.overdue.title' => 'Faktúra po splatnosti',
+    'notification_type.invoice.overdue.body' => 'Faktúra je po dátume splatnosti a bola označená ako oneskorená.',
+    'notification_type.contract.expiring.title' => 'Zmluva vyprší o :days dní',
+    'notification_type.contract.expiring.body' => 'Zmluva vyprší o :days dní.',
+    'notification_type.contract.expired.title' => 'Zmluva vypršala',
+    'notification_type.contract.expired.body' => 'Platnosť zmluvy skončila.',
+    'notification_type.quote.sent.title' => 'Cenová ponuka bola odoslaná',
+    'notification_type.quote.sent.body' => 'Cenová ponuka bola úspešne odoslaná zákazníkovi.',
+    'notification_type.quote.expiring.title' => 'Cenová ponuka vyprší o :days dní',
+    'notification_type.quote.expiring.body' => 'Platnosť cenovej ponuky vyprší o :days dní.',
+    'notification_type.quote.expired.title' => 'Cenová ponuka vypršala',
+    'notification_type.quote.expired.body' => 'Platnosť cenovej ponuky skončila.',
+
+    // Notification FE chrome keys
+    'notifications.bell_label' => 'Notifikácie',
+    'notifications.title' => 'Notifikácie',
+    'notifications.subtitle' => 'Vaše posledné notifikácie',
+    'notifications.mark_all_read' => 'Označiť všetky ako prečítané',
+    'notifications.see_all' => 'Zobraziť všetky',
+    'notifications.empty' => 'Žiadne notifikácie',
+    'notifications.empty_hint' => 'Keď niečo nastane, zobrazí sa tu.',
+    'notifications.filter.unread_only' => 'Iba neprečítané',
+    'notifications.filter.type' => 'Typ',
+    'notifications.filter.all_types' => 'Všetky typy',
+    'notification_settings.title' => 'Nastavenia notifikácií',
+    'notification_settings.subtitle' => 'Nastavte si, o čom chcete dostávať e-mailové upozornenia.',
+    'notification_settings.mail_label' => 'E-mail',
+    'notification_settings.desc.invoice.overdue' => 'Upozornenie, keď faktúra po splatnosti nie je uhradená.',
+    'notification_settings.desc.contract.expiring' => 'Upozornenie pred vypršaním zmluvy.',
+    'notification_settings.desc.contract.expired' => 'Upozornenie, keď zmluva vyprší.',
+    'notification_settings.desc.quote.sent' => 'Upozornenie, keď je cenová ponuka odoslaná.',
+    'notification_settings.desc.quote.expiring' => 'Upozornenie pred vypršaním cenovej ponuky.',
+    'notification_settings.desc.quote.expired' => 'Upozornenie, keď platnosť cenovej ponuky skončí.',
+
 ];

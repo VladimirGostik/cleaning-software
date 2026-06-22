@@ -18,7 +18,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'locale', 'is_active'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'locale', 'is_active', 'notification_preferences'])]
 #[Hidden(['password', 'remember_token'])]
 final class User extends Authenticatable
 {
@@ -35,6 +35,7 @@ final class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'subscription_plan' => SubscriptionPlanEnum::class,
+            'notification_preferences' => 'array',
         ];
     }
 
@@ -44,6 +45,11 @@ final class User extends Authenticatable
             ->logOnly(['name', 'email', 'phone', 'locale', 'is_active', 'subscription_plan'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
+    }
+
+    public function preferredLocale(): string
+    {
+        return $this->locale ?? config('app.locale');
     }
 
     public function memberships(): HasMany

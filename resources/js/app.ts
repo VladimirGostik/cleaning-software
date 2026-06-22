@@ -4,6 +4,7 @@ import { createInertiaApp, router, usePage } from '@inertiajs/vue3';
 import { createPinia } from 'pinia';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { useCapabilitiesStore } from '@/stores/capabilities';
+import { useNotificationsStore } from '@/stores/notifications';
 import { matchRequirement } from '@/lib/routeRequirements';
 import type { SharedProps } from '@/types';
 
@@ -55,9 +56,10 @@ router.on('before', (event) => {
 /**
  * Inertia `navigate` event — fires after every successful page navigation.
  *
- * Primary init path: first authed navigate populates the store via
- * `ensureLoaded()` (idempotent — subsequent calls are no-ops). Errors are
- * caught and logged; the before guard fails-open on a missing load.
+ * Primary init path: first authed navigate populates the capabilities store via
+ * `ensureLoaded()` (idempotent — subsequent calls are no-ops). The notifications
+ * bell is fetched on every navigate for cheap freshness and polling is started
+ * idempotently (60 s interval). Errors are caught and logged.
  */
 router.on('navigate', (event) => {
     const auth = (event.detail.page.props as unknown as SharedProps).auth;
@@ -65,10 +67,16 @@ router.on('navigate', (event) => {
         return;
     }
 
-    const store = useCapabilitiesStore(pinia);
-    store.ensureLoaded().catch((err: unknown) => {
+    const caps = useCapabilitiesStore(pinia);
+    caps.ensureLoaded().catch((err: unknown) => {
         console.error('[capabilities] Failed to load /api/me:', err);
     });
+
+    const notifications = useNotificationsStore(pinia);
+    notifications.fetchBell().catch((err: unknown) => {
+        console.error('[notifications] Failed to fetch bell:', err);
+    });
+    notifications.startPolling();
 });
 
 createInertiaApp({

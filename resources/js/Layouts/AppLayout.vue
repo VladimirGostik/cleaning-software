@@ -23,14 +23,17 @@
     import { usePageProps } from '@/Composables/usePageProps';
     import { useTranslate } from '@/Composables/useTranslate';
     import { useCapabilitiesStore } from '@/stores/capabilities';
+    import { useNotificationsStore } from '@/stores/notifications';
     import { useAuthorization } from '@/Composables/useAuthorization';
     import AddTenantModal from '@/Pages/Tenants/AddTenantModal.vue';
     import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+    import NotificationBell from '@/Components/Notifications/NotificationBell.vue';
 
     const props = usePageProps();
     const { t } = useTranslate();
     const page = usePage(); // kept for page.component (transition key) and page.url only
     const capabilitiesStore = useCapabilitiesStore();
+    const notificationsStore = useNotificationsStore();
     const { can, hasFeature, canCreateTenant } = useAuthorization();
 
     const user = computed(() => props.auth?.user);
@@ -130,6 +133,14 @@
             implemented: true,
         },
         {
+            key: 'notifications',
+            label: 'nav.notifications',
+            href: '/notifications',
+            icon: BellIcon,
+            can: 'view notifications',
+            implemented: true,
+        },
+        {
             key: 'templates',
             label: 'nav.templates',
             href: '/templates',
@@ -157,7 +168,9 @@
     ];
 
     const visibleNav = computed(() =>
-        navItems.filter((item) => (!item.can || can(item.can)) && (!item.feature || hasFeature(item.feature))),
+        navItems.filter(
+            (item) => (!item.can || can(item.can)) && (!item.feature || hasFeature(item.feature)),
+        ),
     );
 
     function isActive(href: string): boolean {
@@ -166,6 +179,7 @@
 
     function logout() {
         capabilitiesStore.reset();
+        notificationsStore.reset();
         router.post('/logout');
     }
 
@@ -243,15 +257,7 @@
             </div>
 
             <!-- Bell -->
-            <button
-                type="button"
-                class="relative flex h-8 w-8 items-center justify-center rounded-md text-base-content/70 hover:bg-base-200 hover:text-base-content transition"
-            >
-                <BellIcon class="h-5 w-5" />
-                <span
-                    class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-error border-2 border-base-100"
-                />
-            </button>
+            <NotificationBell />
 
             <!-- User -->
             <div class="relative">
@@ -286,7 +292,10 @@
                         <button
                             type="button"
                             class="flex w-full items-center gap-2 px-3 py-2 text-sm text-base-content hover:bg-base-200 transition"
-                            @click="isUserMenuOpen = false; isLogoutConfirmOpen = true"
+                            @click="
+                                isUserMenuOpen = false;
+                                isLogoutConfirmOpen = true;
+                            "
                         >
                             {{ t('logout') }}
                         </button>
@@ -356,7 +365,9 @@
 
             <!-- Admin section -->
             <div class="mt-4 border-t border-white/[0.06] pt-3 px-2">
-                <div class="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] nav-section-label">
+                <div
+                    class="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] nav-section-label"
+                >
                     {{ t('nav.admin_section') }}
                 </div>
                 <nav class="flex flex-col gap-0.5">
