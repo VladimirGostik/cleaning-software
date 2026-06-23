@@ -40,6 +40,7 @@ final readonly class EmployeeService
         private DatabaseManager $db,
         private ChecksFeatures $features,
         private PermissionRegistrar $permissionRegistrar,
+        private JobService $jobService,
     ) {}
 
     /**
@@ -275,6 +276,9 @@ final readonly class EmployeeService
     {
         $this->db->transaction(function () use ($membership): void {
             $membership->update(['is_active' => false]);
+
+            // Phase-2 hook: unassign all future jobs assigned to this membership.
+            $this->jobService->unassignFutureForMembership($membership);
         });
     }
 }

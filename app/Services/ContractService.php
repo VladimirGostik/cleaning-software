@@ -30,6 +30,7 @@ final readonly class ContractService
     public function __construct(
         private DatabaseManager $db,
         private PlaceholderResolverService $resolver,
+        private WorkBreakdownService $workBreakdownService,
     ) {}
 
     /**
@@ -152,6 +153,12 @@ final readonly class ContractService
                 'status' => ContractStatusEnum::Active,
                 'signed_at' => now(),
             ]);
+
+            // Load contractable so WorkBreakdownService can inspect it.
+            $contract->loadMissing('contractable');
+
+            // D3: auto-generate work breakdown for service-agreement contracts backed by a quote.
+            $this->workBreakdownService->generateFromContract($contract);
 
             return $contract;
         });

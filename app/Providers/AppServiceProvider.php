@@ -14,12 +14,14 @@ use App\Models\CleaningObject;
 use App\Models\Contract;
 use App\Models\ContractTemplate;
 use App\Models\Quote;
+use App\Models\ScheduledJob;
 use App\Models\TenantMembership;
 use App\Policies\ContractPolicy;
 use App\Policies\ContractTemplatePolicy;
 use App\Policies\NotificationPolicy;
 use App\Policies\ObjectPolicy;
 use App\Policies\QuotePolicy;
+use App\Policies\ScheduledJobPolicy;
 use App\Policies\TenantMembershipPolicy;
 use App\Services\ConfigFeatureChecker;
 use App\Services\Pdf\ContractPdfService;
@@ -70,6 +72,9 @@ final class AppServiceProvider extends ServiceProvider
 
         // TenantMembership — auto-discovery would find TenantMembershipPolicy, but explicit is safer.
         Gate::policy(TenantMembership::class, TenantMembershipPolicy::class);
+
+        // ScheduledJob — explicit binding because model class name doesn't match ScheduledJobPolicy pattern.
+        Gate::policy(ScheduledJob::class, ScheduledJobPolicy::class);
 
         // DatabaseNotification is framework-owned — no auto-discovery, must register explicitly.
         Gate::policy(DatabaseNotification::class, NotificationPolicy::class);

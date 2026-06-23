@@ -110,10 +110,11 @@
         {
             key: 'schedule',
             label: 'nav.schedule',
-            href: '/schedule',
+            href: '/jobs',
             icon: CalendarDaysIcon,
             can: 'view schedule',
-            implemented: false,
+            feature: 'schedule',
+            implemented: true,
         },
         {
             key: 'employees',

@@ -18,6 +18,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
+use App\Http\Controllers\ScheduledJobController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -166,6 +167,18 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->whereUuid('employee');
         Route::match(['PUT', 'PATCH'], '/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->whereUuid('employee');
         Route::post('/employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate')->whereUuid('employee');
+    });
+
+    // Schedule (Zákazky) — feature-gated (plan axis: schedule feature must be enabled).
+    Route::middleware('feature:schedule')->group(function (): void {
+        Route::get('/jobs', [ScheduledJobController::class, 'index'])->name('jobs.index');
+        Route::get('/jobs/create', [ScheduledJobController::class, 'create'])->name('jobs.create');
+        Route::post('/jobs', [ScheduledJobController::class, 'store'])->name('jobs.store');
+        Route::get('/jobs/{job}', [ScheduledJobController::class, 'show'])->name('jobs.show')->whereUuid('job');
+        Route::get('/jobs/{job}/edit', [ScheduledJobController::class, 'edit'])->name('jobs.edit')->whereUuid('job');
+        Route::match(['PUT', 'PATCH'], '/jobs/{job}', [ScheduledJobController::class, 'update'])->name('jobs.update')->whereUuid('job');
+        Route::post('/jobs/{job}/assign', [ScheduledJobController::class, 'assign'])->name('jobs.assign')->whereUuid('job');
+        Route::post('/jobs/{job}/cancel', [ScheduledJobController::class, 'cancel'])->name('jobs.cancel')->whereUuid('job');
     });
 
     // Notifications center and settings.

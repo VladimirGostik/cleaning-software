@@ -21,10 +21,12 @@
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
     import { useLocalizedDate } from '@/Composables/useLocalizedDate';
+    import WorkBreakdownView from '@/Components/Schedule/WorkBreakdownView.vue';
 
     interface Props {
         object: App.Data.Objects.ObjectDetailData;
         clients: Array<{ id: string; name: string }>;
+        workBreakdowns: App.Data.Schedule.WorkBreakdownDetailData[];
     }
 
     const props = defineProps<Props>();
@@ -224,6 +226,20 @@
                         </dl>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Work breakdowns (read-only) -->
+        <div v-if="workBreakdowns.length > 0" class="mt-6">
+            <h2 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-3">
+                {{ t('objects.section.work_breakdowns') }}
+            </h2>
+            <div class="space-y-4">
+                <WorkBreakdownView
+                    v-for="wb in workBreakdowns"
+                    :key="wb.id"
+                    :breakdown="wb"
+                />
             </div>
         </div>
 

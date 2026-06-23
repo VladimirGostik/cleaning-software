@@ -9,14 +9,17 @@ use App\Data\Objects\ObjectIndexFilterData;
 use App\Data\Objects\ObjectListItemData;
 use App\Data\Objects\ObjectStoreData;
 use App\Data\Objects\ObjectUpdateData;
+use App\Data\Schedule\WorkBreakdownDetailData;
 use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
+use App\Models\WorkBreakdown;
 use App\Services\ObjectService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\LaravelData\DataCollection;
 use Spatie\LaravelData\PaginatedDataCollection;
 
 final class ObjectController extends Controller
@@ -42,7 +45,7 @@ final class ObjectController extends Controller
     #[Authorize('view', 'object')]
     public function show(CleaningObject $object): Response
     {
-        $object->load('client');
+        $object->load(['client', 'workBreakdowns.tasks']);
 
         $clients = Client::query()
             ->orderBy('name')
@@ -52,6 +55,10 @@ final class ObjectController extends Controller
         return Inertia::render('Objects/Show', [
             'object' => ObjectDetailData::fromModel($object),
             'clients' => $clients,
+            'workBreakdowns' => WorkBreakdownDetailData::collect(
+                $object->workBreakdowns->map(fn (WorkBreakdown $wb) => WorkBreakdownDetailData::fromModel($wb)),
+                DataCollection::class,
+            ),
         ]);
     }
 

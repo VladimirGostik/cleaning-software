@@ -761,6 +761,93 @@ currency: App.Enums.CurrencyEnum,
 rounding_mode: App.Enums.RoundingModeEnum,
 };
 }
+namespace Schedule {
+export type JobAssignData = {
+assigned_membership_id: string | null,
+};
+export type JobCalendarFilterData = {
+date_from: string,
+date_to: string,
+cleaning_object_id: string | null,
+assigned_membership_id: string | null,
+};
+export type JobDetailData = {
+id: string,
+cleaning_object_id: string,
+object_name: string,
+client_name: string,
+client_id: string | null,
+assigned_membership_id: string | null,
+assignee_display_name: string | null,
+work_breakdown_id: string | null,
+work_breakdown_task_id: string | null,
+contract_id: string | null,
+invoice_id: string | null,
+type: App.Enums.JobTypeEnum,
+status: App.Enums.JobStatusEnum,
+scheduled_date: string,
+start_time: string | null,
+end_time: string | null,
+note: string | null,
+is_invoiced: boolean,
+is_editable: boolean,
+can_be_cancelled: boolean,
+can: Record<string, boolean>,
+};
+export type JobIndexFilterData = {
+search: string | null,
+status: App.Enums.JobStatusEnum | null,
+type: App.Enums.JobTypeEnum | null,
+cleaning_object_id: string | null,
+assigned_membership_id: string | null,
+date_from: string | null,
+date_to: string | null,
+per_page: number,
+};
+export type JobListItemData = {
+id: string,
+scheduled_date: string,
+start_time: string | null,
+end_time: string | null,
+object_name: string,
+client_name: string,
+assignee_display_name: string | null,
+type: App.Enums.JobTypeEnum,
+status: App.Enums.JobStatusEnum,
+is_invoiced: boolean,
+};
+export type JobUpsertData = {
+cleaning_object_id: string,
+type: App.Enums.JobTypeEnum,
+scheduled_date: string,
+start_time: string | null,
+end_time: string | null,
+assigned_membership_id: string | null,
+contract_id: string | null,
+note: string | null,
+};
+export type WorkBreakdownDetailData = {
+id: string,
+cleaning_object_id: string,
+name: string,
+is_active: boolean,
+contract_id: string | null,
+source_quote_id: string | null,
+tasks: App.Data.Schedule.WorkBreakdownTaskData[],
+};
+export type WorkBreakdownTaskData = {
+id: string,
+name: string,
+description: string | null,
+frequency: App.Enums.TaskFrequencyEnum,
+position: number,
+};
+export type WorkBreakdownUpsertData = {
+cleaning_object_id: string,
+name: string,
+is_active: boolean,
+};
+}
 namespace Tenants {
 export type AddTenantData = {
 name: string,
@@ -811,6 +898,8 @@ export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";
 export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
+export type JobStatusEnum = "planned" | "unassigned" | "in_progress" | "completed" | "unapproved" | "cancelled";
+export type JobTypeEnum = "regular" | "one_off" | "special";
 export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
@@ -822,6 +911,7 @@ export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "ca
 export type RoundingModeEnum = "none" | "document" | "cash_005";
 export type SubscriptionPlanEnum = "free" | "starter" | "pro" | "enterprise";
 export type SupportedLanguage = "sk" | "en" | "uk";
+export type TaskFrequencyEnum = "one_time" | "weekly_1x" | "weekly_2x" | "weekly_3x" | "biweekly" | "monthly" | "bimonthly" | "seasonal";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";
 }
 }

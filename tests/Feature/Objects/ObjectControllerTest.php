@@ -9,6 +9,8 @@ use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\WorkBreakdown;
+use App\Models\WorkBreakdownTask;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\PermissionRegistrar;
@@ -243,6 +245,100 @@ final class ObjectControllerTest extends TestCase
 
         // Act & Assert
         $this->get(route('objects.index'))->assertForbidden();
+    }
+
+    // -------------------------------------------------------------------------
+    // SHOW — happy
+    // -------------------------------------------------------------------------
+
+    public function test_show_returns_object_detail_with_empty_work_breakdowns(): void
+    {
+        // Arrange
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+
+        // Act
+        $response = $this->get(route('objects.show', $object));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Objects/Show')
+            ->where('object.id', $object->id)
+            ->has('workBreakdowns', 0),
+        );
+    }
+
+    public function test_show_work_breakdowns_includes_linked_breakdown_with_tasks(): void
+    {
+        // Arrange
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+
+        $breakdown = WorkBreakdown::factory()->create([
+            'tenant_id' => $tenant->id,
+            'cleaning_object_id' => $object->id,
+        ]);
+        WorkBreakdownTask::factory()->count(2)->create([
+            'tenant_id' => $tenant->id,
+            'work_breakdown_id' => $breakdown->id,
+        ]);
+
+        // Act
+        $response = $this->get(route('objects.show', $object));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('workBreakdowns', 1)
+            ->where('workBreakdowns.0.id', $breakdown->id)
+            ->has('workBreakdowns.0.tasks', 2),
+        );
+    }
+
+    public function test_show_work_breakdowns_excludes_other_tenant_breakdowns(): void
+    {
+        // Arrange
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+
+        // Breakdown belonging to another tenant but referencing our object's ID
+        $otherTenant = Tenant::factory()->create();
+        WorkBreakdown::factory()->create([
+            'tenant_id' => $otherTenant->id,
+            'cleaning_object_id' => $object->id,
+        ]);
+
+        // Act
+        $response = $this->get(route('objects.show', $object));
+
+        // Assert — global TenantScope hides the foreign breakdown
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('workBreakdowns', 0),
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // SHOW — failure
+    // -------------------------------------------------------------------------
+
+    public function test_show_cross_tenant_object_returns_404(): void
+    {
+        // Arrange
+        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        $tenantA = Tenant::factory()->forOwner($owner)->create();
+        $tenantB = Tenant::factory()->create();
+        $this->actingAsTenantUser('Vlastník', $tenantA);
+
+        $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
+        $objectB = CleaningObject::factory()->create(['tenant_id' => $tenantB->id, 'client_id' => $clientB->id]);
+
+        // Act — TenantScope hides objectB
+        $this->get(route('objects.show', $objectB->id))->assertNotFound();
     }
 
     // -------------------------------------------------------------------------
