@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Concerns;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids as EloquentHasUuids;
-use Illuminate\Support\Str;
+use App\Actions\GenerateUuid;
 
 trait HasUuids
 {
-    use EloquentHasUuids;
+    use \Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+    protected static ?string $forcedUuid = null;
+
+    public static function forceUuid(?string $uuid): void
+    {
+        static::$forcedUuid = $uuid;
+    }
 
     public function newUniqueId(): string
     {
-        return (string) Str::uuid7();
-    }
+        if (static::$forcedUuid !== null) {
+            $uuid = static::$forcedUuid;
+            static::$forcedUuid = null;
 
-    /**
-     * @return array<int, string>
-     */
-    public function uniqueIds(): array
-    {
-        return [$this->getKeyName()];
+            return $uuid;
+        }
+
+        return new GenerateUuid()->handle()->toString();
     }
 }

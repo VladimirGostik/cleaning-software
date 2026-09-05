@@ -1,0 +1,73 @@
+{
+    "$schema": "https://json.schemastore.org/eslintrc",
+    "root": true,
+    "env": {
+        "browser": true,
+        "es2022": true,
+        "node": false
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:vue/vue3-recommended",
+        "plugin:@typescript-eslint/recommended",
+        "prettier"
+    ],
+    "plugins": ["vue", "@typescript-eslint"],
+    "parser": "vue-eslint-parser",
+    "parserOptions": {
+        "parser": "@typescript-eslint/parser",
+        "ecmaVersion": 2022,
+        "sourceType": "module",
+        "extraFileExtensions": [".vue"]
+    },
+    "rules": {
+        "no-console": ["warn", { "allow": ["warn", "error"] }],
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-template": "warn",
+        "object-shorthand": ["warn", "always"],
+
+        "vue/component-name-in-template-casing": ["error", "PascalCase"],
+        "vue/no-v-html": "warn",
+        "vue/padding-line-between-blocks": ["error", "always"],
+        "vue/block-order": ["error", { "order": ["script", "template", "style"] }],
+        "vue/define-props-declaration": ["error", "type-based"],
+        "vue/no-unused-vars": "warn",
+        "vue/multi-word-component-names": "off"
+    },
+    "overrides": [
+        {
+            "files": ["resources/js/**/*.{ts,vue}"],
+            "rules": {
+                "no-undef": "off"
+            }
+        },
+        {
+            "files": ["**/*.d.ts"],
+            "rules": {
+                "@typescript-eslint/no-explicit-any": "off",
+                "no-undef": "off"
+            }
+        },
+        {
+            "files": ["scripts/**/*.js"],
+            "env": {
+                "node": true,
+                "browser": false
+            },
+            "rules": {
+                "no-console": "off"
+            }
+        },
+        {
+            "files": ["vite.config.js"],
+            "env": {
+                "node": true,
+                "browser": false
+            }
+        }
+    ],
+    "ignorePatterns": ["node_modules/", "public/", "vendor/", "bootstrap/cache/", "storage/"]
+}

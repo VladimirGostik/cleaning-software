@@ -2,18 +2,23 @@
 
 declare(strict_types=1);
 
+use App\Scribe\Strategies\BodyParameters\GetBodyParamsFromSpatieData;
+use App\Scribe\Strategies\Responses\GetResponseFromSpatieData;
 use Knuckles\Scribe\Config\AuthIn;
-use Knuckles\Scribe\Config\Defaults;
-use Knuckles\Scribe\Extracting\Strategies;
 
 use function Knuckles\Scribe\Config\configureStrategy;
+
+use Knuckles\Scribe\Config\Defaults;
+
 use function Knuckles\Scribe\Config\removeStrategies;
+
+use Knuckles\Scribe\Extracting\Strategies;
 
 // Only the most common configs are shown. See the https://scribe.knuckles.wtf/laravel/reference/config for all.
 
 return [
     // The HTML <title> for the generated documentation.
-    'title' => config('app.name') . ' API Documentation',
+    'title' => config('app.name').' API Documentation',
 
     // A short description of your API. Will be included in the docs webpage, Postman collection and OpenAPI spec.
     'description' => '',
@@ -69,8 +74,9 @@ return [
     ],
 
     'laravel' => [
-        // Whether to automatically create a docs route for you to view your generated docs. You can still set up routing manually.
-        'add_routes' => true,
+        // Routes are registered manually in routes/web.php to ensure the web middleware group
+        // (sessions, cookies) is applied — Scribe's service provider loadRoutesFrom() bypasses it.
+        'add_routes' => false,
 
         // URL path to use for the docs endpoint (if `add_routes` is true).
         // By default, `/docs` opens the HTML page, `/docs.postman` opens the Postman collection, and `/docs.openapi` the OpenAPI spec.
@@ -82,7 +88,7 @@ return [
         'assets_directory' => null,
 
         // Middleware to attach to the docs endpoint (if `add_routes` is true).
-        'middleware' => [],
+        'middleware' => ['auth', 'permission:view api docs'],
     ],
 
     'external' => [
@@ -107,17 +113,17 @@ return [
     // How is your API authenticated? This information will be used in the displayed docs, generated examples and response calls.
     'auth' => [
         // Set this to true if ANY endpoints in your API use authentication.
-        'enabled' => false,
+        'enabled' => true,
 
         // Set this to true if your API should be authenticated by default. If so, you must also set `enabled` (above) to true.
         // You can then use @unauthenticated or @authenticated on individual endpoints to change their status from the default.
-        'default' => false,
+        'default' => true,
 
         // Where is the auth value meant to be sent in a request?
         'in' => AuthIn::BEARER->value,
 
         // The name of the auth parameter (e.g. token, key, apiKey) or header (e.g. Authorization, Api-Key).
-        'name' => 'key',
+        'name' => 'Authorization',
 
         // The value of the parameter to be used by Scribe to authenticate response calls.
         // This will NOT be included in the generated documentation. If empty, Scribe will use a random value.
@@ -232,10 +238,14 @@ return [
             ...Defaults::QUERY_PARAMETERS_STRATEGIES,
         ],
         'bodyParameters' => [
+            GetBodyParamsFromSpatieData::class,
             ...Defaults::BODY_PARAMETERS_STRATEGIES,
         ],
         'responses' => configureStrategy(
-            Defaults::RESPONSES_STRATEGIES,
+            [
+                GetResponseFromSpatieData::class,
+                ...Defaults::RESPONSES_STRATEGIES,
+            ],
             Strategies\Responses\ResponseCalls::withSettings(
                 only: ['GET *'],
                 // Recommended: disable debug mode in response calls to avoid error stack traces in responses

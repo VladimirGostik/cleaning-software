@@ -1,96 +1,63 @@
-import './bootstrap';
-import { createApp, h, Transition, type DefineComponent } from 'vue';
-import { createInertiaApp, router, usePage } from '@inertiajs/vue3';
-import { createPinia } from 'pinia';
+/// <reference types="vite/client" />
+
+import '../css/app.css';
+
+import { createApp, h, type DefineComponent, type Plugin } from 'vue';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { useCapabilitiesStore } from '@/stores/capabilities';
-import { useNotificationsStore } from '@/stores/notifications';
-import { matchRequirement } from '@/lib/routeRequirements';
-import type { SharedProps } from '@/types';
+import { createI18n } from 'vue-i18n';
 
-const appName = (import.meta.env.VITE_APP_NAME as string) ?? 'CleanMaster';
+import enApp from '../lang/en/app.json';
+import skApp from '../lang/sk/app.json';
 
-const pinia = createPinia();
+const appName = (import.meta.env.VITE_APP_NAME as string | undefined) ?? 'App';
 
-/**
- * Inertia `before` event — synchronous navigation guard.
- *
- * The `before` result type is `boolean | void` (synchronous only in Inertia v3).
- * Async awaiting is not supported; the store is populated eagerly via the
- * `navigate` hook and read synchronously here.
- *
- * Fail-open: if caps not yet loaded (first navigation before /api/me returns),
- * allow the visit. The navigate hook will populate the store and subsequent
- * guards enforce. Real authorization lives on the BE.
- */
-router.on('before', (event) => {
-    const store = useCapabilitiesStore(pinia);
-    const pageProps = usePage().props as unknown as SharedProps;
-    const authed = pageProps.auth?.user != null;
+const messages = {
+    en: { ...enApp },
+    sk: { ...skApp },
+};
 
-    if (!authed) {
-        return true;
-    }
+void createInertiaApp({
+    title: (title: string | null) =>
+        title ? `${title} - ${appName}` : appName,
+    resolve: (name: string) =>
+        resolvePageComponent(
+            `./Pages/${name}.vue`,
+            import.meta.glob<DefineComponent>('./Pages/**/*.vue'),
+        ),
+    setup: ({
+        el,
+        App,
+        props,
+        plugin,
+    }: {
+        el: HTMLElement;
+        App: DefineComponent;
+        props: Record<string, unknown>;
+        plugin: Plugin;
+    }) => {
+        const initialPage = props.initialPage as { props: Record<string, unknown> } | undefined;
+        const locale = (initialPage?.props?.locale as string | undefined) ?? 'en';
 
-    if (!store.loaded) {
-        // Not yet loaded — allow and let the navigate hook trigger fetch.
-        return true;
-    }
+        const i18n = createI18n({
+            legacy: false,
+            locale,
+            fallbackLocale: 'en',
+            messages,
+        });
 
-    const req = matchRequirement(event.detail.visit.url.pathname);
-    if (!req) {
-        return true;
-    }
+        router.on('navigate', (event: Event) => {
+            const page = (event as unknown as { detail: { page: { props: Record<string, unknown> } } }).detail.page;
+            const newLocale = page?.props?.locale as string | undefined;
+            if (newLocale) {
+                (i18n.global.locale as unknown as { value: string }).value = newLocale;
+            }
+        });
 
-    const permissionOk = req.permission === undefined || store.hasPermission(req.permission);
-
-    if (!permissionOk) {
-        router.visit('/dashboard');
-        return false;
-    }
-
-    return true;
-});
-
-/**
- * Inertia `navigate` event — fires after every successful page navigation.
- *
- * Primary init path: first authed navigate populates the capabilities store via
- * `ensureLoaded()` (idempotent — subsequent calls are no-ops). The notifications
- * bell is fetched on every navigate for cheap freshness and polling is started
- * idempotently (60 s interval). Errors are caught and logged.
- */
-router.on('navigate', (event) => {
-    const auth = (event.detail.page.props as unknown as SharedProps).auth;
-    if (auth?.user == null) {
-        return;
-    }
-
-    const caps = useCapabilitiesStore(pinia);
-    caps.ensureLoaded().catch((err: unknown) => {
-        console.error('[capabilities] Failed to load /api/me:', err);
-    });
-
-    const notifications = useNotificationsStore(pinia);
-    notifications.fetchBell().catch((err: unknown) => {
-        console.error('[notifications] Failed to fetch bell:', err);
-    });
-    notifications.startPolling();
-});
-
-createInertiaApp({
-    title: (title) => (title ? `${title} – ${appName}` : appName),
-    resolve: (name) =>
-        resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob<DefineComponent>('./Pages/**/*.vue')),
-    setup: ({ el, App, props, plugin }) => {
-        createApp({
-            render: () => h(Transition, { name: 'page', mode: 'out-in', appear: true }, () => h(App, props)),
-        })
-            .use(pinia)
+        createApp({ render: () => h(App, props) })
             .use(plugin)
+            .use(i18n)
             .mount(el);
     },
-    progress: {
-        color: '#A16207',
-    },
+    progress: { color: '#4f46e5' },
 });

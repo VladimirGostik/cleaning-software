@@ -1,0 +1,48 @@
+# Dependencies (rebuilt in image)
+node_modules/
+vendor/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Environment — never bake into image
+.env
+.env.*
+!.env.example
+
+# Dev tooling
+.github/
+.docker/
+docker/
+compose.yml
+compose.override.yml
+
+# Tests
+tests/
+phpunit.xml
+phpstan.neon
+pint.json
+
+# Frontend source (build artifacts copied from node-build stage)
+resources/js/
+resources/css/
+
+# Storage — mounted or generated at runtime
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+bootstrap/cache/
+
+# Build artifacts (not needed in context, node-build stage handles this)
+public/build/
+public/hot
+
+# Misc
+*.md
+*.log
+.DS_Store
+.idea/
+.vscode/

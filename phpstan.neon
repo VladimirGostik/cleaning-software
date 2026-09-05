@@ -1,70 +1,11 @@
 includes:
     - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
 
 parameters:
-    # NOTE: level 5 for v0.1 baseline. Increment toward max as code stabilises.
-    level: 5
+    level: max
     paths:
         - app
         - database
-    excludePaths:
-        - database/migrations/2026_05_03_194335_create_permission_tables.php
-        - database/migrations/2026_05_03_194336_create_media_table.php
-    treatPhpDocTypesAsCertain: false
-    ignoreErrors:
-        -
-            identifier: missingType.generics
-            reportUnmatched: false
-        -
-            identifier: trait.unused
-            reportUnmatched: false
-        -
-            # Larastan cannot infer Invoice-typed generic from Spatie QueryBuilder::for(Invoice::class).
-            identifier: return.type
-            path: app/Services/InvoiceService.php
-            reportUnmatched: false
-        -
-            # Larastan infers HasOne relation non-null after eager-loading with('interface'),
-            # but the relation IS nullable at DB level — nullsafe access is correct.
-            identifier: nullsafe.neverNull
-            path: app/Http/Controllers
-            reportUnmatched: false
-        -
-            identifier: nullsafe.neverNull
-            path: app/Data/Invoices/InvoiceSettingsData.php
-            reportUnmatched: false
-        -
-            identifier: nullsafe.neverNull
-            path: app/Listeners/AuthEventListener.php
-            reportUnmatched: false
-        -
-            # Larastan infers BelongsTo client/cleaningObject relations as non-null,
-            # but both FKs are nullable — nullsafe access is correct.
-            identifier: nullsafe.neverNull
-            path: app/Data/RecurringInvoices/RecurringInvoiceDetailData.php
-            reportUnmatched: false
-        -
-            identifier: nullsafe.neverNull
-            path: app/Data/RecurringInvoices/RecurringInvoiceListItemData.php
-            reportUnmatched: false
-        -
-            # Larastan infers BelongsTo client/cleaningObject relations as non-null,
-            # but FKs are nullable on quotes — nullsafe access is correct.
-            identifier: nullsafe.neverNull
-            path: app/Data/Quotes/QuoteDetailData.php
-            reportUnmatched: false
-        -
-            identifier: nullsafe.neverNull
-            path: app/Data/Quotes/QuoteListItemData.php
-            reportUnmatched: false
-        -
-            # Larastan infers BelongsTo cleaningObject relation as non-null,
-            # but CleaningObject is soft-deletable (FK restrictOnDelete only blocks hard deletes) —
-            # nullsafe access is correct.
-            identifier: nullsafe.neverNull
-            path: app/Data/Schedule/JobDetailData.php
-            reportUnmatched: false
-        -
-            identifier: nullsafe.neverNull
-            path: app/Data/Schedule/JobListItemData.php
-            reportUnmatched: false
+        - tests
+    phpVersion: 80500

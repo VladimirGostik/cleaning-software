@@ -23,27 +23,30 @@ final class LocaleMiddleware
 
     private function resolveLocale(Request $request): string
     {
-        $user = $request->user();
-
-        if ($user && SupportedLanguage::isSupported($user->locale)) {
-            return $user->locale;
+        // 1. Authenticated user locale
+        if ($request->user() && SupportedLanguage::isSupported($request->user()->locale)) {
+            return $request->user()->locale;
         }
 
-        $session = $request->session()->get('locale');
-        if (SupportedLanguage::isSupported($session)) {
-            return (string) $session;
+        // 2. Session
+        $sessionLocale = $request->session()->get('locale');
+        if (is_string($sessionLocale) && SupportedLanguage::isSupported($sessionLocale)) {
+            return $sessionLocale;
         }
 
-        $cookie = $request->cookie('locale');
-        if (SupportedLanguage::isSupported($cookie)) {
-            return (string) $cookie;
+        // 3. Cookie
+        $cookieLocale = $request->cookie('locale');
+        if (is_string($cookieLocale) && SupportedLanguage::isSupported($cookieLocale)) {
+            return $cookieLocale;
         }
 
-        $browser = $request->getPreferredLanguage(SupportedLanguage::codes());
-        if (SupportedLanguage::isSupported($browser)) {
-            return (string) $browser;
+        // 4. Preferred language from Accept-Language header
+        $preferred = $request->getPreferredLanguage(SupportedLanguage::getCodes());
+        if ($preferred !== null && SupportedLanguage::isSupported($preferred)) {
+            return $preferred;
         }
 
-        return SupportedLanguage::default()->value;
+        // 5. Default
+        return SupportedLanguage::getDefault()->value;
     }
 }

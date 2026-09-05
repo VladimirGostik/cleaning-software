@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Builder;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -11,27 +12,24 @@ use Spatie\Permission\Models\Role as SpatieRole;
 
 final class Role extends SpatieRole
 {
-    use LogsActivity;
+    use HasUuids, LogsActivity;
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'guard_name', 'tenant_id'])
+            ->logOnly(['name', 'guard_name'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
 
     /**
-     * @param  Builder<self>  $query
+     * @param  Builder<Role>  $query
+     * @return Builder<Role>
      */
-    public function scopeSearch(Builder $query, ?string $term): Builder
+    public function scopeSearch(Builder $query, string $search): Builder
     {
-        if (! $term) {
-            return $query;
-        }
+        $operator = config('database.default') === 'pgsql' ? 'ilike' : 'like';
 
-        $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';
-
-        return $query->where('name', $op, '%' . $term . '%');
+        return $query->where('name', $operator, "%{$search}%");
     }
 }

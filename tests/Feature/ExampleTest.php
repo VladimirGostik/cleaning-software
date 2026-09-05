@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 final class ExampleTest extends TestCase
 {
-    public function test_root_redirects_guests_to_login(): void
-    {
-        $this->get('/')->assertRedirect(route('login'));
-    }
+    use RefreshDatabase;
 
-    public function test_login_page_renders(): void
+    public function test_the_application_returns_a_successful_response(): void
     {
-        $this->get('/login')->assertOk();
+        $user = User::factory()->create();
+
+        $response = $this->withoutVite()->actingAs($user)->get('/');
+
+        $response->assertStatus(200);
     }
 }

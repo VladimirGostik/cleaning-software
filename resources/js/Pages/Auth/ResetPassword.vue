@@ -1,74 +1,83 @@
 <script setup lang="ts">
-    import { useForm } from '@inertiajs/vue3';
-    import GuestLayout from '@/Layouts/GuestLayout.vue';
-    import { useTranslate } from '@/Composables/useTranslate';
+import { useForm } from '@inertiajs/vue3';
+import { useI18n } from 'vue-i18n';
+import TextInput from '@/Components/Forms/TextInput.vue';
+import PasswordInput from '@/Components/Forms/PasswordInput.vue';
+import FormProvider from '@/Components/Forms/FormProvider.vue';
 
-    const props = defineProps<{
-        email: string | null;
-        token: string;
-    }>();
+const { t } = useI18n();
 
-    const { t } = useTranslate();
+const props = defineProps<{
+    token: string;
+    email: string;
+}>();
 
-    const form = useForm({
-        token: props.token,
-        email: props.email ?? '',
-        password: '',
-        password_confirmation: '',
+const form = useForm('post', '/reset-password', {
+    token: props.token,
+    email: props.email,
+    password: '',
+    password_confirmation: '',
+});
+
+function submit() {
+    form.submit({
+        onFinish: () => {
+            form.reset('password', 'password_confirmation');
+        },
     });
-
-    function submit() {
-        form.post('/reset-password', {
-            onFinish: () => form.reset('password', 'password_confirmation'),
-        });
-    }
+}
 </script>
 
 <template>
-    <GuestLayout>
-        <h2 class="card-title text-2xl mb-4">{{ t('reset_password') }}</h2>
+    <div class="min-h-screen flex items-center justify-center bg-base-200 p-4">
+        <div class="card bg-base-100 shadow-xl w-full max-w-md">
+            <div class="card-body">
+                <h1 class="text-2xl font-bold text-center mb-6">
+                    {{ t('reset_password') }}
+                </h1>
 
-        <form class="flex flex-col gap-4" @submit.prevent="submit">
-            <fieldset class="fieldset">
-                <legend class="fieldset-legend">{{ t('email') }}</legend>
-                <input
-                    v-model="form.email"
-                    type="email"
-                    required
-                    autocomplete="email"
-                    class="input w-full"
-                    :class="{ 'input-error': form.errors.email }"
-                />
-            </fieldset>
+                <FormProvider :form="form">
+                    <form
+                        class="space-y-2"
+                        novalidate
+                        @submit.prevent="submit"
+                    >
+                        <TextInput
+                            field="email"
+                            :label="t('email')"
+                            type="email"
+                            autocomplete="email"
+                        />
 
-            <fieldset class="fieldset">
-                <legend class="fieldset-legend">{{ t('password') }}</legend>
-                <input
-                    v-model="form.password"
-                    type="password"
-                    required
-                    autocomplete="new-password"
-                    class="input w-full"
-                    :class="{ 'input-error': form.errors.password }"
-                />
-                <p v-if="form.errors.password" class="text-error text-xs mt-1">{{ form.errors.password }}</p>
-            </fieldset>
+                        <PasswordInput
+                            field="password"
+                            :label="t('new_password')"
+                            autocomplete="new-password"
+                            required
+                        />
 
-            <fieldset class="fieldset">
-                <legend class="fieldset-legend">{{ t('password_confirmation') }}</legend>
-                <input
-                    v-model="form.password_confirmation"
-                    type="password"
-                    required
-                    autocomplete="new-password"
-                    class="input w-full"
-                />
-            </fieldset>
+                        <PasswordInput
+                            field="password_confirmation"
+                            :label="t('confirm_password')"
+                            autocomplete="new-password"
+                        />
 
-            <button type="submit" class="btn btn-primary w-full" :disabled="form.processing">
-                <span v-if="form.processing" class="loading loading-spinner loading-xs" />
-                {{ t('reset_password') }}
-            </button>
-        </form>
-    </GuestLayout>
+                        <div class="flex justify-end mt-6">
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                :disabled="form.processing"
+                            >
+                                <span
+                                    v-if="form.processing"
+                                    class="loading loading-spinner loading-xs"
+                                />
+                                {{ t('reset_password') }}
+                            </button>
+                        </div>
+                    </form>
+                </FormProvider>
+            </div>
+        </div>
+    </div>
 </template>

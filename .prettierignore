@@ -1,9 +1,10 @@
 node_modules
 vendor
 public/build
-public/hot
 storage
-.env
-.env.*
+bootstrap/cache
 resources/js/types/generated.d.ts
-resources/js/types/typescript-transformer-manifest.json
+resources/js/generated/**
+*.lock
+pnpm-lock.yaml
+composer.lock

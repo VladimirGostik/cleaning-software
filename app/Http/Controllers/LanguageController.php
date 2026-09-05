@@ -7,38 +7,25 @@ namespace App\Http\Controllers;
 use App\Enums\SupportedLanguage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Cookie;
+use Illuminate\Support\Facades\Cookie;
 
 final class LanguageController extends Controller
 {
     public function switch(Request $request, string $locale): RedirectResponse
     {
         if (! SupportedLanguage::isSupported($locale)) {
-            $locale = SupportedLanguage::default()->value;
+            abort(404);
         }
 
-        $request->session()->put('locale', $locale);
+        session()->put('locale', $locale);
         app()->setLocale($locale);
 
-        if ($user = $request->user()) {
-            $user->locale = $locale;
-            $user->save();
+        if ($request->user()) {
+            $request->user()->update(['locale' => $locale]);
         }
 
-        $cookie = Cookie::create('locale', $locale, now()->addDays(30)->getTimestamp());
+        Cookie::queue('locale', $locale, 60 * 24 * 30);
 
-        $previous = url()->previous();
-        $appHost = parse_url(config('app.url'), PHP_URL_HOST);
-
-        if ($appHost === null || empty($previous) || str_contains($previous, '/language/')) {
-            $previous = '/dashboard';
-        } else {
-            $prevHost = parse_url($previous, PHP_URL_HOST);
-            if ($prevHost !== $appHost) {
-                $previous = '/dashboard';
-            }
-        }
-
-        return redirect()->to($previous)->withCookie($cookie);
+        return redirect()->back()->with('info', __('app.language_changed'));
     }
 }

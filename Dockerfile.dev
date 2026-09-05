@@ -1,0 +1,30 @@
+# Dev image — code is bind-mounted, no COPY of app code here.
+# Use `docker compose up -d app` to start.
+FROM php:8.5-cli-alpine
+
+# install-php-extensions handles all build deps + tweaks automatically.
+COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN install-php-extensions \
+        pdo \
+        pdo_pgsql \
+        pgsql \
+        gd \
+        exif \
+        opcache \
+        pcntl \
+        bcmath \
+        redis
+
+# Runtime tools + pnpm via npm (corepack not bundled in node 24 alpine).
+RUN apk add --no-cache bash curl git nodejs npm \
+    && npm install -g pnpm@latest
+
+# Composer.
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+EXPOSE 8000 5173
+
+CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=8000"]

@@ -1,25 +1,27 @@
 <script setup lang="ts">
-    withDefaults(
-        defineProps<{
-            label?: string;
-            error?: string;
-            required?: boolean;
-        }>(),
-        {
-            label: undefined,
-            error: undefined,
-            required: false,
-        },
-    );
+defineProps<{
+    label: string;
+    error?: string | null;
+    required?: boolean;
+}>();
 </script>
 
 <template>
-    <fieldset class="fieldset w-full">
-        <legend v-if="label" class="fieldset-legend">
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend">
             {{ label }}
-            <span v-if="required" class="text-error" aria-hidden="true">*</span>
+            <span
+                v-if="required"
+                class="text-error ml-0.5"
+                aria-hidden="true"
+            >*</span>
         </legend>
         <slot />
-        <span v-if="error" class="fieldset-label text-error" role="alert">{{ error }}</span>
+        <p
+            v-if="error"
+            class="text-error text-sm mt-1"
+        >
+            {{ error }}
+        </p>
     </fieldset>
 </template>

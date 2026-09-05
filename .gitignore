@@ -14,6 +14,7 @@
 /.zed
 /auth.json
 /node_modules
+/.pnpm-store
 /public/build
 /public/hot
 /public/storage
@@ -24,14 +25,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
-/.pnpm-store
-/.claude/settings.local.json
+AGENTS.md
 CLAUDE.md
-cleanmaster-technicka-specifikacia-v1.md.docx
-.claude/technical.md
-.claude/business.md
-cleaning
-playwright/.auth/
-playwright-report/
-test-results/
-.playwright-mcp/
+/.claude
+/.scribe
+/.ai
+/.junie

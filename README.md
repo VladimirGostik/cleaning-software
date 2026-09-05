@@ -1,141 +1,145 @@
-# CleanMaster
+# Laravel 13 + Inertia + Vue 3 Skeleton
 
-Multi-tenant SaaS pre upratovacie firmy (SK/CZ trh). Laravel 13 + Inertia 3 + Vue 3 + PostgreSQL 18, beží cez Laravel Sail (Docker).
+Opinionated greenfield skeleton pre rýchle, AI-asistované budovanie webových aplikácií.
 
-## URL
+## Stack
 
-| Služba | URL |
-|---|---|
-| Aplikácia | http://localhost |
-| Vite dev (HMR) | http://localhost:5173 |
-| Mailpit (e-maily) | http://localhost:8025 |
-| MinIO (úložisko) | http://localhost:8900 (sail / password) |
+| Layer | Tool |
+|-------|------|
+| Backend | Laravel 13, PHP 8.5 |
+| Frontend | Inertia v3 + Vue 3 + TypeScript |
+| DB | PostgreSQL 16 |
+| CSS | Tailwind 4 + DaisyUI 5 |
+| Validation | Spatie Data 4 (no FormRequest) |
+| Auth | Spatie Permission 7 |
+| Audit | Spatie Activitylog 5 |
+| Media | Spatie MediaLibrary 11 |
+| API filter | Spatie QueryBuilder 7 + custom `App\Utils\AllowedFilter` |
+| TS gen | Spatie TypeScript Transformer 3 |
+| Tests | PHPUnit 12 |
+| Lint | Pint, PHPStan (Larastan), ESLint, Prettier, vue-tsc |
+| Hooks | Lefthook |
+| AI agent | Laravel Boost 2 |
 
-**Demo prihlásenie:** `admin@example.com` / `password` (Pro plán, nasadené demo dáta).
+## Bundled modules
 
-## Docker (Laravel Sail)
+- **auth** — login, logout, forgot/reset password
+- **profile** — user account + password change
+- **permissions** — role/permission CRUD (Spatie Permission)
+- **audit-logs** — activity log viewer
+- **localisation** — language switcher (SK/EN)
 
-Voliteľný alias (pridaj do `~/.zshrc`), aby si nemusel písať `./vendor/bin/sail`:
+## Postup: od skopírovania po nový modul
 
-```bash
-alias sail='./vendor/bin/sail'
-```
-
-```bash
-# Naštartovať celý stack (laravel.test, pgsql, mailpit, minio)
-./vendor/bin/sail up -d
-
-# Zastaviť stack
-./vendor/bin/sail down
-
-# Stav kontajnerov
-./vendor/bin/sail ps
-
-# Pripojiť sa do shellu kontajnera aplikácie
-./vendor/bin/sail shell          # alebo: sail root-shell (ako root)
-
-# Sledovať logy
-./vendor/bin/sail logs -f
-```
-
-> Pozn.: host port Postgresu je presmerovaný na **5433** (nie 5432) — `FORWARD_DB_PORT=5433` v `.env`.
-
-## Build aplikácie
-
-Všetky príkazy bežia **vnútri kontajnera** cez `sail`:
+### 1. Pull skeleton z gitu
 
 ```bash
-# Závislosti
-./vendor/bin/sail composer install
-./vendor/bin/sail pnpm install
-
-# Frontend build (produkčný — potrebný, ak nebeží `pnpm dev`)
-./vendor/bin/sail pnpm build
-
-# Frontend dev server s HMR (pre vývoj)
-./vendor/bin/sail pnpm dev
-
-# Databáza — čistá schéma + seed demo dát
-./vendor/bin/sail artisan migrate:fresh --seed
-
-# TypeScript typy z app/Data + app/Enums
-./vendor/bin/sail artisan typescript:transform
-
-# Testy
-./vendor/bin/sail artisan test --compact
-
-# Lint / formátovanie
-./vendor/bin/sail pnpm exec vue-tsc --noEmit
-./vendor/bin/sail vendor/bin/pint
+git clone <skeleton-repo-url>
 ```
 
-### Rebuild Docker image (po zmene Dockerfile)
+Alebo cez GitHub: klik **"Use this template"** → clone vytvorený repo.
+
+### 2. Init script (Docker bootstrap end-to-end)
 
 ```bash
-# Build context = ./docker/8.5 (obsahuje arm64 Chromium pre PDF generovanie)
-./vendor/bin/sail build --no-cache
-./vendor/bin/sail up -d
+bin/init-app
 ```
 
-> Ak v prehliadači nevidíš FE zmeny → spusti `./vendor/bin/sail pnpm build` alebo `./vendor/bin/sail pnpm dev`.
+Prompts: slug, display name, DB name, composer vendor + 2 opt-in (host deps pre IDE, git reset).
+
+Script sám: rename placeholders → `.env` → `docker compose up --build` (postgres + redis + app) → composer install + pnpm install vnútri kontajnera → APP_KEY + migrate + seed + typescript:transform → spustí Vite → prune → fresh git. Cca 3-5 min prvýkrát.
+
+**Vyžaduje bežiaci Docker daemon.**
+
+Po skončení: app na `http://localhost:8000`, login `admin@example.com` / `password`.
+
+### 3. Spusti Claude Code
+
+```bash
+claude
+```
+
+### 4. Scaffold modul
+
+```
+/scaffold-module product fields=name:string:required:max:255,price:decimal:required:min:0,sku:string:required:unique:max:64
+```
+
+Agent vygeneruje 13 nových súborov + 5 editov, sám spustí `migrate`, `db:seed --class=PermissionSeeder`, `typescript:transform`, lint a typecheck. Detekuje docker/local runner sám.
+
+### 5. Otestuj
+
+Hard refresh browser (`Cmd+Shift+R`). Vidíš nový nav item, klik → CRUD funguje.
+
+### Reset DB neskôr
+
+V Claude Code: `/docker-init` — dropne DB volume, znovu migrate + seed.
 
 ---
 
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
-
-## About Laravel
-
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
-
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Bežné commands
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+docker compose exec app php artisan <cmd>      # artisan
+docker compose exec app php artisan test       # PHPUnit
+docker compose logs -f app                     # tail logy
+docker compose down                            # stop
+docker compose down -v                         # stop + drop DB
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
-## Contributing
+## Conventions (zhrnutie — detail v `CLAUDE.md`)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- UUIDv7 PK cez `App\Concerns\HasUuids`
+- Spatie Data DTOs (žiadny FormRequest, žiadne `$request->validate()`)
+- Inertia + Spatie Data `toArray()` response (žiadny JsonResource)
+- `final readonly class` services + `DB::transaction`
+- Spatie Permission cez `#[Authorize]` controller attr → Policy
+- Spatie Activitylog na biznis modeloch
+- `env()` mimo `config/` zakázané
+- `php artisan typescript:transform` po každej zmene v `app/Data/`
 
-## Code of Conduct
+## Lefthook hooks
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Pre-commit:
+- `vendor/bin/pint` — PHP format
+- `php -d memory_limit=512M vendor/bin/phpstan analyse` — PHP static analysis
+- `pnpm exec eslint` — JS/TS lint
+- `pnpm exec prettier --check` — formatting
+- `php artisan typescript:transform` — regenerate TS types
 
-## Security Vulnerabilities
+Pre-push:
+- `pnpm exec vue-tsc --noEmit` — TypeScript check
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
-## License
+## Project structure (kľúčové)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+app/
+  Concerns/HasUuids.php           — UUIDv7 trait
+  Data/                            — Spatie Data DTOs (Create/Update/ListItem/IndexFilter)
+  Http/Controllers/                — final classes, #[Authorize] attrs
+  Http/Middleware/HandleInertiaRequests.php  — shared 'can' props
+  Models/                          — final, HasUuids + LogsActivity
+  Policies/                        — 5 methods (viewAny/view/create/update/delete)
+  Services/                        — final readonly + DB::transaction
+  Utils/AllowedFilter.php          — search/dynamic/relationExact/boolean
+resources/js/
+  Components/DataTable/            — reusable table (filters + pagination + search)
+  Composables/useSpatieTableQuery.ts — query param ↔ Spatie filter syncing
+  Layouts/AppLayout.vue            — drawer + nav (gated by 'can')
+  Pages/Users/                     — canonical CRUD example
+  types/generated.d.ts             — auto-gen z PHP DTOs (NIKDY needituj)
+.claude/
+  business.md                      — domain rules, use-cases
+  technical.md                     — architecture catalog
+  agents/scaffold-module.md        — scaffolding agent
+  commands/scaffold-module.md      — slash command
+  skills/skeleton-module-scaffold/ — 13 sub-rules pre scaffolding
+bin/init-app                       — one-shot template bootstrap (self-deletes)
+```
+
+## Updating skeleton in a cloned app
+
+Skeleton + derived apps **nie sú syncované**. Po `bin/init-app` je nová app fork. Bugfixy v skeletone si manuálne cherry-pickni. Dôvod: každá app edituje `AppLayout.vue` nav, `PermissionSeeder`, controllers — upstream merge by bol stratený čas.
+

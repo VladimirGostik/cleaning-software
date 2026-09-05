@@ -1,12 +1,13 @@
 <script setup lang="ts">
-    import type { InertiaForm } from './useFormContext';
-    import { provideFormContext } from './useFormContext';
+import { useForm } from '@inertiajs/vue3';
+import { provideForm } from './useFormContext';
 
-    const props = defineProps<{
-        form: InertiaForm;
-    }>();
+const props = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    form: ReturnType<typeof useForm<any>>;
+}>();
 
-    provideFormContext(props.form);
+provideForm(props.form);
 </script>
 
 <template>

@@ -11,52 +11,87 @@ enum SupportedLanguage: string
 {
     case Slovak = 'sk';
     case English = 'en';
-    case Ukrainian = 'uk';
 
-    public function label(): string
+    public function getDisplayName(): string
     {
         return match ($this) {
             self::Slovak => 'Slovenčina',
             self::English => 'English',
-            self::Ukrainian => 'Українська',
         };
     }
 
-    public function flag(): string
+    public function getFlag(): string
     {
         return match ($this) {
             self::Slovak => '🇸🇰',
             self::English => '🇬🇧',
-            self::Ukrainian => '🇺🇦',
         };
     }
 
     /**
      * @return array<int, string>
      */
-    public static function codes(): array
+    public static function getCodes(): array
     {
-        return array_map(fn (self $c) => $c->value, self::cases());
+        return array_map(fn (self $lang) => $lang->value, self::cases());
     }
 
     /**
-     * @return array<int, array{code:string, label:string, flag:string}>
+     * @return array<int, array{value: string, label: string, flag: string}>
      */
-    public static function options(): array
+    public static function getForLanguageSwitcher(): array
     {
         return array_map(
-            fn (self $c) => ['code' => $c->value, 'label' => $c->label(), 'flag' => $c->flag()],
+            fn (self $lang) => [
+                'value' => $lang->value,
+                'label' => $lang->getDisplayName(),
+                'flag' => $lang->getFlag(),
+            ],
             self::cases(),
         );
     }
 
-    public static function default(): self
+    public static function isSupported(string $code): bool
+    {
+        return in_array($code, self::getCodes(), true);
+    }
+
+    public static function getDefault(): self
     {
         return self::Slovak;
     }
 
-    public static function isSupported(?string $code): bool
+    public function label(): string
     {
-        return $code !== null && in_array($code, self::codes(), true);
+        return $this->getDisplayName();
+    }
+
+    public function color(): string
+    {
+        return match ($this) {
+            self::Slovak => 'blue',
+            self::English => 'green',
+        };
+    }
+
+    public function icon(): string
+    {
+        return $this->getFlag();
+    }
+
+    /**
+     * @return array<int, array{id: string, name: string, color: string, icon: string}>
+     */
+    public static function options(): array
+    {
+        return array_map(
+            fn (self $lang) => [
+                'id' => $lang->value,
+                'name' => $lang->getDisplayName(),
+                'color' => $lang->color(),
+                'icon' => $lang->icon(),
+            ],
+            self::cases(),
+        );
     }
 }

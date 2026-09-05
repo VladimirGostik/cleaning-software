@@ -1,79 +1,48 @@
 <script setup lang="ts">
-    import { computed } from 'vue';
-    import FormField from './FormField.vue';
-    import { useFormContext, callValidate } from './useFormContext';
-    import { useFieldError } from './useFieldError';
+import FormField from './FormField.vue';
 
-    const props = withDefaults(
-        defineProps<{
-            field?: string;
-            modelValue?: number | null;
-            label?: string;
-            placeholder?: string;
-            min?: number;
-            max?: number;
-            step?: number;
-            required?: boolean;
-            disabled?: boolean;
-            error?: string;
-        }>(),
-        {
-            field: undefined,
-            modelValue: null,
-            label: undefined,
-            placeholder: undefined,
-            min: undefined,
-            max: undefined,
-            step: undefined,
-            required: false,
-            disabled: false,
-            error: undefined,
-        },
-    );
+defineProps<{
+    modelValue: number | null;
+    label: string;
+    required?: boolean;
+    error?: string | null;
+    min?: number;
+    max?: number;
+    step?: number | 'any';
+    disabled?: boolean;
+    placeholder?: string;
+}>();
 
-    const emit = defineEmits<{
-        'update:modelValue': [value: number | null];
-    }>();
+defineEmits<{
+    'update:modelValue': [value: number | null];
+}>();
 
-    const form = useFormContext();
-    const resolvedError = useFieldError(props, form);
-
-    const resolvedValue = computed<string>(() => {
-        const v =
-            props.field && form
-                ? ((form as unknown as Record<string, unknown>)[props.field] as number | null | undefined)
-                : props.modelValue;
-        return v === null || v === undefined ? '' : String(v);
-    });
-
-    function onInput(event: Event): void {
-        const raw = (event.target as HTMLInputElement).value;
-        const parsed = raw === '' ? null : Number(raw);
-        const value = Number.isNaN(parsed) ? null : parsed;
-        if (props.field && form) {
-            (form as unknown as Record<string, unknown>)[props.field] = value;
-            callValidate(form, props.field);
-        }
-        emit('update:modelValue', value);
-    }
+function parseValue(event: Event): number | null {
+    const raw = (event.target as HTMLInputElement).value;
+    return raw === '' ? null : Number(raw);
+}
 </script>
 
 <template>
-    <FormField :label="label" :error="resolvedError" :required="required">
+    <FormField
+        :label="label"
+        :error="error"
+        :required="required"
+    >
         <input
+            :value="modelValue ?? ''"
             type="number"
-            :value="resolvedValue"
-            :placeholder="placeholder"
+            class="input w-full"
+            :class="{ 'input-error': error }"
+            :required="required"
             :min="min"
             :max="max"
             :step="step"
-            :required="required"
             :disabled="disabled"
+            :placeholder="placeholder"
             :aria-required="required ? 'true' : undefined"
-            :aria-invalid="resolvedError ? 'true' : undefined"
-            class="input w-full"
-            :class="{ 'input-error': resolvedError }"
-            @input="onInput"
+            :aria-invalid="error ? 'true' : undefined"
+            @input="$emit('update:modelValue', parseValue($event))"
         />
     </FormField>
 </template>

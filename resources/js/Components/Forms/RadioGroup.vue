@@ -1,80 +1,71 @@
 <script setup lang="ts">
-    import { computed } from 'vue';
-    import { useFormContext, callValidate } from './useFormContext';
-    import { useFieldError } from './useFieldError';
+import { computed } from 'vue';
+import FormField from './FormField.vue';
+import { useFormContext } from './useFormContext';
+import { useFieldError, callValidate } from './useFieldError';
 
-    export interface RadioOption {
-        value: string;
-        label: string;
-        disabled?: boolean;
+export interface RadioOption {
+    value: string;
+    label: string;
+    disabled?: boolean;
+}
+
+const props = defineProps<{
+    field?: string;
+    modelValue?: string | null;
+    options: RadioOption[];
+    label: string;
+    required?: boolean;
+    error?: string | null;
+    disabled?: boolean;
+}>();
+
+const emit = defineEmits<{
+    'update:modelValue': [value: string];
+}>();
+
+const form = useFormContext();
+
+const resolvedValue = computed<string | null>(() => {
+    if (props.field && form) return String((form as Record<string, unknown>)[props.field] ?? '') || null;
+    return props.modelValue ?? null;
+});
+
+const resolvedError = useFieldError(props, form);
+
+function onSelect(value: string): void {
+    if (props.field && form) {
+        (form as Record<string, unknown>)[props.field] = value;
     }
-
-    const props = withDefaults(
-        defineProps<{
-            field?: string;
-            modelValue?: string;
-            options: RadioOption[];
-            label?: string;
-            required?: boolean;
-            error?: string;
-        }>(),
-        {
-            field: undefined,
-            modelValue: undefined,
-            label: undefined,
-            required: false,
-            error: undefined,
-        },
-    );
-
-    const emit = defineEmits<{
-        'update:modelValue': [value: string];
-    }>();
-
-    const form = useFormContext();
-    const resolvedError = useFieldError(props, form);
-
-    const resolvedValue = computed<string>(() => {
-        if (props.field && form) {
-            return ((form as unknown as Record<string, unknown>)[props.field] as string) ?? '';
-        }
-        return props.modelValue ?? '';
-    });
-
-    function onChange(value: string): void {
-        if (props.field && form) {
-            (form as unknown as Record<string, unknown>)[props.field] = value;
-            callValidate(form, props.field);
-        }
-        emit('update:modelValue', value);
-    }
+    callValidate(form, props.field);
+    emit('update:modelValue', value);
+}
 </script>
 
 <template>
-    <fieldset class="fieldset w-full">
-        <legend v-if="label" class="fieldset-legend">
-            {{ label }}
-            <span v-if="required" class="text-error" aria-hidden="true">*</span>
-        </legend>
-        <div class="flex gap-4 flex-wrap" role="group" :aria-label="label">
+    <FormField
+        :label="label"
+        :error="resolvedError"
+        :required="required"
+    >
+        <div class="flex flex-wrap gap-4 mt-1">
             <label
-                v-for="opt in options"
-                :key="opt.value"
+                v-for="option in options"
+                :key="option.value"
                 class="flex items-center gap-2 cursor-pointer"
-                :class="{ 'opacity-50 cursor-not-allowed': opt.disabled }"
+                :class="{ 'opacity-50 cursor-not-allowed': disabled || option.disabled }"
             >
                 <input
                     type="radio"
-                    :value="opt.value"
-                    :checked="resolvedValue === opt.value"
-                    :disabled="opt.disabled"
-                    :aria-required="required ? 'true' : undefined"
-                    class="radio"
-                    @change="onChange(opt.value)"
+                    class="radio radio-sm radio-primary"
+                    :value="option.value"
+                    :checked="resolvedValue === option.value"
+                    :disabled="disabled || option.disabled"
+                    :required="required"
+                    @change="onSelect(option.value)"
                 />
-                {{ opt.label }}
+                <span class="text-sm">{{ option.label }}</span>
             </label>
         </div>
-        <span v-if="resolvedError" class="fieldset-label text-error" role="alert">{{ resolvedError }}</span>
-    </fieldset>
+    </FormField>
 </template>

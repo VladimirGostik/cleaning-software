@@ -2,173 +2,86 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\ContractController;
-use App\Http\Controllers\ContractTemplateController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\InvoiceSettingsController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LanguageController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ObjectController;
-use App\Http\Controllers\QuoteController;
-use App\Http\Controllers\RecurringInvoiceController;
-use App\Http\Controllers\ScheduledJobController;
-use App\Http\Controllers\TenantController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\MediaController;
+use App\Http\Controllers\NewPasswordController;
+use App\Http\Controllers\PasswordResetLinkController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\TemporaryUploadController;
+use App\Http\Controllers\UserController;
+use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
-Route::get('/', fn () => redirect()->route(Auth::check() ? 'dashboard' : 'login'))->name('landing');
+Route::get('/language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');
 
 Route::middleware('guest')->group(function (): void {
-    Route::get('login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
 
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email')->middleware('throttle:password-reset');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+        Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+    });
+});
 
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store')->middleware('throttle:password-reset-confirm');
+// API docs — registered here (not via Scribe's add_routes) so that the web middleware group
+// (sessions, cookies) is active. Without it, auth middleware cannot read the session.
+Route::middleware(['auth', 'permission:view api docs'])->group(function (): void {
+    Route::view('/docs', 'scribe.index')->name('scribe');
+
+    Route::get('/docs.postman', function (): JsonResponse {
+        return new JsonResponse(Storage::disk('local')->get('scribe/collection.json'), json: true);
+    })->name('scribe.postman');
+
+    Route::get('/docs.openapi', function () {
+        return response()->file(Storage::disk('local')->path('scribe/openapi.yaml'));
+    })->name('scribe.openapi');
 });
 
 Route::middleware('auth')->group(function (): void {
-    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::get('dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
+    Route::get('/', DashboardController::class)->name('dashboard');
 
-    // Clients — explicit named routes per routing.md rule #4 (NEVER Route::resource).
-    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
-    Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
-    Route::get('/clients/{client}', [ClientController::class, 'show'])->name('clients.show');
-    Route::match(['PUT', 'PATCH'], '/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
-    Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+    });
 
-    // Objects
-    Route::get('/objects', [ObjectController::class, 'index'])->name('objects.index');
-    Route::post('/objects', [ObjectController::class, 'store'])->name('objects.store');
-    Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('objects.show')->whereUuid('object');
-    Route::match(['PUT', 'PATCH'], '/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->whereUuid('object');
-    Route::post('/objects/{object}/deactivate', [ObjectController::class, 'deactivate'])->name('objects.deactivate')->whereUuid('object');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('/audit-logs/{activity}', [AuditLogController::class, 'show'])->name('audit-logs.show');
 
-    // Quotes
-    Route::get('/quotes', [QuoteController::class, 'index'])->name('quotes.index');
-    Route::get('/quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
-    Route::post('/quotes', [QuoteController::class, 'store'])->name('quotes.store');
-    Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->name('quotes.show')->whereUuid('quote');
-    Route::get('/quotes/{quote}/edit', [QuoteController::class, 'edit'])->name('quotes.edit')->whereUuid('quote');
-    Route::match(['PUT', 'PATCH'], '/quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update')->whereUuid('quote');
-    Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy')->whereUuid('quote');
-    Route::post('/quotes/{quote}/send', [QuoteController::class, 'send'])->name('quotes.send')->whereUuid('quote');
-    Route::post('/quotes/{quote}/accept', [QuoteController::class, 'accept'])->name('quotes.accept')->whereUuid('quote');
-    Route::post('/quotes/{quote}/reject', [QuoteController::class, 'reject'])->name('quotes.reject')->whereUuid('quote');
-    Route::post('/quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate')->whereUuid('quote');
-    Route::post('/quotes/{quote}/convert-invoice', [QuoteController::class, 'convertToInvoice'])->name('quotes.convert-invoice')->whereUuid('quote');
-    Route::post('/quotes/{quote}/convert-contract', [QuoteController::class, 'convertToContract'])->name('quotes.convert-contract')->whereUuid('quote');
-    Route::get('/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('quotes.pdf')->whereUuid('quote');
-    Route::post('/quotes/{quote}/attach-client', [QuoteController::class, 'attachClient'])->name('quotes.attach-client')->whereUuid('quote');
-    Route::post('/quotes/{quote}/document', [QuoteController::class, 'uploadDocument'])->name('quotes.document.store')->whereUuid('quote');
+    Route::get('/media', [MediaController::class, 'index'])->name('media.index');
+    Route::get('/media/{media}', [MediaController::class, 'show'])->name('media.show');
 
-    // Invoices
-    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
-    Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
-    // Static segments must precede the {invoice} wildcard to avoid route collision.
-    Route::get('/invoices/export', [InvoiceController::class, 'export'])->name('invoices.export');
-    Route::post('/invoices/bulk', [InvoiceController::class, 'bulk'])->name('invoices.bulk');
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->whereUuid('invoice');
-    Route::get('/invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit')->whereUuid('invoice');
-    Route::match(['PUT', 'PATCH'], '/invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update')->whereUuid('invoice');
-    Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy')->whereUuid('invoice');
-    Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('invoices.issue')->whereUuid('invoice');
-    Route::post('/invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay')->whereUuid('invoice');
-    Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel')->whereUuid('invoice');
-    Route::post('/invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate')->whereUuid('invoice');
-    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf')->whereUuid('invoice');
-    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send')->whereUuid('invoice');
+    Route::post('/uploads', [TemporaryUploadController::class, 'store'])->name('uploads.store');
+    Route::delete('/uploads/{uuid}', [TemporaryUploadController::class, 'destroy'])->name('uploads.destroy');
 
-    // Recurring invoices — static segments before {recurringInvoice} wildcard.
-    Route::get('/recurring-invoices', [RecurringInvoiceController::class, 'index'])->name('recurring-invoices.index');
-    Route::get('/recurring-invoices/create', [RecurringInvoiceController::class, 'create'])->name('recurring-invoices.create');
-    Route::post('/recurring-invoices', [RecurringInvoiceController::class, 'store'])->name('recurring-invoices.store');
-    Route::get('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'show'])->name('recurring-invoices.show')->whereUuid('recurringInvoice');
-    Route::get('/recurring-invoices/{recurringInvoice}/edit', [RecurringInvoiceController::class, 'edit'])->name('recurring-invoices.edit')->whereUuid('recurringInvoice');
-    Route::match(['PUT', 'PATCH'], '/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'update'])->name('recurring-invoices.update')->whereUuid('recurringInvoice');
-    Route::delete('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'destroy'])->name('recurring-invoices.destroy')->whereUuid('recurringInvoice');
-    Route::post('/recurring-invoices/{recurringInvoice}/pause', [RecurringInvoiceController::class, 'pause'])->name('recurring-invoices.pause')->whereUuid('recurringInvoice');
-    Route::post('/recurring-invoices/{recurringInvoice}/resume', [RecurringInvoiceController::class, 'resume'])->name('recurring-invoices.resume')->whereUuid('recurringInvoice');
-    Route::post('/recurring-invoices/{recurringInvoice}/cancel', [RecurringInvoiceController::class, 'cancel'])->name('recurring-invoices.cancel')->whereUuid('recurringInvoice');
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/autocomplete', [UserController::class, 'autocomplete'])->name('users.autocomplete');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    });
 
-    // Invoice settings — tenant default template, numbering format, IBAN, VAT rate, registration info.
-    Route::get('/settings/invoicing', [InvoiceSettingsController::class, 'show'])->name('settings.invoicing');
-    Route::put('/settings/invoicing', [InvoiceSettingsController::class, 'update'])->name('settings.invoicing.update');
-    Route::get('/settings/invoicing/preview/{template}', [InvoiceSettingsController::class, 'preview'])->name('settings.invoicing.preview');
-
-    // Contract Templates
-    Route::get('/contract-templates', [ContractTemplateController::class, 'index'])->name('contract-templates.index');
-    Route::get('/contract-templates/create', [ContractTemplateController::class, 'create'])->name('contract-templates.create');
-    Route::post('/contract-templates', [ContractTemplateController::class, 'store'])->name('contract-templates.store');
-    Route::get('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'show'])->name('contract-templates.show')->whereUuid('contractTemplate');
-    Route::get('/contract-templates/{contractTemplate}/edit', [ContractTemplateController::class, 'edit'])->name('contract-templates.edit')->whereUuid('contractTemplate');
-    Route::match(['PUT', 'PATCH'], '/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'update'])->name('contract-templates.update')->whereUuid('contractTemplate');
-    Route::delete('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'destroy'])->name('contract-templates.destroy')->whereUuid('contractTemplate');
-
-    // Contracts — static segments before {contract} wildcard
-    Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
-    Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
-    Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
-    Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show')->whereUuid('contract');
-    Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->name('contracts.edit')->whereUuid('contract');
-    Route::match(['PUT', 'PATCH'], '/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update')->whereUuid('contract');
-    Route::delete('/contracts/{contract}', [ContractController::class, 'destroy'])->name('contracts.destroy')->whereUuid('contract');
-    Route::post('/contracts/{contract}/sign', [ContractController::class, 'sign'])->name('contracts.sign')->whereUuid('contract');
-    Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate')->whereUuid('contract');
-    Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf')->whereUuid('contract');
-
-    // Employees
-    Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
-    Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
-    Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
-    Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show')->whereUuid('employee');
-    Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->whereUuid('employee');
-    Route::match(['PUT', 'PATCH'], '/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->whereUuid('employee');
-    Route::post('/employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate')->whereUuid('employee');
-
-    // Schedule (Zákazky)
-    Route::get('/jobs', [ScheduledJobController::class, 'index'])->name('jobs.index');
-    Route::get('/jobs/create', [ScheduledJobController::class, 'create'])->name('jobs.create');
-    Route::post('/jobs', [ScheduledJobController::class, 'store'])->name('jobs.store');
-    Route::get('/jobs/{job}', [ScheduledJobController::class, 'show'])->name('jobs.show')->whereUuid('job');
-    Route::get('/jobs/{job}/edit', [ScheduledJobController::class, 'edit'])->name('jobs.edit')->whereUuid('job');
-    Route::match(['PUT', 'PATCH'], '/jobs/{job}', [ScheduledJobController::class, 'update'])->name('jobs.update')->whereUuid('job');
-    Route::post('/jobs/{job}/assign', [ScheduledJobController::class, 'assign'])->name('jobs.assign')->whereUuid('job');
-    Route::post('/jobs/{job}/cancel', [ScheduledJobController::class, 'cancel'])->name('jobs.cancel')->whereUuid('job');
-
-    // Notifications center and settings.
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read')->whereUuid('notification');
-    Route::get('/settings/notifications', [NotificationController::class, 'settings'])->name('settings.notifications');
-    Route::put('/settings/notifications', [NotificationController::class, 'updateSettings'])->name('settings.notifications.update');
-
-    // Tenants — self-service; auth middleware is the only gate (D4a).
-    Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
+    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
+    Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    });
 });
-
-// Invitations — token IS the gate; accessible to guests AND authenticated users (D4a exception).
-// GET serves the accept page (shows form or handles same-email auto-accept).
-// POST submits the accept form.
-Route::get('/invitations/{token}', [InvitationController::class, 'show'])
-    ->name('invitations.show')
-    ->whereAlphaNumeric('token');
-
-Route::post('/invitations/{token}', [InvitationController::class, 'accept'])
-    ->name('invitations.accept')
-    ->whereAlphaNumeric('token')
-    ->middleware('throttle:invitation-accept');
-
-Route::get('language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');

@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
 import laravel from 'laravel-vite-plugin';
-import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
@@ -18,7 +17,6 @@ export default defineConfig({
                 },
             },
         }),
-        tailwindcss(),
     ],
     resolve: {
         alias: {
@@ -27,8 +25,6 @@ export default defineConfig({
     },
     server: {
         host: '0.0.0.0',
-        port: 5173,
-        strictPort: true,
         hmr: { host: 'localhost' },
         watch: {
             ignored: ['**/storage/framework/views/**'],

@@ -1,23 +1,15 @@
-import { inject, provide, type InjectionKey } from 'vue';
-import type { useForm } from '@inertiajs/vue3';
+import { inject, provide } from 'vue';
+import { useForm } from '@inertiajs/vue3';
 
-export type InertiaForm = ReturnType<typeof useForm>;
+const FORM_KEY = Symbol('form');
 
-const FormContextKey: InjectionKey<InertiaForm> = Symbol('FormContext');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyForm = ReturnType<typeof useForm<any>>;
 
-export function provideFormContext(form: InertiaForm): void {
-    provide(FormContextKey, form);
+export function provideForm(form: AnyForm): void {
+    provide(FORM_KEY, form);
 }
 
-export function useFormContext(): InertiaForm | undefined {
-    return inject(FormContextKey, undefined);
-}
-
-export function callValidate(form: InertiaForm | undefined, field: string | undefined): void {
-    if (!form || !field) {
-        return;
-    }
-    if (typeof (form as unknown as Record<string, unknown>).validate === 'function') {
-        (form as unknown as Record<string, (f: string) => void>).validate(field);
-    }
+export function useFormContext(): AnyForm | null {
+    return inject<AnyForm>(FORM_KEY) ?? null;
 }

@@ -1,69 +1,58 @@
 <script setup lang="ts">
-    import { computed } from 'vue';
-    import { useFormContext, callValidate } from './useFormContext';
-    import { useFieldError } from './useFieldError';
+import { computed } from 'vue';
+import { useFormContext } from './useFormContext';
+import { useFieldError, callValidate } from './useFieldError';
 
-    const props = withDefaults(
-        defineProps<{
-            field?: string;
-            modelValue?: boolean;
-            label?: string;
-            required?: boolean;
-            disabled?: boolean;
-            error?: string;
-        }>(),
-        {
-            field: undefined,
-            modelValue: undefined,
-            label: undefined,
-            required: false,
-            disabled: false,
-            error: undefined,
-        },
-    );
+defineOptions({ inheritAttrs: false });
 
-    const emit = defineEmits<{
-        'update:modelValue': [value: boolean];
-    }>();
+const props = defineProps<{
+    field?: string;
+    modelValue?: boolean;
+    label: string;
+    error?: string | null;
+    disabled?: boolean;
+}>();
 
-    const form = useFormContext();
-    const resolvedError = useFieldError(props, form);
+const emit = defineEmits<{
+    'update:modelValue': [value: boolean];
+}>();
 
-    const resolvedValue = computed<boolean>(() => {
-        if (props.field && form) {
-            return ((form as unknown as Record<string, unknown>)[props.field] as boolean) ?? false;
-        }
-        return props.modelValue ?? false;
-    });
+const form = useFormContext();
 
-    function onChange(event: Event): void {
-        const value = (event.target as HTMLInputElement).checked;
-        if (props.field && form) {
-            (form as unknown as Record<string, unknown>)[props.field] = value;
-            callValidate(form, props.field);
-        }
-        emit('update:modelValue', value);
+const resolvedValue = computed(() => {
+    if (props.field && form) return Boolean((form as Record<string, unknown>)[props.field]);
+    return props.modelValue ?? false;
+});
+
+const resolvedError = useFieldError(props, form);
+
+function onNativeChange(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (props.field && form) {
+        (form as Record<string, unknown>)[props.field] = checked;
     }
+    callValidate(form, props.field);
+    emit('update:modelValue', checked);
+}
 </script>
 
 <template>
-    <div class="fieldset w-full">
-        <label class="flex items-center gap-3 cursor-pointer">
-            <input
-                type="checkbox"
-                :checked="resolvedValue"
-                :required="required"
-                :disabled="disabled"
-                :aria-required="required ? 'true' : undefined"
-                :aria-invalid="resolvedError ? 'true' : undefined"
-                class="toggle toggle-primary"
-                @change="onChange"
-            />
-            <span v-if="label" class="text-sm">
-                {{ label }}
-                <span v-if="required" class="text-error" aria-hidden="true">*</span>
-            </span>
-        </label>
-        <span v-if="resolvedError" class="fieldset-label text-error" role="alert">{{ resolvedError }}</span>
-    </div>
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend">{{ label }}</legend>
+        <input
+            v-bind="$attrs"
+            :checked="resolvedValue"
+            type="checkbox"
+            class="toggle toggle-primary"
+            :disabled="disabled"
+            :aria-invalid="resolvedError ? 'true' : undefined"
+            @change="onNativeChange"
+        />
+        <p
+            v-if="resolvedError"
+            class="text-error text-sm mt-1"
+        >
+            {{ resolvedError }}
+        </p>
+    </fieldset>
 </template>
