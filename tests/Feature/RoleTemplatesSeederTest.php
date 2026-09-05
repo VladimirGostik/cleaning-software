@@ -34,7 +34,7 @@ final class RoleTemplatesSeederTest extends TestCase
         $roles = Role::where('tenant_id', $tenant->id)->pluck('name');
         $this->assertCount(6, $roles);
 
-        $expectedRoles = ['Vlastník', 'Vedúca', 'Upratovačka', 'Sekretárka', 'Účtovníčka', 'Zákazník'];
+        $expectedRoles = ['Admin', 'Vedúca', 'Interná upratovačka', 'Sekretárka', 'Účtovníčka', 'Zákazník'];
         foreach ($expectedRoles as $roleName) {
             $this->assertContains($roleName, $roles, "Role '{$roleName}' should exist for tenant.");
         }
@@ -53,7 +53,7 @@ final class RoleTemplatesSeederTest extends TestCase
 
         // Assert
         /** @var Role $vlastnik */
-        $vlastnik = Role::where('name', 'Vlastník')->where('tenant_id', $tenant->id)->firstOrFail();
+        $vlastnik = Role::where('name', 'Admin')->where('tenant_id', $tenant->id)->firstOrFail();
         $allPermissionCount = Permission::count();
         $this->assertSame($allPermissionCount, $vlastnik->permissions()->count());
     }
@@ -69,20 +69,45 @@ final class RoleTemplatesSeederTest extends TestCase
         // Act
         RoleTemplatesSeeder::seedForTenant($tenant);
 
-        // Assert — Upratovačka: ViewSchedule + ViewObjects (added in objects module)
+        // Assert — Interná upratovačka: exactly ViewSchedule + ViewObjects, own-only (no view all *)
         /** @var Role $upratovacka */
-        $upratovacka = Role::where('name', 'Upratovačka')->where('tenant_id', $tenant->id)->firstOrFail();
+        $upratovacka = Role::where('name', 'Interná upratovačka')->where('tenant_id', $tenant->id)->firstOrFail();
         $this->assertSame(2, $upratovacka->permissions()->count());
         $upratovackaPerms = $upratovacka->permissions()->pluck('name')->sort()->values()->all();
         $this->assertContains('view schedule', $upratovackaPerms);
         $this->assertContains('view objects', $upratovackaPerms);
+        $this->assertNotContains('view all objects', $upratovackaPerms);
+        $this->assertNotContains('view all schedule', $upratovackaPerms);
 
-        // Assert — Zákazník: ViewSchedule + ViewPhotos + ViewComplaints + ViewObjects (added in objects module)
+        // Assert — Zákazník: exactly its 4 existing permissions, own-only (no view all *)
         /** @var Role $zakaznik */
         $zakaznik = Role::where('name', 'Zákazník')->where('tenant_id', $tenant->id)->firstOrFail();
         $this->assertSame(4, $zakaznik->permissions()->count());
         $zakaznikPerms = $zakaznik->permissions()->pluck('name')->sort()->values()->all();
         $this->assertContains('view objects', $zakaznikPerms);
+        $this->assertNotContains('view all objects', $zakaznikPerms);
+        $this->assertNotContains('view all schedule', $zakaznikPerms);
+
+        // Assert — Vedúca: holds both breadth modifiers (full visibility, unchanged behaviour)
+        /** @var Role $veduca */
+        $veduca = Role::where('name', 'Vedúca')->where('tenant_id', $tenant->id)->firstOrFail();
+        $veducaPerms = $veduca->permissions()->pluck('name')->sort()->values()->all();
+        $this->assertContains('view all objects', $veducaPerms);
+        $this->assertContains('view all schedule', $veducaPerms);
+
+        // Assert — Sekretárka: holds view all objects (no schedule permissions today)
+        /** @var Role $sekretarka */
+        $sekretarka = Role::where('name', 'Sekretárka')->where('tenant_id', $tenant->id)->firstOrFail();
+        $sekretarkaPerms = $sekretarka->permissions()->pluck('name')->sort()->values()->all();
+        $this->assertContains('view all objects', $sekretarkaPerms);
+        $this->assertNotContains('view all schedule', $sekretarkaPerms);
+
+        // Assert — Účtovníčka: holds view all objects (no schedule permissions today)
+        /** @var Role $uctovnicka */
+        $uctovnicka = Role::where('name', 'Účtovníčka')->where('tenant_id', $tenant->id)->firstOrFail();
+        $uctovnickaPerms = $uctovnicka->permissions()->pluck('name')->sort()->values()->all();
+        $this->assertContains('view all objects', $uctovnickaPerms);
+        $this->assertNotContains('view all schedule', $uctovnickaPerms);
     }
 
     public function test_seed_for_tenant_is_idempotent(): void
@@ -121,32 +146,32 @@ final class RoleTemplatesSeederTest extends TestCase
             $demoUser = User::where('email', $email)->firstOrFail();
             $this->assertSame(1, $demoUser->ownedTenants()->count(), "User {$email} should own exactly 1 tenant.");
 
-            // Assert Vlastník role on own tenant
+            // Assert Admin role on own tenant
             $tenant = $demoUser->ownedTenants()->firstOrFail();
             app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
             app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-            $ownerRole = Role::where('name', 'Vlastník')
+            $ownerRole = Role::where('name', 'Admin')
                 ->where('tenant_id', $tenant->id)
                 ->firstOrFail();
 
             $this->assertTrue(
                 $demoUser->roles()->where('roles.id', $ownerRole->id)->exists(),
-                "User {$email} should have Vlastník role on own tenant.",
+                "User {$email} should have Admin role on own tenant.",
             );
         }
 
-        // Assert admin has Vlastník on own tenant
+        // Assert admin has Admin on own tenant
         app(PermissionRegistrar::class)->setPermissionsTeamId($adminTenant->id);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $adminOwnerRole = Role::where('name', 'Vlastník')
+        $adminOwnerRole = Role::where('name', 'Admin')
             ->where('tenant_id', $adminTenant->id)
             ->firstOrFail();
 
         $this->assertTrue(
             $admin->roles()->where('roles.id', $adminOwnerRole->id)->exists(),
-            'Admin should have Vlastník role on Demo Cleaning s.r.o.',
+            'Admin should have Admin role on Demo Cleaning s.r.o.',
         );
     }
 }

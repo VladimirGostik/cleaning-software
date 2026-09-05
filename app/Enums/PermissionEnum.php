@@ -21,6 +21,9 @@ enum PermissionEnum: string
     case EditObjects = 'edit objects';
     case DeleteObjects = 'delete objects';
 
+    /** Breadth modifier — requires ViewObjects. Without it the actor sees only objects reachable through her active membership. */
+    case ViewAllObjects = 'view all objects';
+
     // Quotes
     case ViewQuotes = 'view quotes';
     case CreateQuotes = 'create quotes';
@@ -54,6 +57,9 @@ enum PermissionEnum: string
     case CreateSchedule = 'create schedule';
     case EditSchedule = 'edit schedule';
     case AssignCleaners = 'assign cleaners';
+
+    /** Breadth modifier — requires ViewSchedule. Without it the actor sees only jobs reachable through her active membership. */
+    case ViewAllSchedule = 'view all schedule';
 
     // Invoices
     case ViewInvoices = 'view invoices';
@@ -101,9 +107,6 @@ enum PermissionEnum: string
     // Audit
     case ViewAuditLogs = 'view audit logs';
 
-    /**
-     * @return array<int, string>
-     */
     public function label(): string
     {
         return __('app.permission.' . $this->value);

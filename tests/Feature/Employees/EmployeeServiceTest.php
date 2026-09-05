@@ -9,7 +9,6 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\EmploymentContractTypeEnum;
 use App\Enums\PermissionEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Contract;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
@@ -31,8 +30,7 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_create_new_user_and_membership(): void
     {
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $data = EmployeeUpsertData::from([
@@ -40,7 +38,7 @@ final class EmployeeServiceTest extends TestCase
             'first_name' => 'Jana',
             'last_name' => 'Novak',
             'phone' => '+421900000001',
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Interná upratovačka',
             'permissions' => [],
         ]);
 
@@ -56,7 +54,7 @@ final class EmployeeServiceTest extends TestCase
         $this->assertSame('Jana Novak', $membership->display_name);
 
         $user = User::where('email', 'newclean@example.com')->firstOrFail();
-        $this->assertTrue($user->hasRole('Upratovačka'));
+        $this->assertTrue($user->hasRole('Interná upratovačka'));
     }
 
     // -------------------------------------------------------------------------
@@ -65,8 +63,7 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_create_links_existing_user_without_creating_duplicate(): void
     {
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $existingUser = User::factory()->create(['email' => 'existing@example.com']);
@@ -93,8 +90,7 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_create_throws_when_user_is_already_active_member(): void
     {
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
 
         $this->expectException(ValidationException::class);
 
@@ -103,31 +99,7 @@ final class EmployeeServiceTest extends TestCase
             'first_name' => null,
             'last_name' => null,
             'phone' => null,
-            'role_name' => 'Vlastník',
-            'permissions' => [],
-        ]);
-
-        app(EmployeeService::class)->create($data);
-    }
-
-    // -------------------------------------------------------------------------
-    // create — fail: quota exceeded
-    // -------------------------------------------------------------------------
-
-    public function test_create_throws_when_quota_exceeded(): void
-    {
-        $actor = $this->actingAsTenantUser('Vlastník');
-        // Free plan quota = 1 (the owner already occupies the slot)
-        $tenant = Tenant::where('owner_id', $actor->id)->first();
-
-        $this->expectException(ValidationException::class);
-
-        $data = EmployeeUpsertData::from([
-            'email' => 'quota_test@example.com',
-            'first_name' => null,
-            'last_name' => null,
-            'phone' => null,
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Admin',
             'permissions' => [],
         ]);
 
@@ -140,8 +112,7 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_create_reactivates_deactivated_membership(): void
     {
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $targetUser = User::factory()->create(['email' => 'reactivate@example.com']);
@@ -157,7 +128,7 @@ final class EmployeeServiceTest extends TestCase
             'first_name' => 'Anna',
             'last_name' => 'Hruzova',
             'phone' => null,
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Interná upratovačka',
             'permissions' => [],
         ]);
 
@@ -174,8 +145,7 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_deactivate_sets_is_active_false(): void
     {
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $targetUser = User::factory()->create();
@@ -197,8 +167,7 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_create_with_employment_contract_creates_contract_child(): void
     {
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $data = EmployeeUpsertData::from([
@@ -206,7 +175,7 @@ final class EmployeeServiceTest extends TestCase
             'first_name' => 'Maria',
             'last_name' => 'Slobodova',
             'phone' => null,
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Interná upratovačka',
             'permissions' => [],
             'employment' => [
                 'employment_type' => EmploymentContractTypeEnum::Dpp->value,
@@ -234,9 +203,8 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_create_does_not_grant_permission_actor_lacks(): void
     {
-        // Arrange — actor is Upratovačka (has only view schedule + view objects)
-        $actor = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        // Arrange — actor is Interná upratovačka (has only view schedule + view objects)
+        $actor = $this->actingAsTenantUser('Interná upratovačka');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $data = EmployeeUpsertData::from([
@@ -244,7 +212,7 @@ final class EmployeeServiceTest extends TestCase
             'first_name' => 'Test',
             'last_name' => 'User',
             'phone' => null,
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Interná upratovačka',
             // Actor doesn't hold manage billing settings — should be filtered out
             'permissions' => [PermissionEnum::ManageBillingSettings->value],
         ]);
@@ -268,9 +236,8 @@ final class EmployeeServiceTest extends TestCase
 
     public function test_create_throws_when_role_escalation_attempted(): void
     {
-        // Arrange — actor is Upratovačka (has only view schedule + view objects)
-        $actor = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        // Arrange — actor is Interná upratovačka (has only view schedule + view objects)
+        $actor = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->expectException(ValidationException::class);
 
@@ -279,8 +246,8 @@ final class EmployeeServiceTest extends TestCase
             'first_name' => 'Test',
             'last_name' => 'User',
             'phone' => null,
-            // Vlastník holds ALL permissions — a superset of Upratovačka's 2 perms
-            'role_name' => 'Vlastník',
+            // Admin holds ALL permissions — a superset of Interná upratovačka's 2 perms
+            'role_name' => 'Admin',
             'permissions' => [],
         ]);
 
@@ -291,15 +258,14 @@ final class EmployeeServiceTest extends TestCase
     public function test_role_escalation_does_not_create_user(): void
     {
         // Arrange
-        $actor = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Interná upratovačka');
 
         $data = EmployeeUpsertData::from([
             'email' => 'no_user_created@example.com',
             'first_name' => 'Ghost',
             'last_name' => 'User',
             'phone' => null,
-            'role_name' => 'Vlastník',
+            'role_name' => 'Admin',
             'permissions' => [],
         ]);
 
@@ -320,8 +286,7 @@ final class EmployeeServiceTest extends TestCase
     public function test_update_clears_permissions_when_empty_array_submitted(): void
     {
         // Arrange
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $targetUser = User::factory()->create();
@@ -349,7 +314,7 @@ final class EmployeeServiceTest extends TestCase
             'first_name' => 'Anna',
             'last_name' => 'Hruzova',
             'phone' => null,
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Interná upratovačka',
             'permissions' => [], // explicit empty — must wipe direct permissions
         ]);
 
@@ -371,8 +336,7 @@ final class EmployeeServiceTest extends TestCase
     public function test_update_persists_profile_and_role_changes(): void
     {
         // Arrange
-        $actor = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($actor, SubscriptionPlanEnum::Pro);
+        $actor = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $actor->id)->first();
 
         $targetUser = User::factory()->create();
@@ -386,7 +350,7 @@ final class EmployeeServiceTest extends TestCase
             'phone' => null,
         ]);
         app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
-        $targetUser->assignRole('Upratovačka');
+        $targetUser->assignRole('Interná upratovačka');
 
         $membership->load('user');
         $data = EmployeeUpsertData::from([
@@ -408,6 +372,6 @@ final class EmployeeServiceTest extends TestCase
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
         $this->assertTrue($targetUser->fresh()->hasRole('Sekretárka'));
-        $this->assertFalse($targetUser->fresh()->hasRole('Upratovačka'));
+        $this->assertFalse($targetUser->fresh()->hasRole('Interná upratovačka'));
     }
 }

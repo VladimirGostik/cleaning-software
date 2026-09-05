@@ -6,7 +6,6 @@ namespace Tests\Feature\Schedule;
 
 use App\Enums\JobStatusEnum;
 use App\Enums\JobTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\ScheduledJob;
@@ -24,23 +23,61 @@ final class ScheduledJobControllerTest extends TestCase
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
-    // Feature gate — requires schedule feature (Pro+)
+    // index — accessible to authorized user (feature gate removed, see
+    // .claude/plans/remove-entitlement-layer.md — RBAC is the only remaining gate)
     // -------------------------------------------------------------------------
 
-    public function test_index_requires_schedule_feature(): void
+    public function test_index_accessible_to_authorized_user(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        // Default Free plan — no schedule feature
-
-        $this->get(route('jobs.index'))->assertForbidden();
-    }
-
-    public function test_index_accessible_on_pro_plan(): void
-    {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->get(route('jobs.index'))->assertOk();
+    }
+
+    // -------------------------------------------------------------------------
+    // index — paginated data contract (regression: missing PaginatedDataCollection
+    // arg made Spatie Data serialize the raw LengthAwarePaginator flat instead of
+    // the project-wide {data, links, meta} shape)
+    // -------------------------------------------------------------------------
+
+    public function test_index_returns_paginated_data_contract(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        ScheduledJob::factory()->count(2)->create([
+            'tenant_id' => $tenant->id,
+            'cleaning_object_id' => $object->id,
+        ]);
+
+        $response = $this->get(route('jobs.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Schedule/Index')
+            ->has('jobs.data', 2)
+            ->has('jobs.meta.total')
+            ->has('jobs.meta.current_page')
+            ->has('jobs.links'),
+        );
+    }
+
+    public function test_index_returns_paginated_data_contract_when_no_jobs_exist(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+
+        $response = $this->get(route('jobs.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Schedule/Index')
+            ->has('jobs.data', 0)
+            ->where('jobs.meta.total', 0)
+            ->has('jobs.meta.current_page')
+            ->has('jobs.links'),
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -50,7 +87,6 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_index_forbidden_for_sekretarka(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $this->get(route('jobs.index'))->assertForbidden();
     }
@@ -62,8 +98,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_create_passes_object_options_and_membership_options(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -84,8 +119,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_create_object_options_excludes_inactive_objects(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -105,8 +139,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_create_object_options_excludes_other_tenant_objects(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         // Own tenant object
@@ -134,8 +167,7 @@ final class ScheduledJobControllerTest extends TestCase
 
     public function test_store_creates_job_and_redirects(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -160,8 +192,7 @@ final class ScheduledJobControllerTest extends TestCase
 
     public function test_store_rejects_cross_tenant_cleaning_object(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create();
         $otherClient = Client::factory()->create(['tenant_id' => $otherTenant->id]);
@@ -181,8 +212,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_edit_passes_object_options_and_membership_options(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -208,8 +238,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_edit_membership_options_excludes_inactive_memberships(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         // Extra inactive membership in same tenant
@@ -237,7 +266,6 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_veduci_can_assign_job(): void
     {
         $user = $this->actingAsTenantUser('Vedúca');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -263,13 +291,12 @@ final class ScheduledJobControllerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // assign — Upratovačka cannot assign
+    // assign — Interná upratovačka cannot assign
     // -------------------------------------------------------------------------
 
     public function test_upratovacka_cannot_assign_job(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -294,8 +321,7 @@ final class ScheduledJobControllerTest extends TestCase
 
     public function test_cancel_sets_job_cancelled_and_redirects(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -321,8 +347,7 @@ final class ScheduledJobControllerTest extends TestCase
 
     public function test_cancel_completed_job_returns_validation_error(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -344,8 +369,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_show_work_breakdown_is_null_when_job_not_linked_to_breakdown(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -370,8 +394,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_show_work_breakdown_is_present_when_job_linked_to_breakdown(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -408,8 +431,7 @@ final class ScheduledJobControllerTest extends TestCase
     public function test_show_passes_membership_options(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -435,8 +457,7 @@ final class ScheduledJobControllerTest extends TestCase
 
     public function test_show_returns_404_for_other_tenant_job(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Create job for a completely different tenant
         $otherTenant = Tenant::factory()->create();

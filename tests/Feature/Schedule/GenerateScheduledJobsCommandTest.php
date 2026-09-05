@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Schedule;
 
-use App\Enums\SubscriptionPlanEnum;
 use App\Jobs\GenerateScheduledJobsJob;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -29,8 +28,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -64,8 +62,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -96,8 +93,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -130,8 +126,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
         Queue::fake();
 
         // Tenant A
-        $userA = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($userA, SubscriptionPlanEnum::Pro);
+        $userA = $this->actingAsTenantUser('Admin');
         $tenantA = Tenant::where('owner_id', $userA->id)->first();
         $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
         $objectA = CleaningObject::factory()->create(['tenant_id' => $tenantA->id, 'client_id' => $clientA->id]);

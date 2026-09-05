@@ -11,11 +11,14 @@ use App\Data\Objects\ObjectStoreData;
 use App\Data\Objects\ObjectUpdateData;
 use App\Data\Schedule\WorkBreakdownDetailData;
 use App\Enums\ObjectTypeEnum;
+use App\Enums\PermissionEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
+use App\Models\User;
 use App\Models\WorkBreakdown;
 use App\Services\ObjectService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,15 +30,17 @@ final class ObjectController extends Controller
     public function __construct(private readonly ObjectService $objects) {}
 
     #[Authorize('viewAny', CleaningObject::class)]
-    public function index(ObjectIndexFilterData $filter): Response
+    public function index(ObjectIndexFilterData $filter, Request $request): Response
     {
-        $clients = Client::query()
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->all();
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $clients = $actor->can(PermissionEnum::ViewAllObjects->value)
+            ? Client::query()->orderBy('name')->get(['id', 'name'])->all()
+            : [];
 
         return Inertia::render('Objects/Index', [
-            'objects' => ObjectListItemData::collect($this->objects->paginate($filter), PaginatedDataCollection::class),
+            'objects' => ObjectListItemData::collect($this->objects->paginate($filter, $actor), PaginatedDataCollection::class),
             'filters' => $filter,
             'types' => ObjectTypeEnum::options(),
             'clients' => $clients,
@@ -43,14 +48,16 @@ final class ObjectController extends Controller
     }
 
     #[Authorize('view', 'object')]
-    public function show(CleaningObject $object): Response
+    public function show(CleaningObject $object, Request $request): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
         $object->load(['client', 'workBreakdowns.tasks']);
 
-        $clients = Client::query()
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->all();
+        $clients = $actor->can('update', $object)
+            ? Client::query()->orderBy('name')->get(['id', 'name'])->all()
+            : [];
 
         return Inertia::render('Objects/Show', [
             'object' => ObjectDetailData::fromModel($object),
@@ -79,10 +86,10 @@ final class ObjectController extends Controller
     }
 
     #[Authorize('delete', 'object')]
-    public function destroy(CleaningObject $object): RedirectResponse
+    public function deactivate(CleaningObject $object): RedirectResponse
     {
-        $this->objects->delete($object);
+        $this->objects->deactivate($object);
 
-        return to_route('objects.index')->with('flash.success', __('app.objects.deleted'));
+        return to_route('objects.show', $object)->with('flash.success', __('app.objects.deactivated'));
     }
 }

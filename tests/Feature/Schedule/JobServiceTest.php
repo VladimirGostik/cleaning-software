@@ -8,7 +8,6 @@ use App\Data\Schedule\JobAssignData;
 use App\Data\Schedule\JobUpsertData;
 use App\Enums\JobStatusEnum;
 use App\Enums\JobTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\ScheduledJob;
@@ -29,8 +28,7 @@ final class JobServiceTest extends TestCase
 
     public function test_create_manual_job_without_assignee_is_unassigned(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -59,8 +57,7 @@ final class JobServiceTest extends TestCase
 
     public function test_create_job_with_assignee_is_planned(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -86,8 +83,7 @@ final class JobServiceTest extends TestCase
 
     public function test_assign_sets_membership_and_transitions_to_planned(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -114,8 +110,7 @@ final class JobServiceTest extends TestCase
 
     public function test_assign_throws_on_completed_job(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -139,8 +134,7 @@ final class JobServiceTest extends TestCase
 
     public function test_cancel_unassigned_job_sets_cancelled_status_and_timestamp(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -164,8 +158,7 @@ final class JobServiceTest extends TestCase
 
     public function test_cancel_throws_on_completed_job(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -187,8 +180,7 @@ final class JobServiceTest extends TestCase
 
     public function test_update_throws_on_completed_job(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -216,8 +208,7 @@ final class JobServiceTest extends TestCase
 
     public function test_unassign_future_for_membership_clears_planned_future_jobs(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -264,8 +255,7 @@ final class JobServiceTest extends TestCase
 
     public function test_unassign_future_skips_completed_jobs(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\InvitationStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantInvitation;
@@ -32,7 +31,7 @@ final class InvitationAcceptTest extends TestCase
     // Helpers
     // -------------------------------------------------------------------------
 
-    private function makeTenantWithInvitation(string $email, string $roleName = 'Upratovačka'): array
+    private function makeTenantWithInvitation(string $email, string $roleName = 'Interná upratovačka'): array
     {
         $owner = User::factory()->create(['is_active' => true]);
         $tenant = Tenant::factory()->forOwner($owner)->create();
@@ -78,7 +77,6 @@ final class InvitationAcceptTest extends TestCase
 
         $user = User::where('email', 'newuser@example.com')->firstOrFail();
         $this->assertSame('Nový Používateľ', $user->name);
-        $this->assertSame(SubscriptionPlanEnum::Free, $user->subscription_plan);
         $this->assertNotNull($user->email_verified_at);
         $this->assertNull($user->ownedTenants()->first()); // Q3 — no owned tenant
 
@@ -259,6 +257,47 @@ final class InvitationAcceptTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Guest GET — state resolution (regression: App\Models\User import)
+    // -------------------------------------------------------------------------
+
+    public function test_guest_get_shows_existing_user_state_when_account_already_exists(): void
+    {
+        // Arrange
+        [$tenant, $invitation] = $this->makeTenantWithInvitation('registered@example.com');
+        User::factory()->create(['email' => 'registered@example.com', 'is_active' => true]);
+
+        // Act
+        $response = $this->get(route('invitations.show', ['token' => $invitation->token]));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Invitations/Accept')
+            ->where('state', 'existing_user')
+            ->where('email', 'registered@example.com')
+            ->where('tenantName', $tenant->name)
+            ->where('roleName', $invitation->role_name));
+    }
+
+    public function test_guest_get_shows_new_user_state_when_no_account_exists(): void
+    {
+        // Arrange
+        [$tenant, $invitation] = $this->makeTenantWithInvitation('brandnew@example.com');
+
+        // Act
+        $response = $this->get(route('invitations.show', ['token' => $invitation->token]));
+
+        // Assert
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Invitations/Accept')
+            ->where('state', 'new_user')
+            ->where('email', 'brandnew@example.com')
+            ->where('tenantName', $tenant->name)
+            ->where('roleName', $invitation->role_name));
+    }
+
+    // -------------------------------------------------------------------------
     // Logged-in edge — same-email user auto-accepts on GET
     // -------------------------------------------------------------------------
 
@@ -392,9 +431,9 @@ final class InvitationAcceptTest extends TestCase
     public function test_role_assigned_under_invitation_tenant_not_session_tenant(): void
     {
         // Arrange — two separate tenants; user has session on a different tenant
-        [$invitingTenant, $invitation] = $this->makeTenantWithInvitation('multitenant@example.com', 'Upratovačka');
+        [$invitingTenant, $invitation] = $this->makeTenantWithInvitation('multitenant@example.com', 'Interná upratovačka');
 
-        $sessionUser = $this->actingAsTenantUser('Vlastník');
+        $sessionUser = $this->actingAsTenantUser('Admin');
         $sessionTenantId = session('active_tenant_id');
 
         $this->assertNotSame($invitingTenant->id, $sessionTenantId);
@@ -415,7 +454,7 @@ final class InvitationAcceptTest extends TestCase
         app(PermissionRegistrar::class)->setPermissionsTeamId($invitingTenant->id);
 
         $this->assertTrue(
-            $invitedUser->fresh()->hasRole('Upratovačka'),
+            $invitedUser->fresh()->hasRole('Interná upratovačka'),
             'Role should be assigned on the inviting tenant scope',
         );
 

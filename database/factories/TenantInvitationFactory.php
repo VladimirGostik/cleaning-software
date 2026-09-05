@@ -27,7 +27,7 @@ final class TenantInvitationFactory extends Factory
             'tenant_id' => Tenant::factory(),
             'invited_by_user_id' => User::factory(),
             'email' => fake()->unique()->safeEmail(),
-            'role_name' => fake()->randomElement(['Vedúca', 'Upratovačka', 'Sekretárka', 'Účtovníčka', 'Zákazník']),
+            'role_name' => fake()->randomElement(['Vedúca', 'Interná upratovačka', 'Sekretárka', 'Účtovníčka', 'Zákazník']),
             'token' => Str::random(64),
             'status' => InvitationStatusEnum::Pending->value,
             'expires_at' => now()->addDays(7),

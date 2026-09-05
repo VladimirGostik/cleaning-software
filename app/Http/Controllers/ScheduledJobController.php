@@ -14,27 +14,39 @@ use App\Data\Schedule\JobUpsertData;
 use App\Data\Schedule\WorkBreakdownDetailData;
 use App\Enums\JobStatusEnum;
 use App\Enums\JobTypeEnum;
-use App\Models\CleaningObject;
 use App\Models\ScheduledJob;
 use App\Models\TenantMembership;
+use App\Models\User;
 use App\Services\JobService;
+use App\Services\ObjectService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\LaravelData\DataCollection;
+use Spatie\LaravelData\PaginatedDataCollection;
 
 final class ScheduledJobController extends Controller
 {
-    public function __construct(private readonly JobService $jobService) {}
+    public function __construct(
+        private readonly JobService $jobService,
+        private readonly ObjectService $objects,
+    ) {}
 
     #[Authorize('viewAny', ScheduledJob::class)]
-    public function index(JobIndexFilterData $filter): Response
+    public function index(JobIndexFilterData $filter, Request $request): Response
     {
-        $jobs = $this->jobService->paginate($filter);
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $jobs = $this->jobService->paginate($filter, $actor);
 
         return Inertia::render('Schedule/Index', [
-            'jobs' => JobListItemData::collect($jobs->through(fn (ScheduledJob $job) => JobListItemData::fromModel($job))),
+            'jobs' => JobListItemData::collect(
+                $jobs->through(fn (ScheduledJob $job) => JobListItemData::fromModel($job)),
+                PaginatedDataCollection::class,
+            ),
             'filters' => $filter->toArray(),
             'statusOptions' => JobStatusEnum::options(),
             'typeOptions' => JobTypeEnum::options(),
@@ -42,18 +54,17 @@ final class ScheduledJobController extends Controller
     }
 
     #[Authorize('create', ScheduledJob::class)]
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
         $tenantId = app('current_tenant_id');
 
         return Inertia::render('Schedule/Create', [
             'typeOptions' => JobTypeEnum::options(),
             'objectOptions' => ObjectOptionData::collect(
-                CleaningObject::query()
-                    ->select(['id', 'name', 'client_id'])
-                    ->where('is_active', true)
-                    ->orderBy('name')
-                    ->get(),
+                $this->objects->optionsVisibleTo($actor),
                 DataCollection::class,
             ),
             'membershipOptions' => MembershipOptionData::collect(
@@ -76,26 +87,33 @@ final class ScheduledJobController extends Controller
     }
 
     #[Authorize('view', 'job')]
-    public function show(ScheduledJob $job): Response
+    public function show(ScheduledJob $job, Request $request): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
         $tenantId = app('current_tenant_id');
 
         $job->load(['cleaningObject.client', 'assignedMembership.user', 'workBreakdown.tasks', 'contract']);
 
+        $can = [
+            'update' => $actor->can('update', $job),
+            'assign' => $actor->can('assign', $job),
+            'cancel' => $actor->can('cancel', $job),
+        ];
+
         return Inertia::render('Schedule/Show', [
-            'job' => JobDetailData::fromModel($job, [
-                'update' => request()->user()?->can('update', $job) ?? false,
-                'assign' => request()->user()?->can('assign', $job) ?? false,
-                'cancel' => request()->user()?->can('cancel', $job) ?? false,
-            ]),
-            'membershipOptions' => MembershipOptionData::collect(
-                TenantMembership::with('user:id,name,email')
-                    ->where('tenant_id', $tenantId)
-                    ->where('is_active', true)
-                    ->get()
-                    ->map(fn (TenantMembership $m) => MembershipOptionData::fromModel($m)),
-                DataCollection::class,
-            ),
+            'job' => JobDetailData::fromModel($job, $can),
+            'membershipOptions' => $can['assign']
+                ? MembershipOptionData::collect(
+                    TenantMembership::with('user:id,name,email')
+                        ->where('tenant_id', $tenantId)
+                        ->where('is_active', true)
+                        ->get()
+                        ->map(fn (TenantMembership $m) => MembershipOptionData::fromModel($m)),
+                    DataCollection::class,
+                )
+                : MembershipOptionData::collect([], DataCollection::class),
             'workBreakdown' => $job->workBreakdown !== null
                 ? WorkBreakdownDetailData::fromModel($job->workBreakdown)
                 : null,
@@ -103,8 +121,11 @@ final class ScheduledJobController extends Controller
     }
 
     #[Authorize('update', 'job')]
-    public function edit(ScheduledJob $job): Response
+    public function edit(ScheduledJob $job, Request $request): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
         $tenantId = app('current_tenant_id');
 
         $job->load(['cleaningObject.client', 'assignedMembership.user']);
@@ -113,11 +134,7 @@ final class ScheduledJobController extends Controller
             'job' => JobDetailData::fromModel($job),
             'typeOptions' => JobTypeEnum::options(),
             'objectOptions' => ObjectOptionData::collect(
-                CleaningObject::query()
-                    ->select(['id', 'name', 'client_id'])
-                    ->where('is_active', true)
-                    ->orderBy('name')
-                    ->get(),
+                $this->objects->optionsVisibleTo($actor),
                 DataCollection::class,
             ),
             'membershipOptions' => MembershipOptionData::collect(

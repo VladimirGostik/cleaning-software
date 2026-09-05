@@ -8,7 +8,9 @@ use App\Data\Objects\ObjectIndexFilterData;
 use App\Data\Objects\ObjectStoreData;
 use App\Data\Objects\ObjectUpdateData;
 use App\Models\CleaningObject;
+use App\Models\User;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
@@ -23,9 +25,9 @@ final readonly class ObjectService
     /**
      * @return LengthAwarePaginator<CleaningObject>
      */
-    public function paginate(ObjectIndexFilterData $filter): LengthAwarePaginator
+    public function paginate(ObjectIndexFilterData $filter, User $actor): LengthAwarePaginator
     {
-        return QueryBuilder::for(CleaningObject::class)
+        return QueryBuilder::for(CleaningObject::query()->visibleTo($actor))
             ->allowedFilters(
                 AllowedFilter::scope('search'),
                 AllowedFilter::exact('type'),
@@ -40,6 +42,19 @@ final readonly class ObjectService
             ->with('client:id,name')
             ->paginate($filter->per_page)
             ->appends(request()->query());
+    }
+
+    /**
+     * @return Collection<int, CleaningObject>
+     */
+    public function optionsVisibleTo(User $actor): Collection
+    {
+        return CleaningObject::query()
+            ->visibleTo($actor)
+            ->where('is_active', true)
+            ->select(['id', 'name', 'client_id'])
+            ->orderBy('name')
+            ->get();
     }
 
     public function create(ObjectStoreData $data): CleaningObject
@@ -60,10 +75,10 @@ final readonly class ObjectService
         });
     }
 
-    public function delete(CleaningObject $object): void
+    public function deactivate(CleaningObject $object): void
     {
         $this->db->transaction(function () use ($object): void {
-            $object->delete();
+            $object->update(['is_active' => false]);
         });
     }
 }

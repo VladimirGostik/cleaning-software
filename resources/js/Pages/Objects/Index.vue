@@ -40,6 +40,12 @@
 
     const { state: filterState } = useObjectFilters(props.filters);
 
+    // Own-only actors receive an empty `clients` list from BE; drop any stale
+    // client filter so the URL cannot carry a value the actor cannot select.
+    if (props.clients.length === 0) {
+        filterState.client_id = undefined;
+    }
+
     const drawerState = reactive<{
         open: boolean;
         mode: 'create' | 'edit';
@@ -67,7 +73,8 @@
 
     const subtitle = computed(() => {
         const total = props.objects.meta.total;
-        return t('objects.subtitle').replace('{count}', String(total));
+        const base = t('objects.subtitle').replace('{count}', String(total));
+        return pageProps.can.viewAllObjects === false ? `${base} — ${t('objects.own_only_hint')}` : base;
     });
 
     const meta = computed(() => props.objects.meta);
@@ -82,7 +89,7 @@
 
         <PageHeader :title="t('objects.title')" :subtitle="subtitle">
             <template #actions>
-                <Can permission="create objects" feature="objects">
+                <Can permission="create objects">
                     <button type="button" class="btn btn-primary" @click="openCreate">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('objects.add') }}
@@ -94,8 +101,8 @@
         <ObjectFiltersBar
             v-model:search="filterState.search"
             v-model:type="filterState.type"
-            v-model:client_id="filterState.client_id"
-            v-model:is_active="filterState.is_active"
+            v-model:client-id="filterState.client_id"
+            v-model:is-active="filterState.is_active"
             :types="types"
             :clients="clients"
         />
@@ -139,7 +146,7 @@
                                 </span>
                             </td>
                             <td @click.stop>
-                                <Can permission="edit objects" feature="objects">
+                                <Can permission="edit objects">
                                     <Link :href="`/objects/${row.id}`" class="btn btn-ghost btn-xs">
                                         <PencilSquareIcon class="w-4 h-4" />
                                     </Link>
@@ -186,7 +193,7 @@
             :icon="BuildingOffice2Icon"
         >
             <template #cta>
-                <Can permission="create objects" feature="objects">
+                <Can permission="create objects">
                     <button type="button" class="btn btn-primary" @click="openCreate">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('objects.add') }}

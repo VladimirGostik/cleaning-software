@@ -243,10 +243,7 @@
 
                         <div class="flex items-center gap-2 text-sm">
                             <BuildingOfficeIcon class="w-4 h-4 text-base-content/40 shrink-0" />
-                            <Link
-                                :href="`/objects/${job.cleaning_object_id}`"
-                                class="link link-hover"
-                            >
+                            <Link :href="`/objects/${job.cleaning_object_id}`" class="link link-hover">
                                 {{ job.object_name }}
                             </Link>
                         </div>

@@ -78,12 +78,7 @@
             class="input input-bordered input-sm"
             :value="dateFrom ?? ''"
             :aria-label="t('schedule.col.date')"
-            @change="
-                emit(
-                    'update:dateFrom',
-                    ($event.target as HTMLInputElement).value || undefined,
-                )
-            "
+            @change="emit('update:dateFrom', ($event.target as HTMLInputElement).value || undefined)"
         />
 
         <span class="text-base-content/40 text-sm">–</span>
@@ -93,12 +88,7 @@
             class="input input-bordered input-sm"
             :value="dateTo ?? ''"
             :aria-label="t('schedule.col.date')"
-            @change="
-                emit(
-                    'update:dateTo',
-                    ($event.target as HTMLInputElement).value || undefined,
-                )
-            "
+            @change="emit('update:dateTo', ($event.target as HTMLInputElement).value || undefined)"
         />
     </div>
 </template>

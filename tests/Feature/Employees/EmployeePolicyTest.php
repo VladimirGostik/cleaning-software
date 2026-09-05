@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Employees;
 
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
@@ -17,29 +16,26 @@ final class EmployeePolicyTest extends TestCase
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
-    // Vlastník — can do all
+    // Admin — can do all
     // -------------------------------------------------------------------------
 
     public function test_vlastnik_can_view_any(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->assertTrue((new TenantMembershipPolicy)->viewAny($user));
     }
 
     public function test_vlastnik_can_create(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->assertTrue((new TenantMembershipPolicy)->create($user));
     }
 
     public function test_vlastnik_can_update_own_tenant_membership(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $membership = TenantMembership::where('tenant_id', $tenant->id)->firstOrFail();
@@ -49,8 +45,7 @@ final class EmployeePolicyTest extends TestCase
 
     public function test_vlastnik_can_delete(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $membership = TenantMembership::where('tenant_id', $tenant->id)->firstOrFail();
@@ -65,7 +60,6 @@ final class EmployeePolicyTest extends TestCase
     public function test_veduci_can_view_any(): void
     {
         $user = $this->actingAsTenantUser('Vedúca');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $this->assertTrue((new TenantMembershipPolicy)->viewAny($user));
     }
@@ -73,7 +67,6 @@ final class EmployeePolicyTest extends TestCase
     public function test_veduci_cannot_create(): void
     {
         $user = $this->actingAsTenantUser('Vedúca');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $this->assertFalse((new TenantMembershipPolicy)->create($user));
     }
@@ -81,7 +74,6 @@ final class EmployeePolicyTest extends TestCase
     public function test_veduci_cannot_delete(): void
     {
         $user = $this->actingAsTenantUser('Vedúca');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $otherUser = User::factory()->create();
@@ -96,19 +88,19 @@ final class EmployeePolicyTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Upratovačka — cannot do anything
+    // Interná upratovačka — cannot do anything
     // -------------------------------------------------------------------------
 
     public function test_upratovacka_cannot_view_any(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->assertFalse((new TenantMembershipPolicy)->viewAny($user));
     }
 
     public function test_upratovacka_cannot_create(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->assertFalse((new TenantMembershipPolicy)->create($user));
     }
@@ -119,8 +111,7 @@ final class EmployeePolicyTest extends TestCase
 
     public function test_update_denied_for_other_tenant_membership(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Create a membership in a different tenant.
         $otherTenant = Tenant::factory()->create(['owner_id' => User::factory()->create()->id]);

@@ -7,15 +7,18 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
 use App\Enums\ObjectTypeEnum;
+use App\Enums\PermissionEnum;
 use Database\Factories\CleaningObjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -24,12 +27,27 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $id
  * @property string $tenant_id
  * @property string $client_id
+ * @property ObjectTypeEnum $type
  * @property string $name
  * @property string|null $street
  * @property string|null $city
  * @property string|null $postal_code
  * @property string|null $country
+ * @property string|null $access_code
+ * @property string|null $key_box_code
+ * @property int|null $key_count
+ * @property string|null $special_instructions
+ * @property string|null $area_sqm
+ * @property int|null $floor
+ * @property bool $is_active
+ * @property string|null $gps_lat
+ * @property string|null $gps_lng
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  * @property Client|null $client
+ * @property Collection<int, WorkBreakdown> $workBreakdowns
+ * @property Collection<int, ScheduledJob> $jobs
  */
 #[Table('objects')]
 #[Fillable([
@@ -70,14 +88,28 @@ final class CleaningObject extends Model
             ->dontLogEmptyChanges();
     }
 
+    /**
+     * @return BelongsTo<Client, $this>
+     */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
+    /**
+     * @return HasMany<WorkBreakdown, $this>
+     */
     public function workBreakdowns(): HasMany
     {
         return $this->hasMany(WorkBreakdown::class, 'cleaning_object_id');
+    }
+
+    /**
+     * @return HasMany<ScheduledJob, $this>
+     */
+    public function jobs(): HasMany
+    {
+        return $this->hasMany(ScheduledJob::class, 'cleaning_object_id');
     }
 
     public function scopeSearch(Builder $query, string $term): Builder
@@ -90,5 +122,40 @@ final class CleaningObject extends Model
                 ->orWhere('street', $operator, '%' . $term . '%')
                 ->orWhere('city', $operator, '%' . $term . '%');
         });
+    }
+
+    /**
+     * Scopes the query to objects the actor may see: all objects with `view all objects`,
+     * otherwise only objects reachable through a job assigned to the actor's active
+     * membership in the bound tenant (any status/date — see plan D3).
+     *
+     * @param  Builder<CleaningObject>  $query
+     * @return Builder<CleaningObject>
+     */
+    public function scopeVisibleTo(Builder $query, User $actor): Builder
+    {
+        if ($actor->can(PermissionEnum::ViewAllObjects->value)) {
+            return $query;
+        }
+
+        $membershipId = $actor->activeMembershipId();
+
+        if ($membershipId === null) {
+            return $query->whereIn($this->qualifyColumn('id'), []);
+        }
+
+        return $query->whereHas(
+            'jobs',
+            fn (Builder $q) => $q->where('assigned_membership_id', $membershipId),
+        );
+    }
+
+    public function isVisibleTo(User $actor): bool
+    {
+        if ($actor->can(PermissionEnum::ViewAllObjects->value)) {
+            return true;
+        }
+
+        return self::query()->visibleTo($actor)->whereKey($this->id)->exists();
     }
 }

@@ -8,6 +8,7 @@ use App\Data\Tenants\TenantListItemData;
 use App\Enums\PermissionEnum;
 use App\Enums\SupportedLanguage;
 use App\Enums\TenantColorEnum;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -47,7 +48,6 @@ final class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('flash.error'),
                 'info' => $request->session()->get('flash.info'),
                 'status' => $request->session()->get('status'),
-                'justRegistered' => $request->session()->get('justRegistered', false),
             ],
 
             'translations' => fn () => Arr::dot((array) trans('app')),
@@ -102,7 +102,7 @@ final class HandleInertiaRequests extends Middleware
         /** @var DataCollection<int, TenantListItemData> $available */
         $available = TenantListItemData::collect($tenants, DataCollection::class);
 
-        $active = $tenants->first(fn ($t) => $t->id === $activeId);
+        $active = $tenants->first(fn (Tenant $t) => $t->id === $activeId);
         $activeDto = $active !== null ? TenantListItemData::fromModel($active) : null;
 
         return ['active' => $activeDto, 'available' => $available];
@@ -127,6 +127,7 @@ final class HandleInertiaRequests extends Middleware
             'createObjects' => PermissionEnum::CreateObjects,
             'editObjects' => PermissionEnum::EditObjects,
             'deleteObjects' => PermissionEnum::DeleteObjects,
+            'viewAllObjects' => PermissionEnum::ViewAllObjects,
             'viewQuotes' => PermissionEnum::ViewQuotes,
             'createQuotes' => PermissionEnum::CreateQuotes,
             'editQuotes' => PermissionEnum::EditQuotes,
@@ -136,6 +137,7 @@ final class HandleInertiaRequests extends Middleware
             'createEmployees' => PermissionEnum::CreateEmployees,
             'viewSchedule' => PermissionEnum::ViewSchedule,
             'createSchedule' => PermissionEnum::CreateSchedule,
+            'viewAllSchedule' => PermissionEnum::ViewAllSchedule,
             'viewInvoices' => PermissionEnum::ViewInvoices,
             'createInvoices' => PermissionEnum::CreateInvoices,
             'viewTemplates' => PermissionEnum::ViewTemplates,

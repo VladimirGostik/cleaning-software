@@ -11,6 +11,7 @@ use App\Enums\JobStatusEnum;
 use App\Enums\JobTypeEnum;
 use App\Models\ScheduledJob;
 use App\Models\TenantMembership;
+use App\Models\User;
 use App\Models\WorkBreakdown;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\DatabaseManager;
@@ -31,9 +32,9 @@ final readonly class JobService
     /**
      * @return LengthAwarePaginator<ScheduledJob>
      */
-    public function paginate(JobIndexFilterData $filter): LengthAwarePaginator
+    public function paginate(JobIndexFilterData $filter, User $actor): LengthAwarePaginator
     {
-        return QueryBuilder::for(ScheduledJob::class)
+        return QueryBuilder::for(ScheduledJob::query()->visibleTo($actor))
             ->allowedFilters(
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('type'),
@@ -199,7 +200,7 @@ final readonly class JobService
     {
         $breakdown->loadMissing(['tasks', 'cleaningObject', 'contract']);
 
-        if ($breakdown->cleaningObject === null) {
+        if ($breakdown->cleaningObject === null || ! $breakdown->cleaningObject->is_active) {
             return 0;
         }
 

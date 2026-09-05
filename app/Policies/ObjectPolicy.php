@@ -17,7 +17,7 @@ final class ObjectPolicy
 
     public function view(User $user, CleaningObject $object): bool
     {
-        return $user->can(PermissionEnum::ViewObjects->value);
+        return $user->can(PermissionEnum::ViewObjects->value) && $object->isVisibleTo($user);
     }
 
     public function create(User $user): bool
@@ -27,11 +27,11 @@ final class ObjectPolicy
 
     public function update(User $user, CleaningObject $object): bool
     {
-        return $user->can(PermissionEnum::EditObjects->value);
+        return $user->can(PermissionEnum::EditObjects->value) && $object->isVisibleTo($user);
     }
 
     public function delete(User $user, CleaningObject $object): bool
     {
-        return $user->can(PermissionEnum::DeleteObjects->value);
+        return $user->can(PermissionEnum::DeleteObjects->value) && $object->isVisibleTo($user);
     }
 }

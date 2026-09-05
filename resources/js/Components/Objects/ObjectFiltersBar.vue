@@ -7,8 +7,8 @@
     const props = defineProps<{
         search: string;
         type: App.Enums.ObjectTypeEnum | undefined;
-        client_id: string | undefined;
-        is_active: boolean | undefined;
+        clientId: string | undefined;
+        isActive: boolean | undefined;
         types: Array<{ value: string; label: string }>;
         clients: Array<{ id: string; name: string }>;
     }>();
@@ -16,8 +16,8 @@
     const emit = defineEmits<{
         (e: 'update:search', v: string): void;
         (e: 'update:type', v: App.Enums.ObjectTypeEnum | undefined): void;
-        (e: 'update:client_id', v: string | undefined): void;
-        (e: 'update:is_active', v: boolean | undefined): void;
+        (e: 'update:clientId', v: string | undefined): void;
+        (e: 'update:isActive', v: boolean | undefined): void;
     }>();
 
     const { t } = useTranslate();
@@ -31,21 +31,21 @@
     });
 
     const clientValue = computed<string>({
-        get: () => props.client_id ?? '',
+        get: () => props.clientId ?? '',
         set: (val: string | number) => {
             const str = String(val);
-            emit('update:client_id', str || undefined);
+            emit('update:clientId', str || undefined);
         },
     });
 
     const activeValue = computed<string>({
-        get: () => (props.is_active === undefined ? '' : String(props.is_active)),
+        get: () => (props.isActive === undefined ? '' : String(props.isActive)),
         set: (val: string | number) => {
             const str = String(val);
             if (str === '') {
-                emit('update:is_active', undefined);
+                emit('update:isActive', undefined);
             } else {
-                emit('update:is_active', str === 'true');
+                emit('update:isActive', str === 'true');
             }
         },
     });
@@ -81,27 +81,15 @@
         </label>
 
         <div class="flex-1 min-w-44">
-            <SelectInput
-                v-model="typeValue"
-                :options="typeOptions"
-                :label="t('objects.col.type')"
-            />
+            <SelectInput v-model="typeValue" :options="typeOptions" :label="t('objects.col.type')" />
+        </div>
+
+        <div v-if="clients.length > 0" class="flex-1 min-w-44">
+            <SelectInput v-model="clientValue" :options="clientOptions" :label="t('objects.col.client')" />
         </div>
 
         <div class="flex-1 min-w-44">
-            <SelectInput
-                v-model="clientValue"
-                :options="clientOptions"
-                :label="t('objects.col.client')"
-            />
-        </div>
-
-        <div class="flex-1 min-w-44">
-            <SelectInput
-                v-model="activeValue"
-                :options="activeOptions"
-                :label="t('objects.col.active')"
-            />
+            <SelectInput v-model="activeValue" :options="activeOptions" :label="t('objects.col.active')" />
         </div>
     </div>
 </template>

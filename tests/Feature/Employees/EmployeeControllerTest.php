@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Employees;
 
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
@@ -19,22 +18,13 @@ final class EmployeeControllerTest extends TestCase
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
-    // Feature gate — requires employees feature (Pro+ plan)
+    // index — accessible to authorized user (feature gate removed, see
+    // .claude/plans/remove-entitlement-layer.md — RBAC is the only remaining gate)
     // -------------------------------------------------------------------------
 
-    public function test_index_requires_employees_feature(): void
+    public function test_index_accessible_to_authorized_user(): void
     {
-        // Free plan does not include employees feature.
-        $user = $this->actingAsTenantUser('Vlastník');
-        // Default plan is Free — employees feature NOT available.
-
-        $this->get(route('employees.index'))->assertForbidden();
-    }
-
-    public function test_index_accessible_on_pro_plan(): void
-    {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->get(route('employees.index'))->assertOk();
     }
@@ -45,8 +35,7 @@ final class EmployeeControllerTest extends TestCase
 
     public function test_index_forbidden_for_upratovacka(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->get(route('employees.index'))->assertForbidden();
     }
@@ -57,8 +46,7 @@ final class EmployeeControllerTest extends TestCase
 
     public function test_store_creates_new_employee_and_redirects(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->post(route('employees.store'), [
@@ -66,7 +54,7 @@ final class EmployeeControllerTest extends TestCase
             'first_name' => 'Lucia',
             'last_name' => 'Kovacova',
             'phone' => null,
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Interná upratovačka',
             'permissions' => [],
         ])->assertRedirect();
 
@@ -84,15 +72,14 @@ final class EmployeeControllerTest extends TestCase
 
     public function test_store_forbidden_for_upratovacka(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->post(route('employees.store'), [
             'email' => 'fail@example.com',
             'first_name' => null,
             'last_name' => null,
             'phone' => null,
-            'role_name' => 'Upratovačka',
+            'role_name' => 'Interná upratovačka',
             'permissions' => [],
         ])->assertForbidden();
     }
@@ -103,8 +90,7 @@ final class EmployeeControllerTest extends TestCase
 
     public function test_deactivate_sets_membership_inactive(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $targetUser = User::factory()->create();
@@ -127,8 +113,7 @@ final class EmployeeControllerTest extends TestCase
 
     public function test_show_denied_for_membership_in_other_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Create a membership in a completely different tenant.
         $otherOwner = User::factory()->create();

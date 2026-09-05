@@ -32,9 +32,10 @@
 
     const { state: filterState, ui, apply } = useJobFilters(props.filters);
 
-    const subtitle = computed(() =>
-        t('schedule.subtitle').replace('{count}', String(props.jobs.meta.total)),
-    );
+    const subtitle = computed(() => {
+        const base = t('schedule.subtitle').replace('{count}', String(props.jobs.meta.total));
+        return pageProps.can.viewAllSchedule === false ? `${base} — ${t('schedule.own_only_hint')}` : base;
+    });
 
     function goToDetail(id: string): void {
         router.visit(`/jobs/${id}`);
@@ -59,7 +60,10 @@
                 <div class="join" role="group" :aria-label="t('schedule.view_mode_label')">
                     <button
                         type="button"
-                        :class="['btn btn-sm join-item', ui.viewMode === 'list' ? 'btn-primary' : 'btn-ghost']"
+                        :class="[
+                            'btn btn-sm join-item',
+                            ui.viewMode === 'list' ? 'btn-primary' : 'btn-ghost',
+                        ]"
                         :aria-pressed="ui.viewMode === 'list'"
                         @click="ui.viewMode = 'list'"
                     >
@@ -68,7 +72,10 @@
                     </button>
                     <button
                         type="button"
-                        :class="['btn btn-sm join-item', ui.viewMode === 'calendar' ? 'btn-primary' : 'btn-ghost']"
+                        :class="[
+                            'btn btn-sm join-item',
+                            ui.viewMode === 'calendar' ? 'btn-primary' : 'btn-ghost',
+                        ]"
                         :aria-pressed="ui.viewMode === 'calendar'"
                         @click="ui.viewMode = 'calendar'"
                     >
@@ -108,7 +115,7 @@
                     </button>
                 </div>
 
-                <Can permission="create schedule" feature="schedule">
+                <Can permission="create schedule">
                     <Link href="/jobs/create" class="btn btn-primary btn-sm">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('schedule.add') }}
@@ -129,11 +136,6 @@
 
         <JobList v-if="ui.viewMode === 'list'" :jobs="jobs" @select="goToDetail" />
 
-        <JobCalendar
-            v-else
-            :jobs="jobs.data"
-            :view="ui.calendarView"
-            @dates-set="onDatesSet"
-        />
+        <JobCalendar v-else :jobs="jobs.data" :view="ui.calendarView" @dates-set="onDatesSet" />
     </div>
 </template>

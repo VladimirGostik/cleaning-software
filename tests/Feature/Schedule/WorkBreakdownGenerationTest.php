@@ -8,7 +8,6 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Enums\TaskFrequencyEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -34,8 +33,7 @@ final class WorkBreakdownGenerationTest extends TestCase
 
     public function test_signing_service_agreement_with_quote_generates_breakdown_and_tasks(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -92,8 +90,7 @@ final class WorkBreakdownGenerationTest extends TestCase
 
     public function test_signing_employment_contract_does_not_generate_breakdown(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $membership = TenantMembership::where('tenant_id', $tenant->id)->first();
@@ -128,8 +125,7 @@ final class WorkBreakdownGenerationTest extends TestCase
 
     public function test_signing_service_agreement_without_quote_does_not_generate_breakdown(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -158,8 +154,7 @@ final class WorkBreakdownGenerationTest extends TestCase
 
     public function test_generate_from_contract_is_idempotent(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -203,8 +198,7 @@ final class WorkBreakdownGenerationTest extends TestCase
 
     public function test_quote_item_with_null_frequency_becomes_one_time_task(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);

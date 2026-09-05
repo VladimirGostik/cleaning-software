@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Api;
 
 use App\Enums\PermissionEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
@@ -21,17 +20,15 @@ final class MeTest extends TestCase
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
-    // happy: authed user with active tenant → 200 with correct shape
+    // happy: authed user with active tenant → 200 with correct (shrunk) shape
     // -------------------------------------------------------------------------
 
-    public function test_returns_200_with_permissions_and_features_for_authenticated_user_with_active_tenant(): void
+    public function test_returns_200_with_exact_shape_for_authenticated_user_with_active_tenant(): void
     {
-        // Arrange — Účtovníčka on a Pro-owned tenant
-        $owner = User::factory()->pro()->create();
+        // Arrange
+        $owner = User::factory()->create();
         $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->actingAsTenantUser('Účtovníčka', $tenant);
-
-        $expectedFeatures = config('subscription.plans.' . SubscriptionPlanEnum::Pro->value . '.features');
 
         // Act
         $response = $this->getJson(route('api.me'));
@@ -43,17 +40,13 @@ final class MeTest extends TestCase
             'userId',
             'activeTenantId',
             'permissions',
-            'features',
-            'accountPlan',
-            'remainingTenantSlots',
         ]);
 
-        $response->assertJsonPath('activeTenantId', $tenant->id);
+        $response->assertJsonMissingPath('features');
+        $response->assertJsonMissingPath('accountPlan');
+        $response->assertJsonMissingPath('remainingTenantSlots');
 
-        $returnedFeatures = $response->json('features');
-        sort($returnedFeatures);
-        sort($expectedFeatures);
-        $this->assertSame($expectedFeatures, $returnedFeatures);
+        $response->assertJsonPath('activeTenantId', $tenant->id);
 
         // Permissions must be non-empty (Účtovníčka has finance perms)
         $returnedPermissions = $response->json('permissions');
@@ -70,10 +63,10 @@ final class MeTest extends TestCase
 
     public function test_permissions_reflect_active_tenant_role_assignments(): void
     {
-        // Arrange — Vlastník (all permissions) on a Pro-owned tenant
-        $owner = User::factory()->pro()->create();
+        // Arrange — Admin (all permissions)
+        $owner = User::factory()->create();
         $tenant = Tenant::factory()->forOwner($owner)->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         // Act
         $response = $this->getJson(route('api.me'));
@@ -86,73 +79,28 @@ final class MeTest extends TestCase
             $this->assertContains(
                 $case->value,
                 $returnedPermissions,
-                "Vlastník should have permission: {$case->value}",
+                "Admin should have permission: {$case->value}",
             );
         }
     }
 
     // -------------------------------------------------------------------------
-    // happy: accountPlan + remainingTenantSlots in payload
+    // happy: breadth-modifier permission surfaces for a management role
     // -------------------------------------------------------------------------
 
-    public function test_returns_account_plan_and_remaining_slots_for_pro_user(): void
+    public function test_permissions_include_view_all_schedule_for_veduca(): void
     {
-        // Arrange — Pro user owns 1 tenant; Pro limit = 3 → remaining = 2
-        $owner = User::factory()->pro()->create();
+        // Arrange
+        $owner = User::factory()->create();
         $tenant = Tenant::factory()->forOwner($owner)->create();
-
-        $this->actingAs($owner);
-        session(['active_tenant_id' => $tenant->id]);
-        app()->instance('current_tenant_id', $tenant->id);
-        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+        $this->actingAsTenantUser('Vedúca', $tenant);
 
         // Act
         $response = $this->getJson(route('api.me'));
 
         // Assert
         $response->assertOk();
-        $response->assertJsonPath('accountPlan', 'pro');
-        $response->assertJsonPath('remainingTenantSlots', 2);
-    }
-
-    public function test_returns_null_remaining_slots_for_enterprise_user(): void
-    {
-        // Arrange — Enterprise user = unlimited
-        $owner = User::factory()->enterprise()->create();
-        $tenant = Tenant::factory()->forOwner($owner)->create();
-
-        $this->actingAs($owner);
-        session(['active_tenant_id' => $tenant->id]);
-        app()->instance('current_tenant_id', $tenant->id);
-        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
-
-        // Act
-        $response = $this->getJson(route('api.me'));
-
-        // Assert
-        $response->assertOk();
-        $response->assertJsonPath('accountPlan', 'enterprise');
-        $response->assertJsonPath('remainingTenantSlots', null);
-    }
-
-    public function test_returns_zero_remaining_slots_for_free_user_at_limit(): void
-    {
-        // Arrange — Free user owns 1 tenant (limit 1) → remaining = 0
-        $owner = User::factory()->create(); // default Free
-        $tenant = Tenant::factory()->forOwner($owner)->create();
-
-        $this->actingAs($owner);
-        session(['active_tenant_id' => $tenant->id]);
-        app()->instance('current_tenant_id', $tenant->id);
-        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
-
-        // Act
-        $response = $this->getJson(route('api.me'));
-
-        // Assert
-        $response->assertOk();
-        $response->assertJsonPath('accountPlan', 'free');
-        $response->assertJsonPath('remainingTenantSlots', 0);
+        $this->assertContains(PermissionEnum::ViewAllSchedule->value, $response->json('permissions'));
     }
 
     // -------------------------------------------------------------------------
@@ -169,27 +117,22 @@ final class MeTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // edge: Free plan tenant → features is empty array
+    // edge: user with no active tenant → activeTenantId null, permissions empty, still 200
     // -------------------------------------------------------------------------
 
-    public function test_features_is_empty_array_for_free_plan_owner_tenant(): void
+    public function test_returns_null_active_tenant_and_empty_permissions_when_no_active_tenant(): void
     {
-        // Arrange — default User = Free plan; tenant owned by that user
-        $owner = User::factory()->create();
-        $tenant = Tenant::factory()->forOwner($owner)->create();
-        $this->actingAsTenantUser('Upratovačka', $tenant);
+        // Arrange — authenticated user with no tenant context bound at all.
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
         // Act
         $response = $this->getJson(route('api.me'));
 
         // Assert
         $response->assertOk();
-        $response->assertJsonPath('features', []);
-
-        // Upratovačka still has a permission (view schedule) even on Free plan
-        $returnedPermissions = $response->json('permissions');
-        $this->assertNotEmpty($returnedPermissions);
-        $this->assertContains(PermissionEnum::ViewSchedule->value, $returnedPermissions);
+        $response->assertJsonPath('activeTenantId', null);
+        $response->assertJsonPath('permissions', []);
     }
 
     // -------------------------------------------------------------------------
@@ -216,7 +159,7 @@ final class MeTest extends TestCase
 
         $user = User::factory()->create(['is_active' => true]);
 
-        // Tenant A: Vlastník (all permissions)
+        // Tenant A: Admin (all permissions)
         TenantMembership::create([
             'user_id' => $user->id,
             'tenant_id' => $tenantA->id,
@@ -225,10 +168,10 @@ final class MeTest extends TestCase
         ]);
         app(PermissionRegistrar::class)->setPermissionsTeamId($tenantA->id);
         /** @var Role $ownerRoleA */
-        $ownerRoleA = Role::where('name', 'Vlastník')->where('tenant_id', $tenantA->id)->firstOrFail();
+        $ownerRoleA = Role::where('name', 'Admin')->where('tenant_id', $tenantA->id)->firstOrFail();
         $user->assignRole($ownerRoleA);
 
-        // Tenant B: Upratovačka (view schedule only)
+        // Tenant B: Interná upratovačka (view schedule only)
         TenantMembership::create([
             'user_id' => $user->id,
             'tenant_id' => $tenantB->id,
@@ -237,10 +180,10 @@ final class MeTest extends TestCase
         ]);
         app(PermissionRegistrar::class)->setPermissionsTeamId($tenantB->id);
         /** @var Role $cleanerRoleB */
-        $cleanerRoleB = Role::where('name', 'Upratovačka')->where('tenant_id', $tenantB->id)->firstOrFail();
+        $cleanerRoleB = Role::where('name', 'Interná upratovačka')->where('tenant_id', $tenantB->id)->firstOrFail();
         $user->assignRole($cleanerRoleB);
 
-        // Active tenant = B (Upratovačka scope)
+        // Active tenant = B (Interná upratovačka scope)
         $this->actingAs($user);
         session(['active_tenant_id' => $tenantB->id]);
         app()->instance('current_tenant_id', $tenantB->id);
@@ -255,10 +198,10 @@ final class MeTest extends TestCase
 
         $returnedPermissions = $response->json('permissions');
 
-        // Must contain Upratovačka permission
+        // Must contain Interná upratovačka permission
         $this->assertContains(PermissionEnum::ViewSchedule->value, $returnedPermissions);
 
-        // Must NOT contain Vlastník-only permissions from Tenant A
+        // Must NOT contain Admin-only permissions from Tenant A
         $this->assertNotContains(PermissionEnum::ManageRoles->value, $returnedPermissions);
         $this->assertNotContains(PermissionEnum::DeleteClients->value, $returnedPermissions);
     }

@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\ChecksFeatures;
 use App\Data\Employees\EmployeeIndexFilterData;
 use App\Data\Employees\EmployeeUpsertData;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
-use App\Enums\FeatureEnum;
 use App\Enums\InvitationStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Contract;
 use App\Models\EmploymentContract;
 use App\Models\Role;
@@ -38,7 +35,6 @@ final readonly class EmployeeService
 {
     public function __construct(
         private DatabaseManager $db,
-        private ChecksFeatures $features,
         private PermissionRegistrar $permissionRegistrar,
         private JobService $jobService,
     ) {}
@@ -50,8 +46,7 @@ final readonly class EmployeeService
     {
         $tenantId = app('current_tenant_id');
 
-        return QueryBuilder::for(TenantMembership::class)
-            ->where('tenant_memberships.tenant_id', $tenantId)
+        return QueryBuilder::for(TenantMembership::query()->where('tenant_memberships.tenant_id', $tenantId))
             ->allowedFilters(
                 AllowedFilter::callback('search', function ($query, string $value): void {
                     $op = DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
@@ -87,23 +82,8 @@ final readonly class EmployeeService
 
             $this->permissionRegistrar->setPermissionsTeamId($tenantId);
 
-            // Quota check — null quota = unlimited.
-            $quota = $this->features->getQuota($tenant, FeatureEnum::MultiUser);
-
-            if ($quota !== null) {
-                $activeCount = TenantMembership::where('tenant_id', $tenantId)
-                    ->where('is_active', true)
-                    ->count();
-
-                if ($activeCount >= $quota) {
-                    throw ValidationException::withMessages([
-                        'email' => [__('app.employees.quota_reached')],
-                    ]);
-                }
-            }
-
             // Role escalation guard — actor may only assign roles whose full permission
-            // set is a subset of their own permissions. Vlastník holds all → unaffected.
+            // set is a subset of their own permissions. Admin holds all → unaffected.
             /** @var Role $role */
             $role = Role::where('name', $data->role_name)
                 ->where('tenant_id', $tenantId)
@@ -131,7 +111,6 @@ final readonly class EmployeeService
                     'email' => $data->email,
                     'password' => Hash::make(Str::random(32)),
                     'is_active' => true,
-                    'subscription_plan' => SubscriptionPlanEnum::Free->value,
                 ]);
                 $user->forceFill(['email_verified_at' => now()])->save();
             }

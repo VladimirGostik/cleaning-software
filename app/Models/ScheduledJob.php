@@ -8,9 +8,11 @@ use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
 use App\Enums\JobStatusEnum;
 use App\Enums\JobTypeEnum;
+use App\Enums\PermissionEnum;
 use Database\Factories\ScheduledJobFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -133,5 +135,38 @@ final class ScheduledJob extends Model
     public function canBeAssigned(): bool
     {
         return in_array($this->status, [JobStatusEnum::Unassigned, JobStatusEnum::Planned], true);
+    }
+
+    /**
+     * Scopes the query to jobs the actor may see: all jobs with `view all schedule`,
+     * otherwise only jobs assigned to the actor's active membership in the bound tenant.
+     *
+     * @param  Builder<ScheduledJob>  $query
+     * @return Builder<ScheduledJob>
+     */
+    public function scopeVisibleTo(Builder $query, User $actor): Builder
+    {
+        if ($actor->can(PermissionEnum::ViewAllSchedule->value)) {
+            return $query;
+        }
+
+        $membershipId = $actor->activeMembershipId();
+
+        if ($membershipId === null) {
+            return $query->whereIn($this->qualifyColumn('id'), []);
+        }
+
+        return $query->where($this->qualifyColumn('assigned_membership_id'), $membershipId);
+    }
+
+    public function isVisibleTo(User $actor): bool
+    {
+        if ($actor->can(PermissionEnum::ViewAllSchedule->value)) {
+            return true;
+        }
+
+        $membershipId = $actor->activeMembershipId();
+
+        return $membershipId !== null && $this->assigned_membership_id === $membershipId;
     }
 }

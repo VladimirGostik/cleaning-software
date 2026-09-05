@@ -14,26 +14,30 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Creates default role templates per spec — one set per tenant.
  *
- * Vlastník        — all permissions
- * Vedúca         — operational team management
- * Upratovačka    — minimal field worker
- * Sekretárka     — admin support, no finance/employees
- * Účtovníčka     — finance only
- * Zákazník       — customer portal
+ * Admin               — all permissions
+ * Vedúca              — operational team management, full read visibility (view all objects/schedule)
+ * Interná upratovačka — minimal field worker, own-only visibility (no view all *)
+ * Sekretárka          — admin support, no finance/employees, full object visibility
+ * Účtovníčka          — finance only, full object visibility
+ * Zákazník            — customer portal, own-only visibility (no assignments today, sees nothing)
  */
 final class RoleTemplatesSeeder extends Seeder
 {
+    public const string ADMIN_ROLE = 'Admin';
+
     /**
      * @return array<string, array<int, string>>
      */
     public static function templates(): array
     {
         return [
-            'Vlastník' => [], // empty = all permissions assigned at runtime
+            self::ADMIN_ROLE => [], // empty = all permissions assigned at runtime
             'Vedúca' => [
                 PermissionEnum::ViewQuotes->value,
                 PermissionEnum::ViewObjects->value,
+                PermissionEnum::ViewAllObjects->value,
                 PermissionEnum::ViewSchedule->value,
+                PermissionEnum::ViewAllSchedule->value,
                 PermissionEnum::CreateSchedule->value,
                 PermissionEnum::EditSchedule->value,
                 PermissionEnum::AssignCleaners->value,
@@ -46,7 +50,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::ReviewPhotos->value,
                 PermissionEnum::ViewNotifications->value,
             ],
-            'Upratovačka' => [
+            'Interná upratovačka' => [
                 PermissionEnum::ViewSchedule->value,
                 PermissionEnum::ViewObjects->value,
             ],
@@ -56,6 +60,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::EditClients->value,
                 PermissionEnum::DeleteClients->value,
                 PermissionEnum::ViewObjects->value,
+                PermissionEnum::ViewAllObjects->value,
                 PermissionEnum::CreateObjects->value,
                 PermissionEnum::EditObjects->value,
                 PermissionEnum::DeleteObjects->value,
@@ -91,6 +96,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::ViewContractTemplates->value,
                 PermissionEnum::ViewClients->value,
                 PermissionEnum::ViewObjects->value,
+                PermissionEnum::ViewAllObjects->value,
                 PermissionEnum::ManageBillingSettings->value,
                 PermissionEnum::ViewNotifications->value,
             ],
@@ -114,7 +120,7 @@ final class RoleTemplatesSeeder extends Seeder
             /** @var Role $role */
             $role = Role::findOrCreate($roleName, 'web');
 
-            if ($roleName === 'Vlastník') {
+            if ($roleName === self::ADMIN_ROLE) {
                 $role->syncPermissions($allPermissions);
 
                 continue;

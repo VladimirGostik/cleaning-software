@@ -16,7 +16,7 @@ final class InviteData extends Data
     public function __construct(
         #[Required, Email]
         public string $email,
-        #[Required, In(['Vedúca', 'Upratovačka', 'Sekretárka', 'Účtovníčka', 'Zákazník'])]
+        #[Required, In(['Vedúca', 'Interná upratovačka', 'Sekretárka', 'Účtovníčka', 'Zákazník'])]
         public string $role_name,
     ) {}
 }

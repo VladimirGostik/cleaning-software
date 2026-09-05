@@ -7,7 +7,6 @@ namespace Tests\Feature\Schedule;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
@@ -41,8 +40,7 @@ final class GenerateScheduledJobsTest extends TestCase
 
     public function test_weekly_task_generates_correct_count_in_30_day_period(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -72,8 +70,7 @@ final class GenerateScheduledJobsTest extends TestCase
 
     public function test_generate_is_idempotent_no_duplicates_on_re_run(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -101,8 +98,7 @@ final class GenerateScheduledJobsTest extends TestCase
 
     public function test_jobs_not_generated_before_contract_valid_from(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -148,8 +144,7 @@ final class GenerateScheduledJobsTest extends TestCase
 
     public function test_jobs_not_generated_after_contract_end_date(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -196,8 +191,7 @@ final class GenerateScheduledJobsTest extends TestCase
 
     public function test_one_time_task_generates_single_job_on_period_start(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -225,8 +219,7 @@ final class GenerateScheduledJobsTest extends TestCase
 
     public function test_generate_returns_zero_for_breakdown_with_no_tasks(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -245,5 +238,61 @@ final class GenerateScheduledJobsTest extends TestCase
 
         $this->assertSame(0, $count);
         $this->assertDatabaseCount('cleaning_jobs', 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // D1 — deactivated object stops generation
+    // -------------------------------------------------------------------------
+
+    public function test_generation_skips_breakdown_whose_object_is_inactive(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'is_active' => false,
+        ]);
+        $breakdown = $this->makeBreakdown($tenant, $object);
+
+        WorkBreakdownTask::factory()->weekly()->create([
+            'tenant_id' => $tenant->id,
+            'work_breakdown_id' => $breakdown->id,
+        ]);
+
+        $period = CarbonPeriod::create(Carbon::today(), '1 day', Carbon::today()->addDays(13));
+
+        $count = app(JobService::class)->generateForBreakdown($breakdown, $period);
+
+        $this->assertSame(0, $count);
+        $this->assertDatabaseCount('cleaning_jobs', 0);
+    }
+
+    public function test_generation_proceeds_for_breakdown_whose_object_is_active(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'is_active' => true,
+        ]);
+        $breakdown = $this->makeBreakdown($tenant, $object);
+
+        WorkBreakdownTask::factory()->weekly()->create([
+            'tenant_id' => $tenant->id,
+            'work_breakdown_id' => $breakdown->id,
+        ]);
+
+        $period = CarbonPeriod::create(Carbon::today(), '1 day', Carbon::today()->addDays(13));
+
+        $count = app(JobService::class)->generateForBreakdown($breakdown, $period);
+
+        $this->assertGreaterThan(0, $count);
+        $this->assertDatabaseCount('cleaning_jobs', $count);
     }
 }

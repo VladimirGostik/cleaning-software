@@ -17,7 +17,7 @@ final class ScheduledJobPolicy
 
     public function view(User $user, ScheduledJob $job): bool
     {
-        return $user->can(PermissionEnum::ViewSchedule->value);
+        return $user->can(PermissionEnum::ViewSchedule->value) && $job->isVisibleTo($user);
     }
 
     public function create(User $user): bool
@@ -27,21 +27,21 @@ final class ScheduledJobPolicy
 
     public function update(User $user, ScheduledJob $job): bool
     {
-        return $user->can(PermissionEnum::EditSchedule->value) && $job->isEditable();
+        return $user->can(PermissionEnum::EditSchedule->value) && $job->isEditable() && $job->isVisibleTo($user);
     }
 
     public function assign(User $user, ScheduledJob $job): bool
     {
-        return $user->can(PermissionEnum::AssignCleaners->value) && $job->canBeAssigned();
+        return $user->can(PermissionEnum::AssignCleaners->value) && $job->canBeAssigned() && $job->isVisibleTo($user);
     }
 
     public function cancel(User $user, ScheduledJob $job): bool
     {
-        return $user->can(PermissionEnum::EditSchedule->value) && $job->canBeCancelled();
+        return $user->can(PermissionEnum::EditSchedule->value) && $job->canBeCancelled() && $job->isVisibleTo($user);
     }
 
     public function delete(User $user, ScheduledJob $job): bool
     {
-        return $user->can(PermissionEnum::EditSchedule->value) && $job->isEditable();
+        return $user->can(PermissionEnum::EditSchedule->value) && $job->isEditable() && $job->isVisibleTo($user);
     }
 }
