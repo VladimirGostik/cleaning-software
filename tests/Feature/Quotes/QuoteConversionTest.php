@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Quotes;
 
 use App\Enums\QuoteStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
@@ -28,8 +27,7 @@ final class QuoteConversionTest extends TestCase
 
     public function test_convert_to_invoice_creates_invoice_linked_to_quote(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -68,8 +66,7 @@ final class QuoteConversionTest extends TestCase
 
     public function test_convert_to_invoice_throws_when_quote_is_draft(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -90,8 +87,7 @@ final class QuoteConversionTest extends TestCase
 
     public function test_convert_to_contract_creates_contract_linked_to_quote(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
@@ -131,8 +127,7 @@ final class QuoteConversionTest extends TestCase
 
     public function test_convert_to_contract_throws_when_no_cleaning_object(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -153,8 +148,7 @@ final class QuoteConversionTest extends TestCase
 
     public function test_convert_to_contract_throws_when_quote_is_sent(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
@@ -176,8 +170,7 @@ final class QuoteConversionTest extends TestCase
 
     public function test_invoice_item_description_includes_frequency(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -202,5 +195,89 @@ final class QuoteConversionTest extends TestCase
 
         $invoice->loadMissing('items');
         $this->assertStringContainsString('3x týždenne', $invoice->items->first()->description);
+    }
+
+    // -------------------------------------------------------------------------
+    // convertToInvoice — clientless quote carries customer snapshot
+    // -------------------------------------------------------------------------
+
+    public function test_convert_to_invoice_carries_customer_snapshot_for_clientless_quote(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $quote = Quote::factory()->accepted()->withoutClient()->create(['tenant_id' => $tenant->id]);
+
+        QuoteItem::factory()->create([
+            'tenant_id' => $tenant->id,
+            'quote_id' => $quote->id,
+            'name' => 'Upratovanie',
+            'quantity' => '1.00',
+            'unit_price' => '100.00',
+            'line_base' => '100.00',
+            'line_vat' => '0.00',
+            'line_total' => '100.00',
+        ]);
+
+        $invoice = app(QuoteService::class)->convertToInvoice($quote);
+
+        $this->assertNull($invoice->client_id);
+        $this->assertSame($quote->customer_name, $invoice->customer_name);
+        $this->assertSame($quote->customer_email, $invoice->customer_email);
+        $this->assertNull($invoice->customer_ico);
+    }
+
+    // -------------------------------------------------------------------------
+    // convertToInvoice / convertToContract — document mode guard
+    // -------------------------------------------------------------------------
+
+    public function test_convert_to_invoice_throws_for_document_quote(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+        $quote = Quote::factory()->accepted()->document()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(QuoteService::class)->convertToInvoice($quote);
+    }
+
+    public function test_convert_to_contract_throws_for_document_quote(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+
+        $quote = Quote::factory()->accepted()->document()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'cleaning_object_id' => $object->id,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(QuoteService::class)->convertToContract($quote);
+    }
+
+    // -------------------------------------------------------------------------
+    // convertToContract — fail: no client
+    // -------------------------------------------------------------------------
+
+    public function test_convert_to_contract_throws_when_no_client(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $quote = Quote::factory()->accepted()->withoutClient()->create(['tenant_id' => $tenant->id]);
+
+        $this->expectException(ValidationException::class);
+
+        app(QuoteService::class)->convertToContract($quote);
     }
 }

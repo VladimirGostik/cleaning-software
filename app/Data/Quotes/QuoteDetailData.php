@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Data\Quotes;
 
 use App\Data\Invoices\VatBreakdownLineData;
+use App\Data\Media\MediaFileData;
 use App\Enums\CurrencyEnum;
+use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Models\Quote;
 use App\Models\QuoteItem;
@@ -18,9 +20,10 @@ final class QuoteDetailData extends Data
 {
     public function __construct(
         public string $id,
-        public string $client_id,
+        public ?string $client_id,
         public ?string $cleaning_object_id,
         public QuoteStatusEnum $status,
+        public QuoteKindEnum $kind,
         public ?string $number,
         public ?string $subject,
         public string $issue_date,
@@ -36,6 +39,10 @@ final class QuoteDetailData extends Data
         public string $total,
         public ?string $note,
         public string $customer_name,
+        public ?string $customer_email,
+        public ?string $customer_street,
+        public ?string $customer_city,
+        public ?string $customer_postal_code,
         public ?string $object_name,
         /** @var QuoteItemData[] */
         #[DataCollectionOf(QuoteItemData::class)]
@@ -43,17 +50,21 @@ final class QuoteDetailData extends Data
         /** @var VatBreakdownLineData[] */
         #[DataCollectionOf(VatBreakdownLineData::class)]
         public array $vat_breakdown,
+        public ?MediaFileData $document,
     ) {}
 
     public static function fromModel(Quote $quote): self
     {
-        $quote->loadMissing(['items', 'client', 'cleaningObject']);
+        $quote->loadMissing(['items', 'client', 'cleaningObject', 'media']);
+
+        $document = $quote->getFirstMedia('document');
 
         return new self(
             id: $quote->id,
             client_id: $quote->client_id,
             cleaning_object_id: $quote->cleaning_object_id,
             status: $quote->status,
+            kind: $quote->kind,
             number: $quote->number,
             subject: $quote->subject,
             issue_date: $quote->issue_date->toDateString(),
@@ -68,10 +79,15 @@ final class QuoteDetailData extends Data
             vat_amount: $quote->vat_amount,
             total: $quote->total,
             note: $quote->note,
-            customer_name: $quote->client?->name ?? '',
+            customer_name: $quote->client?->name ?? $quote->customer_name ?? '',
+            customer_email: $quote->customer_email,
+            customer_street: $quote->customer_street,
+            customer_city: $quote->customer_city,
+            customer_postal_code: $quote->customer_postal_code,
             object_name: $quote->cleaningObject?->name,
             items: $quote->items->map(fn (QuoteItem $item) => QuoteItemData::fromModel($item))->all(),
             vat_breakdown: array_map(fn (array $l) => VatBreakdownLineData::from($l), $quote->vat_breakdown ?? []),
+            document: $document !== null ? MediaFileData::fromMedia($document, route('quotes.pdf', $quote)) : null,
         );
     }
 }

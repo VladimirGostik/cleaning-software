@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\CurrencyEnum;
+use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -32,8 +33,14 @@ final class QuoteFactory extends Factory
             'client_id' => $client->id,
             'cleaning_object_id' => null,
             'status' => QuoteStatusEnum::Draft,
-            'number' => 'CP' . date('Y') . str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
+            'kind' => QuoteKindEnum::Itemized,
+            'number' => null,
             'subject' => fake()->sentence(4),
+            'customer_name' => null,
+            'customer_email' => null,
+            'customer_street' => null,
+            'customer_city' => null,
+            'customer_postal_code' => null,
             'issue_date' => now()->toDateString(),
             'valid_until' => now()->addDays(30)->toDateString(),
             'sent_at' => null,
@@ -48,6 +55,13 @@ final class QuoteFactory extends Factory
             'vat_breakdown' => null,
             'note' => null,
         ];
+    }
+
+    public function numbered(): static
+    {
+        return $this->state(fn () => [
+            'number' => 'CP' . date('Y') . str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
+        ]);
     }
 
     public function sent(): static
@@ -111,6 +125,29 @@ final class QuoteFactory extends Factory
             'cleaning_object_id' => $object->id,
             'client_id' => $object->client_id,
             'tenant_id' => $object->tenant_id,
+        ]);
+    }
+
+    public function withoutClient(): static
+    {
+        return $this->state(fn () => [
+            'client_id' => null,
+            'cleaning_object_id' => null,
+            'customer_name' => fake()->company(),
+            'customer_email' => fake()->safeEmail(),
+            'customer_street' => fake()->streetAddress(),
+            'customer_city' => fake()->city(),
+            'customer_postal_code' => fake()->postcode(),
+        ]);
+    }
+
+    public function document(): static
+    {
+        return $this->state(fn () => [
+            'kind' => QuoteKindEnum::Document,
+            'subtotal' => '0.00',
+            'vat_amount' => '0.00',
+            'total' => '0.00',
         ]);
     }
 }

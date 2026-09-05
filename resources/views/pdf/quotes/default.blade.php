@@ -94,6 +94,19 @@
                 @if($quote->client->city)
                     <div>{{ $quote->client->postal_code ? $quote->client->postal_code . ' ' : '' }}{{ $quote->client->city }}</div>
                 @endif
+            @else
+                @if($quote->customer_name)
+                    <strong>{{ $quote->customer_name }}</strong>
+                @endif
+                @if($quote->customer_street)
+                    <div>{{ $quote->customer_street }}</div>
+                @endif
+                @if($quote->customer_city)
+                    <div>{{ $quote->customer_postal_code ? $quote->customer_postal_code . ' ' : '' }}{{ $quote->customer_city }}</div>
+                @endif
+                @if($quote->customer_email)
+                    <div>{{ $quote->customer_email }}</div>
+                @endif
             @endif
         </div>
     </div>

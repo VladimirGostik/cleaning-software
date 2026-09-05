@@ -7,11 +7,14 @@ namespace App\Http\Controllers;
 use App\Contracts\RendersQuotePdf;
 use App\Data\Clients\ClientOptionData;
 use App\Data\Objects\ObjectOptionData;
+use App\Data\Quotes\QuoteAttachClientData;
 use App\Data\Quotes\QuoteDetailData;
+use App\Data\Quotes\QuoteDocumentUploadData;
 use App\Data\Quotes\QuoteIndexFilterData;
 use App\Data\Quotes\QuoteListItemData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Enums\CurrencyEnum;
+use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -24,7 +27,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\LaravelData\DataCollection;
 use Spatie\LaravelData\PaginatedDataCollection;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class QuoteController extends Controller
 {
@@ -65,6 +68,7 @@ final class QuoteController extends Controller
                 DataCollection::class,
             ),
             'currencyOptions' => CurrencyEnum::options(),
+            'kindOptions' => QuoteKindEnum::options(),
             'isVatPayer' => $tenant->is_vat_payer,
             'vatRate' => $tenant->vat_rate,
             'vatRateOptions' => [
@@ -88,8 +92,22 @@ final class QuoteController extends Controller
     #[Authorize('view', 'quote')]
     public function show(Quote $quote): Response
     {
+        $isClientless = $quote->client_id === null;
+
         return Inertia::render('Quotes/Show', [
             'quote' => QuoteDetailData::fromModel($quote),
+            'clients' => $isClientless
+                ? ClientOptionData::collect(
+                    Client::query()->select(['id', 'name'])->orderBy('name')->get(),
+                    DataCollection::class,
+                )
+                : null,
+            'objects' => $isClientless
+                ? ObjectOptionData::collect(
+                    CleaningObject::query()->select(['id', 'name', 'client_id'])->where('is_active', true)->orderBy('name')->get(),
+                    DataCollection::class,
+                )
+                : null,
         ]);
     }
 
@@ -110,6 +128,7 @@ final class QuoteController extends Controller
                 DataCollection::class,
             ),
             'currencyOptions' => CurrencyEnum::options(),
+            'kindOptions' => QuoteKindEnum::options(),
             'isVatPayer' => $tenant->is_vat_payer,
             'vatRate' => $tenant->vat_rate,
             'vatRateOptions' => [
@@ -166,6 +185,24 @@ final class QuoteController extends Controller
             ->with('flash.success', __('app.quotes.rejected'));
     }
 
+    #[Authorize('attachClient', 'quote')]
+    public function attachClient(QuoteAttachClientData $data, Quote $quote): RedirectResponse
+    {
+        $this->quotes->attachToClient($quote, $data->client_id, $data->cleaning_object_id);
+
+        return to_route('quotes.show', $quote)
+            ->with('flash.success', __('app.quotes.client_attached'));
+    }
+
+    #[Authorize('update', 'quote')]
+    public function uploadDocument(QuoteDocumentUploadData $data, Quote $quote): RedirectResponse
+    {
+        $this->quotes->attachDocument($quote, $data->document);
+
+        return to_route('quotes.show', $quote)
+            ->with('flash.success', __('app.quotes.document_uploaded'));
+    }
+
     #[Authorize('duplicate', Quote::class)]
     public function duplicate(Quote $quote): RedirectResponse
     {
@@ -194,8 +231,15 @@ final class QuoteController extends Controller
     }
 
     #[Authorize('downloadPdf', 'quote')]
-    public function pdf(Quote $quote, RendersQuotePdf $pdfService): StreamedResponse
+    public function pdf(Quote $quote, RendersQuotePdf $pdfService): HttpResponse
     {
+        if ($quote->isDocument()) {
+            $media = $quote->getFirstMedia('document');
+            abort_if($media === null, 404, __('app.quotes.document_missing'));
+
+            return $media->toResponse(request());
+        }
+
         $bytes = $pdfService->render($quote);
         $filename = ($quote->number ?? 'quote') . '.pdf';
 

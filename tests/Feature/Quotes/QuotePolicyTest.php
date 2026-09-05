@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Quotes;
 
 use App\Enums\QuoteStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Tenant;
@@ -23,16 +22,14 @@ final class QuotePolicyTest extends TestCase
 
     public function test_vlastnik_can_view_any_quotes(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->assertTrue((new QuotePolicy)->viewAny($user));
     }
 
     public function test_upratovacka_cannot_view_any_quotes(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->assertFalse((new QuotePolicy)->viewAny($user));
     }
@@ -44,7 +41,6 @@ final class QuotePolicyTest extends TestCase
     public function test_sekretarka_can_create_quotes(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $this->assertTrue((new QuotePolicy)->create($user));
     }
@@ -55,8 +51,7 @@ final class QuotePolicyTest extends TestCase
 
     public function test_vlastnik_can_update_draft_quote(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -67,8 +62,7 @@ final class QuotePolicyTest extends TestCase
 
     public function test_vlastnik_cannot_update_sent_quote(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -83,8 +77,7 @@ final class QuotePolicyTest extends TestCase
 
     public function test_vlastnik_can_delete_draft_quote(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -95,8 +88,7 @@ final class QuotePolicyTest extends TestCase
 
     public function test_upratovacka_cannot_delete_any_quote(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         // Use a different tenant's client so we don't need Pro for scope
@@ -114,7 +106,6 @@ final class QuotePolicyTest extends TestCase
     public function test_sekretarka_can_send_quote(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -126,7 +117,6 @@ final class QuotePolicyTest extends TestCase
     public function test_sekretarka_can_accept_quote(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -141,8 +131,7 @@ final class QuotePolicyTest extends TestCase
 
     public function test_vlastnik_can_download_pdf(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -157,8 +146,7 @@ final class QuotePolicyTest extends TestCase
 
     public function test_vlastnik_can_convert_to_invoice(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -171,12 +159,46 @@ final class QuotePolicyTest extends TestCase
     {
         // Sekretárka has Quotes permissions but NOT CreateInvoices in base template
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         $quote = Quote::factory()->accepted()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
         $this->assertFalse((new QuotePolicy)->convertToInvoice($user, $quote));
+    }
+
+    // -------------------------------------------------------------------------
+    // attachClient — EditQuotes permission (D5)
+    // -------------------------------------------------------------------------
+
+    public function test_vlastnik_can_attach_client(): void
+    {
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $quote = Quote::factory()->withoutClient()->create(['tenant_id' => $tenant->id]);
+
+        $this->assertTrue((new QuotePolicy)->attachClient($user, $quote));
+    }
+
+    public function test_upratovacka_cannot_attach_client(): void
+    {
+        $user = $this->actingAsTenantUser('Interná upratovačka');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $quote = Quote::factory()->withoutClient()->create(['tenant_id' => $tenant->id]);
+
+        $this->assertFalse((new QuotePolicy)->attachClient($user, $quote));
+    }
+
+    public function test_vlastnik_can_attach_client_on_sent_quote(): void
+    {
+        // D5 — attachClient is allowed in any status, only gated by client_id being null
+        $user = $this->actingAsTenantUser('Admin');
+        $tenant = Tenant::where('owner_id', $user->id)->first();
+
+        $quote = Quote::factory()->withoutClient()->sent()->create(['tenant_id' => $tenant->id]);
+
+        $this->assertTrue((new QuotePolicy)->attachClient($user, $quote));
     }
 }

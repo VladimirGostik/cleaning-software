@@ -69,4 +69,9 @@ final class QuotePolicy
     {
         return $user->can(PermissionEnum::ViewQuotes->value);
     }
+
+    public function attachClient(User $user, Quote $quote): bool
+    {
+        return $user->can(PermissionEnum::EditQuotes->value);
+    }
 }

@@ -8,6 +8,7 @@
         search?: string | null;
         status?: App.Enums.QuoteStatusEnum | null;
         client_id?: string | null;
+        kind?: App.Enums.QuoteKindEnum | null;
         valid_from?: string | null;
         valid_to?: string | null;
     }
@@ -30,6 +31,19 @@
         get: () => filterState.client_id ?? '',
         set: (val: string | number) => {
             filterState.client_id = val === '' ? undefined : String(val);
+        },
+    });
+
+    const kindOptions = computed<SelectOption[]>(() => [
+        { value: '', label: t('quotes.filter.all_kinds') },
+        { value: 'itemized', label: t('quote_kind.itemized') },
+        { value: 'document', label: t('quote_kind.document') },
+    ]);
+
+    const kindSelectValue = computed({
+        get: () => filterState.kind ?? '',
+        set: (val: string | number) => {
+            filterState.kind = val === '' ? undefined : (String(val) as App.Enums.QuoteKindEnum);
         },
     });
 
@@ -65,6 +79,10 @@
 
         <div class="w-44">
             <SelectInput v-model="clientSelectValue" :options="clientOptions" />
+        </div>
+
+        <div class="w-44">
+            <SelectInput v-model="kindSelectValue" :options="kindOptions" />
         </div>
 
         <div class="flex items-center gap-1">

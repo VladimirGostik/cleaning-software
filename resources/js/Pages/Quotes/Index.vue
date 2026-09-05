@@ -12,6 +12,7 @@
     import Pagination from '@/Components/Pagination.vue';
     import QuoteStatusBadge from '@/Components/Quotes/QuoteStatusBadge.vue';
     import QuoteFilters from '@/Components/Quotes/QuoteFilters.vue';
+    import QuoteKindIndicator from '@/Components/Quotes/QuoteKindIndicator.vue';
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
     import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
@@ -23,6 +24,7 @@
             search?: string | null;
             status?: App.Enums.QuoteStatusEnum | null;
             client_id?: string | null;
+            kind?: App.Enums.QuoteKindEnum | null;
             valid_from?: string | null;
             valid_to?: string | null;
         };
@@ -54,7 +56,7 @@
 
         <PageHeader :title="t('quotes.title')" :subtitle="subtitle">
             <template #actions>
-                <Can permission="create quotes" feature="quotes">
+                <Can permission="create quotes">
                     <a href="/quotes/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('quotes.add') }}
@@ -91,8 +93,9 @@
                             @keydown.enter="goToDetail(row.id)"
                         >
                             <td>
-                                <span class="font-medium font-mono text-sm">
-                                    {{ row.number ?? t('quotes.draft_number') }}
+                                <span class="font-medium font-mono text-sm inline-flex items-center gap-1.5">
+                                    {{ row.number ?? t('quotes.no_number') }}
+                                    <QuoteKindIndicator :kind="row.kind" :has-document="row.has_document" />
                                 </span>
                             </td>
                             <td>
@@ -104,7 +107,9 @@
                             <td>
                                 <QuoteStatusBadge :status="row.status" />
                             </td>
-                            <td class="text-right font-mono font-medium">{{ row.total }}</td>
+                            <td class="text-right font-mono font-medium">
+                                {{ row.kind === 'document' ? '—' : row.total }}
+                            </td>
                             <td class="text-sm">{{ row.issue_date }}</td>
                             <td class="text-sm">{{ row.valid_until }}</td>
                             <td>
@@ -134,8 +139,9 @@
                 <div class="card-body p-4">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="font-medium font-mono text-sm">
-                                {{ row.number ?? t('quotes.draft_number') }}
+                            <p class="font-medium font-mono text-sm inline-flex items-center gap-1.5">
+                                {{ row.number ?? t('quotes.no_number') }}
+                                <QuoteKindIndicator :kind="row.kind" :has-document="row.has_document" />
                             </p>
                             <p class="text-sm">{{ row.customer_name }}</p>
                             <p v-if="row.object_name" class="text-xs text-base-content/50">
@@ -146,7 +152,9 @@
                     </div>
                     <div class="flex justify-between text-sm mt-2">
                         <span class="text-base-content/60">{{ row.valid_until }}</span>
-                        <span class="font-mono font-semibold">{{ row.total }}</span>
+                        <span class="font-mono font-semibold">{{
+                            row.kind === 'document' ? '—' : row.total
+                        }}</span>
                     </div>
                 </div>
             </div>
@@ -161,7 +169,7 @@
             :icon="DocumentTextIcon"
         >
             <template #cta>
-                <Can permission="create quotes" feature="quotes">
+                <Can permission="create quotes">
                     <a href="/quotes/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('quotes.add') }}

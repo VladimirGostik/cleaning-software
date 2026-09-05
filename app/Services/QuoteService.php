@@ -15,6 +15,7 @@ use App\Enums\ContractTermTypeEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\PermissionEnum;
+use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Enums\RoundingModeEnum;
 use App\Models\Contract;
@@ -23,8 +24,8 @@ use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
 use App\Notifications\QuoteSent;
-use Carbon\Carbon;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -35,7 +36,6 @@ use Spatie\QueryBuilder\QueryBuilder;
 final readonly class QuoteService
 {
     public function __construct(
-        private QuoteNumberService $numbers,
         private InvoiceService $invoices,
         private ContractService $contracts,
         private DatabaseManager $db,
@@ -52,6 +52,7 @@ final readonly class QuoteService
                 AllowedFilter::scope('search'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('client_id'),
+                AllowedFilter::exact('kind'),
             )
             ->allowedSorts(
                 AllowedSort::field('created_at'),
@@ -59,7 +60,7 @@ final readonly class QuoteService
                 AllowedSort::field('issue_date'),
             )
             ->defaultSort('-created_at')
-            ->with(['client:id,name', 'cleaningObject:id,name'])
+            ->with(['client:id,name', 'cleaningObject:id,name', 'media'])
             ->when($filter->valid_from, fn ($q, $v) => $q->whereDate('valid_until', '>=', $v))
             ->when($filter->valid_to, fn ($q, $v) => $q->whereDate('valid_until', '<=', $v))
             ->paginate($filter->per_page)
@@ -72,21 +73,19 @@ final readonly class QuoteService
             $tenantId = app('current_tenant_id');
             $tenant = Tenant::withoutGlobalScopes()->findOrFail($tenantId);
 
-            $issueDate = Carbon::parse($data->issue_date);
-            $number = $this->numbers->next($tenant, $issueDate);
-
             $attributes = $this->buildAttributes($data, $tenant);
 
             $quote = Quote::create([
                 ...$attributes,
                 'status' => QuoteStatusEnum::Draft,
-                'number' => $number,
             ]);
 
-            $this->syncItems($quote, $data->items, $tenant->id, $tenant->is_vat_payer);
+            if ($data->kind === QuoteKindEnum::Itemized) {
+                $this->syncItems($quote, $data->items, $tenant->id, $tenant->is_vat_payer);
 
-            $totals = $this->computeTotals($quote);
-            $quote->update($totals);
+                $totals = $this->computeTotals($quote);
+                $quote->update($totals);
+            }
 
             return $quote->load('items');
         });
@@ -106,10 +105,12 @@ final readonly class QuoteService
             $attributes = $this->buildAttributes($data, $tenant);
             $quote->update($attributes);
 
-            $this->syncItems($quote, $data->items, $tenant->id, $quote->is_vat_payer);
+            if ($data->kind === QuoteKindEnum::Itemized) {
+                $this->syncItems($quote, $data->items, $tenant->id, $quote->is_vat_payer);
 
-            $totals = $this->computeTotals($quote);
-            $quote->update($totals);
+                $totals = $this->computeTotals($quote);
+                $quote->update($totals);
+            }
 
             return $quote->load('items');
         });
@@ -166,21 +167,59 @@ final readonly class QuoteService
         return $quote;
     }
 
+    public function attachToClient(Quote $quote, string $clientId, ?string $objectId = null): Quote
+    {
+        if ($quote->client_id !== null) {
+            throw ValidationException::withMessages([
+                'client_id' => [__('app.quotes.already_has_client')],
+            ]);
+        }
+
+        $quote->update([
+            'client_id' => $clientId,
+            'cleaning_object_id' => $objectId,
+            'customer_name' => null,
+            'customer_email' => null,
+            'customer_street' => null,
+            'customer_city' => null,
+            'customer_postal_code' => null,
+        ]);
+
+        return $quote;
+    }
+
+    public function attachDocument(Quote $quote, UploadedFile $file): Quote
+    {
+        if (! $quote->isDocument()) {
+            throw ValidationException::withMessages([
+                'document' => [__('app.quotes.document_only_upload')],
+            ]);
+        }
+
+        $quote->addMedia($file)->toMediaCollection('document');
+
+        return $quote->refresh();
+    }
+
     public function duplicate(Quote $quote): Quote
     {
         return $this->db->transaction(function () use ($quote): Quote {
             $quote->loadMissing('items');
 
-            $tenant = Tenant::withoutGlobalScopes()->findOrFail($quote->tenant_id);
             $issueDate = now();
-            $number = $this->numbers->next($tenant, $issueDate);
 
             $newQuote = Quote::create([
                 'client_id' => $quote->client_id,
                 'cleaning_object_id' => $quote->cleaning_object_id,
                 'status' => QuoteStatusEnum::Draft,
-                'number' => $number,
+                'kind' => $quote->kind,
+                'number' => null,
                 'subject' => $quote->subject,
+                'customer_name' => $quote->customer_name,
+                'customer_email' => $quote->customer_email,
+                'customer_street' => $quote->customer_street,
+                'customer_city' => $quote->customer_city,
+                'customer_postal_code' => $quote->customer_postal_code,
                 'issue_date' => $issueDate->toDateString(),
                 'valid_until' => $issueDate->copy()->addDays(30)->toDateString(),
                 'is_vat_payer' => $quote->is_vat_payer,
@@ -193,24 +232,28 @@ final readonly class QuoteService
                 'note' => $quote->note,
             ]);
 
-            /** @var QuoteItem $item */
-            foreach ($quote->items as $item) {
-                QuoteItem::create([
-                    'tenant_id' => $quote->tenant_id,
-                    'quote_id' => $newQuote->id,
-                    'name' => $item->name,
-                    'description' => $item->description,
-                    'frequency' => $item->frequency,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
-                    'unit_price' => $item->unit_price,
-                    'discount_percent' => $item->discount_percent,
-                    'vat_rate' => $item->vat_rate,
-                    'line_base' => $item->line_base,
-                    'line_vat' => $item->line_vat,
-                    'line_total' => $item->line_total,
-                    'position' => $item->position,
-                ]);
+            if ($quote->isDocument()) {
+                $quote->getFirstMedia('document')?->copy($newQuote, 'document');
+            } else {
+                /** @var QuoteItem $item */
+                foreach ($quote->items as $item) {
+                    QuoteItem::create([
+                        'tenant_id' => $quote->tenant_id,
+                        'quote_id' => $newQuote->id,
+                        'name' => $item->name,
+                        'description' => $item->description,
+                        'frequency' => $item->frequency,
+                        'quantity' => $item->quantity,
+                        'unit' => $item->unit,
+                        'unit_price' => $item->unit_price,
+                        'discount_percent' => $item->discount_percent,
+                        'vat_rate' => $item->vat_rate,
+                        'line_base' => $item->line_base,
+                        'line_vat' => $item->line_vat,
+                        'line_total' => $item->line_total,
+                        'position' => $item->position,
+                    ]);
+                }
             }
 
             return $newQuote->load('items');
@@ -230,6 +273,12 @@ final readonly class QuoteService
 
     public function convertToInvoice(Quote $quote): Invoice
     {
+        if ($quote->isDocument()) {
+            throw ValidationException::withMessages([
+                'kind' => [__('app.quotes.document_not_convertible')],
+            ]);
+        }
+
         if (! $quote->canBeConverted()) {
             throw ValidationException::withMessages([
                 'status' => [__('app.quotes.not_acceptable_for_conversion')],
@@ -248,6 +297,8 @@ final readonly class QuoteService
             vat_rate: (float) $item->vat_rate,
         ))->all();
 
+        $hasClient = $quote->client_id !== null;
+
         $invoiceData = new InvoiceUpsertData(
             client_id: $quote->client_id,
             cleaning_object_id: $quote->cleaning_object_id,
@@ -258,16 +309,16 @@ final readonly class QuoteService
             due_date: now()->addDays(14)->toDateString(),
             period_from: null,
             period_to: null,
-            customer_name: null,
+            customer_name: $hasClient ? null : $quote->customer_name,
             customer_representative: null,
             customer_ico: null,
             customer_dic: null,
             customer_vat_number: null,
-            customer_street: null,
-            customer_city: null,
-            customer_postal_code: null,
+            customer_street: $hasClient ? null : $quote->customer_street,
+            customer_city: $hasClient ? null : $quote->customer_city,
+            customer_postal_code: $hasClient ? null : $quote->customer_postal_code,
             customer_country: null,
-            customer_email: null,
+            customer_email: $hasClient ? null : $quote->customer_email,
             note: $quote->note,
             items: $items,
             constant_symbol: null,
@@ -290,9 +341,21 @@ final readonly class QuoteService
 
     public function convertToContract(Quote $quote): Contract
     {
+        if ($quote->isDocument()) {
+            throw ValidationException::withMessages([
+                'kind' => [__('app.quotes.document_not_convertible')],
+            ]);
+        }
+
         if (! $quote->canBeConverted()) {
             throw ValidationException::withMessages([
                 'status' => [__('app.quotes.not_acceptable_for_conversion')],
+            ]);
+        }
+
+        if ($quote->client_id === null) {
+            throw ValidationException::withMessages([
+                'client_id' => [__('app.quotes.client_required_for_contract')],
             ]);
         }
 
@@ -305,7 +368,7 @@ final readonly class QuoteService
         $quote->loadMissing('items');
 
         $contractData = new ContractUpsertData(
-            title: $quote->subject ?? ($quote->number ?? 'Quote'),
+            title: $quote->subject ?? $quote->number ?? __('app.quotes.default_contract_title'),
             reference_number: $quote->number,
             category: ContractCategoryEnum::ServiceAgreement,
             term_type: ContractTermTypeEnum::Indefinite,
@@ -398,10 +461,19 @@ final readonly class QuoteService
      */
     private function buildAttributes(QuoteUpsertData $data, Tenant $tenant): array
     {
+        $hasClient = $data->client_id !== null;
+
         return [
             'client_id' => $data->client_id,
             'cleaning_object_id' => $data->cleaning_object_id,
+            'kind' => $data->kind,
+            'number' => $data->number,
             'subject' => $data->subject,
+            'customer_name' => $hasClient ? null : $data->customer_name,
+            'customer_email' => $hasClient ? null : $data->customer_email,
+            'customer_street' => $hasClient ? null : $data->customer_street,
+            'customer_city' => $hasClient ? null : $data->customer_city,
+            'customer_postal_code' => $hasClient ? null : $data->customer_postal_code,
             'issue_date' => $data->issue_date,
             'valid_until' => $data->valid_until,
             'note' => $data->note,
@@ -413,7 +485,7 @@ final readonly class QuoteService
 
     private function renderItemsToBody(Quote $quote): string
     {
-        $lines = ["<p>Cenová ponuka č. {$quote->number}</p>", '<ul>'];
+        $lines = [__('app.quotes.body_heading', ['number' => $quote->number ?? '']), '<ul>'];
 
         /** @var QuoteItem $item */
         foreach ($quote->items as $item) {

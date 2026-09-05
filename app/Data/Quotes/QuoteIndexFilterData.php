@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Quotes;
 
+use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
@@ -22,6 +23,8 @@ final class QuoteIndexFilterData extends Data
         public ?QuoteStatusEnum $status = null,
         #[Nullable]
         public ?string $client_id = null,
+        #[Nullable]
+        public ?QuoteKindEnum $kind = null,
         #[Nullable, Rule('date_format:Y-m-d')]
         public ?string $valid_from = null,
         #[Nullable, Rule('date_format:Y-m-d')]

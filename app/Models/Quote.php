@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
 use App\Enums\CurrencyEnum;
+use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use Database\Factories\QuoteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -21,15 +22,23 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property string $id
  * @property string $tenant_id
- * @property string $client_id
+ * @property string|null $client_id
  * @property string|null $cleaning_object_id
  * @property QuoteStatusEnum $status
+ * @property QuoteKindEnum $kind
  * @property string|null $number
  * @property string|null $subject
+ * @property string|null $customer_name
+ * @property string|null $customer_email
+ * @property string|null $customer_street
+ * @property string|null $customer_city
+ * @property string|null $customer_postal_code
  * @property CurrencyEnum $currency
  * @property bool $is_vat_payer
  * @property Carbon $issue_date
@@ -52,8 +61,14 @@ use Spatie\Activitylog\Support\LogOptions;
     'client_id',
     'cleaning_object_id',
     'status',
+    'kind',
     'number',
     'subject',
+    'customer_name',
+    'customer_email',
+    'customer_street',
+    'customer_city',
+    'customer_postal_code',
     'issue_date',
     'valid_until',
     'sent_at',
@@ -68,10 +83,10 @@ use Spatie\Activitylog\Support\LogOptions;
     'vat_breakdown',
     'note',
 ])]
-final class Quote extends Model
+final class Quote extends Model implements HasMedia
 {
     /** @use HasFactory<QuoteFactory> */
-    use BelongsToTenant, HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasUuids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     /**
      * @return array<string, string>
@@ -80,6 +95,7 @@ final class Quote extends Model
     {
         return [
             'status' => QuoteStatusEnum::class,
+            'kind' => QuoteKindEnum::class,
             'currency' => CurrencyEnum::class,
             'issue_date' => 'date',
             'valid_until' => 'date',
@@ -95,10 +111,18 @@ final class Quote extends Model
         ];
     }
 
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('document')
+            ->singleFile()
+            ->useDisk(config('documents.disk'))
+            ->acceptsMimeTypes(config('documents.allowed_mimes'));
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'number', 'total', 'client_id'])
+            ->logOnly(['status', 'kind', 'number', 'total', 'client_id'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
@@ -138,13 +162,19 @@ final class Quote extends Model
         return $this->status === QuoteStatusEnum::Accepted;
     }
 
+    public function isDocument(): bool
+    {
+        return $this->kind === QuoteKindEnum::Document;
+    }
+
     public function scopeSearch(Builder $query, string $term): Builder
     {
         $operator = DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
 
         return $query->where(function (Builder $q) use ($term, $operator): void {
             $q->where('number', $operator, '%' . $term . '%')
-                ->orWhere('subject', $operator, '%' . $term . '%');
+                ->orWhere('subject', $operator, '%' . $term . '%')
+                ->orWhere('customer_name', $operator, '%' . $term . '%');
         });
     }
 }

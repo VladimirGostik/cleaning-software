@@ -18,6 +18,7 @@
         clients: App.Data.Clients.ClientOptionData[];
         objects?: App.Data.Objects.ObjectOptionData[] | null;
         currencyOptions: SelectOption[];
+        kindOptions: SelectOption[];
         isVatPayer: boolean;
         vatRate?: string | null;
         vatRateOptions?: VatRateOption[];
@@ -49,6 +50,7 @@
             :clients="props.clients"
             :objects="props.objects"
             :currency-options="props.currencyOptions"
+            :kind-options="props.kindOptions"
             :is-vat-payer="props.isVatPayer"
             :vat-rate="props.vatRate"
             :vat-rate-options="props.vatRateOptions"

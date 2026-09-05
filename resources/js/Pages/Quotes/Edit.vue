@@ -19,6 +19,7 @@
         clients: App.Data.Clients.ClientOptionData[];
         objects?: App.Data.Objects.ObjectOptionData[] | null;
         currencyOptions: SelectOption[];
+        kindOptions: SelectOption[];
         isVatPayer: boolean;
         vatRate?: string | null;
         vatRateOptions?: VatRateOption[];
@@ -42,7 +43,7 @@
                 </li>
                 <li>
                     <Link :href="`/quotes/${props.quote.id}`">
-                        {{ props.quote.number ?? t('quotes.draft_number') }}
+                        {{ props.quote.number ?? t('quotes.no_number') }}
                     </Link>
                 </li>
                 <li>{{ t('quotes.action.edit') }}</li>
@@ -56,6 +57,7 @@
             :clients="props.clients"
             :objects="props.objects"
             :currency-options="props.currencyOptions"
+            :kind-options="props.kindOptions"
             :is-vat-payer="props.isVatPayer"
             :vat-rate="props.vatRate"
             :vat-rate-options="props.vatRateOptions"

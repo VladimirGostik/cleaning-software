@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Quotes;
 
+use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Models\Quote;
 use Spatie\LaravelData\Data;
@@ -16,13 +17,15 @@ final class QuoteListItemData extends Data
         public string $id,
         public ?string $number,
         public QuoteStatusEnum $status,
+        public QuoteKindEnum $kind,
         public ?string $subject,
         public string $customer_name,
         public ?string $object_name,
         public string $total,
         public string $issue_date,
         public string $valid_until,
-        public string $client_id,
+        public ?string $client_id,
+        public bool $has_document,
     ) {}
 
     public static function fromModel(Quote $quote): self
@@ -31,13 +34,15 @@ final class QuoteListItemData extends Data
             id: $quote->id,
             number: $quote->number,
             status: $quote->status,
+            kind: $quote->kind,
             subject: $quote->subject,
-            customer_name: $quote->client?->name ?? '',
+            customer_name: $quote->client?->name ?? $quote->customer_name ?? '',
             object_name: $quote->cleaningObject?->name,
             total: $quote->total,
             issue_date: $quote->issue_date->toDateString(),
             valid_until: $quote->valid_until->toDateString(),
             client_id: $quote->client_id,
+            has_document: $quote->getMedia('document')->isNotEmpty(),
         );
     }
 }

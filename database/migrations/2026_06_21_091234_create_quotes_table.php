@@ -15,12 +15,19 @@ return new class extends Migration
             $table->uuid('id')->primary();
 
             $table->foreignUuid('tenant_id')->constrained('tenants')->restrictOnDelete();
-            $table->foreignUuid('client_id')->constrained('clients')->restrictOnDelete();
+            $table->foreignUuid('client_id')->nullable()->constrained('clients')->restrictOnDelete();
             $table->foreignUuid('cleaning_object_id')->nullable()->constrained('objects')->restrictOnDelete();
 
             $table->string('status')->default('draft');
+            $table->string('kind')->default('itemized');
             $table->string('number')->nullable();
             $table->string('subject')->nullable();
+
+            $table->string('customer_name')->nullable();
+            $table->string('customer_email')->nullable();
+            $table->string('customer_street')->nullable();
+            $table->string('customer_city')->nullable();
+            $table->string('customer_postal_code', 16)->nullable();
 
             $table->date('issue_date');
             $table->date('valid_until');
@@ -46,6 +53,7 @@ return new class extends Migration
 
         Schema::table('quotes', function (Blueprint $table): void {
             $table->index(['tenant_id', 'status']);
+            $table->index(['tenant_id', 'kind']);
             $table->index('valid_until');
         });
 
