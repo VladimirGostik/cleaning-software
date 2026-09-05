@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Enums\SubscriptionPlanEnum;
 use App\Enums\TenantColorEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
-use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -28,9 +26,8 @@ final class TenantControllerTest extends TestCase
 
     public function test_authenticated_user_can_add_tenant(): void
     {
-        // Arrange — actingAsTenantUser creates a Free user by default; upgrade to Pro so limit ≥ 2
-        $user = $this->actingAsTenantUser('Vlastník');
-        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
+        // Arrange
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->post(route('tenants.store'), [
@@ -61,8 +58,7 @@ final class TenantControllerTest extends TestCase
     public function test_add_tenant_with_color_stores_interface_color(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
+        $this->actingAsTenantUser('Admin');
 
         // Act
         $this->post(route('tenants.store'), [
@@ -80,8 +76,7 @@ final class TenantControllerTest extends TestCase
     public function test_add_tenant_copy_settings_copies_color_from_active_tenant(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
+        $this->actingAsTenantUser('Admin');
         $activeTenantId = session('active_tenant_id');
 
         TenantInterface::firstOrCreate(
@@ -105,8 +100,7 @@ final class TenantControllerTest extends TestCase
     public function test_add_tenant_with_leader_email_creates_invitation(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
+        $this->actingAsTenantUser('Admin');
 
         // Act
         $this->post(route('tenants.store'), [
@@ -124,63 +118,23 @@ final class TenantControllerTest extends TestCase
         ]);
     }
 
-    // --- Quota guard ---
+    // --- No quota (entitlement layer removed) ---
 
-    public function test_pro_user_with_two_owned_tenants_can_create_third(): void
+    public function test_owner_of_many_tenants_can_create_another_without_limit(): void
     {
-        // Arrange — Pro limit 3; user owns existing tenant (from actingAsTenantUser) + 1 more
-        $user = $this->actingAsTenantUser('Vlastník');
-        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
+        // Arrange — owns 1 tenant from actingAsTenantUser + 9 more created directly.
+        $user = $this->actingAsTenantUser('Admin');
+        Tenant::factory()->count(9)->forOwner($user)->create();
 
-        // Create a second owned tenant directly (simulating user already has 2)
-        Tenant::factory()->forOwner($user)->create();
-
-        // User now owns 2 tenants; Pro limit = 3 → can create
+        // Act — creating the 11th tenant must never be blocked by a quota.
         $response = $this->post(route('tenants.store'), [
-            'name' => 'Tretia Firma s.r.o.',
+            'name' => 'Jedenásta Firma s.r.o.',
             'ico' => '77889900',
         ]);
 
         // Assert
         $response->assertRedirect(route('dashboard'));
         $this->assertDatabaseHas('tenants', ['ico' => '77889900']);
-    }
-
-    public function test_free_user_with_one_owned_tenant_gets_403_on_create(): void
-    {
-        // Arrange — Free limit 1; actingAsTenantUser creates 1 tenant → already at limit
-        $user = $this->actingAsTenantUser('Vlastník');
-        // User has Free plan (default factory); owns 1 tenant from setUp
-
-        // Act
-        $response = $this->post(route('tenants.store'), [
-            'name' => 'Nepovolená Firma s.r.o.',
-            'ico' => '11112222',
-        ]);
-
-        // Assert
-        $response->assertForbidden();
-        $this->assertDatabaseMissing('tenants', ['ico' => '11112222']);
-    }
-
-    public function test_enterprise_user_is_never_blocked_by_quota(): void
-    {
-        // Arrange — Enterprise = unlimited
-        $user = $this->actingAsTenantUser('Vlastník');
-        $user->forceFill(['subscription_plan' => SubscriptionPlanEnum::Enterprise->value])->save();
-
-        // Pre-create many owned tenants to push well past any finite limit
-        Tenant::factory()->count(10)->forOwner($user)->create();
-
-        // Act
-        $response = $this->post(route('tenants.store'), [
-            'name' => 'Enterprise Firma s.r.o.',
-            'ico' => '55544433',
-        ]);
-
-        // Assert
-        $response->assertRedirect(route('dashboard'));
-        $this->assertDatabaseHas('tenants', ['ico' => '55544433']);
     }
 
     // --- Auth gate ---

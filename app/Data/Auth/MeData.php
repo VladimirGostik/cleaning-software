@@ -12,14 +12,10 @@ final class MeData extends Data
 {
     /**
      * @param  list<string>  $permissions
-     * @param  list<string>  $features
      */
     public function __construct(
         public string $userId,
         public ?string $activeTenantId,
         public array $permissions,
-        public array $features,
-        public string $accountPlan,
-        public ?int $remainingTenantSlots,
     ) {}
 }

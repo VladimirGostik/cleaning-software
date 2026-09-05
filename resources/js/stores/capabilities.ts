@@ -3,17 +3,17 @@ import { meService } from '@/services';
 
 /**
  * Capabilities store — single source of truth for the current user's
- * permission strings and plan feature flags.
+ * permission strings.
  *
  * Source: GET /api/me (fetched once per session, cached in `loaded`).
  *
  * NOTE: This is a UX-only layer. Real enforcement lives on the BE
- * (`#[Authorize]` policies + `feature:` middleware). The FE guard and
- * `<Can>` component only hide UI / redirect; they are NOT security boundaries.
+ * (`#[Authorize]` policies). The FE guard and `<Can>` component only
+ * hide UI / redirect; they are NOT security boundaries.
  *
  * Fetch/reset call sites:
  *  - `ensureLoaded()` — called by the Inertia navigate hook on first authed nav.
- *  - `fetch()` — call explicitly after role/plan changes (flows not yet built).
+ *  - `fetch()` — call explicitly after role changes (flows not yet built).
  *  - `reset()` — call on logout (AppLayout.vue).
  *
  * Error handling: `fetch()` rejects on network/auth error. The caller (navigate
@@ -23,9 +23,6 @@ import { meService } from '@/services';
 export const useCapabilitiesStore = defineStore('capabilities', {
     state: () => ({
         permissions: [] as App.Enums.PermissionEnum[],
-        features: [] as App.Enums.FeatureEnum[],
-        accountPlan: '' as string,
-        remainingTenantSlots: null as number | null,
         loaded: false,
     }),
 
@@ -34,21 +31,13 @@ export const useCapabilitiesStore = defineStore('capabilities', {
             (s) =>
             (p: App.Enums.PermissionEnum): boolean =>
                 s.permissions.includes(p),
-
-        hasFeatureFlag:
-            (s) =>
-            (f: App.Enums.FeatureEnum): boolean =>
-                s.features.includes(f),
     },
 
     actions: {
-        /** Fetch /api/me and populate permissions + features. */
+        /** Fetch /api/me and populate permissions. */
         async fetch(): Promise<void> {
             const me = await meService.fetchMe();
             this.permissions = me.permissions as App.Enums.PermissionEnum[];
-            this.features = me.features as App.Enums.FeatureEnum[];
-            this.accountPlan = me.accountPlan;
-            this.remainingTenantSlots = me.remainingTenantSlots;
             this.loaded = true;
         },
 

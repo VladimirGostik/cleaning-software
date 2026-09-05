@@ -5,21 +5,18 @@
     /**
      * <Can> — declarative capability gate component.
      *
-     * Renders the default slot when the AND of all provided checks passes.
+     * Renders the default slot when the permission check passes.
      * Falls back to #fallback slot (if provided) when the check fails.
      * Renders nothing when fallback slot is absent and check fails.
      *
      * Rules:
-     *  - Both props absent   → always renders (no restriction).
-     *  - permission only     → checks permission axis.
-     *  - feature only        → checks feature/plan axis.
-     *  - Both present        → AND (both must pass).
+     *  - permission absent → always renders (no restriction).
+     *  - permission present → checks permission axis.
      *  - Denial copy goes in the caller's #fallback slot, not here.
      */
 
     const props = defineProps<{
         permission?: App.Enums.PermissionEnum;
-        feature?: App.Enums.FeatureEnum;
     }>();
 
     defineSlots<{
@@ -27,13 +24,9 @@
         fallback(): unknown;
     }>();
 
-    const { can, hasFeature } = useAuthorization();
+    const { can } = useAuthorization();
 
-    const allowed = computed<boolean>(
-        () =>
-            (props.permission === undefined || can(props.permission)) &&
-            (props.feature === undefined || hasFeature(props.feature)),
-    );
+    const allowed = computed<boolean>(() => props.permission === undefined || can(props.permission));
 </script>
 
 <template>

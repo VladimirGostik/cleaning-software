@@ -48,7 +48,7 @@
         >
             <span
                 class="flex h-7 w-7 items-center justify-center rounded-md text-white"
-                style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px)"
+                style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px)"
             >
                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M5 14c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round" />
@@ -67,7 +67,11 @@
             <!-- Radial overlay -->
             <div
                 class="absolute inset-0 pointer-events-none"
-                style="background-image: radial-gradient(circle at 80% 20%, rgba(255,255,255,.08), transparent 40%), radial-gradient(circle at 20% 80%, rgba(255,255,255,.06), transparent 40%)"
+                style="
+                    background-image:
+                        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08), transparent 40%),
+                        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.06), transparent 40%);
+                "
             />
 
             <!-- Tagline (vertically centered) -->
@@ -75,7 +79,10 @@
                 <h1 class="text-[72px] leading-[1.02] font-bold tracking-[-0.035em] text-white max-w-[640px]">
                     {{ t('auth.hero.title_1') }}<br />{{ t('auth.hero.title_2') }}
                 </h1>
-                <p class="mt-6 text-[22px] leading-[1.5] max-w-[560px]" :style="{ color: 'var(--auth-text-muted)' }">
+                <p
+                    class="mt-6 text-[22px] leading-[1.5] max-w-[560px]"
+                    :style="{ color: 'var(--auth-text-muted)' }"
+                >
                     {{ t('auth.hero.subtitle') }}
                 </p>
                 <div class="mt-11 flex gap-8 text-[16px]" :style="{ color: 'var(--auth-text-bright)' }">
@@ -95,7 +102,10 @@
             </div>
 
             <!-- Copyright (absolute bottom) -->
-            <div class="absolute bottom-10 left-14 z-10 text-[12px]" :style="{ color: 'var(--auth-copyright)' }">
+            <div
+                class="absolute bottom-10 left-14 z-10 text-[12px]"
+                :style="{ color: 'var(--auth-copyright)' }"
+            >
                 {{ t('landing.footer.copy') }}
             </div>
         </div>
@@ -113,8 +123,16 @@
 
             <!-- Mobile logo -->
             <Link href="/" class="mb-8 flex items-center gap-2 lg:hidden">
-                <span class="flex h-8 w-8 items-center justify-center rounded-lg text-white auth-mobile-logo-bg">
-                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5">
+                <span
+                    class="flex h-8 w-8 items-center justify-center rounded-lg text-white auth-mobile-logo-bg"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        class="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                    >
                         <path d="M5 14c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round" />
                         <path d="M8 17h8" stroke-linecap="round" />
                     </svg>
@@ -133,14 +151,19 @@
                     <div class="flex flex-col gap-1.5">
                         <label class="text-sm font-medium text-slate-700">{{ t('email') }}</label>
                         <div class="relative">
-                            <EnvelopeIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <EnvelopeIcon
+                                class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                            />
                             <input
                                 v-model="form.email"
                                 type="email"
                                 required
                                 autocomplete="email"
                                 class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition auth-input"
-                                :class="{ 'border-red-400 focus:border-red-400 focus:ring-red-100': form.errors.email }"
+                                :class="{
+                                    'border-red-400 focus:border-red-400 focus:ring-red-100':
+                                        form.errors.email,
+                                }"
                             />
                         </div>
                         <p v-if="form.errors.email" class="text-xs text-red-500">{{ form.errors.email }}</p>
@@ -150,14 +173,19 @@
                     <div class="flex flex-col gap-1.5">
                         <label class="text-sm font-medium text-slate-700">{{ t('password') }}</label>
                         <div class="relative">
-                            <LockClosedIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <LockClosedIcon
+                                class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                            />
                             <input
                                 v-model="form.password"
                                 :type="showPassword ? 'text' : 'password'"
                                 required
                                 autocomplete="current-password"
                                 class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition auth-input"
-                                :class="{ 'border-red-400 focus:border-red-400 focus:ring-red-100': form.errors.password }"
+                                :class="{
+                                    'border-red-400 focus:border-red-400 focus:ring-red-100':
+                                        form.errors.password,
+                                }"
                             />
                             <button
                                 type="button"
@@ -168,7 +196,9 @@
                                 <EyeIcon v-else class="h-4 w-4" />
                             </button>
                         </div>
-                        <p v-if="form.errors.password" class="text-xs text-red-500">{{ form.errors.password }}</p>
+                        <p v-if="form.errors.password" class="text-xs text-red-500">
+                            {{ form.errors.password }}
+                        </p>
                     </div>
 
                     <!-- Remember + forgot -->
@@ -198,7 +228,10 @@
                         class="flex w-full items-center justify-center rounded-lg py-2.5 text-sm font-semibold text-white transition auth-submit-btn disabled:opacity-70"
                         :disabled="form.processing"
                     >
-                        <span v-if="form.processing" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        <span
+                            v-if="form.processing"
+                            class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                        />
                         {{ t('login') }}
                     </button>
 
@@ -207,7 +240,7 @@
 
                     <!-- Lang switcher -->
                     <div class="flex items-center justify-center gap-3 text-[12px] text-slate-500">
-                        <template v-for="(lang, i) in (props.languages ?? [])" :key="lang.code">
+                        <template v-for="(lang, i) in props.languages ?? []" :key="lang.code">
                             <span v-if="i > 0" class="text-slate-300">|</span>
                             <button
                                 type="button"

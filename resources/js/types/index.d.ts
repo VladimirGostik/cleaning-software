@@ -23,13 +23,15 @@ export interface FlashMessages {
     error: string | null;
     info: string | null;
     status: string | null;
-    justRegistered: boolean;
 }
 
 export interface SharedProps {
     app: { name: string };
     auth: { user: AuthUser | null };
-    tenant: { active: App.Data.Tenants.TenantListItemData | null; available: App.Data.Tenants.TenantListItemData[] };
+    tenant: {
+        active: App.Data.Tenants.TenantListItemData | null;
+        available: App.Data.Tenants.TenantListItemData[];
+    };
     can: Record<string, boolean>;
     flash: FlashMessages;
     translations: Record<string, string>;

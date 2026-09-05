@@ -34,7 +34,7 @@
     const page = usePage(); // kept for page.component (transition key) and page.url only
     const capabilitiesStore = useCapabilitiesStore();
     const notificationsStore = useNotificationsStore();
-    const { can, hasFeature, canCreateTenant } = useAuthorization();
+    const { can } = useAuthorization();
 
     const user = computed(() => props.auth?.user);
     const tenant = computed(() => props.tenant?.active);
@@ -58,7 +58,6 @@
         href: string;
         icon: unknown;
         can?: App.Enums.PermissionEnum;
-        feature?: App.Enums.FeatureEnum;
         implemented: boolean;
     }
 
@@ -86,7 +85,6 @@
             href: '/quotes',
             icon: DocumentTextIcon,
             can: 'view quotes',
-            feature: 'quotes',
             implemented: true,
         },
         {
@@ -95,7 +93,6 @@
             href: '/contracts',
             icon: ClipboardDocumentListIcon,
             can: 'view contracts',
-            feature: 'contracts',
             implemented: true,
         },
         {
@@ -104,7 +101,6 @@
             href: '/contract-templates',
             icon: FolderIcon,
             can: 'view contract_templates',
-            feature: 'contracts',
             implemented: true,
         },
         {
@@ -113,7 +109,6 @@
             href: '/jobs',
             icon: CalendarDaysIcon,
             can: 'view schedule',
-            feature: 'schedule',
             implemented: true,
         },
         {
@@ -122,7 +117,6 @@
             href: '/employees',
             icon: UserGroupIcon,
             can: 'view employees',
-            feature: 'employees',
             implemented: true,
         },
         {
@@ -131,7 +125,6 @@
             href: '/invoices',
             icon: ReceiptPercentIcon,
             can: 'view invoices',
-            feature: 'invoices',
             implemented: true,
         },
         {
@@ -169,11 +162,7 @@
         },
     ];
 
-    const visibleNav = computed(() =>
-        navItems.filter(
-            (item) => (!item.can || can(item.can)) && (!item.feature || hasFeature(item.feature)),
-        ),
-    );
+    const visibleNav = computed(() => navItems.filter((item) => !item.can || can(item.can)));
 
     function isActive(href: string): boolean {
         return page.url.startsWith(href);
@@ -221,16 +210,12 @@
                     >
                         <button
                             type="button"
-                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-base-content hover:bg-base-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            :disabled="!canCreateTenant"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-sm text-base-content hover:bg-base-200 transition"
                             @click="openAddTenant"
                         >
                             <PlusIcon class="h-4 w-4 text-base-content/40" />
                             {{ t('nav.add_tenant') }}
                         </button>
-                        <p v-if="!canCreateTenant" class="px-3 py-1 text-xs text-base-content/50">
-                            {{ t('tenant.limit_reached') }}
-                        </p>
                     </div>
                 </Transition>
 

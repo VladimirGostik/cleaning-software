@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
@@ -18,7 +17,7 @@ final class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Admin = Pro plan, owns the primary demo tenant
+        // Admin owns the primary demo tenant
         $admin = User::query()->firstOrCreate(
             ['email' => 'admin@example.com'],
             [
@@ -31,17 +30,12 @@ final class UserSeeder extends Seeder
             ],
         );
 
-        if ($admin->wasRecentlyCreated) {
-            $admin->forceFill(['subscription_plan' => SubscriptionPlanEnum::Pro->value])->save();
-        }
-
         // 4 demo-tier accounts, each owns exactly 1 tenant
-        /** @var array<int, array{email: string, name: string, plan: SubscriptionPlanEnum, ico: string, tenant_name: string, is_vat_payer: bool, vat_number: string|null, contact_email: string}> $demoAccounts */
+        /** @var array<int, array{email: string, name: string, ico: string, tenant_name: string, is_vat_payer: bool, vat_number: string|null, contact_email: string}> $demoAccounts */
         $demoAccounts = [
             [
                 'email' => 'free@demo.sk',
                 'name' => 'Demo Free',
-                'plan' => SubscriptionPlanEnum::Free,
                 'ico' => '10000001',
                 'tenant_name' => 'Demo Free s.r.o.',
                 'is_vat_payer' => false,
@@ -51,7 +45,6 @@ final class UserSeeder extends Seeder
             [
                 'email' => 'starter@demo.sk',
                 'name' => 'Demo Starter',
-                'plan' => SubscriptionPlanEnum::Starter,
                 'ico' => '10000002',
                 'tenant_name' => 'Demo Starter s.r.o.',
                 'is_vat_payer' => false,
@@ -61,7 +54,6 @@ final class UserSeeder extends Seeder
             [
                 'email' => 'pro@demo.sk',
                 'name' => 'Demo Pro',
-                'plan' => SubscriptionPlanEnum::Pro,
                 'ico' => '10000003',
                 'tenant_name' => 'Demo Pro s.r.o.',
                 'is_vat_payer' => false,
@@ -71,7 +63,6 @@ final class UserSeeder extends Seeder
             [
                 'email' => 'enterprise@demo.sk',
                 'name' => 'Demo Enterprise',
-                'plan' => SubscriptionPlanEnum::Enterprise,
                 'ico' => '10000004',
                 'tenant_name' => 'Demo Enterprise s.r.o.',
                 'is_vat_payer' => true,
@@ -91,10 +82,6 @@ final class UserSeeder extends Seeder
                     'is_active' => true,
                 ],
             );
-
-            if ($demoUser->wasRecentlyCreated) {
-                $demoUser->forceFill(['subscription_plan' => $account['plan']->value])->save();
-            }
 
             $tenant = Tenant::query()->firstOrCreate(
                 ['ico' => $account['ico']],
@@ -129,14 +116,14 @@ final class UserSeeder extends Seeder
             RoleTemplatesSeeder::seedForTenant($tenant);
 
             /** @var Role $ownerRole */
-            $ownerRole = Role::where('name', 'Vlastník')
+            $ownerRole = Role::where('name', RoleTemplatesSeeder::ADMIN_ROLE)
                 ->where('tenant_id', $tenant->id)
                 ->firstOrFail();
 
             $demoUser->assignRole($ownerRole);
         }
 
-        // Admin's primary tenant (IČO 12345678, Pro plan)
+        // Admin's primary tenant (IČO 12345678)
         $adminTenant = Tenant::query()->firstOrCreate(
             ['ico' => '12345678'],
             [
@@ -170,7 +157,7 @@ final class UserSeeder extends Seeder
         RoleTemplatesSeeder::seedForTenant($adminTenant);
 
         /** @var Role $adminOwnerRole */
-        $adminOwnerRole = Role::where('name', 'Vlastník')
+        $adminOwnerRole = Role::where('name', RoleTemplatesSeeder::ADMIN_ROLE)
             ->where('tenant_id', $adminTenant->id)
             ->firstOrFail();
 

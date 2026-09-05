@@ -39,7 +39,7 @@ final class LoginPageTest extends TestCase
 
     public function test_login_page_not_accessible_when_authenticated(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('login'));
 

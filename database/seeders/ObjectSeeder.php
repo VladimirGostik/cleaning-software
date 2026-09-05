@@ -13,17 +13,12 @@ final class ObjectSeeder extends Seeder
 {
     public function run(): void
     {
-        // Objects are feature-gated to Starter+ plan (objects feature).
-        // Seeding bypasses the gate intentionally — raw rows for demo data.
-        // Free tenant (IČO 10000001) is skipped: owner's plan doesn't unlock Objects,
-        // so seeded rows would never be visible in UI — keeping it clean.
-
-        // Admin's Pro tenant — richest data set
+        // Admin's tenant — richest data set
         $adminTenant = Tenant::where('ico', '12345678')->firstOrFail();
         $this->seedObjectsForTenant($adminTenant, inactiveOnLast: true);
 
-        // Starter, Pro, Enterprise tenants — Objects feature unlocked
-        $eligibleIcos = ['10000002', '10000003', '10000004'];
+        // Remaining demo tenants
+        $eligibleIcos = ['10000001', '10000002', '10000003', '10000004'];
 
         foreach ($eligibleIcos as $ico) {
             $tenant = Tenant::where('ico', $ico)->first();

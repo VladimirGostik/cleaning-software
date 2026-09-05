@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Data\Auth\RegisterData;
 use App\Data\Tenants\AddTenantData;
+use App\Data\Tenants\CompanyData;
 use App\Data\Tenants\InviteData;
 use App\Enums\InvitationStatusEnum;
 use App\Enums\TenantColorEnum;
@@ -30,40 +30,33 @@ final readonly class RegistrationService
         private PermissionRegistrar $permissionRegistrar,
     ) {}
 
-    public function register(RegisterData $data): User
+    public function createOwner(string $name, string $email, string $password, CompanyData $company): User
     {
-        return $this->db->transaction(function () use ($data): User {
+        return $this->db->transaction(function () use ($name, $email, $password, $company): User {
             $user = User::create([
-                'name' => $data->name,
-                'email' => $data->email,
-                'password' => Hash::make($data->password),
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($password),
                 'is_active' => true,
             ]);
 
             // email_verified_at is intentionally not in #[Fillable] (not mass-assignable from
-            // request input). This app has no email-verification flow — auto-verify on register.
+            // request input). This app has no email-verification flow — auto-verify on create.
             $user->forceFill(['email_verified_at' => now()])->save();
 
-            $tenant = $this->bootstrapTenant(
+            $this->bootstrapTenant(
                 user: $user,
-                name: $data->company->name,
-                ico: $data->company->ico,
-                dic: $data->company->dic,
-                vat_number: $data->company->vat_number,
-                is_vat_payer: $data->company->is_vat_payer,
-                address_line: $data->company->address_line,
-                city: $data->company->city,
-                postal_code: $data->company->postal_code,
-                country: $data->company->country,
+                name: $company->name,
+                ico: $company->ico,
+                dic: $company->dic,
+                vat_number: $company->vat_number,
+                is_vat_payer: $company->is_vat_payer,
+                address_line: $company->address_line,
+                city: $company->city,
+                postal_code: $company->postal_code,
+                country: $company->country,
                 color: null,
             );
-
-            $invites = $data->invites->toCollection()
-                ->filter(fn (InviteData $invite) => $invite->email !== $data->email)
-                ->values()
-                ->all();
-
-            $this->createInvitations($tenant, $user, $invites);
 
             return $user;
         });
@@ -153,7 +146,7 @@ final readonly class RegistrationService
         RoleTemplatesSeeder::seedForTenant($tenant);
 
         /** @var Role $ownerRole */
-        $ownerRole = Role::where('name', 'Vlastník')
+        $ownerRole = Role::where('name', RoleTemplatesSeeder::ADMIN_ROLE)
             ->where('tenant_id', $tenant->id)
             ->firstOrFail();
 

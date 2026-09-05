@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\LocaleMiddleware;
-use App\Http\Middleware\RequiresTenantFeature;
 use App\Http\Middleware\TenantContextMiddleware;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -45,7 +44,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
-            'feature' => RequiresTenantFeature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

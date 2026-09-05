@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('password');
             $table->string('locale', 5)->default('sk');
             $table->boolean('is_active')->default(true);
-            $table->string('subscription_plan')->default('free');
             $table->json('notification_preferences')->nullable();
             $table->rememberToken();
             $table->timestamps();
