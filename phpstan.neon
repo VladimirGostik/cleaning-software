@@ -57,3 +57,14 @@ parameters:
             identifier: nullsafe.neverNull
             path: app/Data/Quotes/QuoteListItemData.php
             reportUnmatched: false
+        -
+            # Larastan infers BelongsTo cleaningObject relation as non-null,
+            # but CleaningObject is soft-deletable (FK restrictOnDelete only blocks hard deletes) —
+            # nullsafe access is correct.
+            identifier: nullsafe.neverNull
+            path: app/Data/Schedule/JobDetailData.php
+            reportUnmatched: false
+        -
+            identifier: nullsafe.neverNull
+            path: app/Data/Schedule/JobListItemData.php
+            reportUnmatched: false

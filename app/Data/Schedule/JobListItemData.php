@@ -34,7 +34,7 @@ final class JobListItemData extends Data
             start_time: $job->start_time,
             end_time: $job->end_time,
             object_name: $job->cleaningObject?->name ?? '',
-            client_name: $job->cleaningObject?->client?->name ?? '',
+            client_name: $job->cleaningObject?->client->name ?? '',
             assignee_display_name: $job->assignedMembership?->display_name,
             type: $job->type,
             status: $job->status,

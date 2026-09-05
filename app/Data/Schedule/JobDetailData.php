@@ -47,7 +47,7 @@ final class JobDetailData extends Data
             id: $job->id,
             cleaning_object_id: $job->cleaning_object_id,
             object_name: $job->cleaningObject?->name ?? '',
-            client_name: $job->cleaningObject?->client?->name ?? '',
+            client_name: $job->cleaningObject?->client->name ?? '',
             client_id: $job->cleaningObject?->client?->id,
             assigned_membership_id: $job->assigned_membership_id,
             assignee_display_name: $job->assignedMembership?->display_name,

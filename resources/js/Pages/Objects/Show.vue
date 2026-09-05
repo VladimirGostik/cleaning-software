@@ -3,7 +3,7 @@
     import { Link, router } from '@inertiajs/vue3';
     import {
         PencilSquareIcon,
-        TrashIcon,
+        NoSymbolIcon,
         MapPinIcon,
         EllipsisVerticalIcon,
         KeyIcon,
@@ -36,7 +36,7 @@
     const { formatDate } = useLocalizedDate();
     const flash = computed(() => pageProps.flash);
 
-    const ui = reactive({ editDrawerOpen: false, deleteConfirmOpen: false });
+    const ui = reactive({ editDrawerOpen: false, deactivateConfirmOpen: false });
 
     const subtitle = computed(() =>
         t('objects.detail.created').replace('{date}', formatDate(props.object.created_at)),
@@ -47,10 +47,16 @@
         router.reload({ only: ['object'] });
     }
 
-    function confirmDelete() {
-        router.delete(`/objects/${props.object.id}`, {
-            onSuccess: () => router.visit('/objects'),
-        });
+    function confirmDeactivate(): void {
+        router.post(
+            `/objects/${props.object.id}/deactivate`,
+            {},
+            {
+                onSuccess: () => {
+                    ui.deactivateConfirmOpen = false;
+                },
+            },
+        );
     }
 </script>
 
@@ -78,16 +84,21 @@
                 </span>
             </template>
             <template #actions>
-                <Can permission="edit objects" feature="objects">
+                <Can permission="edit objects">
                     <button type="button" class="btn btn-primary" @click="ui.editDrawerOpen = true">
                         <PencilSquareIcon class="w-4 h-4" />
                         {{ t('objects.edit') }}
                     </button>
                 </Can>
 
-                <Can permission="delete objects" feature="objects">
-                    <div class="dropdown dropdown-end">
-                        <div tabindex="0" role="button" class="btn btn-ghost btn-square">
+                <Can permission="delete objects">
+                    <div v-if="object.is_active" class="dropdown dropdown-end">
+                        <div
+                            tabindex="0"
+                            role="button"
+                            class="btn btn-ghost btn-square"
+                            :aria-label="t('objects.col.actions')"
+                        >
                             <EllipsisVerticalIcon class="w-5 h-5" />
                         </div>
                         <ul
@@ -95,9 +106,9 @@
                             class="dropdown-content menu bg-base-100 rounded-box z-10 w-40 p-2 shadow"
                         >
                             <li>
-                                <button type="button" class="text-error" @click="ui.deleteConfirmOpen = true">
-                                    <TrashIcon class="w-4 h-4" />
-                                    {{ t('objects.delete') }}
+                                <button type="button" @click="ui.deactivateConfirmOpen = true">
+                                    <NoSymbolIcon class="w-4 h-4" />
+                                    {{ t('objects.deactivate') }}
                                 </button>
                             </li>
                         </ul>
@@ -235,11 +246,7 @@
                 {{ t('objects.section.work_breakdowns') }}
             </h2>
             <div class="space-y-4">
-                <WorkBreakdownView
-                    v-for="wb in workBreakdowns"
-                    :key="wb.id"
-                    :breakdown="wb"
-                />
+                <WorkBreakdownView v-for="wb in workBreakdowns" :key="wb.id" :breakdown="wb" />
             </div>
         </div>
 
@@ -255,14 +262,14 @@
 
         <!-- Delete confirm modal -->
         <ConfirmDialog
-            :open="ui.deleteConfirmOpen"
-            :title="t('objects.delete')"
-            :body="t('objects.delete_confirm').replace('{name}', object.name)"
-            :confirm-label="t('objects.delete')"
+            :open="ui.deactivateConfirmOpen"
+            :title="t('objects.deactivate')"
+            :body="t('objects.deactivate_confirm').replace('{name}', object.name)"
+            :confirm-label="t('objects.deactivate')"
             :cancel-label="t('objects.form.cancel')"
             confirm-variant="error"
-            @confirm="confirmDelete"
-            @cancel="ui.deleteConfirmOpen = false"
+            @confirm="confirmDeactivate"
+            @cancel="ui.deactivateConfirmOpen = false"
         />
     </div>
 </template>

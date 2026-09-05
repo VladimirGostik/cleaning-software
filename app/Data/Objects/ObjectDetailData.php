@@ -35,14 +35,11 @@ final class ObjectDetailData extends Data
 
     public static function fromModel(CleaningObject $object): self
     {
-        /** @var ObjectTypeEnum $type */
-        $type = $object->type;
-
         return new self(
             id: $object->id,
             client_id: $object->client_id,
             client_name: $object->client?->name,
-            type: $type,
+            type: $object->type,
             name: $object->name,
             street: $object->street,
             city: $object->city,

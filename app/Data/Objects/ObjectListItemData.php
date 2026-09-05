@@ -26,12 +26,9 @@ final class ObjectListItemData extends Data
 
     public static function fromModel(CleaningObject $object): self
     {
-        /** @var ObjectTypeEnum $type */
-        $type = $object->type;
-
         return new self(
             id: $object->id,
-            type: $type,
+            type: $object->type,
             name: $object->name,
             city: $object->city,
             is_active: (bool) $object->is_active,

@@ -25,12 +25,11 @@ final class ObjectControllerTest extends TestCase
     // -------------------------------------------------------------------------
 
     /**
-     * Create a tenant whose owner is on Pro plan (has Objects feature) and
-     * authenticate the given role inside that tenant.
+     * Create a fresh tenant and authenticate the given role inside it.
      */
     private function actingAsTenantUserWithObjectsFeature(string $roleName): Tenant
     {
-        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
         $tenant = Tenant::factory()->forOwner($owner)->create();
         $this->actingAsTenantUser($roleName, $tenant);
 
@@ -68,11 +67,11 @@ final class ObjectControllerTest extends TestCase
     public function test_index_returns_own_tenant_objects_only(): void
     {
         // Arrange
-        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
         $tenantA = Tenant::factory()->forOwner($owner)->create();
         $tenantB = Tenant::factory()->create(); // different owner
 
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
 
         $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
         $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
@@ -94,8 +93,8 @@ final class ObjectControllerTest extends TestCase
 
     public function test_index_requires_view_objects_permission_and_passes(): void
     {
-        // Arrange — Upratovačka has ViewObjects
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Upratovačka');
+        // Arrange — Interná upratovačka has ViewObjects
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Interná upratovačka');
 
         // Act & Assert
         $this->get(route('objects.index'))->assertOk();
@@ -109,7 +108,7 @@ final class ObjectControllerTest extends TestCase
     public function test_index_filter_by_type(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         CleaningObject::factory()->count(2)->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'type' => ObjectTypeEnum::Office]);
@@ -128,7 +127,7 @@ final class ObjectControllerTest extends TestCase
     public function test_index_filter_by_client_id(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $clientA = Client::factory()->create(['tenant_id' => $tenant->id]);
         $clientB = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -148,7 +147,7 @@ final class ObjectControllerTest extends TestCase
     public function test_index_filter_by_is_active(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         CleaningObject::factory()->count(3)->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'is_active' => true]);
@@ -167,7 +166,7 @@ final class ObjectControllerTest extends TestCase
     public function test_index_filter_by_search(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'name' => 'Alpha Office']);
@@ -186,7 +185,7 @@ final class ObjectControllerTest extends TestCase
     public function test_index_empty_result_set(): void
     {
         // Arrange
-        $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $this->actingAsTenantUserWithObjectsFeature('Admin');
 
         // Act
         $response = $this->get(route('objects.index'));
@@ -201,7 +200,7 @@ final class ObjectControllerTest extends TestCase
     public function test_index_per_page_boundary_10(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         CleaningObject::factory()->count(15)->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
@@ -221,10 +220,10 @@ final class ObjectControllerTest extends TestCase
 
     public function test_index_forbidden_without_view_objects_permission(): void
     {
-        // Arrange — user with Pro-plan tenant but NO role assigned has no view objects permission
-        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        // Arrange — user with no role assigned has no view objects permission
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
         $tenant = Tenant::factory()->forOwner($owner)->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         // Act — assign acting user to tenant context but strip all roles
         $user = auth()->user();
@@ -236,17 +235,6 @@ final class ObjectControllerTest extends TestCase
         $this->get(route('objects.index'))->assertForbidden();
     }
 
-    public function test_index_feature_gate_blocks_free_plan(): void
-    {
-        // Arrange — Free plan has NO Objects feature
-        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']); // Free plan
-        $tenant = Tenant::factory()->forOwner($owner)->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
-
-        // Act & Assert
-        $this->get(route('objects.index'))->assertForbidden();
-    }
-
     // -------------------------------------------------------------------------
     // SHOW — happy
     // -------------------------------------------------------------------------
@@ -254,7 +242,7 @@ final class ObjectControllerTest extends TestCase
     public function test_show_returns_object_detail_with_empty_work_breakdowns(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
@@ -273,7 +261,7 @@ final class ObjectControllerTest extends TestCase
     public function test_show_work_breakdowns_includes_linked_breakdown_with_tasks(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
@@ -301,7 +289,7 @@ final class ObjectControllerTest extends TestCase
     public function test_show_work_breakdowns_excludes_other_tenant_breakdowns(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
@@ -329,10 +317,10 @@ final class ObjectControllerTest extends TestCase
     public function test_show_cross_tenant_object_returns_404(): void
     {
         // Arrange
-        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
         $tenantA = Tenant::factory()->forOwner($owner)->create();
         $tenantB = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
 
         $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
         $objectB = CleaningObject::factory()->create(['tenant_id' => $tenantB->id, 'client_id' => $clientB->id]);
@@ -348,7 +336,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_creates_object_with_tenant_id(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act
@@ -366,7 +354,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_activity_logged(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act
@@ -397,7 +385,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_validation_missing_name(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act
@@ -410,7 +398,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_validation_missing_type(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act
@@ -423,7 +411,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_validation_nonexistent_client_id(): void
     {
         // Arrange
-        $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $this->actingAsTenantUserWithObjectsFeature('Admin');
 
         // Act
         $response = $this->post(route('objects.store'), $this->storePayload('00000000-0000-0000-0000-000000000000'));
@@ -435,7 +423,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_validation_negative_area_sqm(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act
@@ -448,7 +436,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_validation_negative_key_count(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act
@@ -465,7 +453,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_nullable_fields_persist_null(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act
@@ -489,7 +477,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_name_max_255_accepted(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act — exactly 255 chars
@@ -500,7 +488,7 @@ final class ObjectControllerTest extends TestCase
     public function test_store_name_over_255_rejected(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Act — 256 chars
@@ -511,10 +499,10 @@ final class ObjectControllerTest extends TestCase
     public function test_store_cross_tenant_client_id_rejected(): void
     {
         // Arrange — client from another tenant
-        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
         $tenantA = Tenant::factory()->forOwner($owner)->create();
         $tenantB = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
         $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
 
         // Act — global scope hides tenantB client from Exists validation
@@ -531,7 +519,7 @@ final class ObjectControllerTest extends TestCase
     public function test_update_modifies_object(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
@@ -546,7 +534,7 @@ final class ObjectControllerTest extends TestCase
     public function test_update_allows_client_id_reassignment(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $clientA = Client::factory()->create(['tenant_id' => $tenant->id]);
         $clientB = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $clientA->id]);
@@ -576,10 +564,10 @@ final class ObjectControllerTest extends TestCase
     public function test_update_cross_tenant_object_returns_404(): void
     {
         // Arrange
-        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
         $tenantA = Tenant::factory()->forOwner($owner)->create();
         $tenantB = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
         $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
         $objectB = CleaningObject::factory()->create(['tenant_id' => $tenantB->id, 'client_id' => $clientB->id]);
 
@@ -594,7 +582,7 @@ final class ObjectControllerTest extends TestCase
     public function test_update_toggle_is_active_to_false(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'is_active' => true]);
 
@@ -608,7 +596,7 @@ final class ObjectControllerTest extends TestCase
     public function test_update_toggle_is_active_back_to_true(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'is_active' => false]);
 
@@ -620,29 +608,30 @@ final class ObjectControllerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // DESTROY — happy
+    // DEACTIVATE — happy
     // -------------------------------------------------------------------------
 
-    public function test_destroy_soft_deletes_object(): void
+    public function test_deactivate_sets_is_active_false(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
         // Act
-        $response = $this->delete(route('objects.destroy', $object));
+        $response = $this->post(route('objects.deactivate', $object));
 
         // Assert
-        $response->assertRedirect(route('objects.index'));
-        $this->assertSoftDeleted('objects', ['id' => $object->id]);
+        $response->assertRedirect(route('objects.show', $object));
+        $this->assertDatabaseHas('objects', ['id' => $object->id, 'is_active' => false]);
+        $this->assertNotSoftDeleted('objects', ['id' => $object->id]);
     }
 
     // -------------------------------------------------------------------------
-    // DESTROY — failure
+    // DEACTIVATE — failure
     // -------------------------------------------------------------------------
 
-    public function test_destroy_forbidden_without_delete_objects(): void
+    public function test_deactivate_forbidden_without_delete_objects(): void
     {
         // Arrange — Vedúca has only ViewObjects
         $tenant = $this->actingAsTenantUserWithObjectsFeature('Vedúca');
@@ -650,36 +639,66 @@ final class ObjectControllerTest extends TestCase
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
 
         // Act & Assert
-        $this->delete(route('objects.destroy', $object))->assertForbidden();
+        $this->post(route('objects.deactivate', $object))->assertForbidden();
     }
 
-    public function test_destroy_cross_tenant_object_returns_404(): void
+    public function test_deactivate_cross_tenant_object_returns_404(): void
     {
         // Arrange
-        $owner = User::factory()->pro()->create(['is_active' => true, 'locale' => 'sk']);
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
         $tenantA = Tenant::factory()->forOwner($owner)->create();
         $tenantB = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
         $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
         $objectB = CleaningObject::factory()->create(['tenant_id' => $tenantB->id, 'client_id' => $clientB->id]);
 
         // Act
-        $this->delete(route('objects.destroy', $objectB->id))->assertNotFound();
+        $this->post(route('objects.deactivate', $objectB->id))->assertNotFound();
     }
 
     // -------------------------------------------------------------------------
-    // DESTROY — edge
+    // DEACTIVATE — edge
     // -------------------------------------------------------------------------
 
     public function test_already_soft_deleted_object_not_in_scope(): void
     {
         // Arrange
-        $tenant = $this->actingAsTenantUserWithObjectsFeature('Vlastník');
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
         $object->delete();
 
         // Act — deleted objects excluded by global scope + SoftDeletes
         $this->get(route('objects.show', $object->id))->assertNotFound();
+    }
+
+    public function test_deactivate_is_idempotent_on_already_inactive_object(): void
+    {
+        // Arrange
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'is_active' => false]);
+
+        // Act
+        $response = $this->post(route('objects.deactivate', $object));
+
+        // Assert
+        $response->assertRedirect(route('objects.show', $object));
+        $this->assertDatabaseHas('objects', ['id' => $object->id, 'is_active' => false]);
+    }
+
+    public function test_object_can_be_reactivated_via_update(): void
+    {
+        // Arrange
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $this->post(route('objects.deactivate', $object));
+
+        // Act
+        $this->put(route('objects.update', $object), $this->storePayload($client->id, ['is_active' => true]));
+
+        // Assert
+        $this->assertDatabaseHas('objects', ['id' => $object->id, 'is_active' => true]);
     }
 }

@@ -101,7 +101,7 @@ final class ClientServiceObjectCascadeTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
