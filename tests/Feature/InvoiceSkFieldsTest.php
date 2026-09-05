@@ -9,7 +9,6 @@ use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Tenant;
@@ -56,8 +55,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_create_invoice_with_payment_type_and_symbols_persists_all_sk_fields(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'payment_type' => PaymentTypeEnum::Card->value,
@@ -87,8 +85,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_rounding_mode_document_rounds_total_to_whole_euro(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'rounding_mode' => RoundingModeEnum::Document->value,
@@ -117,8 +114,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_rounding_mode_cash005_rounds_to_five_cents(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'rounding_mode' => RoundingModeEnum::Cash005->value,
@@ -147,8 +143,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_rounding_mode_none_yields_zero_rounding_amount(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'rounding_mode' => RoundingModeEnum::None->value,
@@ -176,8 +171,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_cancel_copies_sk_fields_to_credit_note(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -220,8 +214,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_duplicate_copies_sk_fields_to_new_draft(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -256,8 +249,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_create_page_has_payment_type_currency_rounding_props(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('invoices.create'));
 
@@ -273,8 +265,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_edit_page_has_payment_type_currency_rounding_props(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -298,8 +289,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_constant_symbol_longer_than_10_chars_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'constant_symbol' => '12345678901',
@@ -310,8 +300,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_constant_symbol_with_letters_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'constant_symbol' => 'ABCD',
@@ -322,8 +311,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_invalid_currency_value_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'currency' => 'INVALID',
@@ -334,8 +322,7 @@ final class InvoiceSkFieldsTest extends TestCase
 
     public function test_invalid_payment_type_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('invoices.store'), $this->basePayload([
             'payment_type' => 'wire',

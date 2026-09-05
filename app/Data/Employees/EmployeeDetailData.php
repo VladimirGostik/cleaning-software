@@ -43,9 +43,9 @@ final class EmployeeDetailData extends Data
 
         return new self(
             id: $membership->id,
-            user_id: $membership->user?->id ?? '',
-            user_email: $membership->user?->email ?? '',
-            user_name: $membership->user?->name ?? '',
+            user_id: $membership->user->id ?? '',
+            user_email: $membership->user->email ?? '',
+            user_name: $membership->user->name ?? '',
             role_name: $membership->user?->roles->first()?->name,
             permissions: $membership->user?->getDirectPermissions()->pluck('name')->all() ?? [],
             first_name: $membership->first_name,
@@ -62,7 +62,7 @@ final class EmployeeDetailData extends Data
                 ->count() ?? 0,
             assigned_objects: [],
             is_active: (bool) $membership->is_active,
-            joined_at: $membership->joined_at?->toDateString() ?? '',
+            joined_at: $membership->joined_at->toDateString(),
         );
     }
 }

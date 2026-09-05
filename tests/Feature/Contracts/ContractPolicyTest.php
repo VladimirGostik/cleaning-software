@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Contracts;
 
 use App\Enums\ContractStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
@@ -18,13 +17,12 @@ final class ContractPolicyTest extends TestCase
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
-    // Vlastník — full contract access
+    // Admin — full contract access
     // -------------------------------------------------------------------------
 
     public function test_vlastnik_can_list_contracts(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('contracts.index'));
 
@@ -33,8 +31,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_can_view_draft_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -46,8 +43,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_can_access_create_contract_page(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('contracts.create'));
 
@@ -56,8 +52,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_can_edit_draft_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -69,8 +64,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_cannot_edit_active_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Active);
@@ -82,8 +76,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_can_sign_draft_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -99,8 +92,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_cannot_sign_active_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Active);
@@ -112,8 +104,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_can_terminate_active_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Active);
@@ -132,8 +123,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_cannot_terminate_draft_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -147,8 +137,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_vlastnik_can_delete_draft_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -166,7 +155,6 @@ final class ContractPolicyTest extends TestCase
     public function test_sekretarka_can_list_contracts(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $response = $this->get(route('contracts.index'));
 
@@ -176,7 +164,6 @@ final class ContractPolicyTest extends TestCase
     public function test_sekretarka_can_view_contract(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -189,7 +176,6 @@ final class ContractPolicyTest extends TestCase
     public function test_sekretarka_can_access_create_contract_page(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $response = $this->get(route('contracts.create'));
 
@@ -199,7 +185,6 @@ final class ContractPolicyTest extends TestCase
     public function test_sekretarka_cannot_edit_contract(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -212,7 +197,6 @@ final class ContractPolicyTest extends TestCase
     public function test_sekretarka_cannot_sign_contract(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -225,7 +209,6 @@ final class ContractPolicyTest extends TestCase
     public function test_sekretarka_cannot_terminate_contract(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Active);
@@ -240,7 +223,6 @@ final class ContractPolicyTest extends TestCase
     public function test_sekretarka_can_delete_draft_contract(): void
     {
         $user = $this->actingAsTenantUser('Sekretárka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -258,7 +240,6 @@ final class ContractPolicyTest extends TestCase
     public function test_uctovnicka_can_list_contracts(): void
     {
         $user = $this->actingAsTenantUser('Účtovníčka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $response = $this->get(route('contracts.index'));
 
@@ -268,7 +249,6 @@ final class ContractPolicyTest extends TestCase
     public function test_uctovnicka_cannot_access_create_contract_page(): void
     {
         $user = $this->actingAsTenantUser('Účtovníčka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
 
         $response = $this->get(route('contracts.create'));
 
@@ -278,7 +258,6 @@ final class ContractPolicyTest extends TestCase
     public function test_uctovnicka_cannot_sign_contract(): void
     {
         $user = $this->actingAsTenantUser('Účtovníčka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -291,7 +270,6 @@ final class ContractPolicyTest extends TestCase
     public function test_uctovnicka_cannot_terminate_contract(): void
     {
         $user = $this->actingAsTenantUser('Účtovníčka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Active);
@@ -306,7 +284,6 @@ final class ContractPolicyTest extends TestCase
     public function test_uctovnicka_cannot_delete_contract(): void
     {
         $user = $this->actingAsTenantUser('Účtovníčka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeContract($tenant, ContractStatusEnum::Draft);
@@ -322,8 +299,7 @@ final class ContractPolicyTest extends TestCase
 
     public function test_contract_from_other_tenant_returns_404(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create();
         $client = Client::factory()->create(['tenant_id' => $otherTenant->id]);

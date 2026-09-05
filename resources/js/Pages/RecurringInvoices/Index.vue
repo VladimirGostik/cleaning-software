@@ -55,7 +55,7 @@
 
         <PageHeader :title="t('recurring_invoices.title')" :subtitle="subtitle">
             <template #actions>
-                <Can permission="create recurring_invoices" feature="invoices">
+                <Can permission="create recurring_invoices">
                     <a href="/recurring-invoices/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('recurring_invoices.add') }}
@@ -70,7 +70,7 @@
             v-model:search="filterState.search"
             v-model:status="filterState.status"
             v-model:frequency="filterState.frequency"
-            v-model:client_id="filterState.client_id"
+            v-model:client-id="filterState.client_id"
             :statuses="statusOptions"
             :frequencies="frequencyOptions"
             :clients="clients"
@@ -103,8 +103,12 @@
                         >
                             <td>
                                 <p class="font-medium">{{ row.name }}</p>
-                                <p v-if="row.customer_display_name" class="text-xs text-base-content/50">{{ row.customer_display_name }}</p>
-                                <p v-else class="text-xs text-base-content/40 italic">{{ t('recurring_invoices.no_customer') }}</p>
+                                <p v-if="row.customer_display_name" class="text-xs text-base-content/50">
+                                    {{ row.customer_display_name }}
+                                </p>
+                                <p v-else class="text-xs text-base-content/40 italic">
+                                    {{ t('recurring_invoices.no_customer') }}
+                                </p>
                             </td>
                             <td>
                                 <RecurringFrequencyBadge :frequency="row.frequency" />
@@ -116,7 +120,9 @@
                                 {{ row.next_run_at ?? t('common.empty_dash') }}
                             </td>
                             <td class="text-sm font-mono">
-                                {{ row.occurrences_generated }}/{{ row.occurrences_limit !== null ? row.occurrences_limit : '∞' }}
+                                {{ row.occurrences_generated }}/{{
+                                    row.occurrences_limit !== null ? row.occurrences_limit : '∞'
+                                }}
                             </td>
                             <td>
                                 <CheckIcon v-if="row.auto_issue" class="w-4 h-4 text-success" />
@@ -148,14 +154,20 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="font-medium">{{ row.name }}</p>
-                            <p v-if="row.customer_display_name" class="text-sm text-base-content/60">{{ row.customer_display_name }}</p>
-                            <p v-else class="text-sm text-base-content/40 italic">{{ t('recurring_invoices.no_customer') }}</p>
+                            <p v-if="row.customer_display_name" class="text-sm text-base-content/60">
+                                {{ row.customer_display_name }}
+                            </p>
+                            <p v-else class="text-sm text-base-content/40 italic">
+                                {{ t('recurring_invoices.no_customer') }}
+                            </p>
                         </div>
                         <RecurringStatusBadge :status="row.status" />
                     </div>
                     <div class="flex gap-2 mt-2 flex-wrap">
                         <RecurringFrequencyBadge :frequency="row.frequency" />
-                        <span v-if="row.next_run_at" class="text-xs text-base-content/50">{{ row.next_run_at }}</span>
+                        <span v-if="row.next_run_at" class="text-xs text-base-content/50">{{
+                            row.next_run_at
+                        }}</span>
                     </div>
                 </div>
             </div>
@@ -171,7 +183,7 @@
             :icon="ArrowPathIcon"
         >
             <template #cta>
-                <Can permission="create recurring_invoices" feature="invoices">
+                <Can permission="create recurring_invoices">
                     <a href="/recurring-invoices/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('recurring_invoices.add') }}

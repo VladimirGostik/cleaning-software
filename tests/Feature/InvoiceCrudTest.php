@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -25,8 +24,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_authenticated_user_with_view_permission_can_list_invoices(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->count(3)->create([
@@ -52,8 +50,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_user_without_view_invoices_permission_gets_403(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $response = $this->get(route('invoices.index'));
 
@@ -66,8 +63,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_create_page_renders_correct_prop_keys(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('invoices.create'));
 
@@ -89,8 +85,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_edit_page_renders_correct_prop_keys(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
@@ -116,8 +111,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_user_can_create_standalone_invoice(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $payload = [
@@ -147,8 +141,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_create_invoice_for_client_populates_snapshot(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create([
@@ -183,8 +176,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_create_invoice_for_object_populates_object_snapshot(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -219,8 +211,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_store_fails_when_standalone_without_customer_name(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $payload = [
             'type' => InvoiceTypeEnum::OneOff->value,
@@ -240,8 +231,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_store_fails_when_object_belongs_to_different_client(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $clientA = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -270,8 +260,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_store_fails_with_cross_tenant_client_id(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create();
         $foreignClient = Client::factory()->create(['tenant_id' => $otherTenant->id]);
@@ -294,8 +283,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_monthly_invoice_requires_period_from_and_to(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $payload = [
             'type' => InvoiceTypeEnum::Monthly->value,
@@ -316,8 +304,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_non_vat_payer_tenant_creates_invoice_with_zero_vat_amount(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $tenant->update(['is_vat_payer' => false]);
 
@@ -350,8 +337,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_user_can_update_draft_invoice(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         // Use non-VAT payer for predictable total
         $tenant->update(['is_vat_payer' => false]);
@@ -384,8 +370,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_update_issued_invoice_is_rejected(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
@@ -414,8 +399,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_user_can_view_invoice(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
@@ -428,8 +412,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_cross_tenant_invoice_returns_404(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create();
         $foreignInvoice = Invoice::factory()->create(['tenant_id' => $otherTenant->id]);
@@ -445,8 +428,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_user_can_delete_draft_invoice(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
@@ -459,8 +441,7 @@ final class InvoiceCrudTest extends TestCase
 
     public function test_user_cannot_delete_issued_invoice(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
@@ -471,19 +452,5 @@ final class InvoiceCrudTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHasErrors('status');
         $this->assertDatabaseHas('invoices', ['id' => $invoice->id, 'deleted_at' => null]);
-    }
-
-    // -------------------------------------------------------------------------
-    // feature gate
-    // -------------------------------------------------------------------------
-
-    public function test_free_plan_user_gets_403_on_invoices_route(): void
-    {
-        // User factory defaults to Free plan — no setUserPlan call
-        $this->actingAsTenantUser('Vlastník');
-
-        $response = $this->get(route('invoices.index'));
-
-        $response->assertForbidden();
     }
 }

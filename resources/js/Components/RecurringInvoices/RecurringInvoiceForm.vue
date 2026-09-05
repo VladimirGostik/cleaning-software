@@ -159,7 +159,8 @@
                 { description: '', quantity: 1, unit: null, unit_price: 0, discount_percent: 0, vat_rate: 0 },
             ],
             deposit: parseFloat(props.recurring?.deposit ?? '0') || 0,
-            constant_symbol: props.recurring?.constant_symbol ?? props.invoiceDefaults?.constant_symbol ?? null,
+            constant_symbol:
+                props.recurring?.constant_symbol ?? props.invoiceDefaults?.constant_symbol ?? null,
             payment_type: props.recurring?.payment_type ?? props.invoiceDefaults?.payment_type ?? 'transfer',
             currency: props.recurring?.currency ?? props.invoiceDefaults?.currency ?? 'EUR',
             rounding_mode: props.recurring?.rounding_mode ?? props.invoiceDefaults?.rounding_mode ?? 'none',
@@ -267,11 +268,7 @@
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">
                         <h2 class="card-title text-base">{{ t('recurring_invoices.form.name') }}</h2>
-                        <TextInput
-                            field="name"
-                            :label="t('recurring_invoices.form.name')"
-                            required
-                        />
+                        <TextInput field="name" :label="t('recurring_invoices.form.name')" required />
                     </div>
                 </div>
 
@@ -362,7 +359,11 @@
                                 <template v-if="showPeriodFields">
                                     <FormField :label="t('invoices.form.period_from')">
                                         <input
-                                            v-model="(form as unknown as Record<string, string | null>)['period_from']"
+                                            v-model="
+                                                (form as unknown as Record<string, string | null>)[
+                                                    'period_from'
+                                                ]
+                                            "
                                             type="date"
                                             class="input w-full"
                                             :class="{ 'input-error': form.errors.period_from }"
@@ -374,7 +375,11 @@
                                     </FormField>
                                     <FormField :label="t('invoices.form.period_to')">
                                         <input
-                                            v-model="(form as unknown as Record<string, string | null>)['period_to']"
+                                            v-model="
+                                                (form as unknown as Record<string, string | null>)[
+                                                    'period_to'
+                                                ]
+                                            "
                                             type="date"
                                             class="input w-full"
                                             :class="{ 'input-error': form.errors.period_to }"
@@ -441,7 +446,9 @@
                                 <div v-if="form._end_mode === 'until_date'">
                                     <FormField :label="t('recurring_invoices.form.end_date')">
                                         <input
-                                            v-model="(form as unknown as Record<string, string | null>)['end_date']"
+                                            v-model="
+                                                (form as unknown as Record<string, string | null>)['end_date']
+                                            "
                                             type="date"
                                             class="input w-full"
                                             :class="{ 'input-error': form.errors.end_date }"
@@ -559,11 +566,7 @@
                 <!-- Note -->
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">
-                        <TextareaInput
-                            field="note"
-                            :label="t('invoices.form.note')"
-                            :rows="3"
-                        />
+                        <TextareaInput field="note" :label="t('invoices.form.note')" :rows="3" />
                     </div>
                 </div>
 

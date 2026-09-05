@@ -1,19 +1,21 @@
 <script setup lang="ts">
-withDefaults(
-    defineProps<{
-        processing: boolean;
-        submitLabel: string;
-        cancelLabel: string;
-        cancelHref?: string;
-    }>(),
-    {
-        cancelHref: undefined,
-    },
-);
+    withDefaults(
+        defineProps<{
+            processing: boolean;
+            submitLabel: string;
+            cancelLabel: string;
+            cancelHref?: string;
+            disabled?: boolean;
+        }>(),
+        {
+            cancelHref: undefined,
+            disabled: false,
+        },
+    );
 
-const emit = defineEmits<{
-    cancel: [];
-}>();
+    const emit = defineEmits<{
+        cancel: [];
+    }>();
 </script>
 
 <template>
@@ -24,7 +26,7 @@ const emit = defineEmits<{
         <button v-else type="button" class="btn btn-ghost" @click="emit('cancel')">
             {{ cancelLabel }}
         </button>
-        <button type="submit" class="btn btn-primary" :disabled="processing">
+        <button type="submit" class="btn btn-primary" :disabled="processing || disabled">
             <span v-if="processing" class="loading loading-spinner loading-xs" />
             {{ submitLabel }}
         </button>

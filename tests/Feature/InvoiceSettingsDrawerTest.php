@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\InvoiceTemplateEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -27,8 +26,7 @@ final class InvoiceSettingsDrawerTest extends TestCase
     public function test_index_response_includes_invoice_settings_props(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.index'));
@@ -51,8 +49,7 @@ final class InvoiceSettingsDrawerTest extends TestCase
     public function test_index_settings_template_options_is_non_empty_array(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $expectedCount = count(InvoiceTemplateEnum::cases());
 
@@ -74,8 +71,7 @@ final class InvoiceSettingsDrawerTest extends TestCase
     public function test_index_with_settings_props_returns_correct_company_name(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
@@ -93,8 +89,7 @@ final class InvoiceSettingsDrawerTest extends TestCase
     public function test_index_settings_is_vat_payer_matches_tenant(): void
     {
         // Arrange — TenantFactory defaults is_vat_payer = true; verify the prop round-trips
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
@@ -116,8 +111,7 @@ final class InvoiceSettingsDrawerTest extends TestCase
     public function test_settings_drawer_save_updates_settings(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
@@ -159,9 +153,8 @@ final class InvoiceSettingsDrawerTest extends TestCase
 
     public function test_user_without_view_invoices_permission_gets_403_on_index(): void
     {
-        // Arrange — Upratovačka role has no invoice permissions
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        // Arrange — Interná upratovačka role has no invoice permissions
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         // Act
         $response = $this->get(route('invoices.index'));

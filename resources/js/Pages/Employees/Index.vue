@@ -53,7 +53,7 @@
 
         <PageHeader :title="t('employees.title')">
             <template #actions>
-                <Can permission="create employees" feature="employees">
+                <Can permission="create employees">
                     <a href="/employees/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('employees.add') }}
@@ -120,10 +120,7 @@
                             </td>
                             <td @click.stop>
                                 <Can permission="edit employees">
-                                    <a
-                                        :href="`/employees/${row.id}/edit`"
-                                        class="btn btn-ghost btn-xs"
-                                    >
+                                    <a :href="`/employees/${row.id}/edit`" class="btn btn-ghost btn-xs">
                                         <PencilSquareIcon class="w-4 h-4" />
                                     </a>
                                 </Can>
@@ -166,7 +163,7 @@
             :icon="UserGroupIcon"
         >
             <template #cta>
-                <Can permission="create employees" feature="employees">
+                <Can permission="create employees">
                     <a href="/employees/create" class="btn btn-primary btn-sm">
                         {{ t('employees.add') }}
                     </a>

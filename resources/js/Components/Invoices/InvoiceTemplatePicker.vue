@@ -30,9 +30,7 @@
     const previewTemplate = ref<App.Enums.InvoiceTemplateEnum | null>(null);
 
     const iframeSrc = computed(() =>
-        previewTemplate.value
-            ? route('settings.invoicing.preview', { template: previewTemplate.value })
-            : '',
+        previewTemplate.value ? `/settings/invoicing/preview/${previewTemplate.value}` : '',
     );
 
     function selectTemplate(val: App.Enums.InvoiceTemplateEnum): void {
@@ -49,11 +47,7 @@
 
 <template>
     <div class="space-y-3">
-        <div
-            class="flex flex-wrap gap-2"
-            role="radiogroup"
-            :aria-label="t('invoice_settings.template')"
-        >
+        <div class="flex flex-wrap gap-2" role="radiogroup" :aria-label="t('invoice_settings.template')">
             <button
                 v-for="opt in options"
                 :key="opt.value"
@@ -75,10 +69,7 @@
                     class="h-16 w-12"
                 />
                 <p class="text-xs font-medium text-center mt-1 leading-tight">{{ opt.label }}</p>
-                <p
-                    v-if="modelValue === opt.value"
-                    class="text-xs text-primary text-center mt-0.5"
-                >
+                <p v-if="modelValue === opt.value" class="text-xs text-primary text-center mt-0.5">
                     {{ t('invoice_settings.template_selected') }}
                 </p>
             </button>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Invitations\AcceptInvitationData;
+use App\Models\User;
 use App\Services\InvitationAcceptService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +31,7 @@ final class InvitationController extends Controller
         }
 
         if (Auth::check()) {
-            /** @var \App\Models\User $loggedIn */
+            /** @var User $loggedIn */
             $loggedIn = Auth::user();
 
             if (strtolower($loggedIn->email) === strtolower($invitation->email)) {

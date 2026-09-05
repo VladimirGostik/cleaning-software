@@ -12,7 +12,6 @@ use App\Enums\ContractTermTypeEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\PermissionEnum;
 use App\Enums\QuoteStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
@@ -47,8 +46,7 @@ final class SystemNotificationDispatchTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -64,7 +62,7 @@ final class SystemNotificationDispatchTest extends TestCase
         $accountant->givePermissionTo(PermissionEnum::ViewInvoices->value);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // User WITHOUT ViewInvoices (Upratovačka)
+        // User WITHOUT ViewInvoices (Interná upratovačka)
         $cleaner = User::factory()->create();
         TenantMembership::create([
             'user_id' => $cleaner->id,
@@ -91,8 +89,7 @@ final class SystemNotificationDispatchTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -127,7 +124,7 @@ final class SystemNotificationDispatchTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -156,7 +153,7 @@ final class SystemNotificationDispatchTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -189,8 +186,7 @@ final class SystemNotificationDispatchTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -211,8 +207,7 @@ final class SystemNotificationDispatchTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -237,8 +232,7 @@ final class SystemNotificationDispatchTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -262,7 +256,7 @@ final class SystemNotificationDispatchTest extends TestCase
 
     public function test_tenant_database_channel_writes_tenant_id_column(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 

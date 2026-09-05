@@ -13,17 +13,8 @@
         <div class="card-body gap-3">
             <div class="flex items-center gap-2">
                 <h3 class="font-semibold text-sm">{{ breakdown.name }}</h3>
-                <span
-                    :class="[
-                        'badge badge-sm',
-                        breakdown.is_active ? 'badge-success' : 'badge-ghost',
-                    ]"
-                >
-                    {{
-                        breakdown.is_active
-                            ? t('work_breakdown.active')
-                            : t('work_breakdown.inactive')
-                    }}
+                <span :class="['badge badge-sm', breakdown.is_active ? 'badge-success' : 'badge-ghost']">
+                    {{ breakdown.is_active ? t('work_breakdown.active') : t('work_breakdown.inactive') }}
                 </span>
             </div>
 

@@ -1,164 +1,169 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, onBeforeUnmount, useId } from 'vue';
-import { CheckIcon } from '@heroicons/vue/24/outline';
-import FormField from './FormField.vue';
-import { useFormContext, callValidate } from './useFormContext';
-import { useFieldError } from './useFieldError';
+    import { computed, ref, nextTick, onBeforeUnmount, useId } from 'vue';
+    import { CheckIcon } from '@heroicons/vue/24/outline';
+    import FormField from './FormField.vue';
+    import { useFormContext, callValidate } from './useFormContext';
+    import { useFieldError } from './useFieldError';
 
-export interface SelectOption {
-    value: string | number;
-    label: string;
-}
-
-const props = withDefaults(
-    defineProps<{
-        field?: string;
-        modelValue?: string | number;
-        options: SelectOption[];
-        label?: string;
-        placeholder?: string;
-        required?: boolean;
-        disabled?: boolean;
-        error?: string;
-    }>(),
-    {
-        field: undefined,
-        modelValue: undefined,
-        label: undefined,
-        placeholder: undefined,
-        required: false,
-        disabled: false,
-        error: undefined,
-    },
-);
-
-const emit = defineEmits<{
-    'update:modelValue': [value: string | number];
-}>();
-
-const form = useFormContext();
-const resolvedError = useFieldError(props, form);
-
-const resolvedValue = computed<string | number>(() => {
-    if (props.field && form) {
-        return (form as unknown as Record<string, unknown>)[props.field] as string | number ?? '';
+    export interface SelectOption {
+        value: string | number;
+        label: string;
     }
-    return props.modelValue ?? '';
-});
 
-const matchedOption = computed(() => props.options.find(o => o.value === resolvedValue.value));
-const selectedLabel = computed(() => matchedOption.value?.label ?? '');
-const hasValue = computed(() => matchedOption.value !== undefined);
+    const props = withDefaults(
+        defineProps<{
+            field?: string;
+            modelValue?: string | number;
+            options: SelectOption[];
+            label?: string;
+            placeholder?: string;
+            required?: boolean;
+            disabled?: boolean;
+            error?: string;
+        }>(),
+        {
+            field: undefined,
+            modelValue: undefined,
+            label: undefined,
+            placeholder: undefined,
+            required: false,
+            disabled: false,
+            error: undefined,
+        },
+    );
 
-// DOM refs — allowed by ESLint ref ban
-const rootRef = ref<HTMLElement | null>(null);
-const triggerRef = ref<HTMLButtonElement | null>(null);
-const listRef = ref<HTMLUListElement | null>(null);
+    const emit = defineEmits<{
+        'update:modelValue': [value: string | number];
+    }>();
 
-// Imperative UI state — allowed by ESLint ref ban
-const isOpen = ref(false);
-const activeIndex = ref(-1);
+    const form = useFormContext();
+    const resolvedError = useFieldError(props, form);
 
-// Stable ARIA ids
-const triggerId = useId();
-const listId = useId();
-
-function select(value: string | number): void {
-    if (props.field && form) {
-        (form as unknown as Record<string, unknown>)[props.field] = value;
-        callValidate(form, props.field);
-    }
-    emit('update:modelValue', value);
-    close();
-}
-
-function open(): void {
-    if (props.disabled) {
-        return;
-    }
-    isOpen.value = true;
-    const currentIndex = props.options.findIndex(o => o.value === resolvedValue.value);
-    activeIndex.value = currentIndex >= 0 ? currentIndex : 0;
-    document.addEventListener('pointerdown', onDocPointer);
-    nextTick(() => {
-        listRef.value?.focus();
-        scrollActiveIntoView();
-    });
-}
-
-function close(): void {
-    isOpen.value = false;
-    activeIndex.value = -1;
-    document.removeEventListener('pointerdown', onDocPointer);
-    if (triggerRef.value?.isConnected) {
-        triggerRef.value.focus();
-    }
-}
-
-function toggle(): void {
-    if (isOpen.value) {
-        close();
-    } else {
-        open();
-    }
-}
-
-function onDocPointer(e: PointerEvent): void {
-    if (!isOpen.value) {
-        return;
-    }
-    if (rootRef.value && !rootRef.value.contains(e.target as Node)) {
-        close();
-    }
-}
-
-function scrollActiveIntoView(): void {
-    if (!listRef.value || activeIndex.value < 0) {
-        return;
-    }
-    const item = listRef.value.querySelector(`[id="${listId}-opt-${activeIndex.value}"]`) as HTMLElement | null;
-    item?.scrollIntoView({ block: 'nearest' });
-}
-
-function onTriggerKeydown(e: KeyboardEvent): void {
-    if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
-        e.preventDefault();
-        open();
-    }
-}
-
-function onListKeydown(e: KeyboardEvent): void {
-    if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        activeIndex.value = Math.min(activeIndex.value + 1, props.options.length - 1);
-        scrollActiveIntoView();
-    } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        activeIndex.value = Math.max(activeIndex.value - 1, 0);
-        scrollActiveIntoView();
-    } else if (e.key === 'Home') {
-        e.preventDefault();
-        activeIndex.value = 0;
-        scrollActiveIntoView();
-    } else if (e.key === 'End') {
-        e.preventDefault();
-        activeIndex.value = props.options.length - 1;
-        scrollActiveIntoView();
-    } else if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        if (activeIndex.value >= 0) {
-            select(props.options[activeIndex.value].value);
+    const resolvedValue = computed<string | number>(() => {
+        if (props.field && form) {
+            return ((form as unknown as Record<string, unknown>)[props.field] as string | number) ?? '';
         }
-    } else if (e.key === 'Escape') {
-        close();
-    } else if (e.key === 'Tab') {
+        return props.modelValue ?? '';
+    });
+
+    const matchedOption = computed(() => props.options.find((o) => o.value === resolvedValue.value));
+    const selectedLabel = computed(() => matchedOption.value?.label ?? '');
+    const hasValue = computed(() => matchedOption.value !== undefined);
+
+    // eslint-disable-next-line no-restricted-syntax -- template ref for click-outside hit-testing, imperative DOM access
+    const rootRef = ref<HTMLElement | null>(null);
+    // eslint-disable-next-line no-restricted-syntax -- template ref for focus restore on close, imperative DOM access
+    const triggerRef = ref<HTMLButtonElement | null>(null);
+    // eslint-disable-next-line no-restricted-syntax -- template ref for listbox focus + scrollIntoView, imperative DOM access
+    const listRef = ref<HTMLUListElement | null>(null);
+
+    // eslint-disable-next-line no-restricted-syntax -- imperative UI toggle: listbox open state, single-component
+    const isOpen = ref(false);
+    // eslint-disable-next-line no-restricted-syntax -- imperative roving-focus index for keyboard nav, single-component
+    const activeIndex = ref(-1);
+
+    // Stable ARIA ids
+    const triggerId = useId();
+    const listId = useId();
+
+    function select(value: string | number): void {
+        if (props.field && form) {
+            (form as unknown as Record<string, unknown>)[props.field] = value;
+            callValidate(form, props.field);
+        }
+        emit('update:modelValue', value);
         close();
     }
-}
 
-onBeforeUnmount(() => {
-    document.removeEventListener('pointerdown', onDocPointer);
-});
+    function open(): void {
+        if (props.disabled) {
+            return;
+        }
+        isOpen.value = true;
+        const currentIndex = props.options.findIndex((o) => o.value === resolvedValue.value);
+        activeIndex.value = currentIndex >= 0 ? currentIndex : 0;
+        document.addEventListener('pointerdown', onDocPointer);
+        nextTick(() => {
+            listRef.value?.focus();
+            scrollActiveIntoView();
+        });
+    }
+
+    function close(): void {
+        isOpen.value = false;
+        activeIndex.value = -1;
+        document.removeEventListener('pointerdown', onDocPointer);
+        if (triggerRef.value?.isConnected) {
+            triggerRef.value.focus();
+        }
+    }
+
+    function toggle(): void {
+        if (isOpen.value) {
+            close();
+        } else {
+            open();
+        }
+    }
+
+    function onDocPointer(e: PointerEvent): void {
+        if (!isOpen.value) {
+            return;
+        }
+        if (rootRef.value && !rootRef.value.contains(e.target as Node)) {
+            close();
+        }
+    }
+
+    function scrollActiveIntoView(): void {
+        if (!listRef.value || activeIndex.value < 0) {
+            return;
+        }
+        const item = listRef.value.querySelector(
+            `[id="${listId}-opt-${activeIndex.value}"]`,
+        ) as HTMLElement | null;
+        item?.scrollIntoView({ block: 'nearest' });
+    }
+
+    function onTriggerKeydown(e: KeyboardEvent): void {
+        if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+            e.preventDefault();
+            open();
+        }
+    }
+
+    function onListKeydown(e: KeyboardEvent): void {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex.value = Math.min(activeIndex.value + 1, props.options.length - 1);
+            scrollActiveIntoView();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex.value = Math.max(activeIndex.value - 1, 0);
+            scrollActiveIntoView();
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            activeIndex.value = 0;
+            scrollActiveIntoView();
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            activeIndex.value = props.options.length - 1;
+            scrollActiveIntoView();
+        } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (activeIndex.value >= 0) {
+                select(props.options[activeIndex.value].value);
+            }
+        } else if (e.key === 'Escape') {
+            close();
+        } else if (e.key === 'Tab') {
+            close();
+        }
+    }
+
+    onBeforeUnmount(() => {
+        document.removeEventListener('pointerdown', onDocPointer);
+    });
 </script>
 
 <template>

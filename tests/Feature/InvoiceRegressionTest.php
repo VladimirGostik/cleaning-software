@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -33,8 +32,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_create_page_returns_objects_prop_with_id_name_client_id(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -63,8 +61,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_create_page_objects_prop_is_tenant_scoped(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         // 1 object in current tenant
@@ -99,8 +96,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_edit_page_returns_objects_prop_with_id_name_client_id(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -131,8 +127,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_edit_page_objects_prop_excludes_other_tenant_objects(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $ownClient = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -167,8 +162,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_create_page_objects_prop_is_empty_when_no_objects_exist(): void
     {
         // Arrange — tenant has no objects
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.create'));
@@ -188,8 +182,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_customer_representative_is_persisted_on_store(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $payload = [
@@ -219,8 +212,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_customer_representative_appears_in_show_inertia_prop(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create([
@@ -242,8 +234,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_customer_representative_null_is_allowed_and_returned_as_null(): void
     {
         // Edge — field is nullable; absence must not explode serialisation
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create([
@@ -263,8 +254,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_customer_representative_is_copied_into_credit_note_on_cancel(): void
     {
         // Arrange — issued invoice with representative
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->issued()->create([
@@ -293,8 +283,7 @@ final class InvoiceRegressionTest extends TestCase
     public function test_customer_representative_is_copied_on_duplicate(): void
     {
         // Arrange — draft invoice with representative
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create([

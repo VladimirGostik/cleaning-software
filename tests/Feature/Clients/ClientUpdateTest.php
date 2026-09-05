@@ -39,7 +39,7 @@ final class ClientUpdateTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -62,7 +62,7 @@ final class ClientUpdateTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $existingContact = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id]);
@@ -86,7 +86,7 @@ final class ClientUpdateTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $contact1 = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id, 'is_primary' => true]);
@@ -111,7 +111,7 @@ final class ClientUpdateTest extends TestCase
         $tenantA = Tenant::factory()->create();
         $tenantB = Tenant::factory()->create();
 
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
 
         $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
 

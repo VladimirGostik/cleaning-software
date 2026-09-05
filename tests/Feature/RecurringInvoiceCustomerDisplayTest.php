@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Data\RecurringInvoices\RecurringInvoiceDetailData;
 use App\Data\RecurringInvoices\RecurringInvoiceIndexFilterData;
 use App\Data\RecurringInvoices\RecurringInvoiceListItemData;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\RecurringInvoice;
@@ -35,8 +34,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_detail_data_client_linked_resolves_client_name(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $client = Client::factory()->create([
@@ -63,8 +61,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_detail_data_object_linked_resolves_object_client_name(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $client = Client::factory()->create([
@@ -95,8 +92,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_detail_data_standalone_with_name_uses_customer_name(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $ri = RecurringInvoice::factory()->create([
@@ -117,8 +113,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_detail_data_standalone_no_name_resolves_null(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $ri = RecurringInvoice::factory()->create([
@@ -143,8 +138,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_list_item_data_client_linked_resolves_client_name(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $client = Client::factory()->create([
@@ -171,8 +165,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_list_item_data_object_linked_resolves_object_client_name(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $client = Client::factory()->create([
@@ -204,8 +197,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_list_item_data_standalone_with_name_uses_customer_name(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $ri = RecurringInvoice::factory()->create([
@@ -227,8 +219,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_list_item_data_standalone_no_name_resolves_null(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $ri = RecurringInvoice::factory()->create([
@@ -253,8 +244,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
     public function test_paginate_does_not_produce_n_plus_1_queries_for_mixed_rows(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         // 6 client-linked rows

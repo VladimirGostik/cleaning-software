@@ -26,7 +26,7 @@ final class ClientPolicyTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $user = $this->actingAsTenantUser('Vlastník', $tenant);
+        $user = $this->actingAsTenantUser('Admin', $tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Assert
@@ -71,7 +71,7 @@ final class ClientPolicyTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $user = $this->actingAsTenantUser('Upratovačka', $tenant);
+        $user = $this->actingAsTenantUser('Interná upratovačka', $tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         // Assert

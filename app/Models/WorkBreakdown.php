@@ -13,9 +13,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @property string $id
+ * @property string $tenant_id
+ * @property string $cleaning_object_id
+ * @property string|null $contract_id
+ * @property string|null $source_quote_id
+ * @property string $name
+ * @property bool $is_active
+ * @property Collection<int, WorkBreakdownTask> $tasks
+ * @property Contract|null $contract
+ * @property CleaningObject|null $cleaningObject
+ * @property Quote|null $sourceQuote
+ */
 #[Fillable([
     'tenant_id',
     'cleaning_object_id',
@@ -47,26 +61,41 @@ final class WorkBreakdown extends Model
             ->dontLogEmptyChanges();
     }
 
+    /**
+     * @return BelongsTo<CleaningObject, $this>
+     */
     public function cleaningObject(): BelongsTo
     {
         return $this->belongsTo(CleaningObject::class, 'cleaning_object_id');
     }
 
+    /**
+     * @return BelongsTo<Contract, $this>
+     */
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
     }
 
+    /**
+     * @return BelongsTo<Quote, $this>
+     */
     public function sourceQuote(): BelongsTo
     {
         return $this->belongsTo(Quote::class, 'source_quote_id');
     }
 
+    /**
+     * @return HasMany<WorkBreakdownTask, $this>
+     */
     public function tasks(): HasMany
     {
         return $this->hasMany(WorkBreakdownTask::class)->orderBy('position');
     }
 
+    /**
+     * @return HasMany<ScheduledJob, $this>
+     */
     public function jobs(): HasMany
     {
         return $this->hasMany(ScheduledJob::class, 'work_breakdown_id');

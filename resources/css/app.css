@@ -66,25 +66,35 @@
         -moz-osx-font-smoothing: grayscale;
         letter-spacing: -0.005em;
     }
-    h1, h2, h3, h4, h5, h6 {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
         letter-spacing: -0.02em;
     }
 }
 
 :root {
-    --auth-gradient-from:  #78350F;
-    --auth-gradient-mid:   #A16207;
-    --auth-gradient-to:    #713F12;
-    --auth-text-muted:     rgba(255,255,255,0.7);
-    --auth-text-bright:    rgba(255,255,255,0.9);
-    --auth-copyright:      rgba(255,255,255,0.6);
-    --auth-border-muted:   #cbd5e1;
-    --auth-link:           #1E3A8A;
+    --auth-gradient-from: #78350f;
+    --auth-gradient-mid: #a16207;
+    --auth-gradient-to: #713f12;
+    --auth-text-muted: rgba(255, 255, 255, 0.7);
+    --auth-text-bright: rgba(255, 255, 255, 0.9);
+    --auth-copyright: rgba(255, 255, 255, 0.6);
+    --auth-border-muted: #cbd5e1;
+    --auth-link: #1e3a8a;
 }
 
 /* Auth page utility classes */
 .auth-hero-bg {
-    background: linear-gradient(135deg, var(--auth-gradient-from) 0%, var(--auth-gradient-mid) 45%, var(--auth-gradient-to) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--auth-gradient-from) 0%,
+        var(--auth-gradient-mid) 45%,
+        var(--auth-gradient-to) 100%
+    );
 }
 
 .auth-mobile-logo-bg {

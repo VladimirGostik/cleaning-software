@@ -30,7 +30,7 @@ final class QuoteExpired extends BaseTenantNotification
         return __('app.notification_type.quote.expired.body');
     }
 
-    protected function url(object $notifiable): ?string
+    protected function url(object $notifiable): string
     {
         return route('quotes.show', $this->quoteId);
     }

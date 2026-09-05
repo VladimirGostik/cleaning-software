@@ -105,9 +105,12 @@
     });
 
     // Reset selection when page changes
-    watch(() => props.invoices, () => {
-        selectedIds.value = [];
-    });
+    watch(
+        () => props.invoices,
+        () => {
+            selectedIds.value = [];
+        },
+    );
 
     const subtitle = computed(() =>
         t('invoices.subtitle').replace('{count}', String(props.invoices.meta.total)),
@@ -189,8 +192,7 @@
     }
 
     function toggleType(value: string): void {
-        filterState.type =
-            filterState.type === value ? undefined : (value as App.Enums.InvoiceTypeEnum);
+        filterState.type = filterState.type === value ? undefined : (value as App.Enums.InvoiceTypeEnum);
     }
 
     function clearAdvancedFilters() {
@@ -291,24 +293,24 @@
 
         <PageHeader :title="t('invoices.title')" :subtitle="subtitle">
             <template #actions>
-                <Can permission="manage billing settings" feature="invoices">
+                <Can permission="manage billing settings">
                     <button type="button" class="btn btn-outline btn-sm" @click="settingsOpen = true">
                         <Cog6ToothIcon class="w-4 h-4" />{{ t('invoice_settings.open') }}
                     </button>
                 </Can>
-                <Can permission="view invoices" feature="invoices">
+                <Can permission="view invoices">
                     <button type="button" class="btn btn-outline btn-sm" @click="exportInvoices">
                         <ArrowDownTrayIcon class="w-4 h-4" />
                         {{ t('invoices.export') }}
                     </button>
                 </Can>
-                <Can permission="create recurring_invoices" feature="invoices">
+                <Can permission="create recurring_invoices">
                     <a href="/recurring-invoices/create" class="btn btn-outline btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('invoices.add_recurring') }}
                     </a>
                 </Can>
-                <Can permission="create invoices" feature="invoices">
+                <Can permission="create invoices">
                     <a href="/invoices/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('invoices.add') }}
@@ -319,16 +321,24 @@
 
         <!-- Stats cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div v-for="card in statCards" :key="card.key" class="card bg-base-100 border border-base-300 border-b-2 border-b-primary shadow-sm">
+            <div
+                v-for="card in statCards"
+                :key="card.key"
+                class="card bg-base-100 border border-base-300 border-b-2 border-b-primary shadow-sm"
+            >
                 <div class="card-body p-5">
                     <div class="flex items-start justify-between mb-3">
-                        <span class="text-xs font-semibold uppercase tracking-wide text-base-content/60">{{ card.label }}</span>
+                        <span class="text-xs font-semibold uppercase tracking-wide text-base-content/60">{{
+                            card.label
+                        }}</span>
                         <span class="rounded-lg p-1.5 bg-primary/10 text-primary">
                             <component :is="card.icon" class="w-4 h-4" />
                         </span>
                     </div>
                     <div class="text-2xl font-bold text-primary">{{ card.value }} €</div>
-                    <div class="text-xs text-base-content/50 mt-1">{{ t('invoices.stats.count').replace('{count}', String(card.count)) }}</div>
+                    <div class="text-xs text-base-content/50 mt-1">
+                        {{ t('invoices.stats.count').replace('{count}', String(card.count)) }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -354,7 +364,9 @@
                     :aria-pressed="filterState.status === opt.value"
                     :class="['btn btn-xs', filterState.status === opt.value ? 'btn-primary' : 'btn-ghost']"
                     @click="toggleStatus(opt.value)"
-                >{{ opt.label }}</button>
+                >
+                    {{ opt.label }}
+                </button>
             </div>
             <!-- Type pills -->
             <div class="flex flex-wrap gap-1">
@@ -365,7 +377,9 @@
                     :aria-pressed="filterState.type === opt.value"
                     :class="['btn btn-xs', filterState.type === opt.value ? 'btn-primary' : 'btn-ghost']"
                     @click="toggleType(opt.value)"
-                >{{ opt.label }}</button>
+                >
+                    {{ opt.label }}
+                </button>
             </div>
             <!-- Advanced filter toggle -->
             <button
@@ -431,7 +445,9 @@
                             </td>
                             <td>
                                 <div class="font-medium">{{ row.customer_name }}</div>
-                                <div v-if="row.object_name" class="text-xs text-base-content/50">{{ row.object_name }}</div>
+                                <div v-if="row.object_name" class="text-xs text-base-content/50">
+                                    {{ row.object_name }}
+                                </div>
                             </td>
                             <td>
                                 <span class="badge badge-ghost badge-sm">
@@ -439,10 +455,7 @@
                                 </span>
                             </td>
                             <td class="text-sm">{{ row.issue_date }}</td>
-                            <td
-                                class="text-sm"
-                                :class="{ 'text-error font-medium': isOverdue(row) }"
-                            >
+                            <td class="text-sm" :class="{ 'text-error font-medium': isOverdue(row) }">
                                 {{ row.due_date }}
                             </td>
                             <td class="text-right font-mono font-medium">{{ row.total }}</td>
@@ -453,28 +466,49 @@
                                 <div class="flex items-center gap-1">
                                     <ChevronRightIcon class="w-4 h-4 text-base-content/40" />
                                     <!-- Row dropdown actions -->
-                                    <Can permission="edit invoices" feature="invoices">
+                                    <Can permission="edit invoices">
                                         <details
-                                            v-if="row.status === 'draft' || row.status === 'issued' || row.status === 'overdue'"
+                                            v-if="
+                                                row.status === 'draft' ||
+                                                row.status === 'issued' ||
+                                                row.status === 'overdue'
+                                            "
                                             class="dropdown dropdown-end"
                                             @click.stop
                                         >
-                                            <summary class="btn btn-ghost btn-xs btn-square list-none" :aria-label="t('invoices.col.actions')">
+                                            <summary
+                                                class="btn btn-ghost btn-xs btn-square list-none"
+                                                :aria-label="t('invoices.col.actions')"
+                                            >
                                                 <EllipsisVerticalIcon class="w-4 h-4" />
                                             </summary>
-                                            <ul class="dropdown-content menu menu-sm bg-base-100 rounded-box shadow-lg z-10 w-40 p-1">
+                                            <ul
+                                                class="dropdown-content menu menu-sm bg-base-100 rounded-box shadow-lg z-10 w-40 p-1"
+                                            >
                                                 <li v-if="row.status === 'draft'">
-                                                    <button type="button" @click="rowAction('invoices.issue', row.id)">
+                                                    <button
+                                                        type="button"
+                                                        @click="rowAction('invoices.issue', row.id)"
+                                                    >
                                                         {{ t('invoices.action.issue') }}
                                                     </button>
                                                 </li>
                                                 <li v-if="row.status === 'issued'">
-                                                    <button type="button" @click="rowAction('invoices.pay', row.id)">
+                                                    <button
+                                                        type="button"
+                                                        @click="rowAction('invoices.pay', row.id)"
+                                                    >
                                                         {{ t('invoices.action.mark_paid') }}
                                                     </button>
                                                 </li>
-                                                <li v-if="row.status === 'issued' || row.status === 'overdue'">
-                                                    <button type="button" class="text-error" @click="cancelRow(row.id)">
+                                                <li
+                                                    v-if="row.status === 'issued' || row.status === 'overdue'"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        class="text-error"
+                                                        @click="cancelRow(row.id)"
+                                                    >
                                                         {{ t('invoices.action.cancel') }}
                                                     </button>
                                                 </li>
@@ -522,7 +556,9 @@
                                     {{ row.number ?? t('invoices.draft_number') }}
                                 </p>
                                 <p class="text-sm">{{ row.customer_name }}</p>
-                                <p v-if="row.object_name" class="text-xs text-base-content/50">{{ row.object_name }}</p>
+                                <p v-if="row.object_name" class="text-xs text-base-content/50">
+                                    {{ row.object_name }}
+                                </p>
                             </div>
                         </div>
                         <InvoiceStatusBadge :status="row.status" />
@@ -546,7 +582,7 @@
             :icon="ReceiptPercentIcon"
         >
             <template #cta>
-                <Can permission="create invoices" feature="invoices">
+                <Can permission="create invoices">
                     <a href="/invoices/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('invoices.add') }}
@@ -568,7 +604,7 @@
                     <XMarkIcon class="w-4 h-4" />
                     {{ t('invoices.filter.clear') }}
                 </button>
-                <Can permission="edit invoices" feature="invoices">
+                <Can permission="edit invoices">
                     <button type="button" class="btn btn-primary btn-sm" @click="bulkMarkPaid">
                         {{ t('invoices.bulk.mark_paid') }}
                     </button>
@@ -624,7 +660,9 @@
                             <!-- Issue date range -->
                             <div class="grid grid-cols-2 gap-3">
                                 <label class="form-control w-full">
-                                    <div class="label"><span class="label-text">{{ t('invoices.filter.issued_from') }}</span></div>
+                                    <div class="label">
+                                        <span class="label-text">{{ t('invoices.filter.issued_from') }}</span>
+                                    </div>
                                     <input
                                         ref="advancedFirstInput"
                                         v-model="filterState.issued_from"
@@ -633,7 +671,9 @@
                                     />
                                 </label>
                                 <label class="form-control w-full">
-                                    <div class="label"><span class="label-text">{{ t('invoices.filter.issued_to') }}</span></div>
+                                    <div class="label">
+                                        <span class="label-text">{{ t('invoices.filter.issued_to') }}</span>
+                                    </div>
                                     <input
                                         v-model="filterState.issued_to"
                                         type="date"
@@ -645,7 +685,9 @@
                             <!-- Due date range -->
                             <div class="grid grid-cols-2 gap-3">
                                 <label class="form-control w-full">
-                                    <div class="label"><span class="label-text">{{ t('invoices.filter.due_from') }}</span></div>
+                                    <div class="label">
+                                        <span class="label-text">{{ t('invoices.filter.due_from') }}</span>
+                                    </div>
                                     <input
                                         v-model="filterState.due_from"
                                         type="date"
@@ -653,7 +695,9 @@
                                     />
                                 </label>
                                 <label class="form-control w-full">
-                                    <div class="label"><span class="label-text">{{ t('invoices.filter.due_to') }}</span></div>
+                                    <div class="label">
+                                        <span class="label-text">{{ t('invoices.filter.due_to') }}</span>
+                                    </div>
                                     <input
                                         v-model="filterState.due_to"
                                         type="date"
@@ -680,11 +724,7 @@
                         </div>
 
                         <div class="modal-action">
-                            <button
-                                type="button"
-                                class="btn btn-ghost btn-sm"
-                                @click="clearAdvancedFilters"
-                            >
+                            <button type="button" class="btn btn-ghost btn-sm" @click="clearAdvancedFilters">
                                 {{ t('invoices.filter.clear') }}
                             </button>
                             <button

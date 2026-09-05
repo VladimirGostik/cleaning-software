@@ -34,18 +34,16 @@
 
     const form = useForm<{ name: string; password: string }>({ name: '', password: '' });
 
-    const isFormState = computed(
-        () => props.state === 'existing_user' || props.state === 'new_user',
-    );
+    const isFormState = computed(() => props.state === 'existing_user' || props.state === 'new_user');
 
     function submit() {
-        form.post(route('invitations.accept', { token: props.token }), {
+        form.post(`/invitations/${props.token}`, {
             onFinish: () => form.reset('password'),
         });
     }
 
     function logout() {
-        router.post(route('logout'));
+        router.post('/logout');
     }
 
     function switchLocale(code: string) {
@@ -59,11 +57,21 @@
     <!-- Error / block states: single-pane centered card -->
     <template v-if="state === 'expired' || state === 'invalid' || state === 'wrong_user'">
         <div class="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-            <div class="w-full max-w-[420px] rounded-2xl bg-white shadow-sm border border-slate-200 p-10 text-center">
+            <div
+                class="w-full max-w-[420px] rounded-2xl bg-white shadow-sm border border-slate-200 p-10 text-center"
+            >
                 <!-- Mobile logo -->
                 <Link href="/" class="inline-flex items-center gap-2 mb-8">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-lg text-white auth-mobile-logo-bg">
-                        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <span
+                        class="flex h-8 w-8 items-center justify-center rounded-lg text-white auth-mobile-logo-bg"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            class="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                        >
                             <path d="M5 14c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round" />
                             <path d="M8 17h8" stroke-linecap="round" />
                         </svg>
@@ -87,7 +95,10 @@
                     >
                         {{ t('invitation.logout_to_accept') }}
                     </button>
-                    <Link href="/login" class="mt-4 inline-block text-sm font-medium hover:underline auth-link">
+                    <Link
+                        href="/login"
+                        class="mt-4 inline-block text-sm font-medium hover:underline auth-link"
+                    >
                         <ArrowLeftIcon class="inline h-3.5 w-3.5 mr-1" />
                         {{ t('invitation.back_to_login') }}
                     </Link>
@@ -136,9 +147,15 @@
             >
                 <span
                     class="flex h-7 w-7 items-center justify-center rounded-md text-white"
-                    style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px)"
+                    style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px)"
                 >
-                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg
+                        viewBox="0 0 24 24"
+                        class="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                    >
                         <path d="M5 14c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round" />
                         <path d="M8 17h8" stroke-linecap="round" />
                         <circle cx="17" cy="6" r="1" fill="currentColor" />
@@ -155,7 +172,11 @@
                 <!-- Radial overlay -->
                 <div
                     class="absolute inset-0 pointer-events-none"
-                    style="background-image: radial-gradient(circle at 80% 20%, rgba(255,255,255,.08), transparent 40%), radial-gradient(circle at 20% 80%, rgba(255,255,255,.06), transparent 40%)"
+                    style="
+                        background-image:
+                            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08), transparent 40%),
+                            radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.06), transparent 40%);
+                    "
                 />
 
                 <div class="relative z-10">
@@ -181,7 +202,9 @@
             </div>
 
             <!-- Form panel (right 40%) -->
-            <div class="relative flex flex-1 flex-col items-center justify-center bg-white px-8 py-12 lg:px-16">
+            <div
+                class="relative flex flex-1 flex-col items-center justify-center bg-white px-8 py-12 lg:px-16"
+            >
                 <!-- Back link -->
                 <Link
                     href="/"
@@ -224,18 +247,15 @@
                             </template>
                         </p>
                         <p v-if="tenantName || roleName" class="mt-1 text-sm font-medium text-slate-700">
-                            {{ tenantName
-                            }}<template v-if="tenantName && roleName"> — </template>{{ roleName }}
+                            {{ tenantName }}<template v-if="tenantName && roleName"> — </template
+                            >{{ roleName }}
                         </p>
                     </div>
 
                     <form class="flex flex-col gap-[18px]" novalidate @submit.prevent="submit">
                         <!-- Email (immutable display) -->
                         <div class="flex flex-col gap-1.5">
-                            <label
-                                for="accept-email"
-                                class="text-sm font-medium text-slate-700"
-                            >
+                            <label for="accept-email" class="text-sm font-medium text-slate-700">
                                 {{ t('invitation.email_label') }}
                             </label>
                             <div class="relative">
@@ -254,10 +274,7 @@
 
                         <!-- Name (new_user only) -->
                         <div v-if="state === 'new_user'" class="flex flex-col gap-1.5">
-                            <label
-                                for="accept-name"
-                                class="text-sm font-medium text-slate-700"
-                            >
+                            <label for="accept-name" class="text-sm font-medium text-slate-700">
                                 {{ t('invitation.name_label') }}
                             </label>
                             <div class="relative">
@@ -283,10 +300,7 @@
 
                         <!-- Password -->
                         <div class="flex flex-col gap-1.5">
-                            <label
-                                for="accept-password"
-                                class="text-sm font-medium text-slate-700"
-                            >
+                            <label for="accept-password" class="text-sm font-medium text-slate-700">
                                 {{ t('invitation.password_label') }}
                             </label>
                             <div class="relative">
@@ -297,9 +311,7 @@
                                     id="accept-password"
                                     v-model="form.password"
                                     :type="showPassword ? 'text' : 'password'"
-                                    :autocomplete="
-                                        state === 'new_user' ? 'new-password' : 'current-password'
-                                    "
+                                    :autocomplete="state === 'new_user' ? 'new-password' : 'current-password'"
                                     class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition auth-input"
                                     :class="{
                                         'border-red-400 focus:border-red-400 focus:ring-red-100':
@@ -320,10 +332,7 @@
                                     <EyeIcon v-else class="h-4 w-4" />
                                 </button>
                             </div>
-                            <PasswordStrengthBar
-                                v-if="state === 'new_user'"
-                                :password="form.password"
-                            />
+                            <PasswordStrengthBar v-if="state === 'new_user'" :password="form.password" />
                             <p v-if="form.errors.password" class="text-xs text-red-500">
                                 {{ form.errors.password }}
                             </p>
@@ -347,19 +356,12 @@
 
                         <!-- Lang switcher -->
                         <div class="flex items-center justify-center gap-3 text-[12px] text-slate-500">
-                            <template
-                                v-for="(lang, i) in pageProps.languages ?? []"
-                                :key="lang.code"
-                            >
+                            <template v-for="(lang, i) in pageProps.languages ?? []" :key="lang.code">
                                 <span v-if="i > 0" class="text-slate-300">|</span>
                                 <button
                                     type="button"
                                     class="transition hover:text-slate-800"
-                                    :class="
-                                        lang.code === currentLocale
-                                            ? 'font-semibold text-slate-800'
-                                            : ''
-                                    "
+                                    :class="lang.code === currentLocale ? 'font-semibold text-slate-800' : ''"
                                     @click="switchLocale(lang.code)"
                                 >
                                     {{ lang.code.toUpperCase() }}

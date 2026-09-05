@@ -60,7 +60,9 @@
                 @keydown.escape="close"
             >
                 <!-- Header -->
-                <header class="sticky top-0 bg-base-100 border-b border-base-300 px-5 py-4 flex justify-between items-center shrink-0">
+                <header
+                    class="sticky top-0 bg-base-100 border-b border-base-300 px-5 py-4 flex justify-between items-center shrink-0"
+                >
                     <h2 id="peek-drawer-title" class="text-base font-semibold font-mono">
                         {{ invoice.number ?? t('invoices.draft_number') }}
                     </h2>
@@ -79,13 +81,17 @@
                     <!-- Status -->
                     <div class="flex items-center gap-2">
                         <InvoiceStatusBadge :status="invoice.status" />
-                        <span class="badge badge-ghost badge-sm">{{ t('invoice_type.' + invoice.type) }}</span>
+                        <span class="badge badge-ghost badge-sm">{{
+                            t('invoice_type.' + invoice.type)
+                        }}</span>
                     </div>
 
                     <!-- Customer / Object -->
                     <div class="space-y-1">
                         <p class="text-sm font-medium">{{ invoice.customer_name }}</p>
-                        <p v-if="invoice.object_name" class="text-xs text-base-content/50">{{ invoice.object_name }}</p>
+                        <p v-if="invoice.object_name" class="text-xs text-base-content/50">
+                            {{ invoice.object_name }}
+                        </p>
                     </div>
 
                     <div class="divider my-0" />
@@ -97,11 +103,15 @@
                             <dd class="font-mono font-semibold">{{ invoice.total }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs text-base-content/50 mb-0.5">{{ t('invoices.col.issue_date') }}</dt>
+                            <dt class="text-xs text-base-content/50 mb-0.5">
+                                {{ t('invoices.col.issue_date') }}
+                            </dt>
                             <dd>{{ invoice.issue_date }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs text-base-content/50 mb-0.5">{{ t('invoices.col.due_date') }}</dt>
+                            <dt class="text-xs text-base-content/50 mb-0.5">
+                                {{ t('invoices.col.due_date') }}
+                            </dt>
                             <dd :class="{ 'text-error font-medium': invoice.status === 'overdue' }">
                                 {{ invoice.due_date }}
                             </dd>
@@ -109,7 +119,7 @@
                     </dl>
 
                     <!-- Inline status actions -->
-                    <Can permission="edit invoices" feature="invoices">
+                    <Can permission="edit invoices">
                         <div class="flex flex-wrap gap-2 pt-1">
                             <button
                                 v-if="invoice.status === 'draft'"

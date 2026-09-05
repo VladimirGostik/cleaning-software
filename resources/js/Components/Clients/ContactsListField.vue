@@ -19,12 +19,13 @@
     // Single source of truth: local clone of the prop (no watch mirror).
     // All mutations operate here and immediately emit the full array.
     // eslint-disable-next-line no-restricted-syntax -- local mutable array for dynamic contact rows; not app/cross-component state
-    const items = ref<App.Data.Clients.ClientContactData[]>(
-        props.modelValue.map((c) => ({ ...c })),
-    );
+    const items = ref<App.Data.Clients.ClientContactData[]>(props.modelValue.map((c) => ({ ...c })));
 
     function notify() {
-        emit('update:modelValue', items.value.map((c) => ({ ...c })));
+        emit(
+            'update:modelValue',
+            items.value.map((c) => ({ ...c })),
+        );
     }
 
     function add() {

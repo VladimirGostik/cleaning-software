@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Invoice;
 use App\Models\InvoiceNumberSequence;
 use App\Models\Tenant;
@@ -22,8 +21,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_issue_draft_invoice_assigns_number_and_status(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $tenant->update(['invoice_number_format' => 'FA-{YYYY}-{XXXX}']);
 
@@ -46,8 +44,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_two_sequential_issues_get_consecutive_numbers(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $tenant->update(['invoice_number_format' => 'FA-{YYYY}-{XXXX}']);
 
@@ -69,8 +66,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_second_tenant_has_independent_sequence(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $tenant->update(['invoice_number_format' => '{YYYY}-{XXXX}']);
 
@@ -78,8 +74,7 @@ final class InvoiceIssueTest extends TestCase
         $this->post(route('invoices.issue', $inv1), []);
 
         // Switch to second tenant (its own user as owner)
-        $user2 = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user2, SubscriptionPlanEnum::Pro);
+        $user2 = $this->actingAsTenantUser('Admin');
         $tenant2 = Tenant::where('owner_id', $user2->id)->first();
         $tenant2->update(['invoice_number_format' => '{YYYY}-{XXXX}']);
 
@@ -96,8 +91,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_manual_number_is_accepted_and_sequence_not_incremented(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => now()->toDateString()]);
@@ -121,8 +115,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_issue_already_issued_invoice_is_rejected(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
@@ -136,8 +129,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_duplicate_manual_number_within_tenant_returns_error(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->issued()->create([
@@ -155,8 +147,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_same_manual_number_in_different_tenant_is_allowed(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $otherTenant = Tenant::factory()->create();
@@ -183,8 +174,7 @@ final class InvoiceIssueTest extends TestCase
         // Reproduce BUG 5: a manually-issued invoice occupies the number the
         // sequence would produce next. The service must skip that slot and
         // produce the next free number instead of colliding.
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $tenant->update(['invoice_number_format' => 'FA-{YYYY}-{XXXX}']);
 
@@ -216,8 +206,7 @@ final class InvoiceIssueTest extends TestCase
 
     public function test_format_yymm_xxx_renders_correctly(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $tenant->update(['invoice_number_format' => '{YY}{MM}{XXX}']);
 

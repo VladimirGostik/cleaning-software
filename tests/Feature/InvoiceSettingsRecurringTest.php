@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Data\Invoices\InvoiceSettingsData;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\RecurringDefaultStateEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -34,8 +33,7 @@ final class InvoiceSettingsRecurringTest extends TestCase
 
     public function test_recurring_default_state_draft_persists(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -48,8 +46,7 @@ final class InvoiceSettingsRecurringTest extends TestCase
 
     public function test_recurring_default_state_issued_persists(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -62,8 +59,7 @@ final class InvoiceSettingsRecurringTest extends TestCase
 
     public function test_settings_page_returns_recurring_state_options(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('settings.invoicing'));
 
@@ -73,8 +69,7 @@ final class InvoiceSettingsRecurringTest extends TestCase
 
     public function test_recurring_default_state_round_trips_via_dto(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -94,8 +89,7 @@ final class InvoiceSettingsRecurringTest extends TestCase
 
     public function test_invalid_recurring_default_state_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), $this->basePayload([
             'recurring_default_state' => 'invalid_state',
@@ -106,8 +100,7 @@ final class InvoiceSettingsRecurringTest extends TestCase
 
     public function test_missing_recurring_default_state_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $payload = $this->basePayload();
         unset($payload['recurring_default_state']);

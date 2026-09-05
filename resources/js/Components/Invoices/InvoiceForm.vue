@@ -240,11 +240,11 @@
     const itemsRef = computed(() => form.items);
     const isVatPayerRef = computed(() => props.isVatPayer);
     const depositRef = computed(() => form.deposit);
-    const { subtotal: previewSubtotal, total: previewTotal, balanceDue: previewBalanceDue } = useInvoiceTotals(
-        itemsRef,
-        isVatPayerRef,
-        depositRef,
-    );
+    const {
+        subtotal: previewSubtotal,
+        total: previewTotal,
+        balanceDue: previewBalanceDue,
+    } = useInvoiceTotals(itemsRef, isVatPayerRef, depositRef);
 
     const typeLabel = computed(() => {
         const opt = props.typeOptions.find((o) => o.value === form.type);
@@ -368,19 +368,30 @@
                                     <template v-if="showPeriodFields">
                                         <FormField :label="t('invoices.form.period_from')">
                                             <input
-                                                v-model="(form as unknown as Record<string, string | null>)['period_from']"
+                                                v-model="
+                                                    (form as unknown as Record<string, string | null>)[
+                                                        'period_from'
+                                                    ]
+                                                "
                                                 type="date"
                                                 class="input w-full"
                                                 :class="{ 'input-error': form.errors.period_from }"
                                                 :aria-invalid="form.errors.period_from ? 'true' : undefined"
                                             />
-                                            <p v-if="form.errors.period_from" class="text-error text-xs mt-0.5">
+                                            <p
+                                                v-if="form.errors.period_from"
+                                                class="text-error text-xs mt-0.5"
+                                            >
                                                 {{ form.errors.period_from }}
                                             </p>
                                         </FormField>
                                         <FormField :label="t('invoices.form.period_to')">
                                             <input
-                                                v-model="(form as unknown as Record<string, string | null>)['period_to']"
+                                                v-model="
+                                                    (form as unknown as Record<string, string | null>)[
+                                                        'period_to'
+                                                    ]
+                                                "
                                                 type="date"
                                                 class="input w-full"
                                                 :class="{ 'input-error': form.errors.period_to }"
@@ -478,11 +489,7 @@
                     <!-- Note -->
                     <div class="card bg-base-100 shadow-sm">
                         <div class="card-body">
-                            <TextareaInput
-                                field="note"
-                                :label="t('invoices.form.note')"
-                                :rows="3"
-                            />
+                            <TextareaInput field="note" :label="t('invoices.form.note')" :rows="3" />
                         </div>
                     </div>
 
@@ -499,13 +506,17 @@
                     <div class="sticky top-4">
                         <div class="card bg-base-100 shadow-sm">
                             <div class="card-body gap-3">
-                                <h2 class="card-title text-sm text-base-content/60 uppercase tracking-wide font-medium">
+                                <h2
+                                    class="card-title text-sm text-base-content/60 uppercase tracking-wide font-medium"
+                                >
                                     {{ t('invoices.preview.title') }}
                                 </h2>
 
                                 <!-- Number placeholder -->
                                 <div>
-                                    <p class="text-xs text-base-content/50 mb-0.5">{{ t('invoices.col.number') }}</p>
+                                    <p class="text-xs text-base-content/50 mb-0.5">
+                                        {{ t('invoices.col.number') }}
+                                    </p>
                                     <p class="font-mono text-sm font-medium text-base-content/40">
                                         {{ t('invoices.draft_number') }}
                                     </p>
@@ -513,18 +524,24 @@
 
                                 <!-- Type -->
                                 <div>
-                                    <p class="text-xs text-base-content/50 mb-0.5">{{ t('invoices.form.type') }}</p>
+                                    <p class="text-xs text-base-content/50 mb-0.5">
+                                        {{ t('invoices.form.type') }}
+                                    </p>
                                     <span class="badge badge-ghost badge-sm">{{ typeLabel }}</span>
                                 </div>
 
                                 <!-- Dates -->
                                 <div class="grid grid-cols-2 gap-2 text-xs">
                                     <div>
-                                        <p class="text-base-content/50 mb-0.5">{{ t('invoices.form.issue_date') }}</p>
+                                        <p class="text-base-content/50 mb-0.5">
+                                            {{ t('invoices.form.issue_date') }}
+                                        </p>
                                         <p class="font-mono">{{ form.issue_date }}</p>
                                     </div>
                                     <div>
-                                        <p class="text-base-content/50 mb-0.5">{{ t('invoices.form.due_date') }}</p>
+                                        <p class="text-base-content/50 mb-0.5">
+                                            {{ t('invoices.form.due_date') }}
+                                        </p>
                                         <p class="font-mono">{{ form.due_date }}</p>
                                     </div>
                                 </div>
@@ -534,21 +551,33 @@
                                 <!-- Totals -->
                                 <dl class="space-y-1 text-sm">
                                     <div class="flex justify-between gap-2">
-                                        <dt class="text-base-content/60">{{ t('invoices.detail.subtotal') }}</dt>
-                                        <dd class="font-mono">{{ previewSubtotal.toFixed(2) }} {{ form.currency }}</dd>
+                                        <dt class="text-base-content/60">
+                                            {{ t('invoices.detail.subtotal') }}
+                                        </dt>
+                                        <dd class="font-mono">
+                                            {{ previewSubtotal.toFixed(2) }} {{ form.currency }}
+                                        </dd>
                                     </div>
                                     <div class="flex justify-between gap-2 font-semibold">
                                         <dt>{{ t('invoices.detail.total') }}</dt>
-                                        <dd class="font-mono">{{ previewTotal.toFixed(2) }} {{ form.currency }}</dd>
+                                        <dd class="font-mono">
+                                            {{ previewTotal.toFixed(2) }} {{ form.currency }}
+                                        </dd>
                                     </div>
                                     <template v-if="form.deposit > 0">
                                         <div class="flex justify-between gap-2">
-                                            <dt class="text-base-content/60">{{ t('invoices.detail.deposit') }}</dt>
-                                            <dd class="font-mono">{{ form.deposit.toFixed(2) }} {{ form.currency }}</dd>
+                                            <dt class="text-base-content/60">
+                                                {{ t('invoices.detail.deposit') }}
+                                            </dt>
+                                            <dd class="font-mono">
+                                                {{ form.deposit.toFixed(2) }} {{ form.currency }}
+                                            </dd>
                                         </div>
                                         <div class="flex justify-between gap-2 font-semibold">
                                             <dt>{{ t('invoices.detail.balance_due') }}</dt>
-                                            <dd class="font-mono">{{ previewBalanceDue.toFixed(2) }} {{ form.currency }}</dd>
+                                            <dd class="font-mono">
+                                                {{ previewBalanceDue.toFixed(2) }} {{ form.currency }}
+                                            </dd>
                                         </div>
                                     </template>
                                 </dl>

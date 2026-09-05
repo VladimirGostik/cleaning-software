@@ -46,7 +46,7 @@ final class NotificationCenterTest extends TestCase
 
     public function test_index_lists_only_active_tenant_notifications(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -69,7 +69,7 @@ final class NotificationCenterTest extends TestCase
 
     public function test_unread_only_filter_returns_only_unread(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -86,7 +86,7 @@ final class NotificationCenterTest extends TestCase
 
     public function test_mark_single_notification_as_read(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -99,7 +99,7 @@ final class NotificationCenterTest extends TestCase
 
     public function test_mark_all_read_only_affects_active_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -123,14 +123,14 @@ final class NotificationCenterTest extends TestCase
 
     public function test_index_denied_without_view_notifications_permission(): void
     {
-        $this->actingAsTenantUser('Upratovačka');
+        $this->actingAsTenantUser('Interná upratovačka');
 
         $this->get(route('notifications.index'))->assertForbidden();
     }
 
     public function test_mark_read_denied_for_another_users_notification(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -142,7 +142,7 @@ final class NotificationCenterTest extends TestCase
 
     public function test_mark_read_denied_for_notification_in_different_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create(['owner_id' => $user->id, 'is_active' => true]);
         $id = $this->insertNotification($user, $otherTenant->id);

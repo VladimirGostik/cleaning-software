@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\PermissionEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Notifications\InvoiceIssued;
@@ -28,8 +27,7 @@ final class SendInvoiceEmailTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -58,8 +56,7 @@ final class SendInvoiceEmailTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -80,8 +77,7 @@ final class SendInvoiceEmailTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -101,8 +97,7 @@ final class SendInvoiceEmailTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -123,8 +118,7 @@ final class SendInvoiceEmailTest extends TestCase
         // Overdue invoices are NOT Issued — send guard requires status === Issued per plan spec
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -142,8 +136,7 @@ final class SendInvoiceEmailTest extends TestCase
 
     public function test_unauthenticated_user_cannot_send(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         /** @var Invoice $invoice */
@@ -164,8 +157,7 @@ final class SendInvoiceEmailTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         // Give this user ViewInvoices but NOT EditInvoices — simulates view-only role

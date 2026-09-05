@@ -110,7 +110,11 @@
                 <div class="card-body">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Object -->
-                        <FormField :label="t('schedule.form.object')" :error="form.errors.cleaning_object_id" required>
+                        <FormField
+                            :label="t('schedule.form.object')"
+                            :error="form.errors.cleaning_object_id"
+                            required
+                        >
                             <SelectInput
                                 v-model="objectSelectValue"
                                 :options="objectSelectOptions"
@@ -130,7 +134,11 @@
                         </FormField>
 
                         <!-- Date -->
-                        <FormField :label="t('schedule.form.date')" :error="form.errors.scheduled_date" required>
+                        <FormField
+                            :label="t('schedule.form.date')"
+                            :error="form.errors.scheduled_date"
+                            required
+                        >
                             <input
                                 v-model="form.scheduled_date"
                                 type="date"
@@ -141,7 +149,10 @@
                         </FormField>
 
                         <!-- Assignee -->
-                        <FormField :label="t('schedule.form.assignee')" :error="form.errors.assigned_membership_id">
+                        <FormField
+                            :label="t('schedule.form.assignee')"
+                            :error="form.errors.assigned_membership_id"
+                        >
                             <SelectInput
                                 v-model="membershipSelectValue"
                                 :options="membershipSelectOptions"

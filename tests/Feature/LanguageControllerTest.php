@@ -17,7 +17,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_switches_locale_and_redirects_to_previous_same_host_url(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
         $appUrl = config('app.url');
 
         $response = $this->get(
@@ -30,7 +30,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_stores_locale_in_session(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $this->get(route('language.switch', ['locale' => 'en']));
 
@@ -39,7 +39,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_persists_locale_on_authenticated_user(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->get(route('language.switch', ['locale' => 'en']));
 
@@ -48,7 +48,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_sets_locale_cookie(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('language.switch', ['locale' => 'sk']));
 
@@ -69,7 +69,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_unsupported_locale_falls_back_to_default(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $this->get(route('language.switch', ['locale' => 'xx']));
 
@@ -82,7 +82,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_external_referer_redirects_to_dashboard_not_off_site(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $response = $this->get(
             route('language.switch', ['locale' => 'sk']),
@@ -95,7 +95,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_referer_with_different_subdomain_redirects_to_dashboard(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
         $attackUrl = 'https://attacker.' . $appHost . '/steal';
@@ -110,7 +110,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_language_loop_referer_redirects_to_dashboard(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
         $appUrl = config('app.url');
 
         $response = $this->get(
@@ -123,7 +123,7 @@ final class LanguageControllerTest extends TestCase
 
     public function test_no_referer_header_stays_on_same_host(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         // No Referer header → url()->previous() returns the app base URL (same host).
         // The guard must NOT redirect off-site; any same-host destination is acceptable.

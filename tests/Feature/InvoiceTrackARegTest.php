@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Tenant;
@@ -34,8 +33,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_returns_correct_inertia_component(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.index'));
@@ -48,8 +46,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_returns_required_prop_keys(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.index'));
@@ -68,8 +65,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_filters_prop_has_expected_shape(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.index'));
@@ -89,8 +85,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_accepts_status_filter_and_returns_matching_invoices(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->count(2)->create(['tenant_id' => $tenant->id]);
@@ -110,8 +105,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_accepts_tab_query_param_without_error(): void
     {
         // Arrange — FE useInvoiceFilters sends tab param; backend ignores unknown keys silently
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act — send all params the composable can produce
         $response = $this->get(route('invoices.index', [
@@ -131,8 +125,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_accepts_month_query_param_without_error(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act — FE sends month as 'YYYY-MM' string
         $response = $this->get(route('invoices.index', ['month' => '2025-06']));
@@ -145,8 +138,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_accepts_tab_and_month_together_without_error(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.index', [
@@ -167,8 +159,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_index_status_options_prop_contains_all_enum_values(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $expectedCount = count(InvoiceStatusEnum::cases());
 
@@ -191,8 +182,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_create_returns_correct_inertia_component(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.create'));
@@ -205,8 +195,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_create_returns_vat_rate_prop(): void
     {
         // Arrange — vatRate is new prop, must not be dropped by layout refactor
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.create'));
@@ -222,8 +211,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_create_segmented_type_options_all_present(): void
     {
         // Arrange — segmented control in InvoiceForm.vue needs all typeOptions entries
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $expectedCount = count(InvoiceTypeEnum::cases());
 
@@ -245,8 +233,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_show_returns_correct_inertia_component(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -261,8 +248,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_show_invoice_prop_contains_status_and_number(): void
     {
         // Arrange — InvoiceStatusBadge.vue reads invoice.status; redesigned Show.vue reads invoice.number
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -283,8 +269,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_show_invoice_prop_contains_financial_fields(): void
     {
         // Arrange — InvoiceTotals composable (extracted from InvoiceItemsEditor) reads subtotal/vat_amount/total
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -305,8 +290,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_show_invoice_prop_contains_items_array(): void
     {
         // Arrange — InvoiceItemsEditor consumes items; regression if key renamed/removed
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -324,8 +308,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_show_invoice_prop_contains_supplier(): void
     {
         // Arrange — supplier block visible in Show.vue layout redesign
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -343,8 +326,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_show_invoice_prop_contains_qr_fields(): void
     {
         // Arrange — Pay-by-Square QR rendered in Show.vue; field must survive layout restructure
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -366,8 +348,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_settings_invoicing_returns_correct_component(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('settings.invoicing'));
@@ -380,8 +361,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_settings_invoicing_settings_prop_contains_required_keys(): void
     {
         // Arrange — section nav restructure must not strip settings prop keys
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('settings.invoicing'));
@@ -401,8 +381,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_settings_invoicing_templates_prop_contains_all_enum_values(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $expectedCount = count(InvoiceTemplateEnum::cases());
 
@@ -425,8 +404,7 @@ final class InvoiceTrackARegTest extends TestCase
     {
         // Arrange — InvoiceStatusBadge.vue maps status string; badge class mapping changed in Track A.
         // If status value changes format the badge would render wrong class silently.
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id]);
@@ -448,8 +426,7 @@ final class InvoiceTrackARegTest extends TestCase
     public function test_invoices_index_with_client_filter_returns_correct_subset(): void
     {
         // Arrange — client_id filter used in FE; verify backend filter still wired
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);

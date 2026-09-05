@@ -30,7 +30,7 @@ final class QuoteSent extends BaseTenantNotification
         return __('app.notification_type.quote.sent.body');
     }
 
-    protected function url(object $notifiable): ?string
+    protected function url(object $notifiable): string
     {
         return route('quotes.show', $this->quoteId);
     }

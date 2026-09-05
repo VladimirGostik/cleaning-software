@@ -9,7 +9,6 @@ use App\Enums\InvoiceTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Jobs\GenerateRecurringInvoiceJob;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
@@ -26,8 +25,7 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
 
     private function createDueTemplate(array $overrides = []): RecurringInvoice
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $ri = RecurringInvoice::factory()->create(array_merge([
@@ -200,8 +198,7 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
     public function test_tenant_context_bound_correctly_for_cross_tenant_isolation(): void
     {
         // Create template for tenant A
-        $userA = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($userA, SubscriptionPlanEnum::Pro);
+        $userA = $this->actingAsTenantUser('Admin');
         $tenantAId = app('current_tenant_id');
 
         $ri = RecurringInvoice::factory()->create([

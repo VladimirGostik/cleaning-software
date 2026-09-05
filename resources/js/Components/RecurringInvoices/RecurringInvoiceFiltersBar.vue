@@ -8,7 +8,7 @@
         search: string;
         status: App.Enums.RecurringInvoiceStatusEnum | undefined;
         frequency: App.Enums.RecurringFrequencyEnum | undefined;
-        client_id: string | undefined;
+        clientId: string | undefined;
         statuses: Array<{ value: string; label: string }>;
         frequencies: Array<{ value: string; label: string }>;
         clients: Array<{ id: string; name: string }>;
@@ -18,7 +18,7 @@
         (e: 'update:search', v: string): void;
         (e: 'update:status', v: App.Enums.RecurringInvoiceStatusEnum | undefined): void;
         (e: 'update:frequency', v: App.Enums.RecurringFrequencyEnum | undefined): void;
-        (e: 'update:client_id', v: string | undefined): void;
+        (e: 'update:clientId', v: string | undefined): void;
     }>();
 
     const { t } = useTranslate();
@@ -40,10 +40,10 @@
     });
 
     const clientValue = computed<string>({
-        get: () => props.client_id ?? '',
+        get: () => props.clientId ?? '',
         set: (val: string | number) => {
             const str = String(val);
-            emit('update:client_id', str || undefined);
+            emit('update:clientId', str || undefined);
         },
     });
 

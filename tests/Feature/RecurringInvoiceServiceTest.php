@@ -8,7 +8,6 @@ use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Services\RecurringInvoiceService;
@@ -73,8 +72,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_create_standalone_sets_active_and_next_run_at(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $data = $this->makeUpsertData([
             'start_date' => now()->subMonth()->toDateString(), // past = use frequency->nextRunDate
@@ -89,8 +87,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_create_with_future_start_date_uses_start_date_as_next_run(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $futureStart = now()->addMonths(2)->startOfMonth();
         $data = $this->makeUpsertData([
@@ -107,8 +104,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_create_client_linked(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $client = Client::factory()->create(['tenant_id' => $tenantId]);
@@ -125,8 +121,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_indefinite_template_is_active_with_no_end_no_limit(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $data = $this->makeUpsertData([
             'end_date' => null,
@@ -143,8 +138,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_pause_active_template_sets_paused_and_nulls_next_run(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $this->assertSame(RecurringInvoiceStatusEnum::Active, $ri->status);
@@ -157,8 +151,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_resume_paused_template_sets_active_and_next_run(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $this->service->pause($ri);
@@ -171,8 +164,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_cancel_active_sets_cancelled_and_nulls_next_run(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $this->service->cancel($ri);
@@ -183,8 +175,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_cancel_paused_sets_cancelled(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $this->service->pause($ri);
@@ -199,8 +190,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_start_date_today_day_of_month_equals_today_sets_next_run_today(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $todayDay = (int) now()->day;
 
@@ -217,8 +207,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_start_date_today_day_of_month_already_passed_this_month_sets_next_run_to_next_interval(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Ensure we pick a day_of_month strictly before today's day
         $today = now();
@@ -247,8 +236,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_pause_when_not_active_throws_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $this->service->pause($ri);
@@ -259,8 +247,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_resume_when_not_paused_throws_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
 
@@ -270,8 +257,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_update_completed_template_throws_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $ri->update(['status' => RecurringInvoiceStatusEnum::Completed]);
@@ -282,8 +268,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_cancel_completed_template_throws_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $ri->update(['status' => RecurringInvoiceStatusEnum::Completed]);
@@ -298,8 +283,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_resume_when_limit_already_reached_marks_completed(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData(['occurrences_limit' => 3]));
         $this->service->pause($ri);
@@ -317,8 +301,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_delete_soft_deletes_template(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ri = $this->service->create($this->makeUpsertData());
         $id = $ri->id;
@@ -330,8 +313,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_object_must_belong_to_client_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenantId = app('current_tenant_id');
 
         $clientA = Client::factory()->create(['tenant_id' => $tenantId]);
@@ -359,8 +341,7 @@ final class RecurringInvoiceServiceTest extends TestCase
 
     public function test_both_end_date_and_limit_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('recurring-invoices.store'), [
             'name' => 'Test',

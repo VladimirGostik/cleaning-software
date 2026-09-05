@@ -39,7 +39,7 @@ final class ClientStoreTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $payload = $this->corporatePayload([
             'contacts' => [
@@ -76,7 +76,7 @@ final class ClientStoreTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $payload = [
             'type' => ClientTypeEnum::Private->value,
@@ -105,7 +105,7 @@ final class ClientStoreTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $payload = $this->corporatePayload(['ico' => null]);
 
@@ -120,7 +120,7 @@ final class ClientStoreTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $payload = $this->corporatePayload([
             'contacts' => [
@@ -143,7 +143,7 @@ final class ClientStoreTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         Client::factory()->create(['tenant_id' => $tenant->id, 'ico' => '99999999']);
 
@@ -164,7 +164,7 @@ final class ClientStoreTest extends TestCase
 
         Client::factory()->create(['tenant_id' => $tenantA->id, 'ico' => '88888888']);
 
-        $this->actingAsTenantUser('Vlastník', $tenantB);
+        $this->actingAsTenantUser('Admin', $tenantB);
 
         $payload = $this->corporatePayload(['ico' => '88888888']);
 
@@ -204,7 +204,7 @@ final class ClientStoreTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $payload = $this->corporatePayload(['country' => 'Slovensko', 'ico' => '11111111']);
 
@@ -225,7 +225,7 @@ final class ClientStoreTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $payload = $this->corporatePayload(['country' => 'SK', 'ico' => '22222222']);
 

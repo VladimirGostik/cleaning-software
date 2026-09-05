@@ -42,9 +42,7 @@
             return {
                 id: job.id,
                 title,
-                start: job.start_time
-                    ? `${job.scheduled_date}T${job.start_time}`
-                    : job.scheduled_date,
+                start: job.start_time ? `${job.scheduled_date}T${job.start_time}` : job.scheduled_date,
                 end: job.end_time ? `${job.scheduled_date}T${job.end_time}` : undefined,
                 allDay: !job.start_time,
                 backgroundColor: color,

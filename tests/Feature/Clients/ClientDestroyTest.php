@@ -17,7 +17,7 @@ final class ClientDestroyTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -33,7 +33,7 @@ final class ClientDestroyTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $client->delete();

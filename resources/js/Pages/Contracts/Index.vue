@@ -33,7 +33,7 @@
     const { t } = useTranslate();
     const pageProps = usePageProps();
     const flash = computed(() => pageProps.flash);
-    const { can, hasFeature } = useAuthorization();
+    const { can } = useAuthorization();
     const { formatDate } = useLocalizedDate();
 
     const { state: filterState } = useContractFilters(props.filters);
@@ -54,7 +54,7 @@
 
         <PageHeader :title="t('contracts.title')">
             <template #actions>
-                <Can permission="create contracts" feature="contracts">
+                <Can permission="create contracts">
                     <a href="/contracts/create" class="btn btn-primary">
                         <PlusIcon class="w-4 h-4" />
                         {{ t('contracts.add') }}
@@ -155,7 +155,7 @@
             :description="t('contracts.empty_hint')"
             :icon="ClipboardDocumentListIcon"
         >
-            <template v-if="can('create contracts') && hasFeature('contracts')" #cta>
+            <template v-if="can('create contracts')" #cta>
                 <a href="/contracts/create" class="btn btn-primary btn-sm">
                     {{ t('contracts.add') }}
                 </a>

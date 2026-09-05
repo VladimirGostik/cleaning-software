@@ -9,7 +9,6 @@ use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Jobs\GenerateRecurringInvoiceJob;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -73,8 +72,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_vat_payer_three_rate_items_compute_correct_line_breakdown_and_recap(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
         $tenant->update(['is_vat_payer' => true, 'vat_rate' => 23]);
 
@@ -138,8 +136,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_deposit_persisted_and_balance_due_equals_total_minus_deposit(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
         $tenant->update(['is_vat_payer' => false]);
 
@@ -163,8 +160,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_discount_100_percent_yields_zero_line_base_and_vat(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
         $tenant->update(['is_vat_payer' => true]);
 
@@ -197,8 +193,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_discount_over_100_fails_validation_via_http(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $payload = $this->invoicePayload([
             $this->itemPayload(['discount_percent' => 110.0]),
@@ -218,8 +213,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_non_vat_payer_all_item_vat_zeroed_and_breakdown_null(): void
     {
         // Arrange: tenant is NOT a VAT payer
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
         $tenant->update(['is_vat_payer' => false]);
 
@@ -253,8 +247,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_cancel_credit_note_negates_line_columns_deposit_and_breakdown(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $invoice = Invoice::factory()->issued()->create([
@@ -319,8 +312,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_duplicate_copies_vat_columns_and_deposit_as_draft(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $original = Invoice::factory()->create([
@@ -385,8 +377,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_generate_from_template_passes_vat_rate_discount_and_deposit(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
         $tenant->update(['is_vat_payer' => true]);
         $tenantId = $tenant->id;
@@ -450,8 +441,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_job_generates_invoice_with_vat_breakdown_from_template(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
         $tenant->update(['is_vat_payer' => true]);
         $tenantId = $tenant->id;
@@ -505,8 +495,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_pay_by_square_returns_null_when_balance_due_is_zero(): void
     {
         // Arrange: deposit = total → balance_due = 0 → QR must be null
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $invoice = Invoice::factory()->issued()->create([
@@ -526,8 +515,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_pay_by_square_returns_null_when_balance_due_is_negative(): void
     {
         // Arrange: deposit > total → balance_due < 0 (overpayment/credit)
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $invoice = Invoice::factory()->issued()->create([
@@ -547,8 +535,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_pay_by_square_returns_non_null_for_positive_balance_due(): void
     {
         // Arrange: total=200, deposit=50 → balance_due=150 → QR encoded with 150
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $invoice = Invoice::factory()->issued()->create([
@@ -573,8 +560,7 @@ final class InvoiceVatCalcTest extends TestCase
     public function test_totals_partial_renders_vat_recap_and_deposit_row(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $invoice = Invoice::factory()->issued()->create([

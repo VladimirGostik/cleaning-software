@@ -13,7 +13,7 @@
     import { useTranslate } from '@/Composables/useTranslate';
     import { usePageProps } from '@/Composables/usePageProps';
     import { useLocalizedDate } from '@/Composables/useLocalizedDate';
-     
+
     import { ref } from 'vue';
 
     interface Props {
@@ -128,7 +128,10 @@
                             >
                                 {{ perm }}
                             </span>
-                            <span v-if="employee.permissions.length === 0" class="text-sm text-base-content/50">
+                            <span
+                                v-if="employee.permissions.length === 0"
+                                class="text-sm text-base-content/50"
+                            >
                                 {{ t('common.empty_dash') }}
                             </span>
                         </div>
@@ -186,11 +189,7 @@
                                         {{ t('contracts.form.employment_probation_end_date') }}
                                     </dt>
                                     <dd class="font-medium mt-0.5">
-                                        {{
-                                            formatDate(
-                                                employee.employment_contract.probation_end_date,
-                                            )
-                                        }}
+                                        {{ formatDate(employee.employment_contract.probation_end_date) }}
                                     </dd>
                                 </div>
                             </dl>
@@ -247,9 +246,7 @@
         <ConfirmDialog
             :open="deactivateConfirmOpen"
             :title="t('employees.action.deactivate')"
-            :body="
-                t('employees.deactivate_confirm').replace('{name}', employee.display_name)
-            "
+            :body="t('employees.deactivate_confirm').replace('{name}', employee.display_name)"
             :confirm-label="t('employees.action.deactivate')"
             :cancel-label="t('common.cancel')"
             confirm-variant="error"

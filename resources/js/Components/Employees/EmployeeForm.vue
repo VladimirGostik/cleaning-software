@@ -44,8 +44,7 @@
             employment_type: ec.employment_type,
             position: ec.position,
             hourly_rate: ec.hourly_rate !== null ? Number(ec.hourly_rate) || null : null,
-            monthly_salary:
-                ec.monthly_salary !== null ? Number(ec.monthly_salary) || null : null,
+            monthly_salary: ec.monthly_salary !== null ? Number(ec.monthly_salary) || null : null,
             weekly_hours: ec.weekly_hours !== null ? Number(ec.weekly_hours) || null : null,
             probation_end_date: ec.probation_end_date,
         };
@@ -86,9 +85,7 @@
         form.employment = data;
     }
 
-    const permissionsError = computed<string | undefined>(
-        () => form.errors.permissions ?? undefined,
-    );
+    const permissionsError = computed<string | undefined>(() => form.errors.permissions ?? undefined);
 
     function submit(): void {
         form.submit();
@@ -112,19 +109,9 @@
                                 required
                             />
                         </div>
-                        <TextInput
-                            field="first_name"
-                            :label="t('employees.form.first_name')"
-                        />
-                        <TextInput
-                            field="last_name"
-                            :label="t('employees.form.last_name')"
-                        />
-                        <TextInput
-                            field="phone"
-                            type="tel"
-                            :label="t('employees.form.phone')"
-                        />
+                        <TextInput field="first_name" :label="t('employees.form.first_name')" />
+                        <TextInput field="last_name" :label="t('employees.form.last_name')" />
+                        <TextInput field="phone" type="tel" :label="t('employees.form.phone')" />
                     </div>
                 </div>
             </div>

@@ -54,19 +54,10 @@
         <select
             class="select select-bordered"
             :value="role ?? ''"
-            @change="
-                emit(
-                    'update:role',
-                    ($event.target as HTMLSelectElement).value || undefined,
-                )
-            "
+            @change="emit('update:role', ($event.target as HTMLSelectElement).value || undefined)"
         >
             <option value="">{{ t('employees.filter.all_roles') }}</option>
-            <option
-                v-for="opt in roleOptions"
-                :key="String(opt.value)"
-                :value="String(opt.value)"
-            >
+            <option v-for="opt in roleOptions" :key="String(opt.value)" :value="String(opt.value)">
                 {{ opt.label }}
             </option>
         </select>
@@ -77,11 +68,7 @@
             @change="onStatusChange(($event.target as HTMLSelectElement).value || undefined)"
         >
             <option value="">{{ t('employees.filter.all_statuses') }}</option>
-            <option
-                v-for="opt in statusOptions"
-                :key="String(opt.value)"
-                :value="String(opt.value)"
-            >
+            <option v-for="opt in statusOptions" :key="String(opt.value)" :value="String(opt.value)">
                 {{ opt.label }}
             </option>
         </select>

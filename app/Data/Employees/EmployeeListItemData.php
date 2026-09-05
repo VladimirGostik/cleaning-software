@@ -27,7 +27,7 @@ final class EmployeeListItemData extends Data
         return new self(
             id: $membership->id,
             display_name: $membership->display_name,
-            email: $membership->user?->email ?? '',
+            email: $membership->user->email ?? '',
             phone: $membership->phone,
             role_name: $membership->user?->roles->first()?->name,
             assigned_objects_count: 0,

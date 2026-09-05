@@ -1,49 +1,49 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useFormContext, callValidate } from './useFormContext';
-import { useFieldError } from './useFieldError';
+    import { computed } from 'vue';
+    import { useFormContext, callValidate } from './useFormContext';
+    import { useFieldError } from './useFieldError';
 
-const props = withDefaults(
-    defineProps<{
-        field?: string;
-        modelValue?: boolean;
-        label?: string;
-        required?: boolean;
-        disabled?: boolean;
-        error?: string;
-    }>(),
-    {
-        field: undefined,
-        modelValue: undefined,
-        label: undefined,
-        required: false,
-        disabled: false,
-        error: undefined,
-    },
-);
+    const props = withDefaults(
+        defineProps<{
+            field?: string;
+            modelValue?: boolean;
+            label?: string;
+            required?: boolean;
+            disabled?: boolean;
+            error?: string;
+        }>(),
+        {
+            field: undefined,
+            modelValue: undefined,
+            label: undefined,
+            required: false,
+            disabled: false,
+            error: undefined,
+        },
+    );
 
-const emit = defineEmits<{
-    'update:modelValue': [value: boolean];
-}>();
+    const emit = defineEmits<{
+        'update:modelValue': [value: boolean];
+    }>();
 
-const form = useFormContext();
-const resolvedError = useFieldError(props, form);
+    const form = useFormContext();
+    const resolvedError = useFieldError(props, form);
 
-const resolvedValue = computed<boolean>(() => {
-    if (props.field && form) {
-        return (form as unknown as Record<string, unknown>)[props.field] as boolean ?? false;
+    const resolvedValue = computed<boolean>(() => {
+        if (props.field && form) {
+            return ((form as unknown as Record<string, unknown>)[props.field] as boolean) ?? false;
+        }
+        return props.modelValue ?? false;
+    });
+
+    function onChange(event: Event): void {
+        const value = (event.target as HTMLInputElement).checked;
+        if (props.field && form) {
+            (form as unknown as Record<string, unknown>)[props.field] = value;
+            callValidate(form, props.field);
+        }
+        emit('update:modelValue', value);
     }
-    return props.modelValue ?? false;
-});
-
-function onChange(event: Event): void {
-    const value = (event.target as HTMLInputElement).checked;
-    if (props.field && form) {
-        (form as unknown as Record<string, unknown>)[props.field] = value;
-        callValidate(form, props.field);
-    }
-    emit('update:modelValue', value);
-}
 </script>
 
 <template>

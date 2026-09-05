@@ -84,7 +84,7 @@ final class ClientServiceDeleteTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $contact = ClientContact::factory()->create([

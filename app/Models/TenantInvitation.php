@@ -13,9 +13,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @property string $id
+ * @property string $tenant_id
+ * @property string|null $invited_by_user_id
+ * @property string $email
+ * @property string $role_name
+ * @property string $token
+ * @property InvitationStatusEnum $status
+ * @property Carbon $expires_at
+ * @property Carbon|null $accepted_at
+ * @property Tenant|null $tenant
+ * @property User|null $invitedBy
+ */
 #[Fillable([
     'tenant_id',
     'invited_by_user_id',
@@ -51,6 +65,9 @@ final class TenantInvitation extends Model
             ->dontLogEmptyChanges();
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function invitedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by_user_id');

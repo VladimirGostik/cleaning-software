@@ -30,7 +30,7 @@ final class InvoiceOverdue extends BaseTenantNotification
         return __('app.notification_type.invoice.overdue.body');
     }
 
-    protected function url(object $notifiable): ?string
+    protected function url(object $notifiable): string
     {
         return route('invoices.show', $this->invoiceId);
     }

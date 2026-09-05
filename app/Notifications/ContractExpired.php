@@ -30,7 +30,7 @@ final class ContractExpired extends BaseTenantNotification
         return __('app.notification_type.contract.expired.body');
     }
 
-    protected function url(object $notifiable): ?string
+    protected function url(object $notifiable): string
     {
         return route('contracts.show', $this->contractId);
     }

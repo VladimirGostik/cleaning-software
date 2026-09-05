@@ -123,7 +123,7 @@
             :icon="CalendarDaysIcon"
         >
             <template #cta>
-                <Can permission="create schedule" feature="schedule">
+                <Can permission="create schedule">
                     <Link href="/jobs/create" class="btn btn-primary btn-sm">
                         {{ t('schedule.add') }}
                     </Link>

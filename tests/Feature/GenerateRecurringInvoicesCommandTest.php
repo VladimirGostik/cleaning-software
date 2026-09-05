@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Jobs\GenerateRecurringInvoiceJob;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
@@ -48,8 +47,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $due = $this->makeTemplate([
             'status' => RecurringInvoiceStatusEnum::Active,
@@ -69,8 +67,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->makeTemplate([
             'status' => RecurringInvoiceStatusEnum::Paused,
@@ -85,8 +82,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->makeTemplate([
             'status' => RecurringInvoiceStatusEnum::Active,
@@ -101,8 +97,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->makeTemplate([
             'status' => RecurringInvoiceStatusEnum::Active,
@@ -117,8 +112,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->makeTemplate([
             'status' => RecurringInvoiceStatusEnum::Completed,
@@ -133,8 +127,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
     {
         Queue::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->makeTemplate([
             'status' => RecurringInvoiceStatusEnum::Cancelled,

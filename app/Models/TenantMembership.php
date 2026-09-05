@@ -9,20 +9,29 @@ use App\Enums\ContractCategoryEnum;
 use Database\Factories\TenantMembershipFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
+ * @property string $id
+ * @property string $tenant_id
+ * @property string $user_id
+ * @property bool $is_active
+ * @property Carbon $joined_at
  * @property User|null $user
  * @property string $display_name
  * @property string|null $first_name
  * @property string|null $last_name
  * @property string|null $phone
  * @property string|null $position
+ * @property Collection<int, Contract> $employmentContracts
+ * @property Tenant|null $tenant
  */
 #[Fillable(['user_id', 'tenant_id', 'is_active', 'joined_at', 'first_name', 'last_name', 'phone', 'position'])]
 final class TenantMembership extends Model
@@ -49,17 +58,27 @@ final class TenantMembership extends Model
             ->dontLogEmptyChanges();
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<Tenant, $this>
+     */
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    /** Employment contracts where this membership is the contractable subject. */
+    /**
+     * Employment contracts where this membership is the contractable subject.
+     *
+     * @return MorphMany<Contract, $this>
+     */
     public function employmentContracts(): MorphMany
     {
         return $this->morphMany(Contract::class, 'contractable')
@@ -71,7 +90,7 @@ final class TenantMembership extends Model
         return Attribute::get(function (): string {
             $name = trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
 
-            return $name !== '' ? $name : ($this->user?->name ?? $this->user?->email ?? '');
+            return $name !== '' ? $name : ($this->user->name ?? $this->user->email ?? '');
         });
     }
 }

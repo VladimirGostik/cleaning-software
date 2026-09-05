@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\InvoiceTemplateEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -21,8 +20,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_owner_can_view_invoice_settings_page(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('settings.invoicing'));
 
@@ -36,8 +34,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_owner_can_update_invoice_settings(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $payload = [
@@ -63,8 +60,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_new_default_template_applied_to_next_invoice(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), [
@@ -82,8 +78,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_registration_info_saved_and_retrievable(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), [
@@ -105,8 +100,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_user_without_manage_billing_settings_gets_403_on_show(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $response = $this->get(route('settings.invoicing'));
 
@@ -115,8 +109,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_user_without_manage_billing_settings_gets_403_on_update(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $response = $this->put(route('settings.invoicing.update'), [
             'invoice_template' => InvoiceTemplateEnum::Modern->value,
@@ -128,8 +121,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_format_without_sequence_placeholder_returns_validation_error(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), [
             'invoice_template' => InvoiceTemplateEnum::Classic->value,
@@ -145,8 +137,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_invalid_iban_format_returns_validation_error(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), [
             'invoice_template' => InvoiceTemplateEnum::Classic->value,
@@ -162,8 +153,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_vat_rate_above_100_returns_validation_error(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), [
             'invoice_template' => InvoiceTemplateEnum::Classic->value,
@@ -179,8 +169,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_registration_info_too_long_returns_validation_error(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), [
             'invoice_template' => InvoiceTemplateEnum::Classic->value,
@@ -200,8 +189,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_null_optional_fields_are_accepted(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), [
             'invoice_template' => InvoiceTemplateEnum::Classic->value,
@@ -217,8 +205,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_vat_rate_zero_is_valid(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), [
@@ -236,8 +223,7 @@ final class InvoiceSettingsTest extends TestCase
 
     public function test_unauthenticated_user_redirected_from_settings(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $this->post(route('logout'));
 
         $response = $this->get(route('settings.invoicing'));

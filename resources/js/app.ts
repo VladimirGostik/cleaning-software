@@ -43,9 +43,8 @@ router.on('before', (event) => {
     }
 
     const permissionOk = req.permission === undefined || store.hasPermission(req.permission);
-    const featureOk = req.feature === undefined || store.hasFeatureFlag(req.feature);
 
-    if (!permissionOk || !featureOk) {
+    if (!permissionOk) {
         router.visit('/dashboard');
         return false;
     }

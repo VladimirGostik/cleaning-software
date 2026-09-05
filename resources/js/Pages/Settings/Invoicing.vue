@@ -74,24 +74,20 @@
 
     const isPreset = (fmt: string): boolean => presets.some((p) => p.value === fmt);
 
-    const form = useForm<InvoiceSettingsFormData>(
-        'put',
-        '/settings/invoicing',
-        {
-            invoice_template: props.settings.invoice_template,
-            invoice_number_format: props.settings.invoice_number_format,
-            custom_format: !isPreset(props.settings.invoice_number_format),
-            iban: props.settings.iban ?? null,
-            swift_bic: props.settings.swift_bic ?? null,
-            vat_rate: props.settings.vat_rate ?? null,
-            registration_info: props.settings.registration_info ?? null,
-            recurring_default_state: props.settings.recurring_default_state,
-            default_constant_symbol: props.settings.default_constant_symbol ?? null,
-            default_payment_type: props.settings.default_payment_type,
-            default_currency: props.settings.default_currency,
-            default_rounding_mode: props.settings.default_rounding_mode,
-        },
-    );
+    const form = useForm<InvoiceSettingsFormData>('put', '/settings/invoicing', {
+        invoice_template: props.settings.invoice_template,
+        invoice_number_format: props.settings.invoice_number_format,
+        custom_format: !isPreset(props.settings.invoice_number_format),
+        iban: props.settings.iban ?? null,
+        swift_bic: props.settings.swift_bic ?? null,
+        vat_rate: props.settings.vat_rate ?? null,
+        registration_info: props.settings.registration_info ?? null,
+        recurring_default_state: props.settings.recurring_default_state,
+        default_constant_symbol: props.settings.default_constant_symbol ?? null,
+        default_payment_type: props.settings.default_payment_type,
+        default_currency: props.settings.default_currency,
+        default_rounding_mode: props.settings.default_rounding_mode,
+    });
 
     const presetOptions = computed<SelectOption[]>(() => [
         ...presets.map((p) => ({ value: p.value, label: p.label })),
@@ -138,10 +134,7 @@
             <span>{{ pageProps.flash.success }}</span>
         </div>
 
-        <PageHeader
-            :title="t('invoice_settings.title')"
-            :subtitle="t('invoice_settings.subtitle')"
-        />
+        <PageHeader :title="t('invoice_settings.title')" :subtitle="t('invoice_settings.subtitle')" />
 
         <div class="grid grid-cols-[200px_1fr] gap-6">
             <!-- Left nav -->
@@ -150,7 +143,7 @@
                     <li v-for="section in sections" :key="section.key">
                         <button
                             type="button"
-                            :class="{ 'active': nav.section === section.key }"
+                            :class="{ active: nav.section === section.key }"
                             @click="nav.section = section.key"
                         >
                             {{ section.label }}
@@ -167,7 +160,9 @@
                         <div v-if="nav.section === 'basic'" class="space-y-6">
                             <div class="card bg-base-100 shadow-sm">
                                 <div class="card-body">
-                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.basic') }}</h2>
+                                    <h2 class="card-title text-base">
+                                        {{ t('invoice_settings.section.basic') }}
+                                    </h2>
                                     <TextInput
                                         field="iban"
                                         :label="t('invoice_settings.iban')"
@@ -190,7 +185,9 @@
                             <!-- Invoice defaults sub-card -->
                             <div class="card bg-base-100 shadow-sm">
                                 <div class="card-body">
-                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.defaults') }}</h2>
+                                    <h2 class="card-title text-base">
+                                        {{ t('invoice_settings.section.defaults') }}
+                                    </h2>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <TextInput
                                             field="default_constant_symbol"
@@ -227,11 +224,17 @@
                         <div v-if="nav.section === 'vat'" class="space-y-6">
                             <div class="card bg-base-100 shadow-sm">
                                 <div class="card-body">
-                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.vat') }}</h2>
+                                    <h2 class="card-title text-base">
+                                        {{ t('invoice_settings.section.vat') }}
+                                    </h2>
 
                                     <!-- VAT status info card -->
-                                    <div class="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
-                                        <p class="font-medium mb-0.5">{{ t('invoice_settings.vat_status_label') }}</p>
+                                    <div
+                                        class="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm"
+                                    >
+                                        <p class="font-medium mb-0.5">
+                                            {{ t('invoice_settings.vat_status_label') }}
+                                        </p>
                                         <p v-if="isVatPayer === true" class="text-base-content/70">
                                             {{ t('invoice_settings.vat_payer_yes') }}
                                         </p>
@@ -285,7 +288,9 @@
                         <div v-if="nav.section === 'numbering'" class="space-y-6">
                             <div class="card bg-base-100 shadow-sm">
                                 <div class="card-body">
-                                    <h2 class="card-title text-base">{{ t('invoice_settings.number_format') }}</h2>
+                                    <h2 class="card-title text-base">
+                                        {{ t('invoice_settings.number_format') }}
+                                    </h2>
                                     <p class="text-xs text-base-content/60 mb-3">
                                         {{ t('invoice_settings.number_format_hint') }}
                                     </p>
@@ -308,7 +313,9 @@
 
                                     <!-- Live preview -->
                                     <div class="mt-3 p-3 bg-base-200 rounded text-sm">
-                                        <span class="text-base-content/60">{{ t('invoice_settings.preview') }}: </span>
+                                        <span class="text-base-content/60"
+                                            >{{ t('invoice_settings.preview') }}:
+                                        </span>
                                         <span class="font-mono font-medium">{{ previewNumber }}</span>
                                     </div>
                                 </div>
@@ -325,7 +332,9 @@
                         <div v-if="nav.section === 'recurring'" class="space-y-6">
                             <div class="card bg-base-100 shadow-sm">
                                 <div class="card-body">
-                                    <h2 class="card-title text-base">{{ t('invoice_settings.section.recurring') }}</h2>
+                                    <h2 class="card-title text-base">
+                                        {{ t('invoice_settings.section.recurring') }}
+                                    </h2>
                                     <SelectInput
                                         field="recurring_default_state"
                                         :label="t('recurring_invoices.settings.default_state')"
@@ -345,7 +354,9 @@
                         <div v-if="nav.section === 'reminders'">
                             <div class="card bg-base-100 shadow-sm">
                                 <div class="card-body items-center text-center py-12">
-                                    <p class="text-base-content/50 text-sm">{{ t('invoice_settings.section.coming_soon') }}</p>
+                                    <p class="text-base-content/50 text-sm">
+                                        {{ t('invoice_settings.section.coming_soon') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>

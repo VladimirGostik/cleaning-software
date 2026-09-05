@@ -10,7 +10,6 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
@@ -33,8 +32,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_create_client_contract_replaces_token_in_body(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'ACME s.r.o.']);
@@ -68,8 +66,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_create_employment_contract_persists_employment_child(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $membership = TenantMembership::where('tenant_id', $tenant->id)->first();
@@ -109,8 +106,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_create_fails_with_cross_tenant_contractable_id(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create();
         $otherClient = Client::factory()->create(['tenant_id' => $otherTenant->id]);
@@ -136,8 +132,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_create_fails_when_employment_null_for_employment_category(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $membership = TenantMembership::where('tenant_id', $tenant->id)->first();
@@ -163,8 +158,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_create_fails_when_end_date_missing_for_fixed_term(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -190,8 +184,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_update_fails_when_end_date_missing_for_fixed_term(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeDraftContract($tenant);
@@ -217,8 +210,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_update_fails_when_employment_null_for_employment_category(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $membership = TenantMembership::where('tenant_id', $tenant->id)->first();
@@ -251,8 +243,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_update_deletes_employment_contract_when_category_changes(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $membership = TenantMembership::where('tenant_id', $tenant->id)->first();
@@ -292,8 +283,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_sign_transitions_draft_to_active(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeDraftContract($tenant);
@@ -311,8 +301,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_sign_throws_when_contract_already_active(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -334,8 +323,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_sign_twice_fails_on_second_call(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeDraftContract($tenant);
@@ -354,8 +342,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_terminate_sets_terminated_status_and_reason(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -385,8 +372,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_terminate_throws_when_contract_is_draft(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeDraftContract($tenant);
@@ -405,8 +391,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_delete_soft_deletes_draft_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $contract = $this->makeDraftContract($tenant);
@@ -422,8 +407,7 @@ final class ContractServiceTest extends TestCase
 
     public function test_delete_throws_when_contract_is_active(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);

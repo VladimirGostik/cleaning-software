@@ -31,6 +31,7 @@
 
     const { t } = useTranslate();
 
+    // eslint-disable-next-line no-restricted-syntax -- drawer focus management, imperative DOM access
     const drawerRef = ref<HTMLElement | null>(null);
     // eslint-disable-next-line no-restricted-syntax -- transient toast flag, no composable exists
     const showSaved = ref(false);
@@ -43,6 +44,7 @@
     );
 
     type SectionKey = 'zaklad' | 'dph' | 'sablony' | 'cislovanie' | 'opakovane' | 'upominky';
+    // eslint-disable-next-line no-restricted-syntax -- imperative UI state: active drawer section tab, single-component
     const activeSection = ref<SectionKey>('zaklad');
 
     const sections: Array<{ key: SectionKey; label: string }> = [
@@ -63,18 +65,15 @@
 
     const isPreset = (fmt: string): boolean => presets.some((p) => p.value === fmt);
 
-    const form = useForm(
-        'put',
-        '/settings/invoicing',
-        {
-            invoice_template: props.settings.invoice_template,
-            invoice_number_format: props.settings.invoice_number_format,
-            iban: props.settings.iban ?? null,
-            vat_rate: props.settings.vat_rate ?? null,
-            registration_info: props.settings.registration_info ?? null,
-        },
-    );
+    const form = useForm('put', '/settings/invoicing', {
+        invoice_template: props.settings.invoice_template,
+        invoice_number_format: props.settings.invoice_number_format,
+        iban: props.settings.iban ?? null,
+        vat_rate: props.settings.vat_rate ?? null,
+        registration_info: props.settings.registration_info ?? null,
+    });
 
+    // eslint-disable-next-line no-restricted-syntax -- local toggle for custom-format mode; not derivable from form state without behavior change
     const customFormat = ref(!isPreset(props.settings.invoice_number_format));
 
     const presetOptions = computed<SelectOption[]>(() => [
@@ -139,9 +138,18 @@
                 @keydown.escape="close"
             >
                 <!-- Header -->
-                <header class="sticky top-0 bg-base-100 border-b border-base-300 px-6 py-4 flex justify-between items-center shrink-0">
-                    <h2 id="invoice-settings-title" class="text-lg font-semibold">{{ t('invoice_settings.open') }}</h2>
-                    <button class="btn btn-sm btn-ghost btn-circle" type="button" :aria-label="t('common.close')" @click="close">
+                <header
+                    class="sticky top-0 bg-base-100 border-b border-base-300 px-6 py-4 flex justify-between items-center shrink-0"
+                >
+                    <h2 id="invoice-settings-title" class="text-lg font-semibold">
+                        {{ t('invoice_settings.open') }}
+                    </h2>
+                    <button
+                        class="btn btn-sm btn-ghost btn-circle"
+                        type="button"
+                        :aria-label="t('common.close')"
+                        @click="close"
+                    >
                         <XMarkIcon class="w-5 h-5" />
                     </button>
                 </header>
@@ -155,7 +163,7 @@
                                 <button
                                     type="button"
                                     :aria-current="activeSection === section.key ? 'page' : undefined"
-                                    :class="{ 'active': activeSection === section.key }"
+                                    :class="{ active: activeSection === section.key }"
                                     @click="activeSection = section.key"
                                 >
                                     {{ section.label }}
@@ -172,16 +180,19 @@
 
                         <FormProvider :form="form">
                             <form class="p-6 space-y-6 pb-24" novalidate @submit.prevent="submit">
-
                                 <!-- Section: zaklad -->
                                 <template v-if="activeSection === 'zaklad'">
                                     <div class="card bg-base-100 border border-base-300">
                                         <div class="card-body space-y-4">
-                                            <h3 class="font-semibold text-sm">{{ t('invoice_settings.section.zaklad') }}</h3>
+                                            <h3 class="font-semibold text-sm">
+                                                {{ t('invoice_settings.section.zaklad') }}
+                                            </h3>
 
                                             <!-- Company name read-only -->
                                             <div>
-                                                <p class="text-xs text-base-content/60 mb-1">{{ t('clients.col.name') }}</p>
+                                                <p class="text-xs text-base-content/60 mb-1">
+                                                    {{ t('clients.col.name') }}
+                                                </p>
                                                 <p class="text-sm font-medium">{{ companyName }}</p>
                                             </div>
 
@@ -199,38 +210,81 @@
                                     <!-- Track B: disabled company detail placeholders — outside FormProvider scope logic -->
                                     <div class="card bg-base-100 border border-base-300 opacity-60">
                                         <div class="card-body space-y-3">
-                                            <h3 class="font-semibold text-sm">{{ t('invoice_settings.company.ico') }} / {{ t('invoice_settings.company.dic') }}</h3>
+                                            <h3 class="font-semibold text-sm">
+                                                {{ t('invoice_settings.company.ico') }} /
+                                                {{ t('invoice_settings.company.dic') }}
+                                            </h3>
                                             <div class="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <p class="text-xs text-base-content/60 mb-1">{{ t('invoice_settings.company.ico') }}</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <p class="text-xs text-base-content/60 mb-1">
+                                                        {{ t('invoice_settings.company.ico') }}
+                                                    </p>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <p class="text-xs text-base-content/60 mb-1">{{ t('invoice_settings.company.dic') }}</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <p class="text-xs text-base-content/60 mb-1">
+                                                        {{ t('invoice_settings.company.dic') }}
+                                                    </p>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <p class="text-xs text-base-content/60 mb-1">{{ t('invoice_settings.company.ic_dph') }}</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <p class="text-xs text-base-content/60 mb-1">
+                                                        {{ t('invoice_settings.company.ic_dph') }}
+                                                    </p>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <p class="text-xs text-base-content/60 mb-1">{{ t('invoice_settings.company.swift') }}</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <p class="text-xs text-base-content/60 mb-1">
+                                                        {{ t('invoice_settings.company.swift') }}
+                                                    </p>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div>
-                                                <p class="text-xs text-base-content/60 mb-1">{{ t('invoice_settings.company.address') }}</p>
-                                                <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                <p class="text-xs text-base-content/60 mb-1">
+                                                    {{ t('invoice_settings.company.address') }}
+                                                </p>
+                                                <div
+                                                    class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                >
+                                                    —
+                                                </div>
                                             </div>
                                             <div>
-                                                <p class="text-xs text-base-content/60 mb-1">{{ t('invoice_settings.company.logo') }}</p>
-                                                <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                <p class="text-xs text-base-content/60 mb-1">
+                                                    {{ t('invoice_settings.company.logo') }}
+                                                </p>
+                                                <div
+                                                    class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                >
+                                                    —
+                                                </div>
                                             </div>
-                                            <p class="text-xs text-base-content/40 italic">{{ t('invoice_settings.coming_soon') }}</p>
+                                            <p class="text-xs text-base-content/40 italic">
+                                                {{ t('invoice_settings.coming_soon') }}
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <div class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3">
+                                    <div
+                                        class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3"
+                                    >
                                         <FormActions
                                             :processing="form.processing"
                                             :cancel-label="t('cancel')"
@@ -244,7 +298,9 @@
                                 <template v-if="activeSection === 'dph'">
                                     <div class="card bg-base-100 border border-base-300">
                                         <div class="card-body space-y-4">
-                                            <h3 class="font-semibold text-sm">{{ t('invoice_settings.section.dph') }}</h3>
+                                            <h3 class="font-semibold text-sm">
+                                                {{ t('invoice_settings.section.dph') }}
+                                            </h3>
 
                                             <!-- VAT payer status card (read-only) -->
                                             <div
@@ -255,9 +311,15 @@
                                                         : 'border-base-300 bg-base-200/50',
                                                 ]"
                                             >
-                                                <p class="font-medium mb-0.5">{{ t('invoice_settings.vat_status_label') }}</p>
+                                                <p class="font-medium mb-0.5">
+                                                    {{ t('invoice_settings.vat_status_label') }}
+                                                </p>
                                                 <p class="text-base-content/70">
-                                                    {{ isVatPayer ? t('invoice_settings.vat_payer_yes') : t('invoice_settings.vat_payer_no') }}
+                                                    {{
+                                                        isVatPayer
+                                                            ? t('invoice_settings.vat_payer_yes')
+                                                            : t('invoice_settings.vat_payer_no')
+                                                    }}
                                                 </p>
                                             </div>
 
@@ -273,7 +335,9 @@
                                         </div>
                                     </div>
 
-                                    <div class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3">
+                                    <div
+                                        class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3"
+                                    >
                                         <FormActions
                                             :processing="form.processing"
                                             :cancel-label="t('cancel')"
@@ -287,7 +351,9 @@
                                 <template v-if="activeSection === 'sablony'">
                                     <div class="card bg-base-100 border border-base-300">
                                         <div class="card-body space-y-4">
-                                            <h3 class="font-semibold text-sm">{{ t('invoice_settings.section.sablony') }}</h3>
+                                            <h3 class="font-semibold text-sm">
+                                                {{ t('invoice_settings.section.sablony') }}
+                                            </h3>
                                             <InvoiceTemplatePicker
                                                 v-model="form.invoice_template"
                                                 :options="templateOptions"
@@ -296,7 +362,9 @@
                                         </div>
                                     </div>
 
-                                    <div class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3">
+                                    <div
+                                        class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3"
+                                    >
                                         <FormActions
                                             :processing="form.processing"
                                             :cancel-label="t('cancel')"
@@ -310,7 +378,9 @@
                                 <template v-if="activeSection === 'cislovanie'">
                                     <div class="card bg-base-100 border border-base-300">
                                         <div class="card-body space-y-4">
-                                            <h3 class="font-semibold text-sm">{{ t('invoice_settings.section.cislovanie') }}</h3>
+                                            <h3 class="font-semibold text-sm">
+                                                {{ t('invoice_settings.section.cislovanie') }}
+                                            </h3>
                                             <p class="text-xs text-base-content/60">
                                                 {{ t('invoice_settings.number_format_hint') }}
                                             </p>
@@ -333,13 +403,17 @@
 
                                             <!-- Live preview -->
                                             <div class="p-3 bg-base-200 rounded text-sm">
-                                                <span class="text-base-content/60">{{ t('invoice_settings.preview') }}: </span>
+                                                <span class="text-base-content/60"
+                                                    >{{ t('invoice_settings.preview') }}:
+                                                </span>
                                                 <span class="font-mono font-medium">{{ previewNumber }}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3">
+                                    <div
+                                        class="sticky bottom-0 bg-base-100 border-t border-base-300 -mx-6 px-6 py-3"
+                                    >
                                         <FormActions
                                             :processing="form.processing"
                                             :cancel-label="t('cancel')"
@@ -353,8 +427,12 @@
                                 <template v-if="activeSection === 'opakovane'">
                                     <!-- Info block -->
                                     <div class="rounded-lg bg-accent/10 border border-accent/30 p-4 text-sm">
-                                        <p class="font-medium text-accent">{{ t('invoice_settings.section.opakovane') }}</p>
-                                        <p class="text-base-content/70 mt-1 text-xs">{{ t('invoice_settings.coming_soon') }}</p>
+                                        <p class="font-medium text-accent">
+                                            {{ t('invoice_settings.section.opakovane') }}
+                                        </p>
+                                        <p class="text-base-content/70 mt-1 text-xs">
+                                            {{ t('invoice_settings.coming_soon') }}
+                                        </p>
                                     </div>
 
                                     <div class="card bg-base-100 border border-base-300 opacity-60">
@@ -363,38 +441,80 @@
                                             <div class="space-y-3">
                                                 <div class="flex items-center justify-between">
                                                     <div>
-                                                        <p class="text-sm font-medium">{{ t('invoice_settings.recurring.auto_issue') }}</p>
-                                                        <p class="text-xs text-base-content/60">{{ t('invoice_settings.recurring.auto_issue_desc') }}</p>
+                                                        <p class="text-sm font-medium">
+                                                            {{ t('invoice_settings.recurring.auto_issue') }}
+                                                        </p>
+                                                        <p class="text-xs text-base-content/60">
+                                                            {{
+                                                                t(
+                                                                    'invoice_settings.recurring.auto_issue_desc',
+                                                                )
+                                                            }}
+                                                        </p>
                                                     </div>
-                                                    <input type="checkbox" class="toggle toggle-sm" disabled />
+                                                    <input
+                                                        type="checkbox"
+                                                        class="toggle toggle-sm"
+                                                        disabled
+                                                    />
                                                 </div>
                                                 <div class="flex items-center justify-between">
-                                                    <p class="text-sm font-medium">{{ t('invoice_settings.recurring.auto_send') }}</p>
-                                                    <input type="checkbox" class="toggle toggle-sm" disabled />
+                                                    <p class="text-sm font-medium">
+                                                        {{ t('invoice_settings.recurring.auto_send') }}
+                                                    </p>
+                                                    <input
+                                                        type="checkbox"
+                                                        class="toggle toggle-sm"
+                                                        disabled
+                                                    />
                                                 </div>
                                                 <div class="flex items-center justify-between">
-                                                    <p class="text-sm font-medium">{{ t('invoice_settings.recurring.draft_only') }}</p>
-                                                    <input type="checkbox" class="toggle toggle-sm" disabled />
+                                                    <p class="text-sm font-medium">
+                                                        {{ t('invoice_settings.recurring.draft_only') }}
+                                                    </p>
+                                                    <input
+                                                        type="checkbox"
+                                                        class="toggle toggle-sm"
+                                                        disabled
+                                                    />
                                                 </div>
                                             </div>
 
                                             <!-- 2x2 schedule grid -->
                                             <div class="grid grid-cols-2 gap-3 pt-2">
                                                 <div>
-                                                    <p class="text-xs text-base-content/60 mb-1">{{ t('invoice_settings.section.opakovane') }}</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <p class="text-xs text-base-content/60 mb-1">
+                                                        {{ t('invoice_settings.section.opakovane') }}
+                                                    </p>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <p class="text-xs text-base-content/60 mb-1">—</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <p class="text-xs text-base-content/60 mb-1">—</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <p class="text-xs text-base-content/60 mb-1">—</p>
-                                                    <div class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm">—</div>
+                                                    <div
+                                                        class="input input-sm input-bordered w-full bg-base-200 text-base-content/40 flex items-center text-sm"
+                                                    >
+                                                        —
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -404,41 +524,70 @@
                                 <!-- Section: upominky (Track B: all visual-only) -->
                                 <template v-if="activeSection === 'upominky'">
                                     <div class="rounded-lg bg-accent/10 border border-accent/30 p-4 text-sm">
-                                        <p class="font-medium text-accent">{{ t('invoice_settings.section.upominky') }}</p>
-                                        <p class="text-base-content/70 mt-1 text-xs">{{ t('invoice_settings.coming_soon') }}</p>
+                                        <p class="font-medium text-accent">
+                                            {{ t('invoice_settings.section.upominky') }}
+                                        </p>
+                                        <p class="text-base-content/70 mt-1 text-xs">
+                                            {{ t('invoice_settings.coming_soon') }}
+                                        </p>
                                     </div>
 
                                     <div class="card bg-base-100 border border-base-300 opacity-60">
                                         <div class="card-body space-y-4">
                                             <!-- Header toggle -->
                                             <div class="flex items-center justify-between">
-                                                <p class="text-sm font-medium">{{ t('invoice_settings.reminders.enable') }}</p>
+                                                <p class="text-sm font-medium">
+                                                    {{ t('invoice_settings.reminders.enable') }}
+                                                </p>
                                                 <input type="checkbox" class="toggle toggle-sm" disabled />
                                             </div>
 
                                             <!-- 4 reminder rows -->
                                             <div class="space-y-3 pt-1 border-t border-base-300">
                                                 <div class="flex items-center justify-between">
-                                                    <p class="text-sm">{{ t('invoice_settings.reminders.before_due') }}</p>
-                                                    <input type="checkbox" class="toggle toggle-sm toggle-xs" disabled />
+                                                    <p class="text-sm">
+                                                        {{ t('invoice_settings.reminders.before_due') }}
+                                                    </p>
+                                                    <input
+                                                        type="checkbox"
+                                                        class="toggle toggle-sm toggle-xs"
+                                                        disabled
+                                                    />
                                                 </div>
                                                 <div class="flex items-center justify-between">
-                                                    <p class="text-sm">{{ t('invoice_settings.reminders.on_due') }}</p>
-                                                    <input type="checkbox" class="toggle toggle-sm toggle-xs" disabled />
+                                                    <p class="text-sm">
+                                                        {{ t('invoice_settings.reminders.on_due') }}
+                                                    </p>
+                                                    <input
+                                                        type="checkbox"
+                                                        class="toggle toggle-sm toggle-xs"
+                                                        disabled
+                                                    />
                                                 </div>
                                                 <div class="flex items-center justify-between">
-                                                    <p class="text-sm">{{ t('invoice_settings.reminders.after_7') }}</p>
-                                                    <input type="checkbox" class="toggle toggle-sm toggle-xs" disabled />
+                                                    <p class="text-sm">
+                                                        {{ t('invoice_settings.reminders.after_7') }}
+                                                    </p>
+                                                    <input
+                                                        type="checkbox"
+                                                        class="toggle toggle-sm toggle-xs"
+                                                        disabled
+                                                    />
                                                 </div>
                                                 <div class="flex items-center justify-between">
-                                                    <p class="text-sm">{{ t('invoice_settings.reminders.after_14') }}</p>
-                                                    <input type="checkbox" class="toggle toggle-sm toggle-xs" disabled />
+                                                    <p class="text-sm">
+                                                        {{ t('invoice_settings.reminders.after_14') }}
+                                                    </p>
+                                                    <input
+                                                        type="checkbox"
+                                                        class="toggle toggle-sm toggle-xs"
+                                                        disabled
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </template>
-
                             </form>
                         </FormProvider>
                     </div>

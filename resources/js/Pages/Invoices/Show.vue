@@ -69,15 +69,27 @@
     }
 
     function cancelInvoice() {
-        router.post(`/invoices/${props.invoice.id}/cancel`, {}, {
-            onSuccess: () => { ui.cancelConfirmOpen = false; },
-        });
+        router.post(
+            `/invoices/${props.invoice.id}/cancel`,
+            {},
+            {
+                onSuccess: () => {
+                    ui.cancelConfirmOpen = false;
+                },
+            },
+        );
     }
 
     function sendInvoice() {
-        router.post(`/invoices/${props.invoice.id}/send`, {}, {
-            onSuccess: () => { ui.sendConfirmOpen = false; },
-        });
+        router.post(
+            `/invoices/${props.invoice.id}/send`,
+            {},
+            {
+                onSuccess: () => {
+                    ui.sendConfirmOpen = false;
+                },
+            },
+        );
     }
 
     function duplicateInvoice() {
@@ -96,7 +108,7 @@
     }
 
     function itemNet(item: App.Data.Invoices.InvoiceItemData): string {
-        const n = item.line_base ?? (item.quantity * item.unit_price);
+        const n = item.line_base ?? item.quantity * item.unit_price;
         return n.toFixed(2);
     }
 </script>
@@ -117,10 +129,7 @@
             </ul>
         </div>
 
-        <PageHeader
-            :title="invoice.number ?? t('invoices.draft_number')"
-            :subtitle="invoice.customer_name"
-        >
+        <PageHeader :title="invoice.number ?? t('invoices.draft_number')" :subtitle="invoice.customer_name">
             <template #badges>
                 <InvoiceStatusBadge :status="invoice.status" />
                 <span class="badge badge-ghost badge-sm">
@@ -130,10 +139,7 @@
         </PageHeader>
 
         <!-- Credit note link -->
-        <div
-            v-if="invoice.credited_invoice_id"
-            class="alert alert-warning mb-4"
-        >
+        <div v-if="invoice.credited_invoice_id" class="alert alert-warning mb-4">
             <span>
                 {{ t('invoices.credit_note_for') }}
                 <Link :href="`/invoices/${invoice.credited_invoice_id}`" class="link font-medium">
@@ -159,7 +165,9 @@
                                 v-if="invoice.supplier.postal_code || invoice.supplier.city"
                                 class="text-sm text-base-content/70"
                             >
-                                <span v-if="invoice.supplier.postal_code">{{ invoice.supplier.postal_code }} </span>
+                                <span v-if="invoice.supplier.postal_code"
+                                    >{{ invoice.supplier.postal_code }}
+                                </span>
                                 <span v-if="invoice.supplier.city">{{ invoice.supplier.city }}</span>
                             </p>
                             <p v-if="invoice.supplier.ico" class="text-sm text-base-content/60 mt-1">
@@ -199,8 +207,12 @@
                                     v-if="invoice.customer_street || invoice.customer_city"
                                     class="text-sm text-base-content/70"
                                 >
-                                    <span v-if="invoice.customer_street">{{ invoice.customer_street }}, </span>
-                                    <span v-if="invoice.customer_postal_code">{{ invoice.customer_postal_code }} </span>
+                                    <span v-if="invoice.customer_street"
+                                        >{{ invoice.customer_street }},
+                                    </span>
+                                    <span v-if="invoice.customer_postal_code"
+                                        >{{ invoice.customer_postal_code }}
+                                    </span>
                                     <span v-if="invoice.customer_city">{{ invoice.customer_city }}</span>
                                 </p>
                             </div>
@@ -210,15 +222,21 @@
                     <!-- 4-up date grid + payment fields -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                         <div>
-                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.col.issue_date') }}</p>
+                            <p class="text-base-content/50 text-xs mb-0.5">
+                                {{ t('invoices.col.issue_date') }}
+                            </p>
                             <p class="font-mono">{{ formatDate(invoice.issue_date) }}</p>
                         </div>
                         <div>
-                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.delivery_date') }}</p>
+                            <p class="text-base-content/50 text-xs mb-0.5">
+                                {{ t('invoices.detail.delivery_date') }}
+                            </p>
                             <p class="font-mono">{{ formatDate(invoice.delivery_date) }}</p>
                         </div>
                         <div>
-                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.col.due_date') }}</p>
+                            <p class="text-base-content/50 text-xs mb-0.5">
+                                {{ t('invoices.col.due_date') }}
+                            </p>
                             <p
                                 class="font-mono"
                                 :class="{ 'text-error font-medium': invoice.status === 'overdue' }"
@@ -227,15 +245,21 @@
                             </p>
                         </div>
                         <div>
-                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.payment_method') }}</p>
+                            <p class="text-base-content/50 text-xs mb-0.5">
+                                {{ t('invoices.detail.payment_method') }}
+                            </p>
                             <p>{{ t('payment_type.' + invoice.payment_type) }}</p>
                         </div>
                         <div v-if="invoice.constant_symbol">
-                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.pdf.constant_symbol') }}</p>
+                            <p class="text-base-content/50 text-xs mb-0.5">
+                                {{ t('invoices.pdf.constant_symbol') }}
+                            </p>
                             <p class="font-mono">{{ invoice.constant_symbol }}</p>
                         </div>
                         <div v-if="invoice.specific_symbol">
-                            <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.pdf.specific_symbol') }}</p>
+                            <p class="text-base-content/50 text-xs mb-0.5">
+                                {{ t('invoices.pdf.specific_symbol') }}
+                            </p>
                             <p class="font-mono">{{ invoice.specific_symbol }}</p>
                         </div>
                     </div>
@@ -243,17 +267,16 @@
                     <!-- Period row (when applicable) -->
                     <div v-if="invoice.period_from" class="text-sm">
                         <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.period') }}</p>
-                        <p class="font-mono">{{ formatDate(invoice.period_from) }} – {{ formatDate(invoice.period_to) }}</p>
+                        <p class="font-mono">
+                            {{ formatDate(invoice.period_from) }} – {{ formatDate(invoice.period_to) }}
+                        </p>
                     </div>
 
                     <!-- Object info -->
                     <div v-if="invoice.object_name" class="text-sm bg-base-200/50 rounded-lg p-3">
                         <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.section.object') }}</p>
                         <p class="font-medium">{{ invoice.object_name }}</p>
-                        <p
-                            v-if="invoice.object_street || invoice.object_city"
-                            class="text-base-content/60"
-                        >
+                        <p v-if="invoice.object_street || invoice.object_city" class="text-base-content/60">
                             <span v-if="invoice.object_street">{{ invoice.object_street }}, </span>
                             <span v-if="invoice.object_postal_code">{{ invoice.object_postal_code }} </span>
                             <span v-if="invoice.object_city">{{ invoice.object_city }}</span>
@@ -303,9 +326,13 @@
                             </div>
                             <div v-if="hasRounding" class="flex justify-between gap-4">
                                 <dt class="text-base-content/60">{{ t('invoices.pdf.rounding') }}</dt>
-                                <dd class="font-mono">{{ invoice.rounding_amount }} {{ invoice.currency }}</dd>
+                                <dd class="font-mono">
+                                    {{ invoice.rounding_amount }} {{ invoice.currency }}
+                                </dd>
                             </div>
-                            <div class="flex justify-between gap-4 border-t border-base-300 pt-1 font-semibold text-base">
+                            <div
+                                class="flex justify-between gap-4 border-t border-base-300 pt-1 font-semibold text-base"
+                            >
                                 <dt>{{ t('invoices.detail.total') }}</dt>
                                 <dd class="font-mono">{{ invoice.total }} {{ invoice.currency }}</dd>
                             </div>
@@ -316,7 +343,9 @@
                                 </div>
                                 <div class="flex justify-between gap-4 font-semibold">
                                     <dt>{{ t('invoices.detail.balance_due') }}</dt>
-                                    <dd class="font-mono">{{ invoice.balance_due }} {{ invoice.currency }}</dd>
+                                    <dd class="font-mono">
+                                        {{ invoice.balance_due }} {{ invoice.currency }}
+                                    </dd>
                                 </div>
                             </template>
                         </dl>
@@ -348,7 +377,9 @@
                                 <p class="font-mono">{{ invoice.supplier.swift }}</p>
                             </div>
                             <div v-if="invoice.variable_symbol">
-                                <p class="text-base-content/50 text-xs">{{ t('invoices.pdf.variable_symbol') }}</p>
+                                <p class="text-base-content/50 text-xs">
+                                    {{ t('invoices.pdf.variable_symbol') }}
+                                </p>
                                 <p class="font-mono">{{ invoice.variable_symbol }}</p>
                             </div>
                         </div>
@@ -372,7 +403,7 @@
                         <h2 class="card-title text-sm">{{ t('invoices.section.actions') }}</h2>
 
                         <!-- Edit (Draft only) -->
-                        <Can permission="edit invoices" feature="invoices">
+                        <Can permission="edit invoices">
                             <Link
                                 v-if="isDraft"
                                 :href="`/invoices/${invoice.id}/edit`"
@@ -384,7 +415,7 @@
                         </Can>
 
                         <!-- Issue (Draft only) -->
-                        <Can permission="edit invoices" feature="invoices">
+                        <Can permission="edit invoices">
                             <button
                                 v-if="isDraft"
                                 type="button"
@@ -396,7 +427,7 @@
                         </Can>
 
                         <!-- Mark paid -->
-                        <Can permission="edit invoices" feature="invoices">
+                        <Can permission="edit invoices">
                             <button
                                 v-if="canMarkPaid"
                                 type="button"
@@ -419,7 +450,7 @@
                         </a>
 
                         <!-- Send email -->
-                        <Can permission="edit invoices" feature="invoices">
+                        <Can permission="edit invoices">
                             <button
                                 v-if="isIssued"
                                 type="button"
@@ -444,7 +475,7 @@
                         </button>
 
                         <!-- Storno -->
-                        <Can permission="cancel invoices" feature="invoices">
+                        <Can permission="cancel invoices">
                             <button
                                 v-if="canCancel"
                                 type="button"
@@ -457,7 +488,7 @@
                         </Can>
 
                         <!-- Delete (Draft) -->
-                        <Can permission="cancel invoices" feature="invoices">
+                        <Can permission="cancel invoices">
                             <button
                                 v-if="isDraft"
                                 type="button"
@@ -510,7 +541,14 @@
                     />
                 </div>
                 <div class="modal-action">
-                    <button type="button" class="btn btn-ghost" @click="ui.issueDialogOpen = false; ui.customNumber = ''">
+                    <button
+                        type="button"
+                        class="btn btn-ghost"
+                        @click="
+                            ui.issueDialogOpen = false;
+                            ui.customNumber = '';
+                        "
+                    >
                         {{ t('common.cancel') }}
                     </button>
                     <button type="button" class="btn btn-success" @click="issueInvoice">
@@ -518,7 +556,13 @@
                     </button>
                 </div>
             </div>
-            <div class="modal-backdrop" @click="ui.issueDialogOpen = false; ui.customNumber = ''" />
+            <div
+                class="modal-backdrop"
+                @click="
+                    ui.issueDialogOpen = false;
+                    ui.customNumber = '';
+                "
+            />
         </dialog>
 
         <!-- Send email confirm -->

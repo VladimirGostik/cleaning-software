@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\InvoiceTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Services\InvoiceService;
@@ -25,8 +24,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_stats_are_scoped_to_active_tenant_and_exclude_other_tenants(): void
     {
         // Arrange — tenant A
-        $userA = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($userA, SubscriptionPlanEnum::Pro);
+        $userA = $this->actingAsTenantUser('Admin');
         $tenantA = Tenant::where('owner_id', $userA->id)->first();
 
         // 2 Issued this month for tenant A
@@ -78,8 +76,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_stats_issued_this_month_count_is_two_for_non_monthly_issued(): void
     {
         // Arrange — only 2 plain Issued invoices this month, no Overdue/Monthly
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->issued()->count(2)->create([
@@ -105,8 +102,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_stats_overdue_count_is_one(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->overdue()->create(['tenant_id' => $tenant->id]);
@@ -128,8 +124,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_tab_counts_scoped_to_active_tenant_exclude_other_tenant(): void
     {
         // Arrange — tenant A: 2 Issued, 1 Overdue
-        $userA = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($userA, SubscriptionPlanEnum::Pro);
+        $userA = $this->actingAsTenantUser('Admin');
         $tenantA = Tenant::where('owner_id', $userA->id)->first();
 
         Invoice::factory()->issued()->count(2)->create(['tenant_id' => $tenantA->id]);
@@ -155,8 +150,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_overdue_invoice_appears_in_both_all_issued_and_overdue_tab_counts(): void
     {
         // Arrange — 1 Overdue + 1 plain Issued
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->overdue()->create(['tenant_id' => $tenant->id]);
@@ -179,8 +173,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_stats_returns_zero_amounts_and_counts_for_tenant_with_no_invoices(): void
     {
         // Arrange — fresh tenant, no invoices at all
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         app()->instance('current_tenant_id', $tenant->id);
@@ -209,8 +202,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_index_with_tab_all_issued_returns_200(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act & Assert
         $this->get(route('invoices.index', ['tab' => 'all_issued']))->assertOk();
@@ -219,8 +211,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_index_with_tab_recurring_returns_200(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act & Assert
         $this->get(route('invoices.index', ['tab' => 'recurring']))->assertOk();
@@ -233,8 +224,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_index_with_month_filter_returns_200_and_echoes_month_prop(): void
     {
         // Arrange
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act
         $response = $this->get(route('invoices.index', ['month' => '2026-06']));
@@ -252,8 +242,7 @@ final class InvoiceStatsTest extends TestCase
     public function test_index_with_invalid_month_format_fails_validation(): void
     {
         // Arrange — month must match Y-m format (date_format:Y-m)
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Act — supply malformed month
         $response = $this->get(route('invoices.index', ['month' => '06-2026']));

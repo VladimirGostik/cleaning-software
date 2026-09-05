@@ -45,9 +45,15 @@
     }
 
     function cancelRecurring(): void {
-        router.post(`/recurring-invoices/${props.recurring.id}/cancel`, {}, {
-            onSuccess: () => { ui.cancelConfirmOpen = false; },
-        });
+        router.post(
+            `/recurring-invoices/${props.recurring.id}/cancel`,
+            {},
+            {
+                onSuccess: () => {
+                    ui.cancelConfirmOpen = false;
+                },
+            },
+        );
     }
 
     function deleteRecurring(): void {
@@ -92,7 +98,9 @@
                     <div class="card-body gap-4">
                         <h2 class="card-title text-base">{{ t('invoices.section.customer') }}</h2>
                         <div class="text-sm space-y-1">
-                            <p class="font-medium">{{ recurring.customer_display_name ?? t('recurring_invoices.no_customer') }}</p>
+                            <p class="font-medium">
+                                {{ recurring.customer_display_name ?? t('recurring_invoices.no_customer') }}
+                            </p>
                             <p v-if="recurring.customer_representative" class="text-base-content/60">
                                 {{ recurring.customer_representative }}
                             </p>
@@ -109,8 +117,12 @@
                                 v-if="recurring.customer_street || recurring.customer_city"
                                 class="text-base-content/70"
                             >
-                                <span v-if="recurring.customer_street">{{ recurring.customer_street }}, </span>
-                                <span v-if="recurring.customer_postal_code">{{ recurring.customer_postal_code }} </span>
+                                <span v-if="recurring.customer_street"
+                                    >{{ recurring.customer_street }},
+                                </span>
+                                <span v-if="recurring.customer_postal_code"
+                                    >{{ recurring.customer_postal_code }}
+                                </span>
                                 <span v-if="recurring.customer_city">{{ recurring.customer_city }}</span>
                             </p>
                             <p v-if="recurring.customer_email" class="text-base-content/60">
@@ -127,43 +139,68 @@
 
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                             <div>
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.col.frequency') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.col.frequency') }}
+                                </p>
                                 <RecurringFrequencyBadge :frequency="recurring.frequency" />
                             </div>
                             <div>
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.form.day_of_month') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.form.day_of_month') }}
+                                </p>
                                 <p class="font-mono">{{ recurring.day_of_month }}.</p>
                             </div>
                             <div>
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.col.next_run') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.col.next_run') }}
+                                </p>
                                 <p class="font-mono">{{ formatDate(recurring.next_run_at) }}</p>
                             </div>
                             <div>
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.col.occurrences') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.col.occurrences') }}
+                                </p>
                                 <p class="font-mono">
-                                    {{ recurring.occurrences_generated }}/{{ recurring.occurrences_limit !== null ? recurring.occurrences_limit : '∞' }}
+                                    {{ recurring.occurrences_generated }}/{{
+                                        recurring.occurrences_limit !== null
+                                            ? recurring.occurrences_limit
+                                            : '∞'
+                                    }}
                                 </p>
                             </div>
                             <div>
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.form.auto_issue') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.form.auto_issue') }}
+                                </p>
                                 <CheckIcon v-if="recurring.auto_issue" class="w-4 h-4 text-success" />
                                 <span v-else class="text-base-content/30">—</span>
                             </div>
                             <div>
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.form.due_days') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.form.due_days') }}
+                                </p>
                                 <p class="font-mono">{{ recurring.due_days }}</p>
                             </div>
                             <div>
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.form.start_date') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.form.start_date') }}
+                                </p>
                                 <p class="font-mono">{{ formatDate(recurring.start_date) }}</p>
                             </div>
                             <div v-if="recurring.end_date">
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('recurring_invoices.form.end_date') }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('recurring_invoices.form.end_date') }}
+                                </p>
                                 <p class="font-mono">{{ formatDate(recurring.end_date) }}</p>
                             </div>
                             <div v-if="recurring.period_from">
-                                <p class="text-base-content/50 text-xs mb-0.5">{{ t('invoices.detail.period') }}</p>
-                                <p class="font-mono">{{ formatDate(recurring.period_from) }} – {{ formatDate(recurring.period_to) }}</p>
+                                <p class="text-base-content/50 text-xs mb-0.5">
+                                    {{ t('invoices.detail.period') }}
+                                </p>
+                                <p class="font-mono">
+                                    {{ formatDate(recurring.period_from) }} –
+                                    {{ formatDate(recurring.period_to) }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -225,7 +262,9 @@
                                 class="flex items-center justify-between p-3 rounded-lg border border-base-300 hover:bg-base-200 transition"
                             >
                                 <div>
-                                    <p class="font-mono text-sm font-medium">{{ inv.number ?? t('invoices.draft_number') }}</p>
+                                    <p class="font-mono text-sm font-medium">
+                                        {{ inv.number ?? t('invoices.draft_number') }}
+                                    </p>
                                     <p class="text-xs text-base-content/60">{{ inv.customer_name }}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
@@ -245,7 +284,7 @@
                         <h2 class="card-title text-sm">{{ t('invoices.section.actions') }}</h2>
 
                         <!-- Edit -->
-                        <Can permission="edit recurring_invoices" feature="invoices">
+                        <Can permission="edit recurring_invoices">
                             <Link
                                 v-if="canModify"
                                 :href="`/recurring-invoices/${recurring.id}/edit`"
@@ -257,7 +296,7 @@
                         </Can>
 
                         <!-- Pause -->
-                        <Can permission="edit recurring_invoices" feature="invoices">
+                        <Can permission="edit recurring_invoices">
                             <button
                                 v-if="isActive"
                                 type="button"
@@ -269,7 +308,7 @@
                         </Can>
 
                         <!-- Resume -->
-                        <Can permission="edit recurring_invoices" feature="invoices">
+                        <Can permission="edit recurring_invoices">
                             <button
                                 v-if="isPaused"
                                 type="button"
@@ -281,7 +320,7 @@
                         </Can>
 
                         <!-- Cancel -->
-                        <Can permission="delete recurring_invoices" feature="invoices">
+                        <Can permission="delete recurring_invoices">
                             <button
                                 v-if="canModify"
                                 type="button"
@@ -293,7 +332,7 @@
                         </Can>
 
                         <!-- Delete -->
-                        <Can permission="delete recurring_invoices" feature="invoices">
+                        <Can permission="delete recurring_invoices">
                             <button
                                 type="button"
                                 class="btn btn-ghost btn-sm w-full justify-start text-error"

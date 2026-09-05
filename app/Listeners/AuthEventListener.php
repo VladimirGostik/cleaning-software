@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Events\PasswordChanged;
+use App\Models\User;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Login;
@@ -23,8 +24,11 @@ final class AuthEventListener implements ShouldQueue
 
     public function handleLogin(Login $event): void
     {
+        /** @var User $user */
+        $user = $event->user;
+
         activity('auth')
-            ->causedBy($event->user)
+            ->causedBy($user)
             ->withProperties($this->context())
             ->event('login')
             ->log('Používateľ sa prihlásil');
@@ -36,8 +40,11 @@ final class AuthEventListener implements ShouldQueue
             return;
         }
 
+        /** @var User $user */
+        $user = $event->user;
+
         activity('auth')
-            ->causedBy($event->user)
+            ->causedBy($user)
             ->withProperties($this->context())
             ->event('logout')
             ->log('Používateľ sa odhlásil');
@@ -65,8 +72,11 @@ final class AuthEventListener implements ShouldQueue
 
     public function handlePasswordReset(PasswordReset $event): void
     {
+        /** @var User $user */
+        $user = $event->user;
+
         activity('auth')
-            ->causedBy($event->user)
+            ->causedBy($user)
             ->withProperties($this->context())
             ->event('password_reset')
             ->log('Heslo bolo obnovené');
@@ -83,8 +93,11 @@ final class AuthEventListener implements ShouldQueue
 
     public function handleRegistered(Registered $event): void
     {
+        /** @var User $user */
+        $user = $event->user;
+
         activity('auth')
-            ->causedBy($event->user)
+            ->causedBy($user)
             ->withProperties($this->context())
             ->event('registered')
             ->log('Nový používateľ bol zaregistrovaný');
@@ -92,8 +105,11 @@ final class AuthEventListener implements ShouldQueue
 
     public function handleVerified(Verified $event): void
     {
+        /** @var User $user */
+        $user = $event->user;
+
         activity('auth')
-            ->causedBy($event->user)
+            ->causedBy($user)
             ->withProperties($this->context())
             ->event('verified')
             ->log('E-mailová adresa bola overená');

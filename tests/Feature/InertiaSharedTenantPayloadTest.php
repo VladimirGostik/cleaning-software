@@ -17,7 +17,7 @@ final class InertiaSharedTenantPayloadTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         // Act
         $response = $this->get(route('dashboard'));
@@ -38,7 +38,7 @@ final class InertiaSharedTenantPayloadTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         // Act
         $response = $this->get(route('dashboard'));
@@ -68,7 +68,7 @@ final class InertiaSharedTenantPayloadTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         // Act
         $response = $this->get(route('dashboard'));

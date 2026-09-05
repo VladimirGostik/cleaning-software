@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Notifications;
 
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Notifications\InvoiceIssued;
@@ -27,8 +26,7 @@ final class InvoiceIssuedNotificationTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -56,8 +54,7 @@ final class InvoiceIssuedNotificationTest extends TestCase
 
     public function test_stamp_invoice_sent_at_sets_sent_at_when_notification_sent_event_fires(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -89,8 +86,7 @@ final class InvoiceIssuedNotificationTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -112,8 +108,7 @@ final class InvoiceIssuedNotificationTest extends TestCase
     {
         Notification::fake();
 
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 

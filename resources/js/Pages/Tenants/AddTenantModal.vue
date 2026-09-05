@@ -54,12 +54,7 @@
 <template>
     <Teleport to="body">
         <Transition name="fade">
-            <div
-                v-if="open"
-                class="fixed inset-0 z-40 bg-black/40"
-                aria-hidden="true"
-                @click="close"
-            />
+            <div v-if="open" class="fixed inset-0 z-40 bg-black/40" aria-hidden="true" @click="close" />
         </Transition>
 
         <Transition name="slide-up">

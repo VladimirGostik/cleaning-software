@@ -4,19 +4,14 @@
  * Inertia has no Vue Router route meta — requirements are keyed by URL
  * pathname prefix. The guard matches the longest prefix.
  *
- * Each entry expresses an AND: both permission AND feature must pass
- * when provided. Omitting a field means that axis is not checked.
- *
  * NOTE: This is UX-only. Real enforcement is on the BE via `#[Authorize]`
- * policies + `feature:` middleware. This guard only redirects/hides — it
- * is NOT a security boundary.
+ * policies. This guard only redirects/hides — it is NOT a security boundary.
  *
  * Add an entry here when a new protected route is introduced. The value
- * shape mirrors `<Can permission feature />` props.
+ * shape mirrors `<Can permission />` props.
  */
 export interface RouteRequirement {
     permission?: App.Enums.PermissionEnum;
-    feature?: App.Enums.FeatureEnum;
 }
 
 /**
@@ -30,8 +25,8 @@ export const routeRequirements: Record<string, RouteRequirement> = {
     '/contracts': { permission: 'view contracts' },
     '/schedule': { permission: 'view schedule' },
     '/employees': { permission: 'view employees' },
-    '/invoices': { permission: 'view invoices', feature: 'invoices' },
-    '/settings/invoicing': { permission: 'manage billing settings', feature: 'invoices' },
+    '/invoices': { permission: 'view invoices' },
+    '/settings/invoicing': { permission: 'manage billing settings' },
     '/templates': { permission: 'view templates' },
 };
 

@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,8 +21,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_issued_from_filter_narrows_results(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => '2026-01-10', 'customer_name' => 'Old']);
@@ -41,8 +39,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_issued_to_filter_narrows_results(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => '2026-01-10', 'customer_name' => 'Old']);
@@ -60,8 +57,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_total_min_filter_excludes_lower_totals(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'total' => '50.00', 'customer_name' => 'Cheap']);
@@ -79,8 +75,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_total_max_filter_excludes_higher_totals(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'total' => '50.00', 'customer_name' => 'Cheap']);
@@ -98,8 +93,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_filters_combined_with_month_both_apply(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => '2026-03-05', 'customer_name' => 'Early']);
@@ -120,8 +114,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_only_issued_from_returns_open_ended_upper(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->count(3)->create(['tenant_id' => $tenant->id, 'issue_date' => '2026-05-01']);
@@ -138,8 +131,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_total_min_equals_total_max_returns_exact_match(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'total' => '100.00', 'customer_name' => 'Exact']);
@@ -158,8 +150,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_advanced_filter_returns_empty_result_set(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => '2026-01-01']);
@@ -179,8 +170,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_malformed_issued_from_date_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('invoices.index', ['issued_from' => '2026-13-99']));
 
@@ -190,8 +180,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_negative_total_min_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('invoices.index', ['total_min' => '-10']));
 
@@ -205,8 +194,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_index_returns_clients_prop(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('invoices.index'));
 
@@ -223,8 +211,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_tab_all_issued_excludes_draft_and_cancelled_invoices(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'customer_name' => 'DraftInvoice']);
@@ -247,8 +234,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_export_returns_csv_with_bom_and_header_row(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create([
@@ -272,8 +258,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_export_zero_matching_invoices_returns_header_row_only(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('invoices.export', ['issued_from' => '2099-01-01']));
 
@@ -288,8 +273,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_export_honors_same_filters_as_index(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => '2026-01-01', 'customer_name' => 'Old']);
@@ -305,8 +289,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_user_without_view_invoices_cannot_export(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $response = $this->get(route('invoices.export'));
 
@@ -322,8 +305,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_export_cross_tenant_invoices_excluded(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create();
         Invoice::factory()->create([
@@ -344,8 +326,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_bulk_mark_paid_all_issued_invoices(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoices = Invoice::factory()->count(3)->sequence(
@@ -373,8 +354,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_bulk_action_cancel_rejected_with_422(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->postJson(route('invoices.bulk'), [
             'action' => 'cancel',
@@ -386,8 +366,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_bulk_without_edit_invoices_permission_returns_403(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $response = $this->postJson(route('invoices.bulk'), [
             'action' => 'mark_paid',
@@ -399,8 +378,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_bulk_cross_tenant_id_excluded_as_failed(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $otherTenant = Tenant::factory()->create();
         $otherInvoice = Invoice::factory()->create([
@@ -425,8 +403,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_bulk_partial_success_mix_payable_and_non_payable(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $payable = Invoice::factory()->create([
@@ -454,8 +431,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_bulk_empty_ids_returns_422(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->postJson(route('invoices.bulk'), [
             'action' => 'mark_paid',
@@ -467,8 +443,7 @@ final class InvoiceListExpansionTest extends TestCase
 
     public function test_bulk_more_than_200_ids_returns_422(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $ids = array_map(fn () => fake()->uuid(), range(1, 201));
 

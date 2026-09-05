@@ -6,7 +6,6 @@ namespace Tests\Feature\Contracts;
 
 use App\Contracts\RendersContractPdf;
 use App\Enums\ContractStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
@@ -27,8 +26,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_index_returns_paginated_contracts_for_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->makeContracts($tenant, 3);
@@ -47,8 +45,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_index_excludes_other_tenant_contracts(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->makeContracts($tenant, 2);
@@ -69,8 +66,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_index_403_for_user_without_view_contracts(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $response = $this->get(route('contracts.index'));
 
@@ -83,8 +79,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_create_page_has_required_props(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('contracts.create'));
 
@@ -104,8 +99,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_create_page_memberships_scoped_to_current_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $currentTenantMemberCount = TenantMembership::where('tenant_id', $tenant->id)->where('is_active', true)->count();
 
@@ -133,8 +127,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_store_creates_contract_and_redirects_to_show(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -160,8 +153,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_store_fails_without_required_fields(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('contracts.store'), []);
 
@@ -174,8 +166,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_show_renders_contract_detail(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         [$contract] = $this->makeContracts($tenant, 1);
@@ -195,8 +186,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_edit_page_memberships_scoped_to_current_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
         $currentTenantMemberCount = TenantMembership::where('tenant_id', $tenant->id)->where('is_active', true)->count();
 
@@ -226,8 +216,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_sign_transitions_to_active_and_redirects(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         [$contract] = $this->makeContracts($tenant, 1, ContractStatusEnum::Draft);
@@ -243,8 +232,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_sign_fails_when_contract_already_active(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         [$contract] = $this->makeContracts($tenant, 1, ContractStatusEnum::Active);
@@ -261,8 +249,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_terminate_transitions_to_terminated_and_redirects(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         [$contract] = $this->makeContracts($tenant, 1, ContractStatusEnum::Active);
@@ -281,8 +268,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_terminate_fails_when_contract_is_draft(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         [$contract] = $this->makeContracts($tenant, 1, ContractStatusEnum::Draft);
@@ -301,8 +287,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_destroy_soft_deletes_draft_contract(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         [$contract] = $this->makeContracts($tenant, 1, ContractStatusEnum::Draft);
@@ -319,8 +304,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_pdf_streams_download_response(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         [$contract] = $this->makeContracts($tenant, 1);
@@ -341,8 +325,7 @@ final class ContractControllerTest extends TestCase
 
     public function test_pdf_403_without_view_contracts_permission(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -354,21 +337,6 @@ final class ContractControllerTest extends TestCase
         ]);
 
         $response = $this->get(route('contracts.pdf', $contract));
-
-        $response->assertForbidden();
-    }
-
-    // -------------------------------------------------------------------------
-    // Feature gate
-    // -------------------------------------------------------------------------
-
-    public function test_contracts_index_403_without_contracts_feature(): void
-    {
-        $user = $this->actingAsTenantUser('Vlastník');
-        // Free plan — no contracts feature
-        // (no setUserPlan call → stays on Free)
-
-        $response = $this->get(route('contracts.index'));
 
         $response->assertForbidden();
     }

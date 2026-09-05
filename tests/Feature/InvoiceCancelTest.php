@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,8 +20,7 @@ final class InvoiceCancelTest extends TestCase
 
     public function test_cancel_issued_invoice_creates_credit_note(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->issued()->create([
@@ -55,8 +53,7 @@ final class InvoiceCancelTest extends TestCase
 
     public function test_cancel_overdue_invoice_works(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->overdue()->create([
@@ -76,8 +73,7 @@ final class InvoiceCancelTest extends TestCase
 
     public function test_cancel_draft_invoice_returns_error(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
@@ -91,9 +87,8 @@ final class InvoiceCancelTest extends TestCase
 
     public function test_user_without_cancel_permission_gets_403(): void
     {
-        // Upratovačka role has no cancel invoices permission
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        // Interná upratovačka role has no cancel invoices permission
+        $user = $this->actingAsTenantUser('Interná upratovačka');
         $tenant = Tenant::where('owner_id', $user->id)->firstOrFail();
 
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);

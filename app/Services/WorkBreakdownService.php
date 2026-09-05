@@ -83,10 +83,9 @@ final readonly class WorkBreakdownService
      */
     public function paginate(string $cleaningObjectId, int $perPage = 15): LengthAwarePaginator
     {
-        return QueryBuilder::for(WorkBreakdown::class)
-            ->where('cleaning_object_id', $cleaningObjectId)
-            ->with(['tasks', 'contract', 'sourceQuote'])
+        return QueryBuilder::for(WorkBreakdown::query()->where('cleaning_object_id', $cleaningObjectId))
             ->defaultSort('-created_at')
+            ->with(['tasks', 'contract', 'sourceQuote'])
             ->paginate($perPage)
             ->appends(request()->query());
     }

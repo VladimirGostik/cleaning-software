@@ -44,7 +44,7 @@ final class ClientIndexTest extends TestCase
         $tenantA = Tenant::factory()->create();
         $tenantB = Tenant::factory()->create();
 
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
 
         Client::factory()->count(3)->create(['tenant_id' => $tenantA->id]);
         Client::factory()->count(2)->create(['tenant_id' => $tenantB->id]);
@@ -65,7 +65,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Foo Company']);
         Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Bar Corp']);
@@ -87,7 +87,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         Client::factory()->count(3)->create(['tenant_id' => $tenant->id, 'type' => ClientTypeEnum::Corporate]);
         Client::factory()->count(2)->private()->create(['tenant_id' => $tenant->id]);
@@ -108,7 +108,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         Client::factory()->count(25)->create(['tenant_id' => $tenant->id]);
 
@@ -141,7 +141,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Upratovačka', $tenant);
+        $this->actingAsTenantUser('Interná upratovačka', $tenant);
 
         // Act & Assert
         $this->get(route('clients.index'))->assertForbidden();
@@ -157,7 +157,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         ClientContact::factory()->for($client)->create([
@@ -189,7 +189,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         ClientContact::factory()->for($client)->create([
@@ -215,7 +215,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         // non-primary contact only
@@ -248,7 +248,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         $clientWithObjects = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Alpha']);
         CleaningObject::factory()->count(2)->create([
@@ -283,7 +283,7 @@ final class ClientIndexTest extends TestCase
     {
         // Arrange
         $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Vlastník', $tenant);
+        $this->actingAsTenantUser('Admin', $tenant);
 
         Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -305,7 +305,7 @@ final class ClientIndexTest extends TestCase
         $tenantA = Tenant::factory()->create();
         $tenantB = Tenant::factory()->create();
 
-        $this->actingAsTenantUser('Vlastník', $tenantA);
+        $this->actingAsTenantUser('Admin', $tenantA);
 
         $client = Client::factory()->create(['tenant_id' => $tenantA->id]);
 

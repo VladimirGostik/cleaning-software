@@ -9,7 +9,6 @@ use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -41,8 +40,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_swift_bic_saved_on_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -55,8 +53,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_default_payment_type_persisted_on_interface(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -69,8 +66,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_default_currency_persisted_on_interface(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -83,8 +79,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_default_rounding_mode_persisted_on_interface(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -97,8 +92,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_defaults_round_trip_via_dto(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -122,8 +116,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_settings_page_has_new_enum_option_props(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->get(route('settings.invoicing'));
 
@@ -138,8 +131,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_invoice_create_page_reflects_interface_defaults(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         // Save defaults via settings
         $this->put(route('settings.invoicing.update'), $this->basePayload([
@@ -163,8 +155,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_invalid_swift_bic_format_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), $this->basePayload([
             'swift_bic' => 'not-valid',
@@ -175,8 +166,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_swift_bic_too_long_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), $this->basePayload([
             'swift_bic' => 'TATRSKBXXXXX', // 12 chars — exceeds max 11
@@ -187,8 +177,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_invalid_default_payment_type_fails_validation(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), $this->basePayload([
             'default_payment_type' => 'wire',
@@ -203,8 +192,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
 
     public function test_null_swift_bic_and_constant_symbol_accepted(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), $this->basePayload([
             'swift_bic' => null,
@@ -218,8 +206,7 @@ final class InvoiceSettingsDefaultsTest extends TestCase
     public function test_missing_new_fields_falls_back_to_defaults(): void
     {
         // Old-style payload without new fields — should succeed with defaults
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.invoicing.update'), $this->basePayload());
 

@@ -86,7 +86,9 @@
                                 class="input input-sm w-full"
                                 :class="{ 'input-error': errors[`items.${index}.description`] }"
                                 :aria-label="t('invoices.items.description')"
-                                @input="updateRow(index, 'description', ($event.target as HTMLInputElement).value)"
+                                @input="
+                                    updateRow(index, 'description', ($event.target as HTMLInputElement).value)
+                                "
                             />
                             <p v-if="errors[`items.${index}.description`]" class="text-error text-xs mt-0.5">
                                 {{ errors[`items.${index}.description`] }}
@@ -100,7 +102,13 @@
                                 step="0.01"
                                 class="input input-sm w-full font-mono text-right"
                                 :aria-label="t('invoices.items.quantity')"
-                                @input="updateRow(index, 'quantity', parseFloat(($event.target as HTMLInputElement).value) || 0)"
+                                @input="
+                                    updateRow(
+                                        index,
+                                        'quantity',
+                                        parseFloat(($event.target as HTMLInputElement).value) || 0,
+                                    )
+                                "
                             />
                         </td>
                         <td>
@@ -110,7 +118,13 @@
                                 :placeholder="t('invoices.items.unit_placeholder')"
                                 class="input input-sm w-full"
                                 :aria-label="t('invoices.items.unit')"
-                                @input="updateRow(index, 'unit', ($event.target as HTMLInputElement).value || null)"
+                                @input="
+                                    updateRow(
+                                        index,
+                                        'unit',
+                                        ($event.target as HTMLInputElement).value || null,
+                                    )
+                                "
                             />
                         </td>
                         <td>
@@ -121,7 +135,13 @@
                                 step="0.01"
                                 class="input input-sm w-full font-mono text-right"
                                 :aria-label="t('invoices.items.unit_price')"
-                                @input="updateRow(index, 'unit_price', parseFloat(($event.target as HTMLInputElement).value) || 0)"
+                                @input="
+                                    updateRow(
+                                        index,
+                                        'unit_price',
+                                        parseFloat(($event.target as HTMLInputElement).value) || 0,
+                                    )
+                                "
                             />
                         </td>
                         <td>
@@ -133,7 +153,13 @@
                                 step="0.01"
                                 class="input input-sm w-full font-mono text-right"
                                 :aria-label="t('invoices.items.discount')"
-                                @input="updateRow(index, 'discount_percent', parseFloat(($event.target as HTMLInputElement).value) || 0)"
+                                @input="
+                                    updateRow(
+                                        index,
+                                        'discount_percent',
+                                        parseFloat(($event.target as HTMLInputElement).value) || 0,
+                                    )
+                                "
                             />
                         </td>
                         <td v-if="isVatPayer">
@@ -141,13 +167,15 @@
                                 :value="row.vat_rate"
                                 class="select select-sm w-full"
                                 :aria-label="t('invoices.items.vat_rate')"
-                                @change="updateRow(index, 'vat_rate', parseFloat(($event.target as HTMLSelectElement).value) || 0)"
+                                @change="
+                                    updateRow(
+                                        index,
+                                        'vat_rate',
+                                        parseFloat(($event.target as HTMLSelectElement).value) || 0,
+                                    )
+                                "
                             >
-                                <option
-                                    v-for="opt in vatRateOptions"
-                                    :key="opt.value"
-                                    :value="opt.value"
-                                >
+                                <option v-for="opt in vatRateOptions" :key="opt.value" :value="opt.value">
                                     {{ opt.label }}
                                 </option>
                             </select>

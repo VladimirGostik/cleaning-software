@@ -45,7 +45,7 @@ final class NotificationBellApiTest extends TestCase
 
     public function test_bell_returns_unread_count_and_recent(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -63,7 +63,7 @@ final class NotificationBellApiTest extends TestCase
 
     public function test_bell_is_scoped_to_active_tenant(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -82,7 +82,7 @@ final class NotificationBellApiTest extends TestCase
 
     public function test_bell_caps_recent_at_five(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 

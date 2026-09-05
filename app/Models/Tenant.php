@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\HasUuids;
-use App\Contracts\ChecksFeatures;
-use App\Enums\FeatureEnum;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +18,13 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
+ * @property string $id
+ * @property string $name
+ * @property string|null $ico
+ * @property bool $is_vat_payer
+ * @property string|null $vat_rate
+ * @property bool $is_active
+ * @property User|null $owner
  * @property TenantInterface|null $interface
  */
 #[Fillable([
@@ -70,11 +75,9 @@ final class Tenant extends Model
             ->dontLogEmptyChanges();
     }
 
-    public function hasFeature(FeatureEnum $feature): bool
-    {
-        return app(ChecksFeatures::class)->hasFeature($this, $feature);
-    }
-
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -85,6 +88,9 @@ final class Tenant extends Model
         return $this->hasOne(TenantInterface::class);
     }
 
+    /**
+     * @return HasMany<TenantMembership, $this>
+     */
     public function memberships(): HasMany
     {
         return $this->hasMany(TenantMembership::class);

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Invitations\AcceptInvitationData;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\Role;
 use App\Models\TenantInvitation;
 use App\Models\TenantMembership;
@@ -64,7 +63,6 @@ final readonly class InvitationAcceptService
                     'email' => $invitation->email,
                     'password' => Hash::make($data->password),
                     'is_active' => true,
-                    'subscription_plan' => SubscriptionPlanEnum::Free,
                 ]);
 
                 $user->forceFill(['email_verified_at' => now()])->save();

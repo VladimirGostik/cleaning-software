@@ -65,7 +65,7 @@
             <span v-if="counts?.overdue != null" class="badge badge-sm ml-1">{{ counts.overdue }}</span>
         </Link>
 
-        <Can permission="view recurring_invoices" feature="invoices">
+        <Can permission="view recurring_invoices">
             <Link
                 href="/recurring-invoices"
                 preserve-scroll
@@ -74,7 +74,9 @@
                 :class="['tab', active === 'recurring' ? 'tab-active' : '']"
             >
                 {{ t('invoices.tab.recurring') }}
-                <span v-if="counts?.recurring != null" class="badge badge-sm ml-1">{{ counts.recurring }}</span>
+                <span v-if="counts?.recurring != null" class="badge badge-sm ml-1">{{
+                    counts.recurring
+                }}</span>
             </Link>
         </Can>
     </div>

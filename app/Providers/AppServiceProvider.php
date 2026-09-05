@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Contracts\ChecksFeatures;
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
@@ -23,7 +22,6 @@ use App\Policies\ObjectPolicy;
 use App\Policies\QuotePolicy;
 use App\Policies\ScheduledJobPolicy;
 use App\Policies\TenantMembershipPolicy;
-use App\Services\ConfigFeatureChecker;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
@@ -43,7 +41,6 @@ final class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(ChecksFeatures::class, ConfigFeatureChecker::class);
         $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);
         $this->app->bind(RendersInvoicePdf::class, InvoicePdfService::class);
         $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
@@ -92,13 +89,6 @@ final class AppServiceProvider extends ServiceProvider
             return [
                 Limit::perMinute(500),
                 Limit::perMinute(5)->by('email:' . $r->input('email')),
-            ];
-        });
-
-        RateLimiter::for('register', function (Request $r): array {
-            return [
-                Limit::perMinute(3)->by('ip:' . get_client_ip()),
-                Limit::perMinute(3)->by('email:' . $r->input('email')),
             ];
         });
 

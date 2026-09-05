@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
-use App\Enums\SubscriptionPlanEnum;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
 use App\Models\Role;
@@ -74,24 +73,21 @@ final class RecurringInvoiceControllerTest extends TestCase
 
     public function test_index_returns_200_for_authorized_user(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->get(route('recurring-invoices.index'))->assertOk();
     }
 
     public function test_create_returns_200_for_authorized_user(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->get(route('recurring-invoices.create'))->assertOk();
     }
 
     public function test_store_creates_recurring_invoice_and_redirects(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
 
         $response = $this->post(route('recurring-invoices.store'), $this->storePayload());
 
@@ -101,8 +97,7 @@ final class RecurringInvoiceControllerTest extends TestCase
 
     public function test_show_returns_200_for_authorized_user(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $ri = $this->makeTemplate($user);
 
         $this->get(route('recurring-invoices.show', $ri))->assertOk();
@@ -110,8 +105,7 @@ final class RecurringInvoiceControllerTest extends TestCase
 
     public function test_pause_sets_status_to_paused(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $ri = $this->makeTemplate($user);
 
         $this->post(route('recurring-invoices.pause', $ri))->assertRedirect();
@@ -121,8 +115,7 @@ final class RecurringInvoiceControllerTest extends TestCase
 
     public function test_resume_sets_status_to_active(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $ri = $this->makeTemplate($user);
         $ri->update(['status' => RecurringInvoiceStatusEnum::Paused, 'next_run_at' => null]);
 
@@ -133,8 +126,7 @@ final class RecurringInvoiceControllerTest extends TestCase
 
     public function test_cancel_sets_status_to_cancelled(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $ri = $this->makeTemplate($user);
 
         $this->post(route('recurring-invoices.cancel', $ri))->assertRedirect();
@@ -144,8 +136,7 @@ final class RecurringInvoiceControllerTest extends TestCase
 
     public function test_destroy_soft_deletes(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Admin');
         $ri = $this->makeTemplate($user);
 
         $this->delete(route('recurring-invoices.destroy', $ri))->assertRedirect();
@@ -159,31 +150,16 @@ final class RecurringInvoiceControllerTest extends TestCase
 
     public function test_upratovacka_cannot_view_index(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->get(route('recurring-invoices.index'))->assertForbidden();
     }
 
     public function test_upratovacka_cannot_create(): void
     {
-        $user = $this->actingAsTenantUser('Upratovačka');
-        $this->setUserPlan($user, SubscriptionPlanEnum::Pro);
+        $user = $this->actingAsTenantUser('Interná upratovačka');
 
         $this->post(route('recurring-invoices.store'), $this->storePayload())->assertForbidden();
-    }
-
-    // -------------------------------------------------------------------------
-    // Feature-gate — no invoices feature → 403
-    // -------------------------------------------------------------------------
-
-    public function test_free_plan_cannot_access_recurring_invoices_index(): void
-    {
-        $user = $this->actingAsTenantUser('Vlastník');
-        // Free plan has no invoices feature
-        $this->setUserPlan($user, SubscriptionPlanEnum::Free);
-
-        $this->get(route('recurring-invoices.index'))->assertForbidden();
     }
 
     // -------------------------------------------------------------------------
@@ -193,8 +169,7 @@ final class RecurringInvoiceControllerTest extends TestCase
     public function test_cannot_view_other_tenant_recurring_invoice(): void
     {
         // Create template as user in tenant A
-        $userA = $this->actingAsTenantUser('Vlastník');
-        $this->setUserPlan($userA, SubscriptionPlanEnum::Pro);
+        $userA = $this->actingAsTenantUser('Admin');
         $ri = $this->makeTemplate($userA);
 
         // Log in as user in tenant B
@@ -210,8 +185,8 @@ final class RecurringInvoiceControllerTest extends TestCase
         session(['active_tenant_id' => $tenantB->id]);
         app()->instance('current_tenant_id', $tenantB->id);
 
-        // Vlastník role in tenant B
-        $role = Role::where('name', 'Vlastník')->where('tenant_id', $tenantB->id)->firstOrFail();
+        // Admin role in tenant B
+        $role = Role::where('name', 'Admin')->where('tenant_id', $tenantB->id)->firstOrFail();
         $userB->assignRole($role);
         TenantMembership::create([
             'user_id' => $userB->id,
@@ -219,7 +194,6 @@ final class RecurringInvoiceControllerTest extends TestCase
             'is_active' => true,
             'joined_at' => now(),
         ]);
-        $this->setUserPlan($userB, SubscriptionPlanEnum::Pro);
 
         // Template belongs to tenant A, user B is in tenant B — should 404 (TenantScope hides it)
         $this->get(route('recurring-invoices.show', $ri))->assertNotFound();

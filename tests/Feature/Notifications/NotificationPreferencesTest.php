@@ -20,7 +20,7 @@ final class NotificationPreferencesTest extends TestCase
 
     public function test_update_preferences_persists_to_user(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
 
         $this->put(route('settings.notifications.update'), [
             'preferences' => [
@@ -37,7 +37,7 @@ final class NotificationPreferencesTest extends TestCase
 
     public function test_via_skips_mail_when_user_pref_disabled(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -56,7 +56,7 @@ final class NotificationPreferencesTest extends TestCase
 
     public function test_via_includes_mail_when_user_pref_enabled(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -75,7 +75,7 @@ final class NotificationPreferencesTest extends TestCase
 
     public function test_default_mail_enabled_applied_when_key_absent(): void
     {
-        $user = $this->actingAsTenantUser('Vlastník');
+        $user = $this->actingAsTenantUser('Admin');
         /** @var Tenant $tenant */
         $tenant = Tenant::where('owner_id', $user->id)->first();
 
@@ -91,7 +91,7 @@ final class NotificationPreferencesTest extends TestCase
 
     public function test_settings_page_renders(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $this->get(route('settings.notifications'))->assertOk();
     }
@@ -102,7 +102,7 @@ final class NotificationPreferencesTest extends TestCase
 
     public function test_update_preferences_rejects_unknown_type_key(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         $response = $this->put(route('settings.notifications.update'), [
             'preferences' => [
@@ -115,7 +115,7 @@ final class NotificationPreferencesTest extends TestCase
 
     public function test_update_preferences_rejects_non_configurable_type(): void
     {
-        $this->actingAsTenantUser('Vlastník');
+        $this->actingAsTenantUser('Admin');
 
         // InvoiceIssued is not userConfigurable
         $response = $this->put(route('settings.notifications.update'), [

@@ -129,11 +129,7 @@
 
                     <!-- Poznamka -->
                     <section>
-                        <TextareaInput
-                            field="note"
-                            :label="t('clients.form.section.note')"
-                            :rows="4"
-                        />
+                        <TextareaInput field="note" :label="t('clients.form.section.note')" :rows="4" />
                     </section>
 
                     <footer class="sticky bottom-0 bg-base-100 border-t border-base-300 px-6 py-3">
