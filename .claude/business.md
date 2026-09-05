@@ -2,21 +2,44 @@
 
 Source of truth: `docs/cleanmaster-technicka-specifikacia-v1.md.docx` (Slovak, 2312 lines, v1.0 dated 2026-05-02).
 
-## What
+## Implementation status
 
-Internal tool for small/medium cleaning companies. Multi-tenant (one user account can operate multiple cleaning companies). Targets SK + CZ markets.
+**Current state (branch `rebuild`):** Skeleton infrastructure only. The Laravel 13 + Inertia 3 application foundation is in place (auth, users, roles, permissions, audit logs, media, localisation, Scribe docs). **No CleanMaster business modules yet implemented.** The skeleton roles are admin / user (seeded in PermissionSeeder + UserSeeder), login canonical: `admin@example.com` / `password`.
 
-## Who uses it
+**Target domain content below** is the complete CleanMaster specification ported phase by phase from branch `main` per `.claude/plans/port-from-cleaning-software.md`. Phases are:
 
-Cleaning company **owner** (Vlastník) + team members. One owner account can manage multiple cleaning companies (tenants) from a single login. Team members are invited per tenant.
+1. **Phase 1 visual + login** — skeleton complete; admin / user roles + login/logout/forgot-password/password-reset flow.
+2. **Phase 2 tenancy** — Tenant model, TenantMembership pivot, multi-tenant row-level scoping (tenant_id FK + BelongsToTenant trait + TenantScope global scope on all domain models). Spatie Permission teams=true (tenant_id), role-per-tenant seeding, active_tenant_id session binding. Invitation flow for team members. Profile + settings pages.
+3. **Phase 3 operational core** — Clients CRUD, Objects CRUD, Quotes full lifecycle (draft/send/accept/convert), Contracts (service agreements + employment), ContractTemplates, basic schedule/jobs.
+4. **Phase 4 invoicing** — Invoices (draft/issue/pay/overdue/cancel), recurring invoice templates auto-generation, invoice settings (template, numbering, SK fields).
+5. **Phase 5 notifications** — In-app notification centre, email preferences, bell icon 60s polling.
+6. **Phase 6 advanced operational** — Employees (TenantMembership UI), role assignment with escalation guards, permission overrides, employment contracts, deactivation logic.
+7. **Phase 7 schedule + reporting** — Work breakdown generation (Rozpis prác), scheduled job (Zákazka) materialization, calendar view, cleaner assignment scoping.
 
-## Three pillars
+Later: Mobile portal (MAPP cleaner + VAPP supervisor), customer portal, complaints/photos, absence management, analytics.
 
-1. **Documents** — quotes (cenové ponuky), client contracts, document templates.
-2. **Employees** — registration, schedule, photo documentation, employment contracts.
-3. **Invoicing** — monthly, one-off, special-period invoices with VAT compliance.
+---
 
-## Use-cases (Phase 1, implemented)
+## Use-cases (Platform skeleton — Phase 1)
+
+### Platform (skeleton)
+
+- **User login** — POST `/login` with email + password + remember flag; validates via Auth::attempt; on success sets session + redirects /dashboard; on fail returns validation error `invalid_credentials`. Session manages is_active flag (future port guard), user locale preference. Logged to Activitylog (login/login_failed/logout events).
+- **Forgot password** — GET /forgot-password shows form; POST sends reset link via Mail::queue; link valid 60 min (config/auth.php); user follows to GET /reset-password/{token} + email prepopulated; POST /reset-password updates password via Password::reset.
+- **User profile + password change** — GET /profile (no page props, reads shared auth.user) · PUT /profile updates name/email/locale (ProfileService, updates session('locale') + app()->setLocale()) · PUT /profile/password validates current_password via Hash::check, updates password (inline in controller, no service yet).
+- **Manage users (CRUD)** — Authorized by policy (viewAny/view/create/update/delete users). QueryBuilder with AllowedFilter search/role/is_active/created_at. Pages Users/{Index,Form}. Create/Edit via useForm (Precognition). Deactivate via is_active toggle (soft revocation, reactivatable). Delete removes user (hard delete, no soft-delete on User model).
+- **Manage roles + permissions** — Authorized by policy (viewAny/view/create/update/delete roles; delete blocks SYSTEM_ROLES=['admin']). Pages Roles/{Index,Form}. Form: PermissionManager component to toggle flat permission strings. RoleService::getPermissionsGrouped() groups permissions by resource (2nd word) for UI affordance. No edit of permission catalogue (that is admin-only via PermissionSeeder).
+- **View audit log** — Read-only, permission-gated (view audit logs). Pages AuditLogs/{Index,Show}. Lists with filters (subject_type, created_at, causer search). Show renders activity properties + attribute_changes as JSON diff. Activity writers: User/Role LogsActivity, LogAuthenticationActivity (login/logout/login_failed).
+- **View media library** — Read-only, permission-gated (view media). Pages Media/{Index,Show}. Displays uploaded files via MediaLibrary. Show page has image preview. No delete yet (future). Mirrors TemporaryUpload lifecycle.
+- **Upload temporary files** — POST /uploads (multipart file) stores in TemporaryUpload (uuid PK, user_id FK, session_id, MediaLibrary collection). Returns 201 {uuid,name,file_name,mime_type,size,url}. DELETE /uploads/{uuid} removes. Consumer forms use uuid validated by OwnedTemporaryMedia rule → service moveToModel($owner, 'collection', $uuid). Cron daily purges TemporaryUpload rows older than 24h.
+- **Switch language** — GET /language/{locale} (unauthenticated, full-page reload, no DTO) sets cookie + session locale; redirects back; LocaleMiddleware resolves order: user.locale → session → cookie → Accept-Language → sk. Supports sk/en today (uk will be added on port). App.Enums.SupportedLanguage #[TypeScript].
+- **View API documentation** — GET /docs (auth + permission:view api docs) shows Scribe v5 docs. Only api/* endpoints documented. Strategies: GetBodyParamsFromSpatieData, GetResponseFromSpatieData. Covers auth/login, profile endpoints.
+- **Navigate app** — Inertia shared nav from NavigationRegistry (BE-driven via #[NavItem] attribute discovery). NavItems on controllers: Dashboard, Users, Roles, AuditLogs, Media, Profile→settings. Icon resolution via ICONS map (FE hardcoded, unknown → HomeIcon). Gated by permission + policy (e.g. Users nav visible only if user can view users). Nav links full-page load (no SPA routing; each click → server round-trip). On port: extend ICONS map for new domains (BuildingOffice2Icon for clients, etc.).
+- **View dashboard** — GET / renders Pages/Dashboard.vue (placeholder welcome card, no props; reads shared auth.user.name). On port: add widgets (recent quotes/invoices, upcoming jobs, notifications, team activity).
+
+---
+
+## Use-cases (CleanMaster target — to port Phase 2+)
 
 - **Bootstrap first account (app:create-owner)** — internal/DevOps invokes `php artisan app:create-owner` (interactive or flag-based) to create the first user account, tenant, and owner role assignment. User-supplied: email, name, password, company name, IČO. Creates User → Tenant → TenantInterface → TenantMembership → assigns Vlastník role. User can then log in and add more tenants/team members.
 - **Add another company** — authenticated Vlastník clicks "Pridať novú firmu", enters name + IČO + optional leader email, creates new Tenant. Can copy color settings from previous company. Switches active tenant (session-bound `active_tenant_id`).

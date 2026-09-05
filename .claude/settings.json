@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(rm -rf:*)"
+    ],
+    "allow": [
+      "Skill(*)", "Read", "Edit", "Write", "MultiEdit",
+      "mcp__plugin_inogile-dev-plugin_laravel-boost__*",
+      "Bash(php artisan:*)", "Bash(artisan:*)", "Bash(php:*)", "Bash(composer:*)",
+      "Bash(npm:*)", "Bash(npx:*)", "Bash(pnpm:*)", "Bash(yarn:*)", "Bash(node:*)",
+      "Bash(vendor/bin/pint:*)", "Bash(./vendor/bin/pint:*)", "Bash(vendor/bin/phpstan:*)", "Bash(php vendor/bin/phpstan:*)",
+      "Bash(vendor/bin/pest:*)", "Bash(vendor/bin/phpunit:*)", "Bash(npx tsc:*)", "Bash(npx vue-tsc:*)", "Bash(pnpm vue-tsc:*)",
+      "Bash(docker:*)", "Bash(docker compose:*)", "Bash(docker-compose:*)",
+      "Bash(git status:*)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)", "Bash(git branch:*)", "Bash(git fetch:*)",
+      "Bash(git stash:*)", "Bash(git add:*)", "Bash(git checkout:*)", "Bash(git switch:*)", "Bash(git restore:*)",
+      "Bash(grep:*)", "Bash(rg:*)", "Bash(find:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
+      "Bash(awk:*)", "Bash(sed:*)", "Bash(sort:*)", "Bash(uniq:*)", "Bash(cut:*)", "Bash(jq:*)", "Bash(tree:*)",
+      "Bash(mkdir:*)", "Bash(mv:*)", "Bash(cp:*)", "Bash(touch:*)", "Bash(date:*)", "Bash(which:*)", "Bash(command:*)",
+      "Bash(pwd:*)", "Bash(cd:*)", "Bash(basename:*)", "Bash(dirname:*)", "Bash(xargs:*)", "Bash(diff:*)"
+    ]
+  }
+}

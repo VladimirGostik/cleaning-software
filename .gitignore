@@ -27,7 +27,10 @@ Homestead.yaml
 Thumbs.db
 AGENTS.md
 CLAUDE.md
-/.claude
+/.claude/settings.local.json
+/.claude/plans/*
+!/.claude/plans/.gitkeep
+!/.claude/plans/port-from-cleaning-software.md
 /.scribe
 /.ai
 /.junie
