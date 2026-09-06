@@ -364,6 +364,15 @@ App\Navigation\NavItem attribute (repeatable, method-level: label, route, icon, 
 ### Scribe API docs
 add_routes=false; routes in routes/web.php:37-49 under auth + permission:view api docs. Strategies App\Scribe\Strategies\BodyParameters\GetBodyParamsFromSpatieData, Responses\GetResponseFromSpatieData (#[ResponseFromSpatieData(dataClass, model, states, with, paginated)]), wired config/scribe.php:223+. Only api/* documented. On port: extend docs for business API endpoints (clients, objects, quotes, invoices, contracts).
 
+### Event → Listener wiring (auto-discovery, no explicit registration) — Phase 8
+
+**Backend:**
+- Laravel 9+ auto-discovers listeners: `@handle($event)` methods are auto-wired (bootstrap/app.php has `withEvents(discover: true)` by default).
+- Phase 8 listeners (Notify*) are auto-discovered only — NEVER register explicitly with `Event::listen()` (causes double-fire).
+- Pre-existing bug (phase 4–7): AppServiceProvider had explicit `Event::listen(ContractSigned::class, GenerateWorkBreakdownFromSignedContract::class)` + `Event::listen(NotificationSent::class, StampInvoiceSentAt::class)` — both listeners were auto-discovered, causing double-fire. Phase 8 removed explicit registrations.
+- Verify with `php artisan event:list --event=<EventName>` — each listener should appear ONCE as `@handle` entry, not duplicated.
+- Design: sync listeners (Notify*, GenerateWorkBreakdownFromSignedContract) run immediately on event dispatch; queued work (Notification send jobs, GenerateScheduledJobsJob) dispatches on queue via ShouldQueue.
+
 ### App shell (FE) — Phase 2 tenant switcher + colour override
 
 **Layout & styling:**
@@ -394,9 +403,11 @@ add_routes=false; routes in routes/web.php:37-49 under auth + permission:view ap
 - Components/BrandMark.vue — sparkle-broom SVG icon (size via class).
 - DaisyUI themes:false + [data-theme='app-theme'] OKLCH token block (Plus Jakarta Sans / JetBrains Mono via Google Fonts in app.blade.php) + app.blade.php :root {--auth-*} login palette + app.ts Inertia progress colour amber (static, out of scope for tenant override).
 
-**TODO (out of scope Phase 2):**
-- Notification bell (polling /api/notifications/bell every 60s, display unread count + 5 recent).
-- Dashboard content (widgets, recent activity).
+**Phase 8 complete:**
+- Notification bell (polling `/notifications/bell` web route OR `/api/notifications/bell` API route, every 60s, display unread count + 5 recent, tab-hidden pause).
+
+**TODO (out of scope Phase 8):**
+- Dashboard content (widgets, recent activity, notifications inbox summary).
 
 ## Layer contracts
 
@@ -806,6 +817,23 @@ No queued jobs today (QUEUE_CONNECTION sync in tests). Only schedule PurgeTempor
 - Neither RBAC check ($user->hasRole) nor role-based rendering.
 - Only permission-based authorization (single axis: user/permission).
 
+### BE ↔ FE Notifications bell (web vs. API) — Phase 8
+
+**Web route (session auth, browser poll):**
+- `GET /notifications/bell` (web route, auth + tenant.required middleware) → `NotificationController::bell()` → `NotificationService::bell(User, tenantId): NotificationBellData`
+- Returns JSON `{ unread_count: number, recent: NotificationListItemData[] }` (5 latest, including read).
+- FE `useNotificationBell` composable polls every 60s, ref-counted subscribers (only one poller per tab), stops on 401/403/419 (auth loss), pauses when tab hidden (battery optimization).
+
+**API route (Sanctum, header-based tenant):**
+- `GET /api/notifications/bell` (Sanctum Bearer token, no session; X-Tenant-Id header required) → `Api\NotificationBellController` (invokable) → same service method.
+- Returns same NotificationBellData JSON.
+- Reserved for mobile phase 9 (Capacitor app polling via Bearer token + tenant header).
+- `/api/*` NOT stateful: browser cookies do NOT authenticate (no `statefulApi()` in bootstrap/app.php). Reasons: (a) SPA uses session for web routes only, (b) mobile uses Bearer tokens. Dual routes eliminate need for statefulApi() CSRF overhead.
+
+**DTO contract:**
+- `NotificationBellData (unread_count, recent: NotificationListItemData[])`
+- `NotificationListItemData (id, type: NotificationTypeEnum, title, body, url, read_at, created_at)` — timestamps ISO-8601, url can be null.
+
 ## Gotchas
 
 ### Backend (updated Phase 2: 8 resolved, 18 active/new)
@@ -1124,6 +1152,53 @@ Updated from phase 5:
 
 **Keywords (SK):** rozvrh, zákazka, rozpis prác, úloha, frekvencia, pracovník, priradenie, plán, preukazovateľnosť, kalendár, bez archiovania.
 
+### notifications — In-app centre, bell, mail preferences, 6 event listeners (Phase 8, 2026-09-06)
+
+**Core:**
+- App\Models\Notification extends DatabaseNotification — UUIDv7 id (supplied by framework NotificationSender, not HasUuids); no BelongsToTenant (rows written from queue workers, no bound tenant); no LogsActivity; no SoftDeletes. Columns: id uuid PK, type (64 NotificationTypeEnum value), notifiable_type (string morph), notifiable_id (uuid morph), **tenant_id (uuid NOT NULL FK restrictOnDelete)**, jsonb data (`title`, `body`, `url`, `meta`), read_at (timestamp nullable, NULL = unread), timestamps. Indices: (tenant_id), (notifiable_type, notifiable_id, tenant_id, created_at), partial unique (notifiable_type, notifiable_id, tenant_id) WHERE read_at IS NULL. Relations: tenant() BelongsTo. Scopes: `scopeInTenant(Builder, $tenantId)`, `scopeForRecipient(Builder, User)`. Methods: `isOwnedBy(User): bool`, `typeEnum(): NotificationTypeEnum`.
+- App\Enums\NotificationTypeEnum (#[TypeScript], backed string) — 8 cases: `InvitationCreated='invitation.created'` (mail-only), `InvoiceIssued='invoice.issued'` (mail-only), `InvoiceOverdue='invoice.overdue'` (in-app + configurable mail), `ContractExpiring='contract.expiring'` (in-app + configurable mail), `ContractExpired='contract.expired'` (in-app + configurable mail), `QuoteSent='quote.sent'` (in-app + configurable mail), `QuoteExpiring='quote.expiring'` (in-app + configurable mail), `QuoteExpired='quote.expired'` (in-app + configurable mail). Methods: `label(): string` (→ `__('app.notification_type_<key>')`), `defaultMailEnabled(): bool` (InvoiceOverdue=true, others false), `userConfigurable(): bool` (false for InvitationCreated+InvoiceIssued; true for others), `deliversInApp(): bool` (false for InvitationCreated+InvoiceIssued), `static configurable(): array` (returns user-configurable types), `static inAppOptions(): array` (returns displayable for filter/select).
+- App\Models\User extended: `implements HasLocalePreference` + `preferredLocale(): string` (returns locale; D5: mail rendered in recipient's locale); `#[Fillable(['notification_preferences'])`, `casts(['notification_preferences' => 'array'])`, docblock `@property array<string, array{mail: bool}> $notification_preferences`; override `notifications(): MorphMany` (→ `$this->morphMany(Notification::class, 'notifiable')->latest()`).
+- App\Notifications\BaseTenantNotification (abstract, `extends Notification implements ShouldQueue`, `use Queueable`) — `#[Tries(3)] #[Backoff([10,30,60])] #[Timeout(60)]` class-level. Ctor: `public function __construct(public readonly string $tenantId) { $this->afterCommit(); }`. Abstract methods: `notificationType(): NotificationTypeEnum`, `protected title(object $notifiable): string`, `protected body(object $notifiable): string`, `protected url(object $notifiable): ?string`, `protected meta(): array` (default `{}`). Concrete: `via(object $notifiable): array` (checks mailEnabledFor + adds mail channel), `mailEnabledFor(object $notifiable): bool` (pref ?? defaultMailEnabled), `databaseType(object $notifiable): string` (→ type.value), `toArray(object $notifiable): array` (→ {type, title, body, url, meta}), `toMail(object $notifiable): MailMessage` (subject, line, action, url), `failed(?Throwable $e): void` (logs error).
+- App\Notifications\Channels\TenantDatabaseChannel extends DatabaseChannel — `protected function buildPayload($notifiable, Notification $notification): array` (guards `instanceof BaseTenantNotification`, adds tenant_id to payload).
+- 6 notification subclasses (InvoiceOverdue, ContractExpired, ContractExpiring, QuoteSent, QuoteExpiring, QuoteExpired), each with ctor payload (tenantId, subjectId, daysLeft optional), url/meta/title/body implementations, `#[Tries(3)] #[Backoff([10,30,60])] #[Timeout(60)]`.
+- App\Services\NotificationRecipientResolver (final readonly, ctor PermissionRegistrar) — `usersWithPermission(string $tenantId, PermissionEnum $permission): Collection<User>` (single query: Users where is_active + active membership in tenant + permission in team scope, team scope saved/restored via finally block).
+- App\Services\NotificationService (final readonly, ctor DatabaseManager) — `paginate(User, string $tenantId, Request): LengthAwarePaginator<NotificationListItemData>` (QueryBuilder forRecipient+inTenant, AllowedFilter type/read, sort -created_at); `bell(User, $tenantId): NotificationBellData` (unread_count, recent 5); `unreadCount(User, $tenantId): int`; `markRead(Notification): void`; `markAllRead(User, $tenantId): int`; `updatePreferences(User, NotificationPreferencesUpdateData): void`.
+
+**Satellites (BE):**
+- DTOs: NotificationListItemData (id, type, title, body, url?, read_at?, created_at), NotificationBellData (unread_count, recent: NotificationListItemData[]), NotificationPreferenceItemData (type, label, mail: bool, configurable: bool), NotificationPreferencesData (items: PreferenceItemData[]), NotificationPreferenceUpdateItemData (type, mail), NotificationPreferencesUpdateData (preferences: UpdateItemData[]).
+- Listeners (6, auto-discovered): NotifyInvoiceOverdue (InvoiceMarkedOverdue → InvoiceOverdue), NotifyContractExpired (ContractExpired → ContractExpired), NotifyContractExpiring (ContractExpiring → ContractExpiring), NotifyQuoteSent (QuoteSent → QuoteSent), NotifyQuoteExpiring (QuoteExpiring → QuoteExpiring), NotifyQuoteExpired (QuoteExpired → QuoteExpired). Each: sync, queries usersWithPermission(ViewInvoices|ViewContracts|ViewQuotes), sends notification via Notification::send.
+- Event tweaks: InvoiceMarkedOverdue now `implements ShouldDispatchAfterCommit` (parity with siblings).
+- Policies: NotificationPolicy (viewAny → ViewNotifications, update → viewAny + owner + tenant + current_tenant_id checks).
+- Controllers: NotificationController (#[NavItem(label: 'app.notifications', route: 'notifications.index', icon: 'BellIcon', order: 45)]) · index (Inertia render with paginate/filters/typeOptions/unreadCount), bell (JSON NotificationBellData), markRead/markAllRead. NotificationSettingsController (#[NavItem(label: 'app.notification_settings', route: 'settings.notifications', icon: 'BellAlertIcon', group: 'settings', order: 25)]) · show (Inertia render preferences), update (Precognition). Api/NotificationBellController (invokable, GET /api/notifications/bell, Sanctum + tenant.context + tenant.required, JSON NotificationBellData, mirrors MeController pattern).
+- Routes: web GET|POST /notifications, GET /notifications/bell, POST /notifications/read-all, POST /notifications/{notification}/read, GET|PUT /settings/notifications (Precognition on PUT); API GET /api/notifications/bell. All web: auth+tenant.required. API: auth:sanctum+tenant.context+tenant.required.
+- Permissions: ViewNotifications (Vlastník/Vedúca/Sekretárka/Účtovníčka seeded), ConfigureNotifications (Vedúca/Sekretárka/Účtovníčka seeded; gates settings page per Q1 default).
+- Migrations: 2026_09_12_000100_create_notifications_table.php, 2026_09_12_000200_add_notification_preferences_to_users_table.php.
+- Factory: NotificationFactory with states read()/ofType(NotificationType).
+- Tests: 5 files (NotificationCenterTest, NotificationBellTest, NotificationPreferencesTest, NotificationDispatchTest, TenantDatabaseChannelTest) + 40 test cases.
+- i18n: notification_* keys (8 type labels + 6 title/body pairs + settings labels), total 1054+ keys ×3 languages.
+
+**Flow:**
+- **Event dispatch → listener → notification send:** Event fired (InvoiceMarkedOverdue, ContractExpired, etc.) + ShouldDispatchAfterCommit → listener subscribes (auto-discovered via @handle) → NotifyX listener runs sync → resolves users with permission (team-scoped) → `Notification::send($users, new NotificationClass(...))` → framework queues N jobs (one per user, one per channel: DB+mail if enabled) → queue worker processes jobs → `TenantDatabaseChannel::buildPayload()` adds tenant_id → row inserted → or mail sent via queue (per channel).
+- **Bell polling (60s interval, web session):** FE `useNotificationBell` composable polls `GET /notifications/bell` (web route, session auth) every 60s, reads `unread_count + recent 5` from `NotificationBellData`, displays bell badge. Stops on 401/403/419 (auth loss). Tab-hidden detection pauses polling (battery optimization).
+- **Mark read workflow:** User clicks notification in centre (Notifications/Index or bell popover) → `POST /notifications/{id}/read` → policy + owner check → `markRead()` updates read_at → redirect back + flash. Bulk: `POST /notifications/read-all` → updates all unread for user in active tenant.
+- **Preferences workflow:** User visits `/settings/notifications` → page renders 8 items with toggles (mail: on/off, non-configurable types disabled) → saves via `PUT /settings/notifications` with Precognition preview → updates `notification_preferences` jsonb in User.
+
+**Depends on:** tenancy (tenant_id FK, scopeInTenant), identity (User.is_active, PermissionEnum), invoices (InvoiceMarkedOverdue event), contracts (ContractSigned/Expired/Expiring events), quotes (QuoteSent/Expired/Expiring events), queue (notification ShouldQueue + afterCommit), mail (toMail channel + locale preference).
+
+**Depended on by:** events (listeners must fire when event dispatched; zero-listener phase 8 transition), dashboard widgets (recent notifications list reserved), mobile phase 9 (GET /api/notifications/bell endpoint).
+
+**If you change Core, check:**
+- NotificationTypeEnum cases + defaultMailEnabled/userConfigurable + deliversInApp flags (seeded in RoleTemplatesSeeder, listened by 6 listeners).
+- Listener PermissionEnum permissions (NotifyInvoiceOverdue→ViewInvoices, etc.) + team id restoration in finally.
+- BaseTenantNotification subclass signatures match table schema (data JSON keys match title/body/url/meta).
+- TenantDatabaseChannel guard instanceof BaseTenantNotification (only these carry tenant_id payload).
+- User::notifications() relation (MorphMany latest, used by framework for unreadNotifications()).
+- HasLocalePreference implementation (mail rendered in user.locale, side effect on invitation+password-reset mails).
+- NotificationRecipientResolver query (active membership + is_active guards, team-scoped permission lookup).
+- User.notification_preferences casting (array, allows null keys → defaults to defaultMailEnabled).
+
+**Keywords (SK):** upozornenie, oznamovanie, zvonček, preferenčný, čítané, neprečítané, e-mailový kanál, databázový kanál.
+
 ### Phase 7 additions (12 new gotchas — employees + schedule + cleaner scoping)
 
 46. **Users module coexists with Employees (both write tenant_memberships).** Phase 7 does NOT remove Users CRUD (admin portal platform members vs. operational employees). Users nav in settings group (order 15, D1); Employees nav in default group (order 20, D1). Both write `tenant_memberships` table. Path distinction: Users::create via UserService (no employment contract) → InvitationCreated mail (existing user only); Employees::create via EmployeeService (new or existing) → InvitationCreated mail (new user only), optional employment contract (draft). Authorization: both gated via TenantMembershipPolicy instance checks; no conflict.
@@ -1150,11 +1225,21 @@ Updated from phase 5:
 
 57. **RoleAssignmentGuard 422 escalation prevention (EmployeeService rule).** POST /employees/{id}/role (or store/update with role change) asserts actor's permissions ⊇ target role's permissions (via guard->assertAssignable, throws ValidationException role field). UI: role selector shows only roles ⊆ actor's permissions (e.g., Vedúca can only assign roles with ViewSchedule subset of her perms; cannot assign Vlastník). Guard prevents API escalation.
 
+### Phase 8 additions (4 new gotchas — notifications module)
+
+58. **Listener auto-discovery: explicit Event::listen double-fires listeners.** Laravel 9+ auto-discovers `@handle` methods on listeners (bootstrap/app.php has `withEvents(discover: true)` by default). AppServiceProvider must NOT register discovered listeners explicitly (Event::listen for same event=duplicate delivery). Phase 8: REMOVED duplicate `Event::listen(NotificationSent::class, StampInvoiceSentAt::class)` and `Event::listen(ContractSigned::class, GenerateWorkBreakdownFromSignedContract::class)` (pre-existing bug). Verify with `php artisan event:list --event=ContractSigned` (single `@handle` entry per listener, not two). New listeners (Notify*) are auto-discovered only — never explicit registration.
+
+59. **Notification rows have manual tenant scoping (NOT BelongsToTenant trait).** Unlike domain models, Notification does NOT extend model+BelongsToTenant because rows are written from queue workers with no bound tenant context. `tenant_id` comes from notification payload (set by listener when constructing notification). Scoping is explicit: service calls `Notification::inTenant($tenantId)` + policy checks current_tenant_id. RMB model binding does NOT apply tenant scope (TenantScope global scope absent) → cross-tenant row resolves → policy 403 gates. Same pattern as Activity (login events pre-tenant-bind).
+
+60. **`notification_preferences` is jsonb null-safe with fallback defaults.** User column is `jsonb NOT NULL DEFAULT '{}'` (Core rule). Pref shape: `{ "invoice.overdue": { "mail": true }, ... }`. Absent key → `NotificationTypeEnum::defaultMailEnabled()` fallback. Update flow: Spatie Data builds nested DTO `NotificationPreferencesUpdateData(preferences: [...])`, validated list of `{type, mail}`, service merges into prefs object keeping untouched keys. Side effect: D5 HasLocalePreference on User renders mail toArray()/toMail() in recipient's locale (user.locale), affecting InvitationCreated + password-reset mails for existing users (not just new-employee flow).
+
+61. **API /notifications/bell is stateless session-independent from web /notifications/bell.** Web route (`GET /notifications/bell`) uses session auth (browser cookies); responds to FE composable polling. API route (`GET /api/notifications/bell`) uses Sanctum Bearer + `X-Tenant-Id` header (mobile phase 9). `/api/*` NOT stateful (no `statefulApi()` bootstrap) → browser session cookies do NOT authenticate `/api` requests. Both routes delegate to same service method; context resolved differently: web via TenantContextMiddleware (session binding), API via X-Tenant-Id header → current_tenant_id(). Avoid adding statefulApi() (cross-cutting CSRF impact); keep dual routes.
+
 ## Verification status
 
 **Last full scan:** 2026-09-06 (Phase 7; degraded — Laravel Boost MCP unavailable; used docker compose exec + direct psql / grep).
 
-**Last delta:** 2026-09-06 (Phase 7 complete: Employees + Schedule + Cleaner scoping. 912 tests, PHPStan [OK] (baseline −4 stale, +1 existing pattern), Pint clean. BE: EmployeeService (paginate/create/update/deactivate/reactivate over TenantMembership); TenantMembership extended (profile columns, LogsActivity); RoleAssignmentGuard (escalation prevention, 422). WorkBreakdown/WorkBreakdownTask/ScheduledJob models (table `cleaning_jobs`, BelongsToTenant, LogsActivity, SoftDeletes); TaskFrequencyEnum (8 values, phase 7 input), JobStatusEnum (6 states, canTransitionTo), JobTypeEnum (3 types); WorkBreakdownService::generateFromContract (idempotent via contract_id FK unique); JobService (paginate/create/update/assign/cancel/complete/unapprove/unassignFutureForMembership with actor-scoping). ScheduledJob::scopeVisibleTo/isVisibleTo (cleaner own-only, Interná upratovačka actor-scoped), CleaningObject::scopeVisibleTo/isVisibleTo (any assigned job reachability D3 override). Listener: GenerateWorkBreakdownFromSignedContract (ContractSigned → WorkBreakdownService::generate → GenerateScheduledJobsJob afterCommit). Job: GenerateScheduledJobsJob (queued ShouldBeUnique, rolling 30d horizon, partial unique index prevents duplicates). Command: GenerateScheduledJobsCommand (daily cron). Policies: TenantMembershipPolicy (rbac-full instance checks), ScheduledJobPolicy (rbac-full + scopeVisibleTo). Controllers: EmployeeController (#[NavItem] IdentificationIcon order 20), ScheduledJobController (#[NavItem] CalendarDaysIcon order 32), both with #[Authorize] + Precognition. Routes: /employees/{id}/role, GET /jobs/calendar. Config: config/scheduling.php. Seeders: ScheduleDemoSeeder. DTOs: Employee* (5), ScheduledJob* (4), WorkBreakdown*; enums (3 new); factories (3). Updates: Quote::contracts() HasMany (phase 6), convertToContract (Accepted itemized), QuoteItem.frequency (TaskFrequencyEnum, phase 5 unused until 7); TenantMembership: profile fields + LogsActivity; User.password nullable (invitation flow); UserService: RoleAssignmentGuard on create/update. FE: Pages Employees/{Index,Create,Edit,Show}, Schedule/{Index,Create,Edit,Show}; components (JobStatusBadge, JobTypeBadge, JobFiltersBar, JobList, JobCalendar FullCalendar v6.1.21, JobForm, JobAssignPanel, WorkBreakdownView, TimeInput, ObjectWorkBreakdownsCard, EmployeeForm, EmployeeFiltersBar, EmployeeStatusBadge, EmployeeRoleModal); composables useJobCalendar; AppLayout ICONS += IdentificationIcon, CalendarDaysIcon; enums utils (6 new fn); i18n +80 keys sk/en/uk (employee_*, job_*, task_frequency_*, schedule_*, work_breakdown_*, permission_*, employee_role_*). Tests: 154 new (EmployeeService/Policy/Controller, JobService/Policy/Controller, GenerateScheduledJobs{Job,Command}, WorkBreakdownService, Quote/Contract extensions) → 912 total across 7 new Feature/* files + 7 phase 7 domain modules.)
+**Last delta:** 2026-09-06 (Phase 8 complete: Notifications module, 952 tests, PHPStan [OK] (no new baseline entries), Pint clean. BE: Notification model extends DatabaseNotification (manual tenant scoping), User gains HasLocalePreference + notification_preferences jsonb, NotificationTypeEnum (8 cases), TenantDatabaseChannel (custom DB channel), BaseTenantNotification (abstract ShouldQueue #[Tries(3)]), 6 queued notifications (InvoiceOverdue, ContractExpired, ContractExpiring, QuoteSent, QuoteExpiring, QuoteExpired); NotificationRecipientResolver (team-scoped usersWithPermission), NotificationService (paginate/bell/markRead/markAllRead/updatePreferences); 6 listeners (Notify*) auto-discovered on existing events (InvoiceMarkedOverdue, ContractExpired/Expiring, QuoteSent, QuoteExpired/Expiring); NotificationPolicy (viewAny/update); DTOs (6); controllers NotificationController (#[NavItem] BellIcon order 45), NotificationSettingsController, Api/NotificationBellController; routes web GET|POST /notifications* + GET|PUT /settings/notifications, API GET /api/notifications/bell (Sanctum + tenant.context); permissions ViewNotifications (Admin/Vedúca/Sekretárka/Účtovníčka) + ConfigureNotifications (Vedúca/Sekretárka/Účtovníčka seeded). Migrations: create_notifications_table, add_notification_preferences_to_users_table. Factory: NotificationFactory. Event tweaks: InvoiceMarkedOverdue gains ShouldDispatchAfterCommit. AppServiceProvider: removed 2 duplicate Event::listen registrations (ContractSigned, NotificationSent listeners auto-discovered). RoleTemplatesSeeder: ConfigureNotifications added to Vedúca/Sekretárka/Účtovníčka. FE: Pages/Notifications/Index.vue, Pages/Settings/Notifications.vue; components NotificationTypeBadge/NotificationItem/NotificationList/NotificationBell/NotificationPreferenceRow; composables useNotificationBell (60s poll, ref-counted, tab-hidden pause, stops on 401/403); AppLayout bell icon (sidebar full, mobile navbar compact); ICONS += BellIcon, BellAlertIcon; i18n +1054 keys (notification_* types/titles/bodies + settings labels). Tests: 5 new files (NotificationCenter/Bell/Preferences/Dispatch/TenantDatabaseChannel) → 952 total; regression AuthControllerTest::test_login_creates_exactly_one_activity_log_entry (double listener removal fix).
 
 **Certainty audit:**
 - All relationships verified by: live route:list (php artisan route:list), migration files + docker exec postgres psql, grep of every cited callsite + direct reads (git show d7cb13c — BE schedule/employees implementation commit).

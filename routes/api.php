@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\NotificationBellController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
@@ -19,6 +20,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
 Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.required'])->group(function (): void {
     Route::get('/me', MeController::class);
+    Route::get('/notifications/bell', NotificationBellController::class)->name('api.notifications.bell');
 
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {

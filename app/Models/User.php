@@ -7,11 +7,13 @@ namespace App\Models;
 use App\Concerns\HasUuids;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -19,12 +21,26 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'locale', 'is_active'])]
+/**
+ * @property array<string, array{mail: bool}> $notification_preferences
+ */
+#[Fillable(['name', 'email', 'password', 'locale', 'is_active', 'notification_preferences'])]
 #[Hidden(['password', 'remember_token'])]
-final class User extends Authenticatable
+final class User extends Authenticatable implements HasLocalePreference
 {
     /** @use HasFactory<UserFactory> */
     use CanResetPasswordTrait, HasApiTokens, HasFactory, HasRoles, HasUuids, LogsActivity, Notifiable;
+
+    /**
+     * In-memory default for a JSON column that is `NOT NULL DEFAULT '{}'` at the DB level —
+     * without this, a freshly `create()`d instance never round-trips the DB default and
+     * `$user->notification_preferences` reads back as `null` until the model is refreshed.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'notification_preferences' => '{}',
+    ];
 
     protected function casts(): array
     {
@@ -32,6 +48,7 @@ final class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'notification_preferences' => 'array',
         ];
     }
 
@@ -41,6 +58,11 @@ final class User extends Authenticatable
             ->logOnly(['name', 'email', 'locale', 'is_active'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
+    }
+
+    public function preferredLocale(): string
+    {
+        return $this->locale;
     }
 
     /** @return HasMany<TenantMembership, $this> */
@@ -61,6 +83,12 @@ final class User extends Authenticatable
     public function ownedTenants(): HasMany
     {
         return $this->hasMany(Tenant::class, 'owner_id');
+    }
+
+    /** @return MorphMany<Notification, $this> */
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable')->latest();
     }
 
     /** Any active membership, or a specific tenant's active membership when `$tenantId` is given. */

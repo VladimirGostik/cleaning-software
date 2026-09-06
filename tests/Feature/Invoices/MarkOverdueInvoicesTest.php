@@ -7,6 +7,7 @@ namespace Tests\Feature\Invoices;
 use App\Events\InvoiceMarkedOverdue;
 use App\Models\Invoice;
 use App\Models\Tenant;
+use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -19,6 +20,7 @@ final class MarkOverdueInvoicesTest extends TestCase
     {
         Event::fake([InvoiceMarkedOverdue::class]);
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->issued()->create([
             'tenant_id' => $tenant->id,
             'due_date' => now()->subDay()->toDateString(),
@@ -34,6 +36,7 @@ final class MarkOverdueInvoicesTest extends TestCase
     public function test_draft_invoice_untouched(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:mark-overdue-invoices');
@@ -45,6 +48,7 @@ final class MarkOverdueInvoicesTest extends TestCase
     public function test_paid_invoice_untouched(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->paid()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:mark-overdue-invoices');
@@ -56,6 +60,7 @@ final class MarkOverdueInvoicesTest extends TestCase
     public function test_cancelled_invoice_untouched(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->cancelled()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:mark-overdue-invoices');
@@ -67,6 +72,7 @@ final class MarkOverdueInvoicesTest extends TestCase
     public function test_not_yet_due_invoice_untouched(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'due_date' => now()->addDay()->toDateString()]);
 
         $this->artisan('app:mark-overdue-invoices');
@@ -78,6 +84,7 @@ final class MarkOverdueInvoicesTest extends TestCase
     public function test_credit_note_never_marked_overdue(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $original = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
         $creditNote = Invoice::factory()->issued()->create([
             'tenant_id' => $tenant->id,
@@ -95,6 +102,7 @@ final class MarkOverdueInvoicesTest extends TestCase
     {
         Event::fake([InvoiceMarkedOverdue::class]);
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:mark-overdue-invoices');

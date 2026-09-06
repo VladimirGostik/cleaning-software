@@ -9,7 +9,7 @@ Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonic
 - Frontend: Inertia v3 + Vue 3 + TypeScript, Tailwind 4 + DaisyUI 5
 - DB: PostgreSQL 16 (compose service `postgres`), Redis 7
 - Mail: Mailpit (compose service `:8025`), SMTP in dev/test
-- Queue: Database driver, background `queue` service (prod: supervisor) for InvoiceIssued + GenerateRecurringInvoiceJob + GenerateScheduledJobsJob
+- Queue: Database driver, background `queue` service (prod: supervisor) for InvoiceIssued + GenerateRecurringInvoiceJob + GenerateScheduledJobsJob + 6 queued notifications (InvoiceOverdue, ContractExpired, ContractExpiring, QuoteSent, QuoteExpiring, QuoteExpired)
 - PDF/QR: spatie/laravel-pdf (chrome driver), chrome-php/chrome (pure-PHP DevTools), Alpine apk Chromium (arm64 native), pay-by-square + bacon QR code
 - Calendar: @fullcalendar/vue3 v6.1.21 (FullCalendar month/week view for schedule jobs)
 - Main packages: Spatie Data 4, Permission 7 (teams mode), Activitylog 5, MediaLibrary 11, QueryBuilder 7 + `App\Utils\AllowedFilter`,
@@ -22,7 +22,7 @@ Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonic
 - **Target Laravel version:** 13
 - **Greenfield (no production):** yes
 - **Legacy patterns allowed (Repository / FormRequest / JsonResource):** no
-- **Last verified:** 2026-09-06 (Phase 5 Quotes complete)
+- **Last verified:** 2026-09-06 (Phase 8 Notifications complete)
 
 Rules:
 - `Target: 13` + `Legacy: no` -> always `laravel-13-conventions` skill, no FormRequest / JsonResource / Repository.
@@ -69,10 +69,10 @@ docker compose exec app vendor/bin/pint --dirty --format agent
 docker compose exec app vendor/bin/phpstan analyse --memory-limit=1G
 docker compose exec app pnpm lint:js && docker compose exec app pnpm lint:prettier && docker compose exec app pnpm typecheck
 
-# Phase 4: Queue + mail + schedule
+# Phase 4+ Queue + mail + schedule + notifications
 docker compose logs -f queue                              # watch background job worker
-docker compose exec app php artisan schedule:run          # trigger daily crons manually (MarkOverdueInvoices, GenerateRecurringInvoices)
-# Browse Mailpit (queued invoices) at http://localhost:8025
+docker compose exec app php artisan schedule:run          # trigger daily crons manually (MarkOverdueInvoices, GenerateRecurringInvoices, GenerateScheduledJobs, ExpireQuotes, CheckContractExpiry)
+# Browse Mailpit (queued invoices + notifications) at http://localhost:8025
 ```
 
 Login (canonical skeleton admin, never change): `admin@example.com` / `password`.
@@ -143,6 +143,8 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - employees (BE) — EmployeeService (paginate/create/update/deactivate over TenantMembership), TenantMembership extended (profile fields first_name/last_name/phone/position, LogsActivity), RoleAssignmentGuard (escalation prevention 422), TenantMembershipPolicy (rbac-full instance checks), EmployeeController with #[NavItem] IdentificationIcon order 20. Routes: GET|POST /employees, GET|PUT|DELETE /employees/{employee}, POST /employees/{employee}/deactivate, POST /employees/{employee}/role. Permissions: ViewEmployees/CreateEmployees/EditEmployees/AssignEmployees/DeleteEmployees. Users module kept (nav settings order 15, both write tenant_memberships). Nullable User.password (invitation flow for new employees).
 - schedule (FE) — Pages/Schedule/{Index,Create,Edit,Show}.vue, Components/Schedule/{JobStatusBadge,JobTypeBadge,JobFiltersBar,JobList,JobCalendar (FullCalendar v6.1.21 month/week),JobForm,JobAssignPanel,WorkBreakdownView}, TimeInput.vue, Objects/Show gained read-only Rozpis prác card. Composable useJobCalendar. AppLayout nav "Rozvrh" order 32 + ICONS CalendarDaysIcon.
 - schedule (BE) — WorkBreakdown/WorkBreakdownTask/ScheduledJob (table `cleaning_jobs`, BelongsToTenant, LogsActivity, SoftDeletes) models, enums (TaskFrequencyEnum 8 values + recurrence, JobStatusEnum 6 states + matrix, JobTypeEnum 3 types, all #[TypeScript]), WorkBreakdownService (generateFromContract idempotent), JobService (paginate/create/update/assign/cancel/complete/unapprove/unassignFutureForMembership with actor scoping), ScheduledJob::scopeVisibleTo/isVisibleTo (cleaner own-only), CleaningObject::scopeVisibleTo/isVisibleTo (any job reachability D3 override), listener GenerateWorkBreakdownFromSignedContract (ContractSigned → generate → dispatch GenerateScheduledJobsJob afterCommit), GenerateScheduledJobsJob (queued ShouldBeUnique, rolling 30d), GenerateScheduledJobsCommand (daily cron), config/scheduling.php, ScheduleDemoSeeder. ScheduledJobPolicy (rbac-full + scopeVisibleTo), ScheduledJobController with #[NavItem] CalendarDaysIcon order 32. Routes: GET|POST /jobs, GET|PUT|DELETE /jobs/{job}, POST /jobs/{job}/{assign|cancel|complete|unapprove}, GET /jobs/calendar. Permissions: ViewSchedule/CreateSchedule/EditSchedule/AssignCleaners.
+- notifications (FE) — Pages/Notifications/Index.vue, Pages/Settings/Notifications.vue, Components/Notifications/{NotificationTypeBadge,NotificationItem,NotificationList,NotificationBell,NotificationPreferenceRow}.vue, Composables/useNotificationBell.ts (ref-counted subscribers, 60s poll paused on tab hidden, stops on 401/403), utils/enums.ts helpers, AppLayout bell icon in sidebar (full-width) + mobile navbar (compact), gated by `allows('view notifications')`, ICONS BellIcon/BellAlertIcon, lang parity 1054+ keys ×3.
+- notifications (BE) — Notification model (extends DatabaseNotification, scopeInTenant/scopeForRecipient/isOwnedBy), User gains HasLocalePreference + notification_preferences jsonb; NotificationTypeEnum (8 cases, configurable/in-app flags, defaultMailEnabled); TenantDatabaseChannel (custom DB channel), BaseTenantNotification (abstract ShouldQueue #[Tries(3)]), 6 queued notifications (InvoiceOverdue, ContractExpired, ContractExpiring, QuoteSent, QuoteExpiring, QuoteExpired); NotificationRecipientResolver (usersWithPermission team-scoped); NotificationService (paginate/bell/markRead/markAllRead/updatePreferences); 6 listeners (Notify*) auto-discovered on existing events; NotificationPolicy (viewAny/update); DTOs (6); controllers NotificationController (#[NavItem] BellIcon order 45), NotificationSettingsController, Api/NotificationBellController; routes web GET|POST /notifications* + GET|PUT /settings/notifications, API GET /api/notifications/bell (Sanctum + tenant.context + tenant.required); permissions ViewNotifications (Admin/Vedúca/Sekretárka/Účtovníčka) + ConfigureNotifications (Vedúca/Sekretárka/Účtovníčka seeded); 5 test files.
 - dashboard (FE) — Pages/Dashboard.vue welcome card.
 - dashboard (BE) — placeholder GET / route, no props.
 - profile (FE) — Pages/Profile/Show.vue, two useForm('put') forms, locale select from shared languages (now sk/en/uk).
@@ -161,7 +163,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
 - shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm (+ confirmVariant prop phase 4), types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
 
-**Note:** Phases 1–7 complete (2026-09-06). Phase 8+ deferred: Notifications listener wiring (InvoiceOverdue, ContractExpiring, QuoteSent/Expiring events zero-listener phase 7; mobile portal (cleaner + supervisor), customer portal, analytics, integrations. All 7 implemented domains: tenant-scoped (BelongsToTenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate (no soft-delete on WorkBreakdownTask, only cascade). Cleaner role (Interná upratovačka) has own-only scoping via absent "all" permissions + ScheduledJob::scopeVisibleTo / CleaningObject::scopeVisibleTo (D3 override: any assigned job reachability).
+**Note:** Phases 1–8 complete (2026-09-06). Phase 8: Notifications module (in-app centre, bell, mail prefs, 6 event listeners). Phase 9+ deferred: mobile portal (cleaner + supervisor), customer portal, analytics, integrations. All 8 implemented domains: tenant-scoped (BelongsToTenant; notifications scoped manually by tenant_id), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate (no soft-delete on WorkBreakdownTask, Notification, only cascade). Cleaner role (Interná upratovačka) has own-only scoping via absent "all" permissions + ScheduledJob::scopeVisibleTo / CleaningObject::scopeVisibleTo (D3 override: any assigned job reachability). 952 tests total (phase 8 +40).
 
 ## Lint
 lint.tools: [pint, phpstan, vue-tsc, eslint, prettier]
@@ -173,7 +175,7 @@ lint.notes: |
 
 ## Deployment Status
 - **Deployed to production:** no
-- **Last verified:** 2026-09-06 (Phase 7 complete: Employees + Schedule + Cleaner scoping, 912 tests, ScheduleDemoSeeder)
+- **Last verified:** 2026-09-06 (Phase 8 complete: Notifications module + 6 event listeners, 952 tests)
 
 ## Review rules
 

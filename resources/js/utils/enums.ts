@@ -203,3 +203,13 @@ export function taskFrequencyKey(frequency: App.Enums.TaskFrequencyEnum): string
 export function permissionLabelKey(name: App.Enums.PermissionEnum): string {
     return `permission_${name.replace(/\s+/g, '_')}`;
 }
+
+// Mirrors BE NotificationTypeEnum::key() — 'invoice.overdue' -> 'notification_type_invoice_overdue'.
+export function notificationTypeKey(type: App.Enums.NotificationTypeEnum): string {
+    return `notification_type_${type.replace('.', '_')}`;
+}
+
+// 'invoice.overdue' -> 'notification_settings_desc_invoice_overdue'
+export function notificationPreferenceDescKey(type: App.Enums.NotificationTypeEnum): string {
+    return `notification_settings_desc_${type.replace('.', '_')}`;
+}

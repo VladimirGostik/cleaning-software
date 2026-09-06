@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 final class AuthControllerTest extends TestCase
@@ -53,6 +54,23 @@ final class AuthControllerTest extends TestCase
 
         $response->assertRedirect(route('dashboard'));
         $this->assertAuthenticated();
+    }
+
+    public function test_login_creates_exactly_one_activity_log_entry(): void
+    {
+        $user = $this->withActiveMembership(User::factory()->create(['email' => 'test@example.com']));
+
+        $this->post('/login', [
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ]);
+
+        $loginEntries = DB::table('activity_log')
+            ->where('causer_id', $user->id)
+            ->where('description', 'login')
+            ->count();
+
+        $this->assertSame(1, $loginEntries);
     }
 
     public function test_login_with_wrong_password_returns_validation_error(): void

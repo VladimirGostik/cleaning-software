@@ -16,6 +16,8 @@ use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NewPasswordController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationSettingsController;
 use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\PasswordResetLinkController;
 use App\Http\Controllers\ProfileController;
@@ -78,6 +80,15 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/audit-logs/{activity}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/bell', [NotificationController::class, 'bell'])->name('notifications.bell');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read')->whereUuid('notification');
+    Route::get('/settings/notifications', [NotificationSettingsController::class, 'show'])->name('settings.notifications');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::put('/settings/notifications', [NotificationSettingsController::class, 'update'])->name('settings.notifications.update');
+    });
 
     Route::get('/media', [MediaController::class, 'index'])->name('media.index');
     Route::get('/media/{media}', [MediaController::class, 'show'])->name('media.show')->whereNumber('media');

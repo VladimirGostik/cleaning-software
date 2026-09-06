@@ -9,6 +9,7 @@ use App\Events\ContractExpired;
 use App\Events\ContractExpiring;
 use App\Models\Contract;
 use App\Models\Tenant;
+use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -22,6 +23,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         Event::fake([ContractExpired::class]);
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:check-contract-expiry')->assertExitCode(0);
@@ -35,6 +37,7 @@ final class CheckContractExpiryCommandTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:check-contract-expiry');
@@ -47,6 +50,7 @@ final class CheckContractExpiryCommandTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->indefinite()->create(['tenant_id' => $tenant->id]);
 
         $this->artisan('app:check-contract-expiry');
@@ -59,6 +63,7 @@ final class CheckContractExpiryCommandTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->toDateString()]);
 
         $this->artisan('app:check-contract-expiry');
@@ -72,6 +77,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         Event::fake([ContractExpired::class]);
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         Contract::factory()->expired()->create(['tenant_id' => $tenant->id]);
 
         $this->artisan('app:check-contract-expiry');
@@ -83,6 +89,7 @@ final class CheckContractExpiryCommandTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->draft()->create(['tenant_id' => $tenant->id, 'end_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:check-contract-expiry');
@@ -96,8 +103,10 @@ final class CheckContractExpiryCommandTest extends TestCase
         $tenantA = Tenant::factory()->create();
         $tenantB = Tenant::factory()->create();
         $this->bindTenant($tenantA);
+        RoleTemplatesSeeder::seedForTenant($tenantA);
         $contractA = Contract::factory()->active()->create(['tenant_id' => $tenantA->id, 'end_date' => now()->subDay()->toDateString()]);
         $this->bindTenant($tenantB);
+        RoleTemplatesSeeder::seedForTenant($tenantB);
         $contractB = Contract::factory()->active()->create(['tenant_id' => $tenantB->id, 'end_date' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:check-contract-expiry');
@@ -113,6 +122,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         Event::fake([ContractExpiring::class]);
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->addDays(30)->toDateString()]);
 
         $this->artisan('app:check-contract-expiry');
@@ -124,6 +134,7 @@ final class CheckContractExpiryCommandTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->toDateString()]);
 
         $this->artisan('app:check-contract-expiry');

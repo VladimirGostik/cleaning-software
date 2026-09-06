@@ -7,6 +7,8 @@ import TenantSwitcher from '@/Components/Tenants/TenantSwitcher.vue';
 import AddTenantModal from '@/Components/Tenants/AddTenantModal.vue';
 import { usePageProps } from '@/Composables/usePageProps';
 import { useTenantTheme } from '@/Composables/useTenantTheme';
+import { useAuthorization } from '@/Composables/useAuthorization';
+import NotificationBell from '@/Components/Notifications/NotificationBell.vue';
 
 type NavigationItem = App.Data.NavigationItemData;
 import {
@@ -30,6 +32,8 @@ import {
     RectangleStackIcon,
     CalendarDaysIcon,
     IdentificationIcon,
+    BellIcon,
+    BellAlertIcon,
 } from '@heroicons/vue/24/outline';
 import type { ToastPayload } from '@/Composables/useToast';
 
@@ -37,6 +41,7 @@ const { t } = useI18n();
 const page = usePage();
 const props = usePageProps();
 const { themeStyle } = useTenantTheme();
+const { allows } = useAuthorization();
 
 const auth = computed(() => props.value.auth);
 const locale = computed(() => props.value.locale);
@@ -45,6 +50,7 @@ const navigation = computed(() => props.value.navigation ?? []);
 const tenant = computed(() => props.value.tenant);
 const tenantColors = computed(() => props.value.tenantColors);
 const isAddTenantOpen = ref(false);
+const canViewNotifications = computed(() => allows('view notifications'));
 
 const ICONS: Record<string, object> = {
     HomeIcon,
@@ -65,6 +71,8 @@ const ICONS: Record<string, object> = {
     RectangleStackIcon,
     CalendarDaysIcon,
     IdentificationIcon,
+    BellIcon,
+    BellAlertIcon,
 };
 
 function resolveIcon(name: string): object {
@@ -174,6 +182,9 @@ function toastAlertClass(type: ToastMessage['type']): string {
                 <div v-if="tenant.available.length > 0" class="flex-none">
                     <TenantSwitcher :tenant="tenant" compact @add-tenant="isAddTenantOpen = true" />
                 </div>
+                <div v-if="canViewNotifications" class="flex-none">
+                    <NotificationBell compact />
+                </div>
             </div>
 
             <!-- Main content -->
@@ -226,6 +237,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                         <ArrowRightOnRectangleIcon class="size-4" />
                         {{ t('logout') }}
                     </button>
+                    <NotificationBell v-if="canViewNotifications" class="mt-1" />
                 </div>
 
                 <!-- Navigation -->

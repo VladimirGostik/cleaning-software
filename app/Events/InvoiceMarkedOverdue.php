@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Events;
 
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 
-final class InvoiceMarkedOverdue
+final class InvoiceMarkedOverdue implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 

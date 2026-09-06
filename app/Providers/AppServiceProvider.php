@@ -8,10 +8,6 @@ use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Contracts\RendersQuotePdf;
-use App\Events\ContractSigned;
-use App\Listeners\GenerateWorkBreakdownFromSignedContract;
-use App\Listeners\LogAuthenticationActivity;
-use App\Listeners\StampInvoiceSentAt;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
 use App\Services\Pdf\ContractPdfService;
@@ -19,14 +15,9 @@ use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
 use App\Services\Pdf\QuotePdfService;
 use App\Support\PrecognitiveDataValidatorResolver;
-use Illuminate\Auth\Events\Failed;
-use Illuminate\Auth\Events\Login;
-use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\Events\NotificationSent;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -70,12 +61,6 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadJsonTranslations();
-
-        Event::listen(Login::class, [LogAuthenticationActivity::class, 'handleLogin']);
-        Event::listen(Logout::class, [LogAuthenticationActivity::class, 'handleLogout']);
-        Event::listen(Failed::class, [LogAuthenticationActivity::class, 'handleFailed']);
-        Event::listen(NotificationSent::class, StampInvoiceSentAt::class);
-        Event::listen(ContractSigned::class, GenerateWorkBreakdownFromSignedContract::class);
 
         Relation::morphMap([
             'tenant_membership' => TenantMembership::class,

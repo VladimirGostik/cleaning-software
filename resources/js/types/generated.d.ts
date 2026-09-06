@@ -651,6 +651,37 @@ readonly vat: number,
 readonly total: number,
 };
 }
+namespace Notifications {
+export type NotificationBellData = {
+readonly unread_count: number,
+readonly recent: App.Data.Notifications.NotificationListItemData[],
+};
+export type NotificationListItemData = {
+readonly id: string,
+readonly type: App.Enums.NotificationTypeEnum,
+readonly title: string,
+readonly body: string,
+readonly url: string | null,
+readonly read_at: string | null,
+readonly created_at: string,
+};
+export type NotificationPreferenceItemData = {
+readonly type: App.Enums.NotificationTypeEnum,
+readonly label: string,
+readonly mail: boolean,
+readonly configurable: boolean,
+};
+export type NotificationPreferenceUpdateItemData = {
+readonly type: App.Enums.NotificationTypeEnum,
+readonly mail: boolean,
+};
+export type NotificationPreferencesData = {
+readonly items: App.Data.Notifications.NotificationPreferenceItemData[],
+};
+export type NotificationPreferencesUpdateData = {
+readonly preferences: App.Data.Notifications.NotificationPreferenceUpdateItemData[],
+};
+}
 namespace Objects {
 export type ObjectDetailData = {
 readonly id: string,
@@ -1067,6 +1098,7 @@ export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
 export type JobTypeEnum = "regular" | "one_off" | "special";
+export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications";

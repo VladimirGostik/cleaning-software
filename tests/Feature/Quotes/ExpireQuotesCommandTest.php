@@ -9,6 +9,7 @@ use App\Events\QuoteExpired;
 use App\Events\QuoteExpiring;
 use App\Models\Quote;
 use App\Models\Tenant;
+use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -21,6 +22,7 @@ final class ExpireQuotesCommandTest extends TestCase
     {
         Event::fake([QuoteExpired::class]);
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $quote = Quote::factory()->create(['tenant_id' => $tenant->id, 'valid_until' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:expire-quotes')->assertExitCode(0);
@@ -33,6 +35,7 @@ final class ExpireQuotesCommandTest extends TestCase
     public function test_sent_past_valid_until_becomes_expired(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $quote = Quote::factory()->sent()->create(['tenant_id' => $tenant->id, 'valid_until' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:expire-quotes');
@@ -44,6 +47,7 @@ final class ExpireQuotesCommandTest extends TestCase
     public function test_valid_until_today_is_not_expired(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $quote = Quote::factory()->create(['tenant_id' => $tenant->id, 'valid_until' => now()->toDateString()]);
 
         $this->artisan('app:expire-quotes');
@@ -55,6 +59,7 @@ final class ExpireQuotesCommandTest extends TestCase
     public function test_accepted_quote_untouched(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $quote = Quote::factory()->accepted()->create(['tenant_id' => $tenant->id, 'valid_until' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:expire-quotes');
@@ -66,6 +71,7 @@ final class ExpireQuotesCommandTest extends TestCase
     public function test_document_kind_untouched(): void
     {
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $quote = Quote::factory()->document()->create(['tenant_id' => $tenant->id, 'valid_until' => now()->subDay()->toDateString()]);
 
         $this->artisan('app:expire-quotes');
@@ -78,6 +84,7 @@ final class ExpireQuotesCommandTest extends TestCase
     {
         Event::fake([QuoteExpired::class]);
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         Quote::factory()->expired()->create(['tenant_id' => $tenant->id]);
 
         $this->artisan('app:expire-quotes');
@@ -88,7 +95,9 @@ final class ExpireQuotesCommandTest extends TestCase
     public function test_expires_across_tenants(): void
     {
         $tenantA = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenantA);
         $tenantB = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenantB);
         $quoteA = Quote::factory()->create(['tenant_id' => $tenantA->id, 'valid_until' => now()->subDay()->toDateString()]);
         $quoteB = Quote::factory()->create(['tenant_id' => $tenantB->id, 'valid_until' => now()->subDay()->toDateString()]);
 
@@ -104,6 +113,7 @@ final class ExpireQuotesCommandTest extends TestCase
     {
         Event::fake([QuoteExpiring::class]);
         $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $quote = Quote::factory()->sent()->create(['tenant_id' => $tenant->id, 'valid_until' => now()->addDays(7)->toDateString()]);
 
         $this->artisan('app:expire-quotes');

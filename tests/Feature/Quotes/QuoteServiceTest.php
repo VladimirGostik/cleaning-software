@@ -14,6 +14,7 @@ use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Tenant;
 use App\Services\QuoteService;
+use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
@@ -283,6 +284,7 @@ final class QuoteServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
         $quote = Quote::factory()->create(['tenant_id' => $tenant->id]);
 
         $sent = app(QuoteService::class)->send($quote);

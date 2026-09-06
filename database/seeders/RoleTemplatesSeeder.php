@@ -42,6 +42,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::ViewEmployees->value,
                 PermissionEnum::AssignEmployees->value,
                 PermissionEnum::ViewNotifications->value,
+                PermissionEnum::ConfigureNotifications->value,
             ],
             'Interná upratovačka' => [
                 PermissionEnum::ViewSchedule->value,
@@ -75,6 +76,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::UploadFiles->value,
                 PermissionEnum::ViewMedia->value,
                 PermissionEnum::ViewNotifications->value,
+                PermissionEnum::ConfigureNotifications->value,
             ],
             'Účtovníčka' => [
                 PermissionEnum::ViewQuotes->value,
@@ -93,6 +95,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::ViewAllObjects->value,
                 PermissionEnum::ManageBillingSettings->value,
                 PermissionEnum::ViewNotifications->value,
+                PermissionEnum::ConfigureNotifications->value,
             ],
             'Zákazník' => [
                 PermissionEnum::ViewSchedule->value,
