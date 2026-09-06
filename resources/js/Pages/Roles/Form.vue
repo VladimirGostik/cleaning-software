@@ -35,18 +35,12 @@ const breadcrumbs: Breadcrumb[] = [
     { label: isEditing.value ? t('edit') : t('create') },
 ];
 
-const form = useForm(
-    isEditing.value ? 'put' : 'post',
-    isEditing.value ? `/roles/${props.role!.id}` : '/roles',
-    {
-        name: props.role?.name ?? '',
-        permissions: (props.role?.permissions ?? []) as string[],
-    },
-);
+const form = useForm(isEditing.value ? 'put' : 'post', isEditing.value ? `/roles/${props.role!.id}` : '/roles', {
+    name: props.role?.name ?? '',
+    permissions: (props.role?.permissions ?? []) as string[],
+});
 
-const flatPermissions = computed<PermissionItem[]>(() =>
-    props.permissions.flatMap((g) => g.permissions),
-);
+const flatPermissions = computed<PermissionItem[]>(() => props.permissions.flatMap((g) => g.permissions));
 
 function updatePermissions(value: string[]) {
     form.permissions = value;
@@ -62,31 +56,20 @@ function submit() {
     <AppLayout>
         <Header
             :title="
-                isEditing
-                    ? `${t('edit')} ${t('roles').toLowerCase()}`
-                    : `${t('create')} ${t('roles').toLowerCase()}`
+                isEditing ? `${t('edit')} ${t('roles').toLowerCase()}` : `${t('create')} ${t('roles').toLowerCase()}`
             "
             :breadcrumbs="breadcrumbs"
         >
             <template #actions>
-                <a
-                    href="/roles"
-                    class="btn btn-ghost btn-sm"
-                >{{ t('cancel') }}</a>
+                <a href="/roles" class="btn btn-ghost btn-sm">{{ t('cancel') }}</a>
             </template>
         </Header>
 
         <FormProvider :form="form">
-            <form
-                novalidate
-                @submit.prevent="submit"
-            >
+            <form novalidate @submit.prevent="submit">
                 <div class="card bg-base-100 shadow-sm mb-6">
                     <div class="card-body">
-                        <div
-                            v-if="isEditing && role?.is_system"
-                            class="alert alert-warning mb-4"
-                        >
+                        <div v-if="isEditing && role?.is_system" class="alert alert-warning mb-4">
                             <span>{{ t('system_role_warning') }}</span>
                         </div>
 

@@ -10,17 +10,10 @@ defineProps<{
     <fieldset class="fieldset">
         <legend class="fieldset-legend">
             {{ label }}
-            <span
-                v-if="required"
-                class="text-error ml-0.5"
-                aria-hidden="true"
-            >*</span>
+            <span v-if="required" class="text-error ml-0.5" aria-hidden="true">*</span>
         </legend>
         <slot />
-        <p
-            v-if="error"
-            class="text-error text-sm mt-1"
-        >
+        <p v-if="error" class="text-error text-sm mt-1">
             {{ error }}
         </p>
     </fieldset>

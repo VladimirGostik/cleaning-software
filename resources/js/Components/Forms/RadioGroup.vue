@@ -43,11 +43,7 @@ function onSelect(value: string): void {
 </script>
 
 <template>
-    <FormField
-        :label="label"
-        :error="resolvedError"
-        :required="required"
-    >
+    <FormField :label="label" :error="resolvedError" :required="required">
         <div class="flex flex-wrap gap-4 mt-1">
             <label
                 v-for="option in options"

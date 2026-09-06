@@ -47,10 +47,7 @@ function toggle(value: string): void {
 
 <template>
     <div>
-        <p
-            v-if="label"
-            class="text-sm font-medium mb-2"
-        >
+        <p v-if="label" class="text-sm font-medium mb-2">
             {{ label }}
         </p>
         <div class="flex flex-wrap gap-4">
@@ -70,10 +67,7 @@ function toggle(value: string): void {
                 <span class="text-sm capitalize">{{ option.label }}</span>
             </label>
         </div>
-        <p
-            v-if="resolvedError"
-            class="text-error text-sm mt-1"
-        >
+        <p v-if="resolvedError" class="text-error text-sm mt-1">
             {{ resolvedError }}
         </p>
     </div>

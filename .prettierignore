@@ -4,7 +4,10 @@ public/build
 storage
 bootstrap/cache
 resources/js/types/generated.d.ts
+resources/js/types/typescript-transformer-manifest.json
 resources/js/generated/**
+# Docs agent owns .claude/** concurrently; do not reformat
+.claude/**
 *.lock
 pnpm-lock.yaml
 composer.lock

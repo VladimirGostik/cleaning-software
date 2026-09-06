@@ -23,26 +23,29 @@ interface UploadItem {
     error: string | null;
 }
 
-const props = withDefaults(defineProps<{
-    modelValue: string | string[] | null;
-    initialFiles?: InitialFile[];
-    multiple?: boolean;
-    accept?: string;
-    maxFiles?: number;
-    maxSizeKb?: number;
-    endpoint?: string;
-    disabled?: boolean;
-    error?: string | null;
-}>(), {
-    multiple: false,
-    accept: '*/*',
-    maxFiles: undefined,
-    maxSizeKb: 10240,
-    endpoint: '/uploads',
-    disabled: false,
-    error: null,
-    initialFiles: () => [],
-});
+const props = withDefaults(
+    defineProps<{
+        modelValue: string | string[] | null;
+        initialFiles?: InitialFile[];
+        multiple?: boolean;
+        accept?: string;
+        maxFiles?: number;
+        maxSizeKb?: number;
+        endpoint?: string;
+        disabled?: boolean;
+        error?: string | null;
+    }>(),
+    {
+        multiple: false,
+        accept: '*/*',
+        maxFiles: undefined,
+        maxSizeKb: 10240,
+        endpoint: '/uploads',
+        disabled: false,
+        error: null,
+        initialFiles: () => [],
+    },
+);
 
 const emit = defineEmits<{
     'update:modelValue': [value: string | string[] | null];
@@ -234,11 +237,14 @@ function openFilePicker(): void {
 }
 
 // Sync external modelValue reset (e.g. form.reset())
-watch(() => props.modelValue, (newVal) => {
-    if (newVal === null || (Array.isArray(newVal) && newVal.length === 0)) {
-        items.splice(0, items.length);
-    }
-});
+watch(
+    () => props.modelValue,
+    (newVal) => {
+        if (newVal === null || (Array.isArray(newVal) && newVal.length === 0)) {
+            items.splice(0, items.length);
+        }
+    },
+);
 </script>
 
 <template>
@@ -267,8 +273,19 @@ watch(() => props.modelValue, (newVal) => {
                 @change="onFileInputChange"
             />
             <div class="flex flex-col items-center gap-1 pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-10 w-10 text-base-content/30"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
                 </svg>
                 <p class="text-sm font-medium text-base-content">{{ t('app.drop_files_here') }}</p>
                 <p class="text-xs text-base-content/50">{{ t('app.or_click_to_upload') }}</p>
@@ -289,15 +306,29 @@ watch(() => props.modelValue, (newVal) => {
                 class="flex items-center gap-3 p-3 rounded-box border border-base-200 bg-base-50"
             >
                 <!-- Thumbnail -->
-                <div class="w-12 h-12 rounded flex-shrink-0 bg-base-200 overflow-hidden flex items-center justify-center">
+                <div
+                    class="w-12 h-12 rounded flex-shrink-0 bg-base-200 overflow-hidden flex items-center justify-center"
+                >
                     <img
                         v-if="item.localUrl && isImage(item.mimeType)"
                         :src="item.localUrl"
                         :alt="item.name"
                         class="w-full h-full object-cover"
                     />
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    <svg
+                        v-else
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6 text-base-content/30"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.5"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        />
                     </svg>
                 </div>
 
@@ -315,11 +346,30 @@ watch(() => props.modelValue, (newVal) => {
                 <!-- Status badge -->
                 <div class="flex-shrink-0">
                     <span v-if="item.status === 'uploading'" class="loading loading-spinner loading-xs text-primary" />
-                    <svg v-else-if="item.status === 'done'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                        v-else-if="item.status === 'done'"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 text-success"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <svg v-else-if="item.status === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                        v-else-if="item.status === 'error'"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 text-error"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                        />
                     </svg>
                 </div>
 
@@ -331,8 +381,19 @@ watch(() => props.modelValue, (newVal) => {
                     :title="t('app.remove_file')"
                     @click.stop="removeItem(item.id)"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                        />
                     </svg>
                 </button>
             </li>

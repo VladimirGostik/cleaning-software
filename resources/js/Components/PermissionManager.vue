@@ -51,9 +51,7 @@ function toggle(permissionName: string) {
 }
 
 function isGroupAllChecked(resource: string): boolean {
-    return (grouped.value[resource] ?? []).every((p) =>
-        props.modelValue.includes(p.name),
-    );
+    return (grouped.value[resource] ?? []).every((p) => props.modelValue.includes(p.name));
 }
 
 function toggleGroup(resource: string) {
@@ -76,11 +74,7 @@ function toggleGroup(resource: string) {
 
 <template>
     <div class="space-y-4">
-        <div
-            v-for="(group, resource) in grouped"
-            :key="resource"
-            class="card bg-base-200"
-        >
+        <div v-for="(group, resource) in grouped" :key="resource" class="card bg-base-200">
             <div class="card-body p-4">
                 <div class="flex items-center gap-3 mb-2">
                     <input

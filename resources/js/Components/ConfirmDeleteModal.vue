@@ -1,6 +1,4 @@
 <script setup lang="ts">
-
-
 defineProps<{
     isOpen: boolean;
     title: string;
@@ -14,34 +12,20 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <dialog
-        class="modal"
-        :class="{ 'modal-open': isOpen }"
-    >
+    <dialog class="modal" :class="{ 'modal-open': isOpen }">
         <div class="modal-box">
             <h3 class="text-lg font-bold">{{ title }}</h3>
             <p class="py-4 text-base-content/70">{{ description }}</p>
             <div class="modal-action">
-                <button
-                    type="button"
-                    class="btn btn-ghost"
-                    @click="emit('cancel')"
-                >
+                <button type="button" class="btn btn-ghost" @click="emit('cancel')">
                     {{ $t('cancel') }}
                 </button>
-                <button
-                    type="button"
-                    class="btn btn-error"
-                    @click="emit('confirm')"
-                >
+                <button type="button" class="btn btn-error" @click="emit('confirm')">
                     {{ $t('delete') }}
                 </button>
             </div>
         </div>
-        <form
-            method="dialog"
-            class="modal-backdrop"
-        >
+        <form method="dialog" class="modal-backdrop">
             <button @click="emit('cancel')">close</button>
         </form>
     </dialog>

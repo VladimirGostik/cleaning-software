@@ -6,20 +6,23 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 
-const props = withDefaults(defineProps<{
-    modelValue: string;
-    placeholder?: string;
-    error?: string | null;
-    disabled?: boolean;
-    uploadEndpoint?: string;
-    maxImageSizeKb?: number;
-}>(), {
-    placeholder: '',
-    error: null,
-    disabled: false,
-    uploadEndpoint: '/uploads',
-    maxImageSizeKb: 10240,
-});
+const props = withDefaults(
+    defineProps<{
+        modelValue: string;
+        placeholder?: string;
+        error?: string | null;
+        disabled?: boolean;
+        uploadEndpoint?: string;
+        maxImageSizeKb?: number;
+    }>(),
+    {
+        placeholder: '',
+        error: null,
+        disabled: false,
+        uploadEndpoint: '/uploads',
+        maxImageSizeKb: 10240,
+    },
+);
 
 const emit = defineEmits<{
     'update:modelValue': [value: string];
@@ -85,16 +88,22 @@ const editor = useEditor({
     },
 });
 
-watch(() => props.modelValue, (val) => {
-    if (!editor.value) return;
-    if (val !== editor.value.getHTML()) {
-        editor.value.commands.setContent(val, { emitUpdate: false });
-    }
-});
+watch(
+    () => props.modelValue,
+    (val) => {
+        if (!editor.value) return;
+        if (val !== editor.value.getHTML()) {
+            editor.value.commands.setContent(val, { emitUpdate: false });
+        }
+    },
+);
 
-watch(() => props.disabled, (val) => {
-    editor.value?.setEditable(!val);
-});
+watch(
+    () => props.disabled,
+    (val) => {
+        editor.value?.setEditable(!val);
+    },
+);
 
 onBeforeUnmount(() => {
     editor.value?.destroy();
@@ -121,17 +130,13 @@ async function uploadImage(file: File): Promise<void> {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': getCsrfToken(),
-                'Accept': 'application/json',
+                Accept: 'application/json',
             },
             body: formData,
         });
         if (!res.ok) throw new Error('upload failed');
-        const data = await res.json() as { uuid: string; url: string };
-        editor.value
-            ?.chain()
-            .focus()
-            .setImage({ src: data.url, alt: file.name })
-            .run();
+        const data = (await res.json()) as { uuid: string; url: string };
+        editor.value?.chain().focus().setImage({ src: data.url, alt: file.name }).run();
         // tag inserted node with data-media-uuid for backend claim
         const html = editor.value?.getHTML() ?? '';
         const tagged = html.replace(
@@ -290,13 +295,7 @@ function setLink(): void {
                     <span v-if="isUploading" class="loading loading-spinner loading-xs" />
                     <span v-else>🖼</span>
                 </button>
-                <input
-                    ref="fileInputRef"
-                    type="file"
-                    class="hidden"
-                    accept="image/*"
-                    @change="onFileInputChange"
-                />
+                <input ref="fileInputRef" type="file" class="hidden" accept="image/*" @change="onFileInputChange" />
                 <span class="divider divider-horizontal mx-0" />
                 <button
                     type="button"

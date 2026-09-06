@@ -48,10 +48,7 @@ function onNativeChange(event: Event) {
             @change="onNativeChange"
         />
         <span class="text-sm">{{ label }}</span>
-        <p
-            v-if="resolvedError"
-            class="text-error text-sm"
-        >
+        <p v-if="resolvedError" class="text-error text-sm">
             {{ resolvedError }}
         </p>
     </label>

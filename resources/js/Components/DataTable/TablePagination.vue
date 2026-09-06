@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import {computed} from 'vue';
-import type {Paginator} from '@/types/table';
+import { computed } from 'vue';
+import type { Paginator } from '@/types/table';
 
-
-const props = withDefaults(defineProps<{
-    rows: Paginator<unknown>;
-    perPageOptions?: number[];
-}>(), {
-    perPageOptions: () => [10, 25, 50, 100],
-});
+const props = withDefaults(
+    defineProps<{
+        rows: Paginator<unknown>;
+        perPageOptions?: number[];
+    }>(),
+    {
+        perPageOptions: () => [10, 25, 50, 100],
+    },
+);
 
 const emit = defineEmits<{
     page: [page: number];
@@ -47,19 +49,22 @@ function go(page: number) {
             </div>
 
             <span class="text-base-content/60 whitespace-nowrap">
-        {{ rows.from ?? 0 }}–{{ rows.to ?? 0 }} / {{ rows.total ?? 0 }}
-      </span>
+                {{ rows.from ?? 0 }}–{{ rows.to ?? 0 }} / {{ rows.total ?? 0 }}
+            </span>
         </div>
 
         <div v-if="rows.last_page > 1" class="join justify-center">
-            <button type="button" class="join-item btn btn-sm" :disabled="rows.current_page <= 1" @click="go(1)">«
+            <button type="button" class="join-item btn btn-sm" :disabled="rows.current_page <= 1" @click="go(1)">
+                «
             </button>
             <button
                 type="button"
                 class="join-item btn btn-sm"
                 :disabled="!rows.prev_page_url"
                 @click="go(rows.current_page - 1)"
-            >‹</button>
+            >
+                ‹
+            </button>
             <button
                 v-for="page in visiblePages"
                 :key="page"
@@ -75,13 +80,17 @@ function go(page: number) {
                 class="join-item btn btn-sm"
                 :disabled="!rows.next_page_url"
                 @click="go(rows.current_page + 1)"
-            >›</button>
+            >
+                ›
+            </button>
             <button
                 type="button"
                 class="join-item btn btn-sm"
                 :disabled="rows.current_page >= rows.last_page"
                 @click="go(rows.last_page)"
-            >»</button>
+            >
+                »
+            </button>
         </div>
     </div>
 </template>

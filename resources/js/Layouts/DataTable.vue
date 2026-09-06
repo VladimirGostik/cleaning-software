@@ -1,14 +1,8 @@
 <script setup lang="ts" generic="TRow extends object">
 import { computed, ref, useSlots } from 'vue';
 import { router } from '@inertiajs/vue3';
-import {
-    ChevronUpIcon,
-    ChevronDownIcon,
-    PencilSquareIcon,
-    TrashIcon,
-} from '@heroicons/vue/24/solid';
+import { ChevronUpIcon, ChevronDownIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
 import type { TableColumn, Paginator } from '@/types';
-
 
 const props = withDefaults(
     defineProps<{
@@ -54,11 +48,12 @@ const resolvedColumns = computed<TableColumn[]>(() => {
     }));
 });
 
+function cellValue(row: TRow, column: TableColumn): unknown {
+    return (row as Record<string, unknown>)[column.key];
+}
+
 const showActionsColumn = computed(
-    () =>
-        (props.canEdit && !!props.editUrl) ||
-        (props.canDelete && !!props.deleteUrl) ||
-        !!slots['buttons'],
+    () => (props.canEdit && !!props.editUrl) || (props.canDelete && !!props.deleteUrl) || !!slots['buttons'],
 );
 
 const popoverOpen = ref<Record<number, boolean>>({});
@@ -142,14 +137,8 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                             <span class="flex items-center gap-1">
                                 {{ column.label }}
                                 <template v-if="column.sortable">
-                                    <ChevronUpIcon
-                                        v-if="getSortDirection(column) === 'asc'"
-                                        class="size-3"
-                                    />
-                                    <ChevronDownIcon
-                                        v-else-if="getSortDirection(column) === 'desc'"
-                                        class="size-3"
-                                    />
+                                    <ChevronUpIcon v-if="getSortDirection(column) === 'asc'" class="size-3" />
+                                    <ChevronDownIcon v-else-if="getSortDirection(column) === 'desc'" class="size-3" />
                                     <ChevronUpIcon v-else class="size-3 opacity-30" />
                                 </template>
                             </span>
@@ -171,22 +160,16 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
 
                     <template v-else>
                         <tr v-for="(row, index) in rows?.data ?? []" :key="index" class="group">
-                            <td
-                                v-for="column in resolvedColumns"
-                                :key="column.key"
-                                :class="column.class"
-                            >
-                                <slot
-                                    :name="`cell-${column.key}`"
-                                    :row="row"
-                                    :value="(row as Record<string, unknown>)[column.key]"
-                                >
-                                    {{ (row as Record<string, unknown>)[column.key] }}
+                            <td v-for="column in resolvedColumns" :key="column.key" :class="column.class">
+                                <slot :name="`cell-${column.key}`" :row="row" :value="cellValue(row, column)">
+                                    {{ cellValue(row, column) }}
                                 </slot>
                             </td>
 
                             <td v-if="showActionsColumn">
-                                <div class="flex gap-1 justify-end items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div
+                                    class="flex gap-1 justify-end items-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
                                     <slot name="buttons" :row="row" :index="index" />
 
                                     <a
@@ -268,13 +251,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
 
         <div v-if="(rows?.last_page ?? 0) > 1" class="flex justify-center">
             <div class="join">
-                <a
-                    v-if="rows?.prev_page_url"
-                    :href="rows.prev_page_url"
-                    class="join-item btn btn-sm"
-                >
-                    &laquo;
-                </a>
+                <a v-if="rows?.prev_page_url" :href="rows.prev_page_url" class="join-item btn btn-sm"> &laquo; </a>
                 <template v-for="page in visiblePages" :key="page">
                     <a
                         :href="getPageUrl(page) ?? '#'"
@@ -284,13 +261,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                         {{ page }}
                     </a>
                 </template>
-                <a
-                    v-if="rows?.next_page_url"
-                    :href="rows.next_page_url"
-                    class="join-item btn btn-sm"
-                >
-                    &raquo;
-                </a>
+                <a v-if="rows?.next_page_url" :href="rows.next_page_url" class="join-item btn btn-sm"> &raquo; </a>
             </div>
         </div>
     </div>

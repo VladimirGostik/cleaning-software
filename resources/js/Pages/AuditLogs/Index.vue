@@ -16,10 +16,7 @@ defineProps<{
     query?: Record<string, unknown>;
 }>();
 
-const breadcrumbs: Breadcrumb[] = [
-    { label: t('dashboard'), url: '/' },
-    { label: t('audit_logs') },
-];
+const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('audit_logs') }];
 
 const columns: TableColumn[] = [
     { key: 'created_at', label: t('created_at'), sortable: true },
@@ -49,10 +46,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
 <template>
     <AppLayout>
-        <Header
-            :title="t('audit_logs')"
-            :breadcrumbs="breadcrumbs"
-        />
+        <Header :title="t('audit_logs')" :breadcrumbs="breadcrumbs" />
 
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
@@ -79,10 +73,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     </template>
 
                     <template #cell-event="{ value }">
-                        <span
-                            v-if="value"
-                            class="badge badge-ghost badge-sm"
-                        >
+                        <span v-if="value" class="badge badge-ghost badge-sm">
                             {{ value }}
                         </span>
                         <span v-else>-</span>

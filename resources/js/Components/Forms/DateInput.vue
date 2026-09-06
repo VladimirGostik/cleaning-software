@@ -17,11 +17,7 @@ defineEmits<{
 </script>
 
 <template>
-    <FormField
-        :label="label"
-        :error="error"
-        :required="required"
-    >
+    <FormField :label="label" :error="error" :required="required">
         <input
             :value="modelValue ?? ''"
             type="date"

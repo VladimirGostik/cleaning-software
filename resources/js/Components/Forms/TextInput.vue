@@ -48,11 +48,7 @@ function onNativeChange() {
 </script>
 
 <template>
-    <FormField
-        :label="label"
-        :error="resolvedError"
-        :required="required"
-    >
+    <FormField :label="label" :error="resolvedError" :required="required">
         <input
             v-bind="$attrs"
             :value="resolvedValue"

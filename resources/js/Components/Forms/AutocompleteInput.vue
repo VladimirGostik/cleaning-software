@@ -113,17 +113,14 @@ async function runSearch(rawQuery: string) {
     loading.value = true;
 
     try {
-        const response = await fetch(
-            `${props.url}?q=${encodeURIComponent(trimmed)}`,
-            {
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                signal: controller.signal,
+        const response = await fetch(`${props.url}?q=${encodeURIComponent(trimmed)}`, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
             },
-        );
+            signal: controller.signal,
+        });
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
@@ -324,10 +321,7 @@ onBeforeUnmount(() => {
                     @mouseenter="highlightedIndex = i"
                 >
                     <span>{{ option[labelKey] }}</span>
-                    <span
-                        v-if="secondaryKey && option[secondaryKey]"
-                        class="text-xs text-base-content/60"
-                    >
+                    <span v-if="secondaryKey && option[secondaryKey]" class="text-xs text-base-content/60">
                         {{ option[secondaryKey] }}
                     </span>
                 </button>

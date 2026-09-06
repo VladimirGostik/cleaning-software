@@ -28,22 +28,16 @@ const breadcrumbs: Breadcrumb[] = [
     { label: isEditing.value ? t('edit') : t('create') },
 ];
 
-const roleOptions = computed<CheckboxOption[]>(() =>
-    props.roles.map((r) => ({ value: r.name, label: r.name })),
-);
+const roleOptions = computed<CheckboxOption[]>(() => props.roles.map((r) => ({ value: r.name, label: r.name })));
 
-const form = useForm(
-    isEditing.value ? 'put' : 'post',
-    isEditing.value ? `/users/${props.user!.id}` : '/users',
-    {
-        name: props.user?.name ?? '',
-        email: props.user?.email ?? '',
-        password: '',
-        password_confirmation: '',
-        is_active: props.user?.is_active ?? true,
-        roles: [...(props.user?.roles ?? [])] as string[],
-    },
-);
+const form = useForm(isEditing.value ? 'put' : 'post', isEditing.value ? `/users/${props.user!.id}` : '/users', {
+    name: props.user?.name ?? '',
+    email: props.user?.email ?? '',
+    password: '',
+    password_confirmation: '',
+    is_active: props.user?.is_active ?? true,
+    roles: [...(props.user?.roles ?? [])] as string[],
+});
 
 function submit() {
     form.submit();
@@ -54,42 +48,23 @@ function submit() {
     <AppLayout>
         <Header
             :title="
-                isEditing
-                    ? `${t('edit')} ${t('users').toLowerCase()}`
-                    : `${t('create')} ${t('users').toLowerCase()}`
+                isEditing ? `${t('edit')} ${t('users').toLowerCase()}` : `${t('create')} ${t('users').toLowerCase()}`
             "
             :breadcrumbs="breadcrumbs"
         >
             <template #actions>
-                <a
-                    href="/users"
-                    class="btn btn-ghost btn-sm"
-                >{{ t('cancel') }}</a>
+                <a href="/users" class="btn btn-ghost btn-sm">{{ t('cancel') }}</a>
             </template>
         </Header>
 
         <FormProvider :form="form">
-            <form
-                novalidate
-                @submit.prevent="submit"
-            >
+            <form novalidate @submit.prevent="submit">
                 <div class="card bg-base-100 shadow-sm mb-6">
                     <div class="card-body">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <TextInput
-                                field="name"
-                                :label="t('name')"
-                                autocomplete="name"
-                                required
-                            />
+                            <TextInput field="name" :label="t('name')" autocomplete="name" required />
 
-                            <TextInput
-                                field="email"
-                                :label="t('email')"
-                                type="email"
-                                autocomplete="email"
-                                required
-                            />
+                            <TextInput field="email" :label="t('email')" type="email" autocomplete="email" required />
 
                             <template v-if="!isEditing">
                                 <PasswordInput
@@ -107,10 +82,7 @@ function submit() {
                             </template>
 
                             <div class="md:col-span-2">
-                                <ToggleInput
-                                    field="is_active"
-                                    :label="t('is_active')"
-                                />
+                                <ToggleInput field="is_active" :label="t('is_active')" />
                             </div>
                         </div>
                     </div>
@@ -119,10 +91,7 @@ function submit() {
                 <div class="card bg-base-100 shadow-sm mb-6">
                     <div class="card-body">
                         <h2 class="card-title text-base">{{ t('assign_roles') }}</h2>
-                        <CheckboxGroup
-                            field="roles"
-                            :options="roleOptions"
-                        />
+                        <CheckboxGroup field="roles" :options="roleOptions" />
                     </div>
                 </div>
 

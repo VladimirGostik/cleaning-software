@@ -8,11 +8,7 @@ import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 
 import { formatDatetime } from '@/utils/date';
-import type {
-    Breadcrumb,
-    Paginator,
-    TableColumn,
-} from '@/types';
+import type { Breadcrumb, Paginator, TableColumn } from '@/types';
 import type { FilterConfig } from '@/types/table';
 
 const { t } = useI18n();
@@ -28,10 +24,7 @@ const props = defineProps<{
 
 const can = page.props.can as Record<string, boolean>;
 
-const breadcrumbs: Breadcrumb[] = [
-    { label: t('dashboard'), url: '/' },
-    { label: t('users') },
-];
+const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('users') }];
 
 const columns: TableColumn[] = [
     { key: 'name', label: t('name'), sortable: true },
@@ -100,11 +93,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
     <AppLayout>
         <Header :title="t('users')" :breadcrumbs="breadcrumbs">
             <template #actions>
-                <a
-                    v-if="can.createUsers"
-                    href="/users/create"
-                    class="btn btn-primary btn-sm"
-                >
+                <a v-if="can.createUsers" href="/users/create" class="btn btn-primary btn-sm">
                     {{ t('create') }}
                 </a>
             </template>
@@ -124,18 +113,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 >
                     <template #cell-roles="{ row }">
                         <div class="flex flex-wrap gap-1">
-                            <span
-                                v-for="role in row.roles"
-                                :key="role"
-                                class="badge badge-ghost badge-sm"
-                            >
+                            <span v-for="role in row.roles" :key="role" class="badge badge-ghost badge-sm">
                                 {{ role }}
                             </span>
 
-                            <span
-                                v-if="row.roles.length === 0"
-                                class="text-base-content/40 text-sm"
-                            >
+                            <span v-if="row.roles.length === 0" class="text-base-content/40 text-sm">
                                 {{ t('no_roles') }}
                             </span>
                         </div>

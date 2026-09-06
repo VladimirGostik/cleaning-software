@@ -9,7 +9,6 @@ import {
     parseFilterValue,
 } from './filterOperators';
 
-
 const props = defineProps<{
     filter: FilterConfig;
     queryValue?: string | null;
@@ -21,15 +20,15 @@ const emit = defineEmits<{
 }>();
 
 const availableOperators = computed<FilterOperator[]>(() => {
-    return props.filter.operators?.length
-        ? props.filter.operators
-        : operatorsForType(props.filter.type);
+    return props.filter.operators?.length ? props.filter.operators : operatorsForType(props.filter.type);
 });
 
-const initial = computed(() => parseFilterValue(
-    props.queryValue ?? null,
-    props.filter.defaultOperator ?? defaultOperatorForType(props.filter.type),
-));
+const initial = computed(() =>
+    parseFilterValue(
+        props.queryValue ?? null,
+        props.filter.defaultOperator ?? defaultOperatorForType(props.filter.type),
+    ),
+);
 
 const operator = ref<FilterOperator>(initial.value.operator);
 const value = ref<string | null>(initial.value.value);
@@ -43,10 +42,7 @@ watch(
     },
 );
 
-function apply(
-    nextValue = value.value,
-    nextOperator = operator.value,
-): void {
+function apply(nextValue = value.value, nextOperator = operator.value): void {
     emit('change', props.filter.property, formatFilterValue(nextValue, nextOperator));
 }
 
@@ -110,20 +106,12 @@ function toggleBoolean(): void {
             :value="operator"
             @change="changeOperator(($event.target as HTMLSelectElement).value as FilterOperator)"
         >
-            <option
-                v-for="op in availableOperators"
-                :key="op"
-                :value="op"
-            >
+            <option v-for="op in availableOperators" :key="op" :value="op">
                 {{ $t(operatorLabels[op]) }}
             </option>
         </select>
 
-        <button
-            v-else
-            type="button"
-            class="btn btn-sm join-item no-animation pointer-events-none"
-        >
+        <button v-else type="button" class="btn btn-sm join-item no-animation pointer-events-none">
             {{ filter.label }}
         </button>
 
@@ -134,11 +122,7 @@ function toggleBoolean(): void {
                 multiple
                 class="select select-sm select-bordered join-item min-w-48 h-20"
             >
-                <option
-                    v-for="option in filter.options ?? []"
-                    :key="option.value"
-                    :value="option.value"
-                >
+                <option v-for="option in filter.options ?? []" :key="option.value" :value="option.value">
                     {{ option.label }}
                 </option>
             </select>
@@ -152,11 +136,7 @@ function toggleBoolean(): void {
                 <option value="">
                     {{ filter.placeholder ?? filter.label }}
                 </option>
-                <option
-                    v-for="option in filter.options ?? []"
-                    :key="option.value"
-                    :value="option.value"
-                >
+                <option v-for="option in filter.options ?? []" :key="option.value" :value="option.value">
                     {{ option.label }}
                 </option>
             </select>
@@ -176,8 +156,8 @@ function toggleBoolean(): void {
                 value === 'true' || value === '1'
                     ? $t('yes')
                     : value === 'false' || value === '0'
-                        ? $t('no')
-                        : filter.label
+                      ? $t('no')
+                      : filter.label
             }}
         </button>
 
@@ -205,10 +185,10 @@ function toggleBoolean(): void {
                 filter.type === 'number'
                     ? 'number'
                     : filter.type === 'date'
-                        ? 'date'
-                        : filter.type === 'datetime'
-                            ? 'datetime-local'
-                            : 'text'
+                      ? 'date'
+                      : filter.type === 'datetime'
+                        ? 'datetime-local'
+                        : 'text'
             "
             :placeholder="filter.placeholder ?? filter.label"
             :value="value ?? ''"

@@ -4,22 +4,22 @@ Opinionated greenfield skeleton pre rýchle, AI-asistované budovanie webových 
 
 ## Stack
 
-| Layer | Tool |
-|-------|------|
-| Backend | Laravel 13, PHP 8.5 |
-| Frontend | Inertia v3 + Vue 3 + TypeScript |
-| DB | PostgreSQL 16 |
-| CSS | Tailwind 4 + DaisyUI 5 |
-| Validation | Spatie Data 4 (no FormRequest) |
-| Auth | Spatie Permission 7 |
-| Audit | Spatie Activitylog 5 |
-| Media | Spatie MediaLibrary 11 |
+| Layer      | Tool                                                     |
+| ---------- | -------------------------------------------------------- |
+| Backend    | Laravel 13, PHP 8.5                                      |
+| Frontend   | Inertia v3 + Vue 3 + TypeScript                          |
+| DB         | PostgreSQL 16                                            |
+| CSS        | Tailwind 4 + DaisyUI 5                                   |
+| Validation | Spatie Data 4 (no FormRequest)                           |
+| Auth       | Spatie Permission 7                                      |
+| Audit      | Spatie Activitylog 5                                     |
+| Media      | Spatie MediaLibrary 11                                   |
 | API filter | Spatie QueryBuilder 7 + custom `App\Utils\AllowedFilter` |
-| TS gen | Spatie TypeScript Transformer 3 |
-| Tests | PHPUnit 12 |
-| Lint | Pint, PHPStan (Larastan), ESLint, Prettier, vue-tsc |
-| Hooks | Lefthook |
-| AI agent | Laravel Boost 2 |
+| TS gen     | Spatie TypeScript Transformer 3                          |
+| Tests      | PHPUnit 12                                               |
+| Lint       | Pint, PHPStan (Larastan), ESLint, Prettier, vue-tsc      |
+| Hooks      | Lefthook                                                 |
+| AI agent   | Laravel Boost 2                                          |
 
 ## Bundled modules
 
@@ -87,7 +87,6 @@ docker compose down                            # stop
 docker compose down -v                         # stop + drop DB
 ```
 
-
 ## Conventions (zhrnutie — detail v `CLAUDE.md`)
 
 - UUIDv7 PK cez `App\Concerns\HasUuids`
@@ -102,6 +101,7 @@ docker compose down -v                         # stop + drop DB
 ## Lefthook hooks
 
 Pre-commit:
+
 - `vendor/bin/pint` — PHP format
 - `php -d memory_limit=512M vendor/bin/phpstan analyse` — PHP static analysis
 - `pnpm exec eslint` — JS/TS lint
@@ -109,8 +109,8 @@ Pre-commit:
 - `php artisan typescript:transform` — regenerate TS types
 
 Pre-push:
-- `pnpm exec vue-tsc --noEmit` — TypeScript check
 
+- `pnpm exec vue-tsc --noEmit` — TypeScript check
 
 ## Project structure (kľúčové)
 
@@ -142,4 +142,3 @@ bin/init-app                       — one-shot template bootstrap (self-deletes
 ## Updating skeleton in a cloned app
 
 Skeleton + derived apps **nie sú syncované**. Po `bin/init-app` je nová app fork. Bugfixy v skeletone si manuálne cherry-pickni. Dôvod: každá app edituje `AppLayout.vue` nav, `PermissionSeeder`, controllers — upstream merge by bol stratený čas.
-

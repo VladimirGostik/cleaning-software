@@ -1,6 +1,6 @@
 # Review rules
-<!-- Mirror of CLAUDE.md §"Review rules" — keep in sync. Enforced strictly by inogile reviewer-agent; this file feeds GitHub @claude review. -->
 
+<!-- Mirror of CLAUDE.md §"Review rules" — keep in sync. Enforced strictly by inogile reviewer-agent; this file feeds GitHub @claude review. -->
 
 Synced with `laravel-13-conventions/references/review-checks.md` §"Distilled house rules" (master copy). See root `REVIEW.md` for the canonical list.
 
@@ -25,4 +25,3 @@ Synced with `laravel-13-conventions/references/review-checks.md` §"Distilled ho
 - **Atomic transactions:** Multi-step operations (create owner, issue invoice, generate recurring invoice) wrapped in `DB::transaction` in Service (NEVER Controller). Events/jobs inside transaction must implement `ShouldDispatchAfterCommit`.
 - **Spatie Data DTO boundary:** Controllers accept DTO params with `#[Validation]` attributes. No inline `$request->validate()`. No FormRequest. No JsonResource.
 - **i18n via locale keys:** Every user-facing string via `__('<ns>.<key>')` from `lang/{sk,en,uk}/*.php`. Logs stay English.
-

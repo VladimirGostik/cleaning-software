@@ -16,10 +16,7 @@ defineProps<{
 
 const can = page.props.can;
 
-const breadcrumbs: Breadcrumb[] = [
-    { label: t('dashboard'), url: '/' },
-    { label: t('roles') },
-];
+const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('roles') }];
 
 const columns: TableColumn[] = [
     { key: 'name', label: t('name'), sortable: true },
@@ -51,10 +48,7 @@ const columns: TableColumn[] = [
                     :can-delete-row="(row: App.Data.RoleListItemData) => !row.is_system"
                 >
                     <template #cell-is_system="{ row }">
-                        <span
-                            v-if="(row as App.Data.RoleListItemData).is_system"
-                            class="badge badge-warning badge-sm"
-                        >
+                        <span v-if="(row as App.Data.RoleListItemData).is_system" class="badge badge-warning badge-sm">
                             system
                         </span>
                     </template>

@@ -1,7 +1,7 @@
 export type SortDirection = 'asc' | 'desc' | null;
 
 export interface TableColumn<TRow extends object = Record<string, unknown>> {
-    key: keyof TRow & string | string;
+    key: (keyof TRow & string) | string;
     label: string;
     sortable?: boolean;
     class?: string;
@@ -32,15 +32,7 @@ export interface Paginator<TRow> {
     total: number;
 }
 
-export type FilterOperator =
-    | '='
-    | '!='
-    | '<'
-    | '<='
-    | '>'
-    | '>='
-    | 'between'
-    | '~';
+export type FilterOperator = '=' | '!=' | '<' | '<=' | '>' | '>=' | 'between' | '~';
 
 export type FilterType =
     | 'string'

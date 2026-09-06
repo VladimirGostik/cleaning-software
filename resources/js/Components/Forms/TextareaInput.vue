@@ -20,11 +20,7 @@ defineEmits<{
 </script>
 
 <template>
-    <FormField
-        :label="label"
-        :error="error"
-        :required="required"
-    >
+    <FormField :label="label" :error="error" :required="required">
         <textarea
             :value="modelValue"
             class="textarea w-full"

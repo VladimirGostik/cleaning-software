@@ -12,6 +12,7 @@
 /.phpunit.cache
 /.vscode
 /.zed
+/.playwright-mcp/
 /auth.json
 /node_modules
 /.pnpm-store

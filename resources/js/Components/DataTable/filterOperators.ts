@@ -64,10 +64,7 @@ export function operatorsForType(type: FilterType): FilterOperator[] {
     return operatorsByType[type] ?? operatorsByType[normalizeFilterType(type)] ?? ['='];
 }
 
-export function formatFilterValue(
-    value: string | null,
-    operator: FilterOperator,
-): string | null {
+export function formatFilterValue(value: string | null, operator: FilterOperator): string | null {
     if (value === null || value === '') {
         return null;
     }

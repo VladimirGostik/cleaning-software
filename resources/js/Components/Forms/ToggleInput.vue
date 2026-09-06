@@ -48,10 +48,7 @@ function onNativeChange(event: Event) {
             :aria-invalid="resolvedError ? 'true' : undefined"
             @change="onNativeChange"
         />
-        <p
-            v-if="resolvedError"
-            class="text-error text-sm mt-1"
-        >
+        <p v-if="resolvedError" class="text-error text-sm mt-1">
             {{ resolvedError }}
         </p>
     </fieldset>

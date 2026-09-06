@@ -11,18 +11,8 @@ export interface UseFiltersOptions<T extends Record<string, unknown>> {
     transform?: (filters: T) => Record<string, unknown>;
 }
 
-export function useFilters<T extends Record<string, unknown>>(
-    options: UseFiltersOptions<T>,
-) {
-    const {
-        url,
-        initialFilters,
-        defaults,
-        debounceMs = 400,
-        searchKey,
-        immediateKeys = [],
-        transform,
-    } = options;
+export function useFilters<T extends Record<string, unknown>>(options: UseFiltersOptions<T>) {
+    const { url, initialFilters, defaults, debounceMs = 400, searchKey, immediateKeys = [], transform } = options;
 
     const filters = reactive<T>({ ...initialFilters } as T);
 
@@ -67,9 +57,7 @@ export function useFilters<T extends Record<string, unknown>>(
     const allImmediateKeys = [...immediateKeys];
     if (allImmediateKeys.length > 0) {
         watch(
-            allImmediateKeys.map(
-                (k) => () => (filters as Record<string, unknown>)[k as string],
-            ),
+            allImmediateKeys.map((k) => () => (filters as Record<string, unknown>)[k as string]),
             () => {
                 navigate();
             },
@@ -87,10 +75,7 @@ export function useFilters<T extends Record<string, unknown>>(
     }
 
     function clearFilters() {
-        const cleared = { ...initialFilters, ...(defaults ?? {}) } as Record<
-            string,
-            unknown
-        >;
+        const cleared = { ...initialFilters, ...(defaults ?? {}) } as Record<string, unknown>;
         for (const key of Object.keys(cleared)) {
             (filters as Record<string, unknown>)[key] = cleared[key];
         }

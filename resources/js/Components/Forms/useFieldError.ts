@@ -18,10 +18,7 @@ interface FieldErrorOptions {
  *
  * Dev-time warning is emitted when field is set but FormProvider is missing.
  */
-export function useFieldError(
-    props: FieldErrorOptions,
-    form: AnyForm | null,
-): ComputedRef<string | null> {
+export function useFieldError(props: FieldErrorOptions, form: AnyForm | null): ComputedRef<string | null> {
     if (import.meta.env.DEV && props.field && !form) {
         console.warn(
             `[FormField] field="${props.field}" is set but no <FormProvider> was found in the component tree. Validation errors will not display automatically.`,

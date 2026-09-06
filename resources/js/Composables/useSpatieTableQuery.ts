@@ -34,10 +34,7 @@ export function readSpatieQuery() {
     };
 }
 
-export function visitSpatieQuery(
-    query: Record<string, QueryValue>,
-    options: VisitOptions = {},
-): void {
+export function visitSpatieQuery(query: Record<string, QueryValue>, options: VisitOptions = {}): void {
     const url = currentUrl(options.routeUrl);
 
     url.searchParams.delete('search');
@@ -69,11 +66,7 @@ export function visitSpatieQuery(
     router.visit(url.toString(), visitOptions);
 }
 
-export function setFilter(
-    property: string,
-    value: QueryValue,
-    options: VisitOptions = {},
-): void {
+export function setFilter(property: string, value: QueryValue, options: VisitOptions = {}): void {
     visitSpatieQuery(
         {
             [`filter[${property}]`]: value,
@@ -82,9 +75,6 @@ export function setFilter(
     );
 }
 
-export function clearFilter(
-    property: string,
-    options: VisitOptions = {},
-): void {
+export function clearFilter(property: string, options: VisitOptions = {}): void {
     setFilter(property, null, options);
 }

@@ -17,10 +17,7 @@ defineProps<{
     filters?: Record<string, unknown>;
 }>();
 
-const breadcrumbs: Breadcrumb[] = [
-    { label: t('dashboard'), url: '/' },
-    { label: t('media') },
-];
+const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('media') }];
 
 const columns: TableColumn<App.Data.MediaListItemData>[] = [
     { key: 'file_name', label: t('file_name'), sortable: true },
@@ -66,19 +63,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
 <template>
     <AppLayout>
-        <Header
-            :title="t('media_library')"
-            :breadcrumbs="breadcrumbs"
-        />
+        <Header :title="t('media_library')" :breadcrumbs="breadcrumbs" />
 
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
-                <DataTable
-                    :columns="columns"
-                    :rows="media"
-                    :filters="filterDefinitions"
-                    route-name="media.index"
-                >
+                <DataTable :columns="columns" :rows="media" :filters="filterDefinitions" route-name="media.index">
                     <template #cell-file_name="{ row }">
                         <a
                             :href="`/media/${(row as App.Data.MediaListItemData).id}`"

@@ -25,10 +25,7 @@ function formatJson(data: Record<string, unknown> | null): string {
 
 <template>
     <AppLayout>
-        <Header
-            :title="t('audit_log_detail')"
-            :breadcrumbs="breadcrumbs"
-        >
+        <Header :title="t('audit_log_detail')" :breadcrumbs="breadcrumbs">
             <template #actions>
                 <a href="/audit-logs" class="btn btn-ghost btn-sm">
                     {{ t('back') }}
@@ -88,23 +85,21 @@ function formatJson(data: Record<string, unknown> | null): string {
                 </div>
             </div>
 
-            <div
-                v-if="activity.attribute_changes"
-                class="card bg-base-100 shadow-sm lg:col-span-2"
-            >
+            <div v-if="activity.attribute_changes" class="card bg-base-100 shadow-sm lg:col-span-2">
                 <div class="card-body">
                     <h2 class="card-title text-base">{{ t('attribute_changes') }}</h2>
-                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{ formatJson(activity.attribute_changes) }}</pre>
+                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
+                        formatJson(activity.attribute_changes)
+                    }}</pre>
                 </div>
             </div>
 
-            <div
-                v-if="activity.properties"
-                class="card bg-base-100 shadow-sm lg:col-span-2"
-            >
+            <div v-if="activity.properties" class="card bg-base-100 shadow-sm lg:col-span-2">
                 <div class="card-body">
                     <h2 class="card-title text-base">{{ t('properties') }}</h2>
-                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{ formatJson(activity.properties) }}</pre>
+                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
+                        formatJson(activity.properties)
+                    }}</pre>
                 </div>
             </div>
         </div>

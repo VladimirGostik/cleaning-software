@@ -31,10 +31,7 @@ const customPropsJson = computed(() => {
 
 <template>
     <AppLayout>
-        <Header
-            :title="t('media_detail')"
-            :breadcrumbs="breadcrumbs"
-        >
+        <Header :title="t('media_detail')" :breadcrumbs="breadcrumbs">
             <template #actions>
                 <a href="/media" class="btn btn-ghost btn-sm">{{ t('back') }}</a>
             </template>
@@ -57,7 +54,9 @@ const customPropsJson = computed(() => {
                         <div class="py-2 flex justify-between">
                             <dt class="text-sm text-base-content/60">{{ t('mime_type') }}</dt>
                             <dd>
-                                <span v-if="media.mime_type" class="badge badge-ghost badge-sm">{{ media.mime_type }}</span>
+                                <span v-if="media.mime_type" class="badge badge-ghost badge-sm">{{
+                                    media.mime_type
+                                }}</span>
                                 <span v-else class="text-base-content/40">—</span>
                             </dd>
                         </div>
@@ -67,7 +66,9 @@ const customPropsJson = computed(() => {
                         </div>
                         <div class="py-2 flex justify-between">
                             <dt class="text-sm text-base-content/60">{{ t('collection_name') }}</dt>
-                            <dd><span class="badge badge-outline badge-sm">{{ media.collection_name }}</span></dd>
+                            <dd>
+                                <span class="badge badge-outline badge-sm">{{ media.collection_name }}</span>
+                            </dd>
                         </div>
                         <div class="py-2 flex justify-between">
                             <dt class="text-sm text-base-content/60">{{ t('disk') }}</dt>
@@ -83,12 +84,7 @@ const customPropsJson = computed(() => {
                         </div>
                     </dl>
                     <div class="card-actions mt-2">
-                        <a
-                            :href="media.url"
-                            target="_blank"
-                            rel="noopener"
-                            class="btn btn-primary btn-sm gap-1"
-                        >
+                        <a :href="media.url" target="_blank" rel="noopener" class="btn btn-primary btn-sm gap-1">
                             <ArrowTopRightOnSquareIcon class="size-4" />
                             {{ t('open_file') }}
                         </a>
@@ -115,10 +111,7 @@ const customPropsJson = computed(() => {
                         </div>
                     </dl>
                     <div v-if="media.model_url" class="card-actions mt-2">
-                        <a
-                            :href="media.model_url"
-                            class="btn btn-outline btn-sm gap-1"
-                        >
+                        <a :href="media.model_url" class="btn btn-outline btn-sm gap-1">
                             <ArrowTopRightOnSquareIcon class="size-4" />
                             {{ t('open_owner') }}
                         </a>

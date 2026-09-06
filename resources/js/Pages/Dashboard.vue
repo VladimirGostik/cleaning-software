@@ -15,9 +15,7 @@ const userName = computed(() => page.props.auth.user?.name ?? '');
 
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
-                <p class="text-lg">
-                    {{ $t('welcome') }}, {{ userName }}
-                </p>
+                <p class="text-lg">{{ $t('welcome') }}, {{ userName }}</p>
             </div>
         </div>
     </AppLayout>

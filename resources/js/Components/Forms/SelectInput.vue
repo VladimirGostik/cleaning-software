@@ -46,11 +46,7 @@ function onNativeChange(event: Event) {
 </script>
 
 <template>
-    <FormField
-        :label="label"
-        :error="resolvedError"
-        :required="required"
-    >
+    <FormField :label="label" :error="resolvedError" :required="required">
         <select
             v-bind="$attrs"
             :value="resolvedValue"
@@ -62,18 +58,10 @@ function onNativeChange(event: Event) {
             :aria-invalid="resolvedError ? 'true' : undefined"
             @change="onNativeChange"
         >
-            <option
-                v-if="placeholder"
-                value=""
-                disabled
-            >
+            <option v-if="placeholder" value="" disabled>
                 {{ placeholder }}
             </option>
-            <option
-                v-for="option in options"
-                :key="option.value"
-                :value="option.value"
-            >
+            <option v-for="option in options" :key="option.value" :value="option.value">
                 {{ option.label }}
             </option>
         </select>
