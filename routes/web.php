@@ -9,6 +9,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ScheduledJobController;
 use App\Http\Controllers\TemporaryUploadController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\UserController;
@@ -82,6 +84,18 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
 
     Route::post('/uploads', [TemporaryUploadController::class, 'store'])->name('uploads.store');
     Route::delete('/uploads/{uuid}', [TemporaryUploadController::class, 'destroy'])->name('uploads.destroy');
+
+    Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+    Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
+    Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show')->whereUuid('employee');
+    Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->whereUuid('employee');
+    Route::post('/employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate')->whereUuid('employee');
+    Route::post('/employees/{employee}/reactivate', [EmployeeController::class, 'reactivate'])->name('employees.reactivate')->whereUuid('employee');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+        Route::match(['PUT', 'PATCH'], '/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->whereUuid('employee');
+        Route::post('/employees/{employee}/role', [EmployeeController::class, 'role'])->name('employees.role')->whereUuid('employee');
+    });
 
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/autocomplete', [UserController::class, 'autocomplete'])->name('users.autocomplete');
@@ -184,6 +198,18 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/settings/invoicing/preview/{template}', [InvoiceSettingsController::class, 'preview'])->name('settings.invoicing.preview');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::put('/settings/invoicing', [InvoiceSettingsController::class, 'update'])->name('settings.invoicing.update');
+    });
+
+    Route::get('/jobs', [ScheduledJobController::class, 'index'])->name('jobs.index');
+    Route::get('/jobs/calendar', [ScheduledJobController::class, 'calendar'])->name('jobs.calendar');
+    Route::get('/jobs/create', [ScheduledJobController::class, 'create'])->name('jobs.create');
+    Route::get('/jobs/{job}', [ScheduledJobController::class, 'show'])->name('jobs.show')->whereUuid('job');
+    Route::get('/jobs/{job}/edit', [ScheduledJobController::class, 'edit'])->name('jobs.edit')->whereUuid('job');
+    Route::post('/jobs/{job}/cancel', [ScheduledJobController::class, 'cancel'])->name('jobs.cancel')->whereUuid('job');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/jobs', [ScheduledJobController::class, 'store'])->name('jobs.store');
+        Route::match(['PUT', 'PATCH'], '/jobs/{job}', [ScheduledJobController::class, 'update'])->name('jobs.update')->whereUuid('job');
+        Route::post('/jobs/{job}/assign', [ScheduledJobController::class, 'assign'])->name('jobs.assign')->whereUuid('job');
     });
 
     Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');

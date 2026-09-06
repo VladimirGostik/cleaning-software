@@ -65,7 +65,7 @@ final class UserServiceTest extends TestCase
         $user = $this->service->create($data, $actor);
 
         $this->assertDatabaseHas('users', ['email' => 'john@example.com']);
-        $this->assertTrue(Hash::check('password123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('password123', $user->fresh()->password ?? ''));
         $this->assertDatabaseHas('tenant_memberships', ['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true]);
     }
 

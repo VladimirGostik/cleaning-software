@@ -269,8 +269,8 @@ final readonly class QuoteService
             $items = [];
             /** @var QuoteItem $item */
             foreach ($quote->items as $item) {
-                $description = $item->frequency !== null && $item->frequency !== ''
-                    ? "{$item->description} ({$item->frequency})"
+                $description = $item->frequency !== null
+                    ? "{$item->description} ({$item->frequency->label()})"
                     : $item->description;
 
                 if ($item->note !== null && $item->note !== '') {

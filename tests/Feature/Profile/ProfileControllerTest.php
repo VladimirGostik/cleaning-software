@@ -93,7 +93,7 @@ final class ProfileControllerTest extends TestCase
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
-        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password ?? ''));
     }
 
     public function test_change_password_with_wrong_current_password_returns_error(): void

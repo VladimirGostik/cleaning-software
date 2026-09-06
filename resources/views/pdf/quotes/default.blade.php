@@ -106,7 +106,7 @@
                 <td style="padding:6px 8px; border-bottom:1px solid #eee;">
                     {{ $item->description }}
                     @if($item->frequency)
-                    <br><span style="font-size:10px; color:#777;">{{ $item->frequency }}</span>
+                    <br><span style="font-size:10px; color:#777;">{{ $item->frequency->label() }}</span>
                     @endif
                     @if($item->note)
                     <br><span style="font-size:10px; color:#999;">{{ $item->note }}</span>

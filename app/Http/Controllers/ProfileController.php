@@ -42,7 +42,7 @@ final class ProfileController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        if (! Hash::check($data->current_password, $user->password)) {
+        if (! Hash::check($data->current_password, $user->password ?? '')) {
             throw ValidationException::withMessages([
                 'current_password' => [__('app.invalid_current_password')],
             ]);

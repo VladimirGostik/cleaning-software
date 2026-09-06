@@ -123,8 +123,8 @@ final readonly class PlaceholderResolverService
         foreach ($quote->items as $index => $item) {
             $description = $item->description;
 
-            if ($item->frequency !== null && $item->frequency !== '') {
-                $description .= " ({$item->frequency})";
+            if ($item->frequency !== null) {
+                $description .= " ({$item->frequency->label()})";
             }
 
             if ($item->note !== null && $item->note !== '') {

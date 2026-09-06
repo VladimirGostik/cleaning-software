@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
+use App\Enums\TaskFrequencyEnum;
 use Database\Factories\QuoteItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $tenant_id
  * @property string $quote_id
  * @property string $description
- * @property string|null $frequency
+ * @property TaskFrequencyEnum|null $frequency
  * @property string|null $note
  * @property string $quantity
  * @property string|null $unit
@@ -56,6 +57,7 @@ final class QuoteItem extends Model
     protected function casts(): array
     {
         return [
+            'frequency' => TaskFrequencyEnum::class,
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',

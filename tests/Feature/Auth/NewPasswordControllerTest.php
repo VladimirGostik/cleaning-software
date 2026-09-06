@@ -40,7 +40,7 @@ final class NewPasswordControllerTest extends TestCase
         ]);
 
         $response->assertRedirect(route('login'));
-        $this->assertTrue(Hash::check('newpassword123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('newpassword123', $user->fresh()->password ?? ''));
     }
 
     public function test_store_with_invalid_token_redirects_with_email_error(): void

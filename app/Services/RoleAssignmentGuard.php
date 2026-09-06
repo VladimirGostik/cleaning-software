@@ -32,4 +32,23 @@ final readonly class RoleAssignmentGuard
             }
         }
     }
+
+    /**
+     * Actor may only grant direct permission overrides that are a subset of her own
+     * permissions — prevents privilege escalation via direct permission grants. Throws
+     * (rather than main's silent intersect) so the operator sees the rejected attempt (D8).
+     *
+     * @param  list<string>  $permissionNames
+     */
+    public function assertPermissionsGrantable(User $actor, array $permissionNames): void
+    {
+        /** @var list<string> $actorPermissions */
+        $actorPermissions = $actor->getAllPermissions()->pluck('name')->all();
+
+        if (array_diff($permissionNames, $actorPermissions) !== []) {
+            throw ValidationException::withMessages([
+                'permissions' => [__('app.permission_not_grantable')],
+            ]);
+        }
+    }
 }

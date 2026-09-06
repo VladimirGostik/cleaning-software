@@ -120,7 +120,7 @@ final readonly class RegistrationService
         return $tenant;
     }
 
-    private function createInvitation(Tenant $tenant, User $inviter, string $email, string $roleName): TenantInvitation
+    public function createInvitation(Tenant $tenant, User $inviter, string $email, string $roleName): TenantInvitation
     {
         /** @var TenantInvitation $invitation */
         $invitation = TenantInvitation::withoutGlobalScope(TenantScope::class)->firstOrCreate(

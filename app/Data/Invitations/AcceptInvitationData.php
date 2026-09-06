@@ -42,7 +42,7 @@ final class AcceptInvitationData extends Data
             ->where('token', $token)
             ->first();
 
-        $isNewUser = $invitation !== null && ! User::where('email', $invitation->email)->exists();
+        $isNewUser = $invitation !== null && ! User::where('email', $invitation->email)->whereNotNull('password')->exists();
 
         if (! $isNewUser) {
             return [];

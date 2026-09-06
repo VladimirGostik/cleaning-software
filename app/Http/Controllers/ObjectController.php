@@ -7,10 +7,12 @@ namespace App\Http\Controllers;
 use App\Data\Clients\ClientOptionData;
 use App\Data\Objects\ObjectDetailData;
 use App\Data\Objects\ObjectUpsertData;
+use App\Data\Schedule\WorkBreakdownDetailData;
 use App\Enums\PermissionEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\User;
+use App\Models\WorkBreakdown;
 use App\Navigation\NavItem;
 use App\Services\ObjectService;
 use Illuminate\Http\RedirectResponse;
@@ -45,11 +47,14 @@ final class ObjectController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
-        $object->load('client');
+        $object->load(['client', 'workBreakdowns.tasks', 'workBreakdowns.contract:id,title,status']);
 
         return Inertia::render('Objects/Show', [
             'object' => ObjectDetailData::fromModel($object),
             'clients' => $actor->can('update', $object) ? $this->clientOptions($actor) : [],
+            'workBreakdowns' => $object->workBreakdowns
+                ->map(fn (WorkBreakdown $breakdown) => WorkBreakdownDetailData::fromModel($breakdown))
+                ->all(),
         ]);
     }
 

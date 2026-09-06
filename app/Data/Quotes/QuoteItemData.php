@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Quotes;
 
+use App\Enums\TaskFrequencyEnum;
 use App\Models\QuoteItem;
 use Spatie\LaravelData\Attributes\Validation\Between;
 use Spatie\LaravelData\Attributes\Validation\Max;
@@ -20,8 +21,8 @@ final class QuoteItemData extends Data
         public readonly ?string $id,
         #[Required]
         public readonly string $description,
-        #[Nullable, Max(50)]
-        public readonly ?string $frequency,
+        #[Nullable]
+        public readonly ?TaskFrequencyEnum $frequency,
         #[Required, Min(0)]
         public readonly float $quantity,
         #[Nullable]

@@ -99,4 +99,50 @@ final class RoleTemplatesSeederTest extends TestCase
 
         $this->assertSame(count(PermissionEnum::cases()), Permission::count());
     }
+
+    public function test_management_roles_hold_view_all_objects_others_do_not(): void
+    {
+        $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+
+        foreach (['Admin', 'Vedúca', 'Sekretárka', 'Účtovníčka'] as $roleName) {
+            $role = Role::inTenant($tenant->id)->where('name', $roleName)->firstOrFail();
+            $this->assertTrue(
+                $role->permissions()->where('name', PermissionEnum::ViewAllObjects->value)->exists(),
+                "{$roleName} is expected to hold ViewAllObjects",
+            );
+        }
+
+        foreach (['Interná upratovačka', 'Zákazník'] as $roleName) {
+            $role = Role::inTenant($tenant->id)->where('name', $roleName)->firstOrFail();
+            $this->assertFalse(
+                $role->permissions()->where('name', PermissionEnum::ViewAllObjects->value)->exists(),
+                "{$roleName} is expected NOT to hold ViewAllObjects",
+            );
+        }
+    }
+
+    public function test_admin_and_vedúca_hold_view_all_schedule_others_do_not(): void
+    {
+        $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+
+        foreach (['Admin', 'Vedúca'] as $roleName) {
+            $role = Role::inTenant($tenant->id)->where('name', $roleName)->firstOrFail();
+            $this->assertTrue(
+                $role->permissions()->where('name', PermissionEnum::ViewAllSchedule->value)->exists(),
+                "{$roleName} is expected to hold ViewAllSchedule",
+            );
+        }
+
+        foreach (['Interná upratovačka', 'Zákazník'] as $roleName) {
+            $role = Role::inTenant($tenant->id)->where('name', $roleName)->firstOrFail();
+            $this->assertFalse(
+                $role->permissions()->where('name', PermissionEnum::ViewAllSchedule->value)->exists(),
+                "{$roleName} is expected NOT to hold ViewAllSchedule",
+            );
+        }
+    }
 }

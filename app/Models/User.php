@@ -77,4 +77,20 @@ final class User extends Authenticatable
     {
         return $this->memberships()->where('tenant_id', $tenantId)->exists();
     }
+
+    /** The actor's active membership id in the currently bound tenant, or null if unbound/none. */
+    public function activeMembershipId(): ?string
+    {
+        if (! app()->bound('current_tenant_id')) {
+            return null;
+        }
+
+        /** @var string|null $id */
+        $id = $this->memberships()
+            ->where('tenant_id', current_tenant_id())
+            ->where('is_active', true)
+            ->value('id');
+
+        return $id;
+    }
 }

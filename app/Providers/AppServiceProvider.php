@@ -8,6 +8,8 @@ use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Contracts\RendersQuotePdf;
+use App\Events\ContractSigned;
+use App\Listeners\GenerateWorkBreakdownFromSignedContract;
 use App\Listeners\LogAuthenticationActivity;
 use App\Listeners\StampInvoiceSentAt;
 use App\Models\CleaningObject;
@@ -73,6 +75,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(Logout::class, [LogAuthenticationActivity::class, 'handleLogout']);
         Event::listen(Failed::class, [LogAuthenticationActivity::class, 'handleFailed']);
         Event::listen(NotificationSent::class, StampInvoiceSentAt::class);
+        Event::listen(ContractSigned::class, GenerateWorkBreakdownFromSignedContract::class);
 
         Relation::morphMap([
             'tenant_membership' => TenantMembership::class,

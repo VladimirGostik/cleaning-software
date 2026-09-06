@@ -541,12 +541,6 @@ parameters:
 			path: app/Utils/SymbolOperatorFilter.php
 
 		-
-			message: '#^Cannot access property \$password on App\\Models\\User\|null\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: tests/Feature/Api/ProfileApiControllerTest.php
-
-		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
 			count: 1
@@ -613,6 +607,12 @@ parameters:
 			path: tests/Feature/Contracts/CheckContractExpiryCommandTest.php
 
 		-
+			message: '#^Cannot call method assertExitCode\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Schedule/GenerateScheduledJobsCommandTest.php
+
+		-
 			message: '#^Cannot access property \$id on Spatie\\Activitylog\\Contracts\\Activity\|null\.$#'
 			identifier: property.nonObject
 			count: 3
@@ -671,12 +671,6 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: tests/Feature/Auth/AuthControllerTest.php
-
-		-
-			message: '#^Cannot access property \$password on App\\Models\\User\|null\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: tests/Feature/Auth/NewPasswordControllerTest.php
 
 		-
 			message: '#^Cannot call method component\(\) on mixed\.$#'
@@ -761,12 +755,6 @@ parameters:
 			identifier: argument.templateType
 			count: 1
 			path: tests/Feature/Media/MediaControllerTest.php
-
-		-
-			message: '#^Cannot access property \$password on App\\Models\\User\|null\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: tests/Feature/Profile/ProfileControllerTest.php
 
 		-
 			message: '#^Cannot call method component\(\) on mixed\.$#'
@@ -859,12 +847,6 @@ parameters:
 			path: tests/Feature/Services/RoleServiceTest.php
 
 		-
-			message: '#^Cannot access property \$password on App\\Models\\User\|null\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: tests/Feature/Services/UserServiceTest.php
-
-		-
 			message: '#^Cannot access property \$roles on App\\Models\\User\|null\.$#'
 			identifier: property.nonObject
 			count: 1
@@ -951,7 +933,7 @@ parameters:
 		-
 			message: '#^Cannot call method component\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 4
+			count: 5
 			path: tests/Feature/Tenancy/InvitationAcceptTest.php
 
 		-
@@ -963,7 +945,7 @@ parameters:
 		-
 			message: '#^Cannot call method where\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 7
+			count: 8
 			path: tests/Feature/Tenancy/InvitationAcceptTest.php
 
 		-

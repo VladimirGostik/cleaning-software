@@ -44,7 +44,14 @@ final readonly class InvitationAcceptService
             $existingUser = User::where('email', $invitation->email)->first();
 
             if ($existingUser !== null) {
-                if (! $skipPasswordCheck && ! Hash::check($data->password, $existingUser->password)) {
+                if ($existingUser->password === null) {
+                    // Pre-created employee (D7) — no password to check against; this
+                    // acceptance sets it for the first time and verifies the e-mail.
+                    $existingUser->forceFill([
+                        'password' => Hash::make($data->password),
+                        'email_verified_at' => $existingUser->email_verified_at ?? now(),
+                    ])->save();
+                } elseif (! $skipPasswordCheck && ! Hash::check($data->password, $existingUser->password)) {
                     throw ValidationException::withMessages([
                         'password' => [__('app.invalid_credentials')],
                     ]);

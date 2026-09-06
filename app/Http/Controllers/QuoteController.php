@@ -19,6 +19,7 @@ use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\ContractTemplate;
 use App\Models\Quote;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
@@ -72,9 +73,12 @@ final class QuoteController extends Controller
     {
         $isClientless = $quote->client_id === null;
 
+        /** @var User $actor */
+        $actor = $request->user();
+
         $canConvertToContract = $quote->status === QuoteStatusEnum::Accepted
             && $quote->kind === QuoteKindEnum::Itemized
-            && $request->user()?->can(PermissionEnum::CreateContracts->value);
+            && $actor->can('convertToContract', $quote);
 
         return Inertia::render('Quotes/Show', [
             'quote' => QuoteDetailData::fromModel($quote),

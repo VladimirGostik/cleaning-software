@@ -33,7 +33,7 @@ final class UserController extends Controller
     ) {}
 
     #[Authorize('viewAny', User::class)]
-    #[NavItem(label: 'app.users', route: 'users.index', icon: 'UsersIcon', permission: PermissionEnum::ViewEmployees->value, order: 20)]
+    #[NavItem(label: 'app.users', route: 'users.index', icon: 'UsersIcon', permission: PermissionEnum::ViewEmployees->value, group: 'settings', order: 15)]
     public function index(Request $request): Response
     {
         $tenantId = current_tenant_id();

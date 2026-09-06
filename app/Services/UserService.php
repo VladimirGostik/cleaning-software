@@ -21,6 +21,7 @@ final readonly class UserService
         private DatabaseManager $db,
         private PermissionRegistrar $registrar,
         private RoleAssignmentGuard $guard,
+        private JobService $jobs,
     ) {}
 
     public function create(CreateUserData $data, User $actor): User
@@ -88,10 +89,16 @@ final readonly class UserService
                 'email' => $data->email,
             ]);
 
-            TenantMembership::query()
+            $membership = TenantMembership::query()
                 ->where('user_id', $user->id)
                 ->where('tenant_id', $tenantId)
-                ->update(['is_active' => $data->is_active]);
+                ->first();
+
+            $membership?->update(['is_active' => $data->is_active]);
+
+            if ($membership !== null && ! $data->is_active) {
+                $this->jobs->unassignFutureForMembership($membership);
+            }
 
             $user->syncRoles($roles);
 
@@ -108,10 +115,15 @@ final readonly class UserService
             $user->syncRoles([]);
             $user->syncPermissions([]);
 
-            TenantMembership::query()
+            $membership = TenantMembership::query()
                 ->where('user_id', $user->id)
                 ->where('tenant_id', $tenantId)
-                ->delete();
+                ->first();
+
+            if ($membership !== null) {
+                $this->jobs->unassignFutureForMembership($membership);
+                $membership->delete();
+            }
         });
     }
 }

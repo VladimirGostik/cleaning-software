@@ -12,9 +12,11 @@ use Database\Factories\CleaningObjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -43,6 +45,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
  * @property Client|null $client
+ * @property Collection<int, WorkBreakdown> $workBreakdowns
+ * @property Collection<int, ScheduledJob> $jobs
  *
  * D1 override (phase 3 plan): two lifecycle switches on this model — `is_active` for direct
  * user deactivation, `deleted_at` for the soft-delete cascade fired by `ClientService::delete()`
@@ -101,10 +105,22 @@ final class CleaningObject extends Model
         return $this->belongsTo(Client::class)->withTrashed();
     }
 
+    /** @return HasMany<WorkBreakdown, $this> */
+    public function workBreakdowns(): HasMany
+    {
+        return $this->hasMany(WorkBreakdown::class, 'cleaning_object_id');
+    }
+
+    /** @return HasMany<ScheduledJob, $this> */
+    public function jobs(): HasMany
+    {
+        return $this->hasMany(ScheduledJob::class, 'cleaning_object_id');
+    }
+
     /**
      * Scopes the query to objects the actor may see. Fail-closed: with `ViewAllObjects` the
-     * actor sees the tenant's objects; without it, an empty set. `cleaning_jobs` does not exist
-     * until phase 7 — the empty branch is a placeholder for "own-only via assigned jobs".
+     * actor sees the tenant's objects; without it, only objects reachable through ANY job
+     * (any status/date) assigned to the actor's active membership.
      *
      * @param  Builder<CleaningObject>  $query
      * @return Builder<CleaningObject>
@@ -115,8 +131,13 @@ final class CleaningObject extends Model
             return $query;
         }
 
-        // TODO(phase 7): replace empty branch with whereHas('jobs', assigned_membership_id = actor's active membership)
-        return $query->whereRaw('1 = 0');
+        $membershipId = $actor->activeMembershipId();
+
+        if ($membershipId === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('jobs', fn (Builder $q) => $q->where('assigned_membership_id', $membershipId));
     }
 
     public function isVisibleTo(User $actor): bool

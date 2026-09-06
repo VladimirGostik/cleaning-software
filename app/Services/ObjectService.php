@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Objects\ObjectListItemData;
+use App\Data\Objects\ObjectOptionData;
 use App\Data\Objects\ObjectUpsertData;
 use App\Models\CleaningObject;
 use App\Models\User;
@@ -78,5 +79,22 @@ final readonly class ObjectService
         $this->db->transaction(function () use ($object): void {
             $object->update(['is_active' => true]);
         });
+    }
+
+    /**
+     * Active objects reachable by `$actor` — used for the schedule job-creation object picker.
+     *
+     * @return array<int, ObjectOptionData>
+     */
+    public function optionsVisibleTo(User $actor): array
+    {
+        return CleaningObject::query()
+            ->visibleTo($actor)
+            ->where('is_active', true)
+            ->with('client:id,name')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (CleaningObject $object) => ObjectOptionData::fromModel($object))
+            ->all();
     }
 }

@@ -63,7 +63,7 @@ final class InvitationController extends Controller
             ]);
         }
 
-        $state = User::where('email', $invitation->email)->exists()
+        $state = User::where('email', $invitation->email)->whereNotNull('password')->exists()
             ? InvitationAcceptStateEnum::ExistingUser
             : InvitationAcceptStateEnum::NewUser;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\TaskFrequencyEnum;
 use App\Models\QuoteItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -41,6 +42,11 @@ final class QuoteItemFactory extends Factory
     public function withNote(string $note = 'Includes window cleaning'): static
     {
         return $this->state(fn () => ['note' => $note]);
+    }
+
+    public function withFrequency(TaskFrequencyEnum $frequency = TaskFrequencyEnum::Weekly1x): static
+    {
+        return $this->state(fn () => ['frequency' => $frequency]);
     }
 
     public function withVat(float $rate = 23.0): static

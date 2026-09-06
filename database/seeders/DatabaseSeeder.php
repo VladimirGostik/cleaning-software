@@ -15,6 +15,7 @@ final class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ClientSeeder::class,
             ObjectSeeder::class,
+            ScheduleDemoSeeder::class,
         ]);
     }
 }

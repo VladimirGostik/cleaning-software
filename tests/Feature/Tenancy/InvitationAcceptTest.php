@@ -108,6 +108,21 @@ final class InvitationAcceptTest extends TestCase
         );
     }
 
+    public function test_show_null_password_user_state_is_new_user(): void
+    {
+        $tenant = $this->tenantWithRole();
+        User::factory()->create(['email' => 'precreated@example.com', 'password' => null]);
+        $invitation = $this->invitation($tenant, ['email' => 'precreated@example.com']);
+
+        $response = $this->withoutVite()->get("/invitations/{$invitation->token}");
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Invitations/Accept')
+            ->where('invitation.state', InvitationAcceptStateEnum::NewUser->value),
+        );
+    }
+
     public function test_show_unknown_token_returns_404(): void
     {
         $response = $this->get('/invitations/'.str_repeat('a', 64));
@@ -236,6 +251,31 @@ final class InvitationAcceptTest extends TestCase
     }
 
     // ── accept — invalid states ──────────────────────────────────────────────
+
+    public function test_accept_null_password_user_sets_password_and_keeps_existing_membership_and_role(): void
+    {
+        $tenant = $this->tenantWithRole();
+        $user = User::factory()->create(['email' => 'precreated2@example.com', 'password' => null]);
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+        $user->assignRole('Vedúca');
+        $invitation = $this->invitation($tenant, ['email' => 'precreated2@example.com']);
+
+        $response = $this->post("/invitations/{$invitation->token}", [
+            'password' => 'newpassword123',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+
+        $freshUser = User::findOrFail($user->id);
+        $this->assertAuthenticatedAs($freshUser);
+        $this->assertNotNull($freshUser->password);
+        $this->assertNotNull($freshUser->email_verified_at);
+        $this->assertSame(1, TenantMembership::where('user_id', $user->id)->where('tenant_id', $tenant->id)->count());
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+        $this->assertTrue($freshUser->hasRole('Vedúca'));
+        $this->assertSame(1, $freshUser->roles()->count());
+    }
 
     public function test_accept_expired_invitation_returns_410(): void
     {

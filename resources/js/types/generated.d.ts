@@ -378,6 +378,68 @@ readonly token: string,
 readonly label: string,
 };
 }
+namespace Employees {
+export type EmployeeDetailData = {
+readonly id: string,
+readonly user_id: string,
+readonly display_name: string,
+readonly email: string,
+readonly phone: string | null,
+readonly position: string | null,
+readonly role_name: string | null,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly upcoming_jobs_count: number,
+readonly is_active: boolean,
+readonly joined_at: string,
+readonly user_name: string,
+readonly first_name: string | null,
+readonly last_name: string | null,
+readonly permissions: string[],
+readonly employment_contract_id: string | null,
+readonly employment_contract: App.Data.Contracts.EmploymentContractData | null,
+readonly other_tenants_count: number,
+readonly is_owner: boolean,
+readonly can: Record<string, boolean>,
+};
+export type EmployeeFormContextData = {
+readonly roles: App.Data.RoleListItemData[],
+readonly permission_groups: App.Data.PermissionGroupData[],
+};
+export type EmployeeListItemData = {
+readonly id: string,
+readonly user_id: string,
+readonly display_name: string,
+readonly email: string,
+readonly phone: string | null,
+readonly position: string | null,
+readonly role_name: string | null,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly upcoming_jobs_count: number,
+readonly is_active: boolean,
+readonly joined_at: string,
+};
+export type EmployeeRoleData = {
+readonly role_name: string,
+};
+export type EmployeeStoreData = {
+readonly email: string,
+readonly first_name: string | null,
+readonly last_name: string | null,
+readonly phone: string | null,
+readonly position: string | null,
+readonly role_name: string,
+readonly permissions: string[] | null,
+readonly employment: App.Data.Contracts.EmploymentContractUpsertData | null,
+};
+export type EmployeeUpdateData = {
+readonly first_name: string | null,
+readonly last_name: string | null,
+readonly phone: string | null,
+readonly position: string | null,
+readonly role_name: string,
+readonly permissions: string[] | null,
+};
+}
 namespace Invitations {
 export type AcceptInvitationData = {
 readonly password: string,
@@ -710,7 +772,7 @@ readonly status: App.Enums.InvoiceStatusEnum,
 export type QuoteItemData = {
 readonly id: string | null,
 readonly description: string,
-readonly frequency: string | null,
+readonly frequency: App.Enums.TaskFrequencyEnum | null,
 readonly quantity: number,
 readonly unit: string | null,
 readonly unit_price: number,
@@ -858,6 +920,109 @@ readonly currency: App.Enums.CurrencyEnum,
 readonly rounding_mode: App.Enums.RoundingModeEnum,
 };
 }
+namespace Schedule {
+export type JobAssignData = {
+readonly assigned_membership_id: string | null,
+};
+export type JobCalendarFilterData = {
+readonly from: string,
+readonly to: string,
+readonly cleaning_object_id: string | null,
+readonly assigned_membership_id: string | null,
+readonly status: App.Enums.JobStatusEnum | null,
+};
+export type JobCalendarItemData = {
+readonly id: string,
+readonly scheduled_date: string,
+readonly start_time: string | null,
+readonly end_time: string | null,
+readonly object_name: string,
+readonly assignee_display_name: string | null,
+readonly type: App.Enums.JobTypeEnum,
+readonly status: App.Enums.JobStatusEnum,
+};
+export type JobDetailData = {
+readonly id: string,
+readonly scheduled_date: string,
+readonly start_time: string | null,
+readonly end_time: string | null,
+readonly cleaning_object_id: string,
+readonly object_name: string,
+readonly client_name: string,
+readonly assigned_membership_id: string | null,
+readonly assignee_display_name: string | null,
+readonly type: App.Enums.JobTypeEnum,
+readonly status: App.Enums.JobStatusEnum,
+readonly is_invoiced: boolean,
+readonly client_id: string | null,
+readonly work_breakdown_id: string | null,
+readonly work_breakdown_task_id: string | null,
+readonly task_name: string | null,
+readonly contract_id: string | null,
+readonly contract_title: string | null,
+readonly invoice_id: string | null,
+readonly note: string | null,
+readonly completed_at: string | null,
+readonly cancelled_at: string | null,
+readonly is_editable: boolean,
+readonly can_be_assigned: boolean,
+readonly can_be_cancelled: boolean,
+readonly can: Record<string, boolean>,
+};
+export type JobFormContextData = {
+readonly objects: App.Data.Objects.ObjectOptionData[],
+readonly memberships: App.Data.Contracts.MembershipOptionData[],
+};
+export type JobListItemData = {
+readonly id: string,
+readonly scheduled_date: string,
+readonly start_time: string | null,
+readonly end_time: string | null,
+readonly cleaning_object_id: string,
+readonly object_name: string,
+readonly client_name: string,
+readonly assigned_membership_id: string | null,
+readonly assignee_display_name: string | null,
+readonly type: App.Enums.JobTypeEnum,
+readonly status: App.Enums.JobStatusEnum,
+readonly is_invoiced: boolean,
+};
+export type JobStoreData = {
+readonly cleaning_object_id: string,
+readonly type: App.Enums.JobTypeEnum,
+readonly scheduled_date: string,
+readonly start_time: string | null,
+readonly end_time: string | null,
+readonly assigned_membership_id: string | null,
+readonly note: string | null,
+};
+export type JobUpdateData = {
+readonly cleaning_object_id: string,
+readonly type: App.Enums.JobTypeEnum,
+readonly scheduled_date: string,
+readonly start_time: string | null,
+readonly end_time: string | null,
+readonly note: string | null,
+};
+export type WorkBreakdownDetailData = {
+readonly id: string,
+readonly cleaning_object_id: string,
+readonly name: string,
+readonly is_active: boolean,
+readonly contract_id: string | null,
+readonly contract_title: string | null,
+readonly contract_status: App.Enums.ContractStatusEnum | null,
+readonly source_quote_id: string | null,
+readonly tasks: App.Data.Schedule.WorkBreakdownTaskData[],
+};
+export type WorkBreakdownTaskData = {
+readonly id: string,
+readonly name: string,
+readonly description: string | null,
+readonly frequency: App.Enums.TaskFrequencyEnum,
+readonly position: number,
+};
+}
 namespace Tenants {
 export type AddTenantData = {
 readonly name: string,
@@ -900,6 +1065,8 @@ export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";
 export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
+export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
+export type JobTypeEnum = "regular" | "one_off" | "special";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications";
@@ -910,6 +1077,7 @@ export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" 
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";
 export type RoundingModeEnum = "none" | "document" | "cash_005";
 export type SupportedLanguage = "sk" | "en" | "uk";
+export type TaskFrequencyEnum = "one_time" | "weekly_1x" | "weekly_2x" | "weekly_3x" | "biweekly" | "monthly" | "bimonthly" | "seasonal";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";
 }
 }

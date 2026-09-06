@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Quotes;
 
 use App\Data\Invoices\InvoiceDetailData;
+use App\Enums\TaskFrequencyEnum;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteItem;
@@ -27,7 +28,7 @@ final class QuoteConversionTest extends TestCase
             'tenant_id' => $tenant->id,
             'quote_id' => $quote->id,
             'description' => 'Weekly cleaning',
-            'frequency' => 'weekly',
+            'frequency' => TaskFrequencyEnum::Weekly1x,
         ]);
 
         $invoice = app(QuoteService::class)->convertToInvoice($quote);
@@ -35,7 +36,7 @@ final class QuoteConversionTest extends TestCase
 
         $this->assertSame($quote->id, $invoice->quote_id);
         $this->assertSame('draft', $invoice->status->value);
-        $this->assertSame('Weekly cleaning (weekly)', $invoice->items->sole()->description);
+        $this->assertSame('Weekly cleaning (1x weekly)', $invoice->items->sole()->description);
     }
 
     public function test_converts_quote_item_note_into_invoice_item_description_suffix(): void
@@ -66,14 +67,14 @@ final class QuoteConversionTest extends TestCase
             'tenant_id' => $tenant->id,
             'quote_id' => $quote->id,
             'description' => 'Deep cleaning',
-            'frequency' => 'monthly',
+            'frequency' => TaskFrequencyEnum::Monthly,
             'note' => 'Use eco-friendly products',
         ]);
 
         $invoice = app(QuoteService::class)->convertToInvoice($quote);
         $invoice->loadMissing('items');
 
-        $this->assertSame('Deep cleaning (monthly) — Use eco-friendly products', $invoice->items->sole()->description);
+        $this->assertSame('Deep cleaning (Monthly) — Use eco-friendly products', $invoice->items->sole()->description);
     }
 
     public function test_empty_note_does_not_add_suffix(): void
