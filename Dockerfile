@@ -70,7 +70,8 @@ RUN docker-php-ext-configure gd \
         exif \
         opcache \
         pcntl \
-        bcmath
+        bcmath \
+        sockets
 
 # Redis extension via PECL
 RUN pecl install redis && docker-php-ext-enable redis

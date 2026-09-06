@@ -14,7 +14,8 @@ RUN install-php-extensions \
         opcache \
         pcntl \
         bcmath \
-        redis
+        redis \
+        sockets
 
 # Runtime tools + pnpm via npm (corepack not bundled in node 24 alpine).
 # Chromium + fonts for spatie/laravel-pdf (chrome driver, chrome-php/chrome).
@@ -29,6 +30,10 @@ RUN chromium-browser --headless --no-sandbox --disable-gpu --version
 
 # Composer.
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Dev-only: default 128M CLI memory_limit is too low for some test suites
+# (e.g. MediaLibrary mime-guess). Raise for CLI/test runs only.
+RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/zz-memory-limit.ini
 
 WORKDIR /app
 
