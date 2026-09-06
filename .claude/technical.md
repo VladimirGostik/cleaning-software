@@ -392,8 +392,89 @@ No queued jobs today (QUEUE_CONNECTION sync in tests). Only schedule PurgeTempor
 - Media/Index {media: Paginator<MediaListItemData>, filters?: Record<string, unknown>, filterOptions?}
 - Media/Show {media: MediaDetailData}
 
-**Phase 3+ (clients, objects, quotes, invoices, etc):**
-- (placeholder; tenant-scoped CRUD pages per domain modules).
+### clients — Cleaning company customers (corporate + private) with contacts and address
+
+**Core:**
+- `App\Models\Client` — UUIDv7; traits BelongsToTenant, HasFactory, HasUuids, LogsActivity, SoftDeletes. Columns: tenant_id FK, `type` (ClientTypeEnum: corporate/private), name (255), nullable ico (32) + dic (32) + vat_number (32), bool is_vat_payer, address (street/city/postal_code/country), nullable note. Relations: `contacts(): HasMany<ClientContact>`, `primaryContact(): HasOne<ClientContact>` (where is_primary=true), `objects(): HasMany<CleaningObject>`. Activity log on changes (logOnly same list as columns; logOnlyDirty). Partial unique index `(tenant_id, ico)` WHERE deleted_at IS NULL AND ico IS NOT NULL.
+- `App\Models\ClientContact` — UUIDv7 pivot; traits BelongsToTenant, HasFactory, HasUuids, LogsActivity, SoftDeletes. Columns: tenant_id FK, client_id FK, name (255), nullable position (255) + email (255, unique per client's contact set) + phone (64), bool is_primary. Relations: client BelongsTo, tenant BelongsTo. Index (client_id, is_primary).
+- `App\Services\ClientService` (final readonly, ctor DatabaseManager) — `paginate(Request): LengthAwarePaginator` (QueryBuilder::for(Client) + AllowedFilter search/name/type/city/ico/created_at + defaultSort name + eager load contacts + primaryContact + counts → through ClientListItemData); `create(ClientUpsertData): Client` (transaction: Client::create + syncContacts); `update(Client, ClientUpsertData): Client`; `delete(Client): void` — **D1 override user decision:** transaction: soft-delete all client's objects via `$client->objects->each->delete()` (SoftDeletes global scope excludes trashed from queries; per-model logging), soft-delete contacts, soft-delete client. CleaningObject keeps both SoftDeletes (for this cascade) and is_active (for direct deactivation via ObjectService::deactivate). **D8 note:** IČO uniqueness enforced by DTO rule (Precognition-visible) + DB partial index (race constraint accepted for internal tool). `private syncContacts(Client, DataCollection): void` — existing-id validation, soft-delete outgoing, primary auto-promotion (none → first becomes primary).
+- `App\Enums\ClientTypeEnum` (#[TypeScript], backed string) — `Corporate='corporate'`, `Private='private'`. Method: `label(): string` → `__('app.client_type_'.$this->value)`.
+
+**Satellites (BE):**
+- DTOs: `ClientContactData` (id, name, ?position, ?email, ?phone, is_primary); `ClientUpsertData` (type enum required, name required, ?ico requiredIf type=corporate, ?dic, ?vat_number, is_vat_payer, address fields, ?note, contacts: DataCollection<ClientContactData>). Rules: ico unique per tenant (D8), at most one primary contact. `ClientListItemData` (id, type, name, ?ico, ?city, contacts_count, objects_count, ?primary_contact_email, ?primary_contact_phone, created_at). `ClientDetailData` (extends ListItemData + dic, vat_number, street, postal_code, country, note, contacts: DataCollection<ClientContactData>). `ClientOptionData` (id, name) — for pickers.
+- Enums: ClientTypeEnum (see Core above).
+- Factories: ClientFactory (with `private()`, `withContacts(int $count)` states).
+- Seeders: ClientSeeder (demo tenant 12345678 with 6 corporate + 3 private clients, 2–3 contacts each).
+- Policies: `ClientPolicy` — viewAny/view → ViewClients; create → CreateClients; update → EditClients; delete → DeleteClients. Tenant isolation via TenantScope (no extra record check).
+- Controllers: `ClientController` (ctor ClientService $clients), actions: `#[Authorize('viewAny')] index(Request)` → Clients/Index `[clients, filters]`; `#[Authorize('view')] show(Client)` → Clients/Show `[client: ClientDetailData, objects: ObjectListItemData[]]` (load contacts, eager-load client on objects); `#[Authorize('create')] store(ClientUpsertData)` → index + flash; `#[Authorize('update')] update(ClientUpsertData, Client)` → show + flash; `#[Authorize('delete')] destroy(Client)` → index + flash. Routes: GET /clients, GET /clients/{client}, POST /clients (Precognition), PUT /clients/{client} (Precognition), DELETE /clients/{client} (all `whereUuid`).
+- Navigation: #[NavItem] on index → `clients` nav (icon UserGroupIcon, permission ViewClients, order 30).
+
+**FE Satellites:**
+- Composables: none (ClientForm owns its state via useForm).
+- Components: `ClientTypeBadge` (badge + icon per type), `ClientDetailCard` (info card: type/VAT/address), `ClientContactsList` (primary badge, contact rows with links), `ClientObjectsTable` (unpaginated table), `ClientForm` (form with RadioGroup type, fields, ContactsListField for array editor), `ClientFormDrawer` (side drawer wrapper, title based on create/edit), `ContactsListField` (custom field-mode: rows, add/remove, set primary via radio, per-row TextInput/email/phone with Precognition).
+- Pages: `Clients/Index` (DataTable: columns name/type/ico/city/primary_contact_email/objects_count; filters search/name/type/city/ico/created_at; sort name/type/city/ico/created_at; empty state "clients_empty"; buttons view/delete; create drawer from #actions). `Clients/Show` (header title/breadcrumbs + edit/add-object/delete buttons; grid: left ClientDetailCard+note+ContactsList, right ClientObjectsTable; edit drawer preloaded; delete confirm cascade copy; add-object preselects client).
+- i18n: `client_add`, `client_edit`, `client_delete`, `client_delete_confirm`, `client_delete_cascade_hint`, `client_type`, `client_name`, `client_ico`, `client_dic`, `client_vat_number`, `client_is_vat_payer`, `client_contacts`, `client_contact_add`, `client_contact_remove`, `client_contact_is_primary`, `client_no_contacts`, `client_objects`, `client_no_objects`, `client_no_note`, `client_customer_since`, `clients_empty`, `clients_empty_hint`, `client_object_add` (per phase-3 FE plan step 10).
+
+**Flow:**
+- **List:** GET /clients → ClientController@index + AllowedFilter + sort/page → Clients/Index {clients: Paginator<ClientListItemData>, filters: Record<string, unknown>}. Table rows: view → Show page; delete → confirm modal (cascade copy). Create drawer from button → POST /clients (Precognition on blur) → ClientService::create → 302 index + flash success.
+- **Show:** GET /clients/{client} (whereUuid) → RMB TenantScope → ClientController@show + eager load contacts + objects → Clients/Show {client: ClientDetailData, objects: ObjectListItemData[]}. Drawer forms: edit PUT /clients/{id} → 302 show + flash; add-object opens Objects form with client preselected.
+- **Update:** PUT /clients/{client} (Precognition) → same service, 302 show + flash.
+- **Delete:** DELETE /clients/{client} → ClientPolicy::delete gates → ClientService::delete (transaction: soft-delete all objects, soft-delete contacts, soft-delete client; activity logged per model).
+
+**Depends on:** tenancy (tenant_id FK, BelongsToTenant, TenantScope), objects (Client::objects() relation, ClientService::delete soft-deletes children).
+
+**Depended on by:** objects (client_id FK, ObjectUpsertData rule), quotes phase 4 (client subject), invoices phase 4 (client subject), contracts phase 4 (service agreement subject).
+
+**If you change Core, check:**
+- ClientService::delete cascade: objects soft-delete logic (loop with `->delete()` per-model for activity logging), contact soft-delete, activity logging per model (3 types: Client, ClientContact, CleaningObject).
+- IČO uniqueness: DTO rule builder (Rule::unique 'clients' with tenant_id + whereNull deleted_at), partial DB index, test reuse-after-delete scenario.
+- Contact primary: syncContacts logic (reset all → promote first if none), validation closure (at most one), test auto-promote.
+- ClientTypeEnum.label() consumers: Badge (label t(clientTypeKey(type))), Form (type selector options), tests.
+- ClientPolicy used in: ObjectController (clients list for picker), ObjectService (no direct policy call but objects depend on clients).
+
+**Keywords (SK):** klient, podnikateľ, fyzická osoba, kontakt, IČO, DIČ, DPH, adresa, kontaktná osoba, primárny kontakt.
+
+### objects — Cleaning locations per client with access info and deactivation
+
+**Core:**
+- `App\Models\CleaningObject` — table `objects`; UUIDv7; traits BelongsToTenant, HasFactory, HasUuids, LogsActivity, **SoftDeletes** (D1 override user decision: hybrid lifecycle — is_active for direct deactivation, deleted_at for client cascade). Columns: tenant_id FK, client_id FK, type (ObjectTypeEnum: office/apartment/house/common_areas), name (255), address (street/city/postal_code/country), nullable access_code (64) + key_box_code (64) + key_count (int) + special_instructions (text) + area_sqm (decimal:2) + floor (int) + gps_lat (10,7) + gps_lng (10,7) (GPS reserved, no UI), bool is_active (direct deactivation), timestamps + soft_deletes. Relations: `client(): BelongsTo` → `$this->belongsTo(Client::class)->withTrashed()` (keeps relation resolvable even if client is soft-deleted). Scopes: `scopeVisibleTo(Builder, User): Builder` — **D2 fail-closed:** if actor can ViewAllObjects return unfiltered, else `whereRaw('1 = 0')` (D2 phase-7 TODO: replace with job assignment scope). `isVisibleTo(User): bool` — calls `scopeVisibleTo` as exists check. Activity log logOnly (no note column logged).
+- `App\Services\ObjectService` (final readonly, ctor DatabaseManager) — `paginate(Request, User): LengthAwarePaginator` (QueryBuilder::for(CleaningObject::visibleTo($actor)) + AllowedFilter search/name/type/client_id/is_active/city/created_at + sorts + eager load client + through ObjectListItemData); `create(ObjectUpsertData): CleaningObject`, `update(CleaningObject, ObjectUpsertData): CleaningObject` (both transaction); `deactivate(CleaningObject): void` (transaction: set is_active=false, log activity).
+- `App\Enums\ObjectTypeEnum` (#[TypeScript], backed string) — `Office='office'`, `Apartment='apartment'`, `House='house'`, `CommonAreas='common_areas'`. Method: `label(): string` → `__('app.object_type_'.$this->value)`.
+
+**Satellites (BE):**
+- DTOs: `ObjectUpsertData` (client_id required UUID, type enum, name required, address/access fields, is_active default true, key_count/area_sqm/floor nullable). Rules: client_id Rule::exists scoped to current_tenant_id() + whereNull deleted_at (live clients only). `ObjectListItemData` (id, type, name, ?city, is_active, client_id, ?client_name, ?area_sqm, created_at). `ObjectDetailData` (extends ListItemData + street, postal_code, country, access_code, key_box_code, key_count, special_instructions, floor, gps columns omitted from response).
+- Enums: ObjectTypeEnum (see Core).
+- Factories: CleaningObjectFactory (default client_id via Client::factory(), `inactive()` state).
+- Seeders: ObjectSeeder (demo tenant, 1–3 per client, last client gets one inactive).
+- Policies: `ObjectPolicy` — viewAny → ViewObjects; view → ViewObjects && isVisibleTo($user); create → CreateObjects; update → EditObjects && isVisibleTo; delete (gates deactivate) → DeleteObjects && isVisibleTo. Tenant isolation + **own-only scoping** (D2) via isVisibleTo.
+- Controllers: `ObjectController` (ctor ObjectService), actions: `#[Authorize('viewAny')] index(Request)` → Objects/Index `[objects, filters, filterOptions: {clients}]` (clients empty for own-only actors → filter hidden, button disabled); `#[Authorize('view')] show(CleaningObject)` → Objects/Show `[object: ObjectDetailData, clients: ClientOptionData[]]` (clients empty if !can('update') → edit hidden); `#[Authorize('create')] store(ObjectUpsertData)` → show + flash; `#[Authorize('update')] update(ObjectUpsertData, CleaningObject)` → show + flash; `#[Authorize('delete')] deactivate(CleaningObject)` (POST to deactivate endpoint) → show + flash; `#[Authorize('update')] reactivate(CleaningObject)` (POST to reactivate endpoint) → show + flash. Routes: GET /objects, GET /objects/{object}, POST /objects (Precognition), PUT /objects/{object} (Precognition), POST /objects/{object}/deactivate, POST /objects/{object}/reactivate (all `whereUuid`). `private clientOptions(User $actor): array` — ViewAllObjects actors get all clients; own-only get empty (D2).
+- Navigation: #[NavItem] on index → `objects` nav (icon BuildingOffice2Icon, permission ViewObjects, order 31).
+
+**FE Satellites:**
+- Composables: none.
+- Components: `ObjectTypeBadge` (badge + icon per type: office/apartment/house/common_areas mapped to different colours/icons), `ObjectStatusBadge` (active green / inactive ghost), `ObjectDetailCard` (type/status badges, ?client link, area/floor, address, created_at), `ObjectAccessCard` (warning-bordered card: access_code/key_box_code/key_count with sensitive warning + caption), `ObjectForm` (form: client SelectInput required, type/name, address fields, access section, key_count/special_instructions, is_active toggle on edit), `ObjectFormDrawer`, `objectPayload.ts` helper (ObjectFormData interface, function to map DetailData → payload incl. string→null conversion).
+- Pages: `Objects/Index` (DataTable: columns name/type/client_name→link/city/area_sqm/is_active; filters search/name/type/client_id/is_active/city/created_at; sort name/type/city/is_active/created_at; info hint when !ViewAllObjects; empty state; buttons view/deactivate when active; create drawer pre-scoped if single client; create hidden when no client list). `Objects/Show` (header + edit/deactivate buttons; inactive banner with reactivate button when is_active=false; grid: left ObjectAccessCard+instructions, right ObjectDetailCard; deactivate/reactivate modals; edit drawer).
+- i18n: `object_add`, `object_edit`, `object_deactivate`, `object_reactivate`, `object_deactivate_confirm`, `object_deactivate_hint`, `object_inactive_banner`, `object_type`, `object_name`, `object_area_sqm`, `object_floor`, `object_access`, `object_access_code`, `object_key_box_code`, `object_key_count`, `object_access_sensitive_hint`, `object_special_instructions`, `object_no_instructions`, `object_is_active`, `object_created`, `objects_empty`, `objects_empty_hint`, `objects_own_only_hint` (per phase-3 FE plan).
+
+**Flow:**
+- **List:** GET /objects (actor) → ObjectController@index + visibleTo($actor) + AllowedFilter → Objects/Index {objects, filters, filterOptions: {clients}}. Own-only actors: clients = [], info hint shown, button hidden. Table rows: view → Show; deactivate button (active only) → deactivate confirm modal.
+- **Show:** GET /objects/{object} → RMB TenantScope + Policy::view isVisibleTo gate → Objects/Show {object, clients: empty if !can('update')}. Edit drawer (clients list provided). Reactivate button (is_active=false) → PUT /objects/{id} with full payload + is_active=true (trade-off: replays full record; dedicated endpoint optional future improvement).
+- **Create:** POST /objects (Precognition) → ObjectService::create → 302 index + flash.
+- **Update:** PUT /objects/{object} (Precognition) → same service, 302 show + flash.
+- **Deactivate:** POST /objects/{object}/deactivate → ObjectPolicy::delete gate + isVisibleTo → ObjectService::deactivate (is_active=false, activity logged).
+
+**Depends on:** tenancy (tenant_id FK, BelongsToTenant, TenantScope), clients (client_id FK + Rule::exists to live clients, client() withTrashed relation, ClientService::delete soft-deletes objects as cascade).
+
+**Depended on by:** quotes phase 4 (object subject), invoices phase 4 (object subject), contracts phase 4 (service agreement subject), schedule phase 7 (ScheduledJob.object_id FK).
+
+**If you change Core, check:**
+- ObjectService::deactivate: is_active = false + activity logged (not soft-delete trigger).
+- scopeVisibleTo logic: D2 fail-closed check (ViewAllObjects cap) vs phase-7 job-based scoping. TODO phase 7 marker in code.
+- client() withTrashed relation: orphaned inactive objects of deleted clients still resolve client_name (test scenario).
+- ObjectPolicy isVisibleTo gates: view/update/delete all check it (D2 defence-in-depth).
+- Precognition cross-field rules (client_id exists scope) behaviour with partial payloads — deferred full testing to phase 4+.
+
+**Keywords (SK):** objekt, lokalita, kancelária, byt, dom, spoločné priestory, prístupový kód, kľúč, deaktivácia, citlivé údaje.
 
 ### BE ↔ FE API (Sanctum, routes/api.php) — Phase 2 tenancy + /api/me
 
@@ -528,7 +609,7 @@ No queued jobs today (QUEUE_CONNECTION sync in tests). Only schedule PurgeTempor
 
 **Last full scan:** 2026-09-06 (Phase 1 initial; degraded — Laravel Boost MCP unavailable; used docker compose exec + direct psql / grep instead).
 
-**Last delta:** 2026-09-06 (Phase 2 tenancy complete: 128 files changed, 275 tests, PHPStan baseline 188 entries [OK], Pint clean, `pnpm lint:js`/prettier/vue-tsc/build green; browser: tenant switcher, add-tenant modal, switch + colour override, users isolation, uk locale verified; FE gotchas 1/2/5/6/7/8/9/10 resolved, new 10/11 noted).
+**Last delta:** 2026-09-06 (Phase 3 clients + objects complete: 386 tests, PHPStan [OK] no new baseline entries, Pint clean, FE lint/typecheck/build green. BE: clients CRUD with contacts (primary auto-promotion), ClientService soft-cascade delete (soft-deletes objects + contacts), IČO uniqueness DTO rule + DB partial index, ObjectService with visibleTo scope (D2 fail-closed, phase-7 job-scoped TODO), object lifecycle (direct deactivation via is_active toggle, soft-delete cascade from client deletion; D1 hybrid SoftDeletes + is_active). FE: drawer pattern (SideDrawer component + ContactsListField custom field), ClientForm with contact editor, ObjectForm with access section, dedicated POST /objects/{object}/reactivate endpoint, four Badges (ClientType/ObjectType/ObjectStatus), EmptyState + confirm-cascade copy. Permissions: ViewClients/CreateClients/EditClients/DeleteClients + ViewObjects/CreateObjects/EditObjects/DeleteObjects/ViewAllObjects (breadth modifier). i18n: both en/sk/uk (FE plan keys appended to shared app.json). Browser verified: clients index/detail/drawer create/edit/delete-cascade, objects index/detail/drawer create/edit/deactivate/reactivate via dedicated endpoint with button state gating, filters search+operators, soft-deleted objects excluded from queries via global scope, own-only scoping hint shown.)
 
 **Certainty audit:**
 - All relationships verified by: live route:list output (php artisan route:list), migration files + docker exec postgres psql schema queries, grep of every cited callsite + direct reads.

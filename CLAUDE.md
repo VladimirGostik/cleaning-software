@@ -90,6 +90,10 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - auth (BE) — session login/logout, forgot/reset password, Sanctum Bearer POST /api/auth/login|logout; is_active + hasActiveMembership guards; login/logout/failed logged to Activitylog.
 - tenancy (FE) — Components/Tenants/{TenantSwitcher,AddTenantModal,TenantColorDot}, Forms/ColorSwatchPicker, Composables/{usePageProps,useAuthorization,useTenantTheme}, Can component, Pages/Invitations/Accept + Components/Invitations/{InvitationAcceptForm,InvitationBlockedNotice}.
 - tenancy (BE) — Tenant/TenantMembership/TenantInterface/TenantInvitation models (UUIDv7 PKs, BelongsToTenant scope). TenantContextMiddleware (D5 resolution: X-Tenant-Id header → session → first active membership). RequireActiveTenant middleware (D4 guards). RegistrationService (createOwner, addTenant, bootstrapTenant), InvitationAcceptService (resolve, accept). RoleTemplatesSeeder per-tenant role bundles (6 roles). Routes: POST /tenants (auth-only), POST /tenants/{id}/switch (TenantPolicy), GET|POST /invitations/{token} (guest, throttle 5/min).
+- clients (FE) — Pages/Clients/{Index,Show}.vue, Components/Clients/{ClientTypeBadge,ClientForm,ContactsListField,ClientFormDrawer,ClientDetailCard,ClientContactsList,ClientObjectsTable}.vue, drawer-based CRUD with contact editor (primary auto-promotion), delete soft-deletes client + contacts + all objects.
+- clients (BE) — Client/ClientContact models (UUIDv7, SoftDeletes, LogsActivity), ClientService (paginate/create/update with syncContacts, delete with soft-delete cascade of all objects + contacts), ClientPolicy (RBAC full), ClientController with #[NavItem], ClientTypeEnum (#[TypeScript]). Routes: GET|POST|PUT|DELETE /clients{,/{client}}.
+- objects (FE) — Pages/Objects/{Index,Show}.vue, Components/Objects/{ObjectTypeBadge,ObjectStatusBadge,ObjectForm,ObjectFormDrawer,ObjectDetailCard,ObjectAccessCard}.vue, drawer-based CRUD with deactivation (is_active toggle), dedicated reactivate endpoint, ObjectAccessCard (sensitive data warning).
+- objects (BE) — CleaningObject model (UUIDv7, hybrid is_active+SoftDeletes per D1 override, LogsActivity, withTrashed client relation), ObjectService (paginate with visibleTo actor scoping D2 fail-closed, deactivate action, reactivate action), ObjectPolicy with isVisibleTo guards (D2), ObjectController with #[NavItem], ObjectTypeEnum (#[TypeScript]). Routes: GET|POST|PUT /objects{,/{object}}, POST /objects/{object}/deactivate, POST /objects/{object}/reactivate. Permissions: ViewObjects/CreateObjects/EditObjects/DeleteObjects + ViewAllObjects breadth modifier.
 - dashboard (FE) — Pages/Dashboard.vue welcome card.
 - dashboard (BE) — placeholder GET / route, no props.
 - profile (FE) — Pages/Profile/Show.vue, two useForm('put') forms, locale select from shared languages (now sk/en/uk).
@@ -97,7 +101,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - users (FE) — Pages/Users/{Index,Form}.vue, DataTable filters (tenant-scoped members), CheckboxGroup roles, allows(...) gating.
 - users (BE) — CRUD + autocomplete (tenant members only), QueryBuilder filters, UserPolicy, create-or-link by email, RoleAssignmentGuard escalation checks, TenantMembership pivot scope.
 - roles (FE) — Pages/Roles/{Index,Form}.vue, PermissionManager (now PermissionGroupData typed), system-role guard.
-- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy.
+- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases → 57+ with clients/objects), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy.
 - audit-logs (FE) — Pages/AuditLogs/{Index,Show}.vue, read-only DataTable + JSON diff.
 - audit-logs (BE) — read-only viewer over App\Models\Activity (Activity::visibleInTenant scope, tenant_id nullable for login events), filters + policy.
 - media (FE) — Pages/Media/{Index,Show}.vue; FileUploadInput/RichTextEditorInput → POST|DELETE /uploads.
@@ -106,7 +110,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - localisation (BE) — SupportedLanguage enum (sk/en/uk, #[TypeScript]), LocaleMiddleware (user.locale → session → cookie → default sk), JSON translations resources/lang/{sk,en,uk}/{app,validation}.json.
 - api-me (BE) — GET /api/me (Sanctum + tenant.required) returns MeData (userId, activeTenantId, permissions per team scope), reserved for mobile app phase 2.
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
-- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager}, ConfirmDeleteModal + useDeleteConfirm, types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
+- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm, types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
 
 **Note:** Phase 3+ modules (Clients, Objects, Quotes, Invoices, RecurringInvoices, Contracts, ContractTemplates, Employees, Schedule/Jobs, Notifications) ported per `.claude/plans/port-from-cleaning-software.md` phase order. Each domain: tenant-scoped (BelongsToTenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate.
 

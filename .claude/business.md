@@ -4,7 +4,7 @@ Source of truth: `docs/cleanmaster-technicka-specifikacia-v1.md.docx` (Slovak, 2
 
 ## Implementation status
 
-**Current state (branch `rebuild`):** Phase 1 + Phase 2 complete (2026-09-06). The Laravel 13 + Inertia 3 application foundation is in place + multi-tenant row-level scoping. **Phase 2 tenancy complete** — Tenant/TenantMembership/TenantInterface/TenantInvitation models (UUIDv7 PKs). Spatie Permission teams=true (tenant_id), role-per-tenant seeding (6 templates: Admin/Vedúca/Sekretárka/Účtovníčka/Interná upratovačka/Zákazník). Invitation flow (7d token, throttled 5/min, new/existing user paths). AddTenantModal + TenantSwitcher UI + colour override (--color-primary). 275 tests. PermissionEnum (53 cases, #[TypeScript]). usePageProps/useAuthorization/Can FE composition. Localisation: uk added (sk/en/uk). Media + Activity tenant_id scoping. Login guards: is_active + hasActiveMembership. RequireActiveTenant middleware (mid-session loss protection).
+**Current state (branch `rebuild`):** Phase 1 + Phase 2 + Phase 3 complete (2026-09-06). The Laravel 13 + Inertia 3 application foundation is in place + multi-tenant row-level scoping. **Phase 2 tenancy complete** — Tenant/TenantMembership/TenantInterface/TenantInvitation models (UUIDv7 PKs). Spatie Permission teams=true (tenant_id), role-per-tenant seeding (6 templates: Admin/Vedúca/Sekretárka/Účtovníčka/Interná upratovačka/Zákazník). Invitation flow (7d token, throttled 5/min, new/existing user paths). AddTenantModal + TenantSwitcher UI + colour override (--color-primary). PermissionEnum (53 cases, #[TypeScript]). usePageProps/useAuthorization/Can FE composition. Localisation: uk added (sk/en/uk). Media + Activity tenant_id scoping. Login guards: is_active + hasActiveMembership. RequireActiveTenant middleware (mid-session loss protection). **Phase 3 clients + objects complete** — Client CRUD with contacts (primary auto-promotion), soft-delete cascade (soft-deletes client + contacts + all objects in one transaction). CleaningObject hybrid lifecycle (is_active for direct deactivation, SoftDeletes for client cascade; both orthogonal; global scope excludes trashed). ObjectService with fail-closed owner-scoping (D2). Dedicated reactivate endpoint (POST /objects/{object}/reactivate). 386 tests. Clients/Objects permissions (4 each + ViewAllObjects breadth modifier). FE drawer pattern (SideDrawer + form state isolation). Browser verified.
 
 **Target domain content below** is the complete CleanMaster specification ported phase by phase from branch `main` per `.claude/plans/port-from-cleaning-software.md`. Phases are:
 
@@ -136,7 +136,7 @@ Access = `user/permission axis` only. No plan/feature gating.
 
 - **Fáza 1 (in scope, Phase 1)** — Admin Portal (AP). Web-only, desktop+tablet responsive. → COMPLETE 2026-09-06.
 - **Fáza 2 (in scope, Phase 2 tenancy)** — Multi-tenant foundation, invitations, team management. → COMPLETE 2026-09-06.
-- **Fáza 3 (later)** — Operational core: Clients, Objects, Quotes, Contracts.
+- **Fáza 3 (in scope, Phase 3 clients + objects)** — Operational core: Clients, Objects (Quotes, Contracts deferred Phase 4+). → COMPLETE 2026-09-06 (clients + objects).
 - **Fáza 4 (later)** — Invoicing + recurring invoice templates.
 - **Fáza 5 (later)** — Notifications (in-app + mail).
 - **Fáza 6 (later)** — Employees management, permission overrides, employment contracts.
