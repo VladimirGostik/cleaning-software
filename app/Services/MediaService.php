@@ -6,9 +6,9 @@ namespace App\Services;
 
 use App\Data\MediaDetailData;
 use App\Data\MediaIndexFilterData;
+use App\Models\Media;
 use App\Utils\AllowedFilter;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\QueryBuilder\QueryBuilder;
 
 final readonly class MediaService
@@ -20,7 +20,7 @@ final readonly class MediaService
     {
         $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';
 
-        return QueryBuilder::for(Media::class)
+        return QueryBuilder::for(Media::inTenant(current_tenant_id()))
             ->allowedFilters(
                 AllowedFilter::callbackClean('search', function ($q, $v) use ($op): void {
                     if (blank($v)) {

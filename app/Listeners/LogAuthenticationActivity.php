@@ -14,7 +14,7 @@ final class LogAuthenticationActivity
     {
         activity()
             ->causedBy($event->user)
-            ->withProperties(['ip' => request()->ip(), 'user_agent' => request()->userAgent()])
+            ->withProperties(['ip' => get_client_ip(), 'user_agent' => request()->userAgent()])
             ->log('login');
     }
 
@@ -23,7 +23,7 @@ final class LogAuthenticationActivity
         if ($event->user) {
             activity()
                 ->causedBy($event->user)
-                ->withProperties(['ip' => request()->ip()])
+                ->withProperties(['ip' => get_client_ip()])
                 ->log('logout');
         }
     }
@@ -32,7 +32,7 @@ final class LogAuthenticationActivity
     {
         activity()
             ->withProperties([
-                'ip' => request()->ip(),
+                'ip' => get_client_ip(),
                 'email' => $event->credentials['email'] ?? null,
             ])
             ->log('login_failed');

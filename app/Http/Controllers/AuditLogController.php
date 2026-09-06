@@ -6,25 +6,27 @@ namespace App\Http\Controllers;
 
 use App\Data\ActivityLogDetailData;
 use App\Data\ActivityLogListItemData;
+use App\Enums\PermissionEnum;
+use App\Models\Activity;
 use App\Navigation\NavItem;
 use App\Utils\AllowedFilter;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Activitylog\Models\Activity;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 final class AuditLogController extends Controller
 {
     #[Authorize('viewAny', Activity::class)]
-    #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: 'ClipboardDocumentListIcon', permission: 'viewAny', policyModel: Activity::class, order: 40)]
+    #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: 'ClipboardDocumentListIcon', permission: PermissionEnum::ViewAuditLogs->value, order: 40)]
     public function index(Request $request): Response
     {
         $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+        $tenantId = current_tenant_id();
 
-        $items = QueryBuilder::for(Activity::class)
+        $items = QueryBuilder::for(Activity::visibleInTenant($tenantId))
             ->allowedFilters(
                 AllowedFilter::callbackClean('search', function ($query, $value) use ($op): void {
                     if (blank($value)) {

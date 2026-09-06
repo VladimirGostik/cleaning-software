@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Listeners\LogAuthenticationActivity;
+use App\Models\TenantMembership;
 use App\Support\PrecognitiveDataValidatorResolver;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Validator;
 use ReflectionClass;
@@ -52,6 +56,12 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, [LogAuthenticationActivity::class, 'handleLogin']);
         Event::listen(Logout::class, [LogAuthenticationActivity::class, 'handleLogout']);
         Event::listen(Failed::class, [LogAuthenticationActivity::class, 'handleFailed']);
+
+        Relation::morphMap([
+            'tenant_membership' => TenantMembership::class,
+        ]);
+
+        RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
     }
 
     private function loadJsonTranslations(): void

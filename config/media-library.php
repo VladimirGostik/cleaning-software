@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Media;
 use Spatie\ImageOptimizer\Optimizers\Avifenc;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
 use Spatie\ImageOptimizer\Optimizers\Gifsicle;
@@ -17,7 +18,6 @@ use Spatie\MediaLibrary\Conversions\ImageGenerators\Video;
 use Spatie\MediaLibrary\Conversions\ImageGenerators\Webp;
 use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
 use Spatie\MediaLibrary\Downloaders\DefaultDownloader;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\MediaCollections\Models\Observers\MediaObserver;
 use Spatie\MediaLibrary\ResponsiveImages\Jobs\GenerateResponsiveImagesJob;
 use Spatie\MediaLibrary\ResponsiveImages\TinyPlaceholderGenerator\Blurred;

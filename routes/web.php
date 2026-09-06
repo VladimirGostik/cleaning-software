@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\PermissionEnum;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NewPasswordController;
@@ -12,6 +14,7 @@ use App\Http\Controllers\PasswordResetLinkController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TemporaryUploadController;
+use App\Http\Controllers\TenantController;
 use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Http\JsonResponse;
@@ -32,23 +35,22 @@ Route::middleware('guest')->group(function (): void {
     });
 });
 
-// API docs — registered here (not via Scribe's add_routes) so that the web middleware group
-// (sessions, cookies) is active. Without it, auth middleware cannot read the session.
-Route::middleware(['auth', 'permission:view api docs'])->group(function (): void {
-    Route::view('/docs', 'scribe.index')->name('scribe');
-
-    Route::get('/docs.postman', function (): JsonResponse {
-        return new JsonResponse(Storage::disk('local')->get('scribe/collection.json'), json: true);
-    })->name('scribe.postman');
-
-    Route::get('/docs.openapi', function () {
-        return response()->file(Storage::disk('local')->path('scribe/openapi.yaml'));
-    })->name('scribe.openapi');
+// Guest-accessible — the invitation token is the credential. Outside `auth`/`tenant.required`
+// so a user whose last membership was deactivated can still accept a new invitation (D4).
+Route::get('/invitations/{token}', [InvitationController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{64}')
+    ->name('invitations.show');
+Route::middleware([HandlePrecognitiveRequests::class, 'throttle:invitation-accept'])->group(function (): void {
+    Route::post('/invitations/{token}', [InvitationController::class, 'accept'])
+        ->where('token', '[A-Za-z0-9]{64}')
+        ->name('invitations.accept');
 });
 
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
 
+Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/', DashboardController::class)->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
@@ -56,6 +58,13 @@ Route::middleware('auth')->group(function (): void {
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
     });
+
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
+    });
+    Route::post('/tenants/{tenant}/switch', [TenantController::class, 'switch'])
+        ->whereUuid('tenant')
+        ->name('tenants.switch');
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/audit-logs/{activity}', [AuditLogController::class, 'show'])->name('audit-logs.show');
@@ -83,5 +92,19 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
         Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    });
+
+    // API docs — registered here (not via Scribe's add_routes) so that the web middleware group
+    // (sessions, cookies) is active. Without it, auth middleware cannot read the session.
+    Route::middleware('permission:'.PermissionEnum::ViewApiDocs->value)->group(function (): void {
+        Route::view('/docs', 'scribe.index')->name('scribe');
+
+        Route::get('/docs.postman', function (): JsonResponse {
+            return new JsonResponse(Storage::disk('local')->get('scribe/collection.json'), json: true);
+        })->name('scribe.postman');
+
+        Route::get('/docs.openapi', function () {
+            return response()->file(Storage::disk('local')->path('scribe/openapi.yaml'));
+        })->name('scribe.openapi');
     });
 });

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Data\Tenants\TenantListItemData;
+use App\Enums\PermissionEnum;
 use App\Enums\SupportedLanguage;
+use App\Enums\TenantColorEnum;
 use App\Navigation\NavigationRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use Spatie\Activitylog\Models\Activity;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 final class HandleInertiaRequests extends Middleware
 {
@@ -31,26 +32,40 @@ final class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
+                    'locale' => $request->user()->locale,
                 ] : null,
             ],
+            'tenant' => function () use ($request): array {
+                $user = $request->user();
+
+                if ($user === null) {
+                    return ['active' => null, 'available' => []];
+                }
+
+                $tenants = $user->tenants()
+                    ->wherePivot('is_active', true)
+                    ->with('interface')
+                    ->orderBy('name')
+                    ->get();
+
+                $activeTenantId = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
+                $active = $tenants->firstWhere('id', $activeTenantId);
+
+                return [
+                    'active' => $active !== null ? TenantListItemData::fromModel($active) : null,
+                    'available' => $tenants->map(fn ($t) => TenantListItemData::fromModel($t))->values()->toArray(),
+                ];
+            },
+            'tenantColors' => fn () => TenantColorEnum::options(),
             'can' => function () use ($request): array {
                 $u = $request->user();
                 if ($u === null) {
                     return [];
                 }
 
-                return [
-                    'viewUsers' => $u->can('view users'),
-                    'createUsers' => $u->can('create users'),
-                    'editUsers' => $u->can('edit users'),
-                    'deleteUsers' => $u->can('delete users'),
-                    'viewRoles' => $u->can('view roles'),
-                    'createRoles' => $u->can('create roles'),
-                    'editRoles' => $u->can('edit roles'),
-                    'deleteRoles' => $u->can('delete roles'),
-                    'viewAuditLogs' => $u->can('viewAny', Activity::class),
-                    'viewMedia' => $u->can('viewAny', Media::class),
-                ];
+                return collect(PermissionEnum::cases())
+                    ->mapWithKeys(fn (PermissionEnum $p) => [$p->sharedKey() => $u->can($p->value)])
+                    ->toArray();
             },
             'locale' => fn () => app()->getLocale(),
             'languages' => fn () => SupportedLanguage::getForLanguageSwitcher(),

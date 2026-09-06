@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Media;
 use App\Models\TemporaryUpload;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 final readonly class TemporaryUploadService
 {
@@ -31,21 +31,36 @@ final readonly class TemporaryUploadService
                 );
             }
 
-            return $temporaryUpload
+            /** @var Media $media */
+            $media = $temporaryUpload
                 ->addMedia($file)
                 ->toMediaCollection('default');
+
+            return $media;
         });
     }
 
-    public function moveToModel(HasMedia $model, string $collection, string $uuid): Media
+    /**
+     * Moves a temporary upload's media onto `$model`. Scoped by tenant AND by the same
+     * session/user ownership rule `delete()` uses — without both, any authenticated
+     * user could move another tenant's (or another user's) staged upload onto their own record.
+     */
+    public function moveToModel(HasMedia $model, string $collection, string $uuid, ?User $user, string $sessionId): Media
     {
-        return DB::transaction(function () use ($model, $collection, $uuid): Media {
+        return DB::transaction(function () use ($model, $collection, $uuid, $user, $sessionId): Media {
+            $ownedIds = TemporaryUpload::query()
+                ->where('session_id', $sessionId)
+                ->when($user !== null, fn ($q) => $q->orWhere('user_id', $user->id))
+                ->pluck('id');
+
             /** @var Media $media */
-            $media = Media::query()
+            $media = Media::inTenant(current_tenant_id())
                 ->where('uuid', $uuid)
                 ->where('model_type', (new TemporaryUpload)->getMorphClass())
+                ->whereIn('model_id', $ownedIds)
                 ->firstOrFail();
 
+            /** @var Media $moved */
             $moved = $media->move($model, $collection);
 
             // Clean up empty TemporaryUpload records
@@ -66,7 +81,7 @@ final readonly class TemporaryUploadService
                 ->when($user !== null, fn ($q) => $q->orWhere('user_id', $user->id))
                 ->pluck('id');
 
-            Media::query()
+            Media::inTenant(current_tenant_id())
                 ->where('uuid', $uuid)
                 ->where('model_type', (new TemporaryUpload)->getMorphClass())
                 ->whereIn('model_id', $ownedIds)

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
+use App\Models\Media;
 use App\Models\TemporaryUpload;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 final class OwnedTemporaryMedia implements ValidationRule
 {

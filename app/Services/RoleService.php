@@ -4,20 +4,26 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\PermissionGroupData;
+use App\Data\PermissionItemData;
+use App\Enums\PermissionEnum;
 use App\Models\Permission;
 use App\Models\Role;
+use Database\Seeders\RoleTemplatesSeeder;
 use InvalidArgumentException;
 
 final readonly class RoleService
 {
-    public const array SYSTEM_ROLES = ['admin'];
+    public const array SYSTEM_ROLES = [RoleTemplatesSeeder::ADMIN_ROLE];
 
     /**
      * @param  array<int, string>  $permissions
      */
     public function create(string $name, array $permissions = []): Role
     {
-        if (Role::where('name', $name)->exists()) {
+        $tenantId = current_tenant_id();
+
+        if (Role::inTenant($tenantId)->where('name', $name)->exists()) {
             throw new InvalidArgumentException(__('app.role_already_exists', ['name' => $name]));
         }
 
@@ -33,12 +39,14 @@ final readonly class RoleService
      */
     public function update(Role $role, string $name, array $permissions = []): Role
     {
+        $tenantId = current_tenant_id();
+
         if ($role->name !== $name) {
             if (in_array($role->name, self::SYSTEM_ROLES, true)) {
                 throw new InvalidArgumentException(__('app.role_cannot_rename_system', ['name' => $role->name]));
             }
 
-            if (Role::where('name', $name)->where('id', '!=', $role->id)->exists()) {
+            if (Role::inTenant($tenantId)->where('name', $name)->whereKeyNot($role->id)->exists()) {
                 throw new InvalidArgumentException(__('app.role_already_exists', ['name' => $name]));
             }
 
@@ -64,18 +72,36 @@ final readonly class RoleService
         $role->delete();
     }
 
-    /**
-     * @return array<int, array{id: string, name: string}>
-     */
+    /** @return list<PermissionGroupData> */
     public function getPermissionsGrouped(): array
     {
-        return Permission::all()
-            ->groupBy(fn (Permission $p) => explode(' ', $p->name)[1] ?? 'other')
-            ->map(fn ($perms, string $group) => [
-                'group' => $group,
-                'permissions' => $perms->values()->toArray(),
-            ])
-            ->values()
-            ->toArray();
+        $permissionsByName = Permission::query()->get()->keyBy('name');
+
+        $groups = [];
+
+        foreach (PermissionEnum::cases() as $case) {
+            $permission = $permissionsByName->get($case->value);
+
+            if ($permission === null) {
+                continue;
+            }
+
+            $groups[$case->group()]['group'] = $case->group();
+            $groups[$case->group()]['group_label'] = $case->groupLabel();
+            $groups[$case->group()]['permissions'][] = new PermissionItemData(
+                id: (string) $permission->id,
+                name: $case,
+                label: $case->label(),
+            );
+        }
+
+        return array_values(array_map(
+            fn (array $group) => new PermissionGroupData(
+                group: $group['group'],
+                group_label: $group['group_label'],
+                permissions: $group['permissions'],
+            ),
+            $groups,
+        ));
     }
 }

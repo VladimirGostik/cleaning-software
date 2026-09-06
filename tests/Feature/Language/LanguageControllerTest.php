@@ -37,6 +37,14 @@ final class LanguageControllerTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $user->id, 'locale' => 'en']);
     }
 
+    public function test_switch_to_uk_sets_session_locale(): void
+    {
+        $response = $this->get('/language/uk');
+
+        $response->assertRedirect();
+        $response->assertSessionHas('locale', 'uk');
+    }
+
     public function test_switch_with_unsupported_locale_returns_404(): void
     {
         $response = $this->get('/language/xx');

@@ -13,7 +13,7 @@ parameters:
 			path: app/Data/ActivityLogDetailData.php
 
 		-
-			message: '#^Access to protected property Spatie\\Activitylog\\Models\\Activity\:\:\$changes\.$#'
+			message: '#^Access to protected property App\\Models\\Activity\:\:\$changes\.$#'
 			identifier: property.protected
 			count: 1
 			path: app/Data/ActivityLogDetailData.php
@@ -121,12 +121,6 @@ parameters:
 			path: app/Data/RoleDetailData.php
 
 		-
-			message: '#^Parameter \$id of class App\\Data\\RoleListItemData constructor expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Data/RoleListItemData.php
-
-		-
 			message: '#^Access to an undefined property \(object\|string\)\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -181,7 +175,7 @@ parameters:
 			path: app/Http/Controllers/AuditLogController.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<\(int\|string\),mixed\>\:\:through\(\) expects callable\(mixed, int\|string\)\: App\\Data\\MediaListItemData, Closure\(Spatie\\MediaLibrary\\MediaCollections\\Models\\Media\)\: App\\Data\\MediaListItemData given\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<\(int\|string\),mixed\>\:\:through\(\) expects callable\(mixed, int\|string\)\: App\\Data\\MediaListItemData, Closure\(App\\Models\\Media\)\: App\\Data\\MediaListItemData given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/MediaController.php
@@ -235,24 +229,6 @@ parameters:
 			path: app/Http/Controllers/RoleController.php
 
 		-
-			message: '#^Parameter \$id of class App\\Data\\RoleListItemData constructor expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/RoleController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\UserController\:\:getRoleOptions\(\) should return array\<int, App\\Data\\RoleListItemData\> but returns array\<mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/UserController.php
-
-		-
-			message: '#^Parameter \$id of class App\\Data\\RoleListItemData constructor expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/UserController.php
-
-		-
 			message: '#^Method App\\Http\\Middleware\\LocaleMiddleware\:\:handle\(\) should return Symfony\\Component\\HttpFoundation\\Response but returns mixed\.$#'
 			identifier: return.type
 			count: 1
@@ -263,6 +239,18 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Http/Middleware/PermissionMiddleware.php
+
+		-
+			message: '#^Method App\\Http\\Middleware\\RequireActiveTenant\:\:handle\(\) should return Symfony\\Component\\HttpFoundation\\Response but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Middleware/RequireActiveTenant.php
+
+		-
+			message: '#^Method App\\Http\\Middleware\\TenantContextMiddleware\:\:handle\(\) should return Symfony\\Component\\HttpFoundation\\Response but returns mixed\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Http/Middleware/TenantContextMiddleware.php
 
 		-
 			message: '#^If condition is always true\.$#'
@@ -463,12 +451,6 @@ parameters:
 			path: app/Services/RoleService.php
 
 		-
-			message: '#^Method App\\Services\\RoleService\:\:getPermissionsGrouped\(\) should return array\<int, array\{id\: string, name\: string\}\> but returns array\<mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/RoleService.php
-
-		-
 			message: '#^Method App\\Services\\RoleService\:\:update\(\) should return App\\Models\\Role but returns App\\Models\\Role\|null\.$#'
 			identifier: return.type
 			count: 1
@@ -477,7 +459,7 @@ parameters:
 		-
 			message: '#^Cannot access property \$id on App\\Models\\User\|null\.$#'
 			identifier: property.nonObject
-			count: 1
+			count: 2
 			path: app/Services/TemporaryUploadService.php
 
 		-
@@ -577,8 +559,44 @@ parameters:
 			path: tests/Feature/Api/UserApiControllerTest.php
 
 		-
+			message: '#^Cannot access property \$id on App\\Models\\Tenant\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: tests/Feature/Api/UserApiControllerTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 9
+			path: tests/Feature/Api/UserApiControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method Tests\\Feature\\Api\\UserApiControllerTest\:\:addMember\(\) expects App\\Models\\Tenant, App\\Models\\Tenant\|null given\.$#'
+			identifier: argument.type
+			count: 13
+			path: tests/Feature/Api/UserApiControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Api/UserApiControllerTest.php
+
+		-
 			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertCount\(\) expects Countable\|iterable, mixed given\.$#'
 			identifier: argument.type
+			count: 1
+			path: tests/Feature/Api/UserApiControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/Api/UserApiControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
 			count: 1
 			path: tests/Feature/Api/UserApiControllerTest.php
 
@@ -591,7 +609,7 @@ parameters:
 		-
 			message: '#^Cannot access property \$id on Spatie\\Activitylog\\Contracts\\Activity\|null\.$#'
 			identifier: property.nonObject
-			count: 2
+			count: 3
 			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
 
 		-
@@ -607,9 +625,33 @@ parameters:
 			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
 
 		-
+			message: '#^Cannot call method where\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
+
+		-
 			message: '#^Part \$activity\-\>id \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
-			count: 2
+			count: 3
+			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
 			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
 
 		-
@@ -649,6 +691,30 @@ parameters:
 			path: tests/Feature/Auth/PasswordResetLinkControllerTest.php
 
 		-
+			message: '#^Cannot call method assertFailed\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: tests/Feature/Console/CreateOwnerCommandTest.php
+
+		-
+			message: '#^Cannot call method assertSuccessful\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Console/CreateOwnerCommandTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Language\\TranslationParityTest\:\:load\(\) should return array\<string, mixed\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Feature/Language/TranslationParityTest.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: tests/Feature/Language/TranslationParityTest.php
+
+		-
 			message: '#^Cannot call method component\(\) on mixed\.$#'
 			identifier: method.nonObject
 			count: 6
@@ -663,7 +729,25 @@ parameters:
 		-
 			message: '#^Cannot call method where\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 2
+			count: 3
+			path: tests/Feature/Media/MediaControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Media/MediaControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/Media/MediaControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
 			path: tests/Feature/Media/MediaControllerTest.php
 
 		-
@@ -691,7 +775,43 @@ parameters:
 			path: tests/Feature/Roles/RoleControllerTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with array\<int, array\{id\: string, name\: string\}\> will always evaluate to true\.$#'
+			message: '#^Cannot call method where\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Roles/RoleControllerTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 11
+			path: tests/Feature/Roles/RoleControllerTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Roles\\RoleControllerTest\:\:roleInTenant\(\) should return App\\Models\\Role but returns Spatie\\Permission\\Contracts\\Role\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Feature/Roles/RoleControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Roles/RoleControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/Roles/RoleControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/Roles/RoleControllerTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertContainsOnlyInstancesOf\(\) with ''App\\\\Data\\\\PermissionGroupData'' and list\<App\\Data\\PermissionGroupData\> will always evaluate to true\.$#'
 			identifier: method.alreadyNarrowedType
 			count: 1
 			path: tests/Feature/Services/RoleServiceTest.php
@@ -699,12 +819,6 @@ parameters:
 		-
 			message: '#^Cannot call method hasPermissionTo\(\) on Spatie\\Permission\\Models\\Role\|null\.$#'
 			identifier: method.nonObject
-			count: 1
-			path: tests/Feature/Services/RoleServiceTest.php
-
-		-
-			message: '#^Offset ''permissions'' does not exist on array\{id\: string, name\: string\}\.$#'
-			identifier: offsetAccess.notFound
 			count: 1
 			path: tests/Feature/Services/RoleServiceTest.php
 
@@ -737,6 +851,150 @@ parameters:
 			identifier: method.nonObject
 			count: 2
 			path: tests/Feature/Services/UserServiceTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Services\\UserServiceTest\:\:roleWithPermissions\(\) has parameter \$permissions with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/Services/UserServiceTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Services\\UserServiceTest\:\:roleWithPermissions\(\) should return App\\Models\\Role but returns Spatie\\Permission\\Contracts\\Role\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Feature/Services/UserServiceTest.php
+
+		-
+			message: '#^Cannot access offset ''can'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Cannot access offset ''props'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Cannot call method has\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Cannot call method toArray\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Cannot call method where\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 5
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Parameter \#2 \$array of function array_key_exists expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/Tenancy/InertiaSharedPropsTest.php
+
+		-
+			message: '#^Cannot access property \$status on App\\Models\\TenantInvitation\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Tenancy/InvitationAcceptTest.php
+
+		-
+			message: '#^Cannot call method component\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: tests/Feature/Tenancy/InvitationAcceptTest.php
+
+		-
+			message: '#^Cannot call method hasRole\(\) on App\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Tenancy/InvitationAcceptTest.php
+
+		-
+			message: '#^Cannot call method where\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 7
+			path: tests/Feature/Tenancy/InvitationAcceptTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Tenancy\\InvitationAcceptTest\:\:invitation\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/Tenancy/InvitationAcceptTest.php
+
+		-
+			message: '#^Parameter \#1 \$attributes of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\TenantInvitation\>\:\:create\(\) expects array\<string, mixed\>\|\(callable\(array\<string, mixed\>\)\: array\<string, mixed\>\), non\-empty\-array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Tenancy/InvitationAcceptTest.php
+
+		-
+			message: '#^Cannot access property \$id on App\\Models\\Role\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: tests/Feature/Tenancy/PermissionTeamScopeTest.php
+
+		-
+			message: '#^Cannot call method can\(\) on App\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: tests/Feature/Tenancy/PermissionTeamScopeTest.php
+
+		-
+			message: '#^Cannot call method assertSuccessful\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Tenancy/RoleTemplatesSeederTest.php
+
+		-
+			message: '#^Cannot access offset ''mail'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Feature/Tenancy/TenantControllerTest.php
+
+		-
+			message: '#^Cannot access property \$color on App\\Models\\TenantInterface\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: tests/Feature/Tenancy/TenantControllerTest.php
+
+		-
+			message: '#^Cannot access property \$routes on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Tenancy/TenantControllerTest.php
+
+		-
+			message: '#^Cannot access property \$value on App\\Enums\\TenantColorEnum\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Tenancy/TenantControllerTest.php
 
 		-
 			message: '#^Part \$uuid \(mixed\) of encapsed string cannot be cast to string\.$#'
@@ -793,9 +1051,27 @@ parameters:
 			path: tests/Feature/UserFilterTest.php
 
 		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 9
+			path: tests/Feature/Users/UserAutocompleteTest.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method Tests\\Feature\\Users\\UserAutocompleteTest\:\:addMember\(\) expects App\\Models\\Tenant, App\\Models\\Tenant\|null given\.$#'
+			identifier: argument.type
+			count: 16
+			path: tests/Feature/Users/UserAutocompleteTest.php
+
+		-
+			message: '#^Cannot access property \$id on App\\Models\\Tenant\|null\.$#'
+			identifier: property.nonObject
+			count: 5
+			path: tests/Feature/Users/UserControllerTest.php
+
+		-
 			message: '#^Cannot call method component\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 4
+			count: 5
 			path: tests/Feature/Users/UserControllerTest.php
 
 		-
@@ -807,6 +1083,42 @@ parameters:
 		-
 			message: '#^Cannot call method where\(\) on mixed\.$#'
 			identifier: method.nonObject
+			count: 2
+			path: tests/Feature/Users/UserControllerTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 14
+			path: tests/Feature/Users/UserControllerTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Users\\UserControllerTest\:\:roleInTenant\(\) should return App\\Models\\Role but returns Spatie\\Permission\\Contracts\\Role\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Feature/Users/UserControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method Tests\\Feature\\Users\\UserControllerTest\:\:addMember\(\) expects App\\Models\\Tenant, App\\Models\\Tenant\|null given\.$#'
+			identifier: argument.type
+			count: 10
+			path: tests/Feature/Users/UserControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Users/UserControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TKey in call to function collect$#'
+			identifier: argument.templateType
+			count: 1
+			path: tests/Feature/Users/UserControllerTest.php
+
+		-
+			message: '#^Unable to resolve the template type TValue in call to function collect$#'
+			identifier: argument.templateType
 			count: 1
 			path: tests/Feature/Users/UserControllerTest.php
 

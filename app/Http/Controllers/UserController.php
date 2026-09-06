@@ -9,12 +9,15 @@ use App\Data\RoleListItemData;
 use App\Data\UpdateUserData;
 use App\Data\UserAutocompleteItemData;
 use App\Data\UserListItemData;
+use App\Enums\PermissionEnum;
 use App\Models\Role;
 use App\Models\User;
 use App\Navigation\NavItem;
-use App\Services\RoleService;
 use App\Services\UserService;
 use App\Utils\AllowedFilter;
+use App\Utils\SymbolOperators;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,15 +33,32 @@ final class UserController extends Controller
     ) {}
 
     #[Authorize('viewAny', User::class)]
-    #[NavItem(label: 'app.users', route: 'users.index', icon: 'UsersIcon', permission: 'view users', order: 20)]
+    #[NavItem(label: 'app.users', route: 'users.index', icon: 'UsersIcon', permission: PermissionEnum::ViewEmployees->value, order: 20)]
     public function index(Request $request): Response
     {
-        $users = QueryBuilder::for(User::query()->with('roles'))
+        $tenantId = current_tenant_id();
+
+        $users = QueryBuilder::for($this->memberBaseQuery($tenantId))
             ->allowedFilters(
                 AllowedFilter::search(['name', 'email']),
                 AllowedFilter::dynamic('name'),
                 AllowedFilter::dynamic('email'),
-                AllowedFilter::dynamic('is_active')->boolean(),
+                AllowedFilter::callback('is_active', function (Builder $query, mixed $value) use ($tenantId): void {
+                    if (is_array($value)) {
+                        return;
+                    }
+
+                    [$operator, $normalized] = SymbolOperators::parse($value);
+
+                    if ($normalized === null || $normalized === '') {
+                        return;
+                    }
+
+                    $bool = filter_var($normalized, FILTER_VALIDATE_BOOLEAN);
+                    $method = $operator === '!=' ? 'whereDoesntHave' : 'whereHas';
+
+                    $query->{$method}('memberships', fn (Builder $q) => $q->where('tenant_id', $tenantId)->where('is_active', $bool));
+                }),
                 AllowedFilter::relationExact('role', 'roles', 'name'),
                 AllowedFilter::dynamic('created_at')->date(),
             )
@@ -58,7 +78,7 @@ final class UserController extends Controller
             'users' => $users,
             'filters' => $request->query(),
             'filterOptions' => [
-                'roles' => $this->getRoleOptions(),
+                'roles' => $this->getRoleOptions($tenantId),
             ],
         ]);
     }
@@ -67,14 +87,17 @@ final class UserController extends Controller
     public function create(): Response
     {
         return Inertia::render('Users/Form', [
-            'roles' => $this->getRoleOptions(),
+            'roles' => $this->getRoleOptions(current_tenant_id()),
         ]);
     }
 
     #[Authorize('create', User::class)]
-    public function store(CreateUserData $data): RedirectResponse
+    public function store(CreateUserData $data, Request $request): RedirectResponse
     {
-        $this->userService->create($data);
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $this->userService->create($data, $actor);
 
         return redirect()->route('users.index')->with('success', __('app.user_created'));
     }
@@ -82,18 +105,22 @@ final class UserController extends Controller
     #[Authorize('update', 'user')]
     public function edit(User $user): Response
     {
-        $user->load('roles');
+        $tenantId = current_tenant_id();
+        $user->load(['roles', 'memberships' => fn (Relation $q) => $q->where('tenant_id', $tenantId)]);
 
         return Inertia::render('Users/Form', [
             'user' => UserListItemData::fromModel($user),
-            'roles' => $this->getRoleOptions(),
+            'roles' => $this->getRoleOptions($tenantId),
         ]);
     }
 
     #[Authorize('update', 'user')]
-    public function update(UpdateUserData $data, User $user): RedirectResponse
+    public function update(UpdateUserData $data, User $user, Request $request): RedirectResponse
     {
-        $this->userService->update($user, $data);
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $this->userService->update($user, $data, $actor);
 
         return redirect()->route('users.index')->with('success', __('app.user_updated'));
     }
@@ -117,8 +144,10 @@ final class UserController extends Controller
             return response()->json([]);
         }
 
-        $users = User::query()
-            ->where('is_active', true)
+        $tenantId = current_tenant_id();
+
+        $users = $this->memberBaseQuery($tenantId)
+            ->whereHas('memberships', fn (Builder $q) => $q->where('tenant_id', $tenantId)->where('is_active', true))
             ->when($q !== '', function ($qb) use ($q) {
                 $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
                 $needle = '%'.addcslashes($q, '%_\\').'%';
@@ -135,19 +164,22 @@ final class UserController extends Controller
         );
     }
 
-    /** @return array<int, RoleListItemData> */
-    private function getRoleOptions(): array
+    /** @return Builder<User> */
+    private function memberBaseQuery(string $tenantId): Builder
     {
-        return Role::withCount(['permissions', 'users'])
+        return User::query()
+            ->whereHas('memberships', fn (Builder $q) => $q->where('tenant_id', $tenantId))
+            ->with(['roles', 'memberships' => fn (Relation $q) => $q->where('tenant_id', $tenantId)]);
+    }
+
+    /** @return array<int, RoleListItemData> */
+    private function getRoleOptions(string $tenantId): array
+    {
+        return Role::inTenant($tenantId)
+            ->withCount(['permissions', 'users'])
             ->orderBy('name')
             ->get()
-            ->map(fn (Role $role) => new RoleListItemData(
-                id: $role->id,
-                name: $role->name,
-                permissions_count: (int) $role->permissions_count,
-                users_count: (int) $role->users_count,
-                is_system: in_array($role->name, RoleService::SYSTEM_ROLES, true),
-            ))
-            ->toArray();
+            ->map(fn (Role $role) => RoleListItemData::fromModel($role))
+            ->all();
     }
 }

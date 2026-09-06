@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Users;
 
+use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\PermissionRegistrar;
@@ -21,11 +23,24 @@ final class UserAutocompleteTest extends TestCase
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
+    private function addMember(Tenant $tenant, User $user, bool $active = true): void
+    {
+        TenantMembership::create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'is_active' => $active,
+            'joined_at' => now(),
+        ]);
+    }
+
     public function test_autocomplete_returns_matching_active_users_by_name(): void
     {
-        $admin = $this->userWithPermission('view users');
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
         $alice = User::factory()->create(['name' => 'Alice Wonderland', 'email' => 'alice@example.test']);
-        User::factory()->create(['name' => 'Bob Builder', 'email' => 'bob@example.test']);
+        $this->addMember($tenant, $alice);
+        $bob = User::factory()->create(['name' => 'Bob Builder', 'email' => 'bob@example.test']);
+        $this->addMember($tenant, $bob);
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=alic');
 
@@ -38,9 +53,12 @@ final class UserAutocompleteTest extends TestCase
 
     public function test_autocomplete_returns_matching_active_users_by_email(): void
     {
-        $admin = $this->userWithPermission('view users');
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create(['name' => 'Random Person', 'email' => 'specific.user@company.io']);
-        User::factory()->create(['name' => 'Other', 'email' => 'other@example.test']);
+        $this->addMember($tenant, $target);
+        $other = User::factory()->create(['name' => 'Other', 'email' => 'other@example.test']);
+        $this->addMember($tenant, $other);
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=specific');
 
@@ -51,9 +69,15 @@ final class UserAutocompleteTest extends TestCase
 
     public function test_autocomplete_excludes_inactive_users(): void
     {
-        $admin = $this->userWithPermission('view users');
-        User::factory()->create(['name' => 'Active Charlie']);
-        User::factory()->inactive()->create(['name' => 'Inactive Charlie']);
+        // Autocomplete scopes by membership status in the active tenant, not the
+        // global `users.is_active` flag — a deactivated membership must exclude
+        // the user even though their global account flag stays true.
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        $active = User::factory()->create(['name' => 'Active Charlie']);
+        $this->addMember($tenant, $active);
+        $inactiveMember = User::factory()->create(['name' => 'Inactive Charlie']);
+        $this->addMember($tenant, $inactiveMember, active: false);
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=Charlie');
 
@@ -62,10 +86,28 @@ final class UserAutocompleteTest extends TestCase
         $response->assertJsonPath('0.name', 'Active Charlie');
     }
 
+    public function test_autocomplete_excludes_users_who_are_members_of_another_tenant_only(): void
+    {
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        $foreignTenant = Tenant::factory()->create();
+        $outsider = User::factory()->create(['name' => 'Outsider Erin']);
+        $this->addMember($foreignTenant, $outsider);
+        $member = User::factory()->create(['name' => 'Member Erin']);
+        $this->addMember($tenant, $member);
+
+        $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=Erin');
+
+        $response->assertOk();
+        $response->assertJsonCount(1);
+        $response->assertJsonPath('0.name', 'Member Erin');
+    }
+
     public function test_autocomplete_returns_empty_for_query_shorter_than_two_chars(): void
     {
-        $admin = $this->userWithPermission('view users');
-        User::factory()->create(['name' => 'Anybody']);
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        $this->addMember($tenant, User::factory()->create(['name' => 'Anybody']));
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=a');
 
@@ -75,22 +117,25 @@ final class UserAutocompleteTest extends TestCase
 
     public function test_autocomplete_returns_initial_active_users_when_no_query(): void
     {
-        $admin = $this->userWithPermission('view users');
-        User::factory()->count(5)->create();
-        User::factory()->inactive()->create();
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        User::factory()->count(5)->create()->each(fn (User $u) => $this->addMember($tenant, $u));
+        $this->addMember($tenant, User::factory()->create(), active: false);
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete');
 
         $response->assertOk();
+        // 5 active + the admin's own membership = 6
         $response->assertJsonCount(6);
         $response->assertJsonStructure([['id', 'name', 'email']]);
     }
 
     public function test_autocomplete_treats_whitespace_only_query_as_empty(): void
     {
-        $admin = $this->userWithPermission('view users');
-        User::factory()->count(5)->create();
-        User::factory()->inactive()->create();
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        User::factory()->count(5)->create()->each(fn (User $u) => $this->addMember($tenant, $u));
+        $this->addMember($tenant, User::factory()->create(), active: false);
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=%20%20');
 
@@ -100,10 +145,11 @@ final class UserAutocompleteTest extends TestCase
 
     public function test_autocomplete_limits_to_twenty_results(): void
     {
-        $admin = $this->userWithPermission('view users');
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
 
         for ($i = 0; $i < 25; $i++) {
-            User::factory()->create(['name' => 'Searchable User '.str_pad((string) $i, 2, '0', STR_PAD_LEFT)]);
+            $this->addMember($tenant, User::factory()->create(['name' => 'Searchable User '.str_pad((string) $i, 2, '0', STR_PAD_LEFT)]));
         }
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=Searchable');
@@ -114,10 +160,11 @@ final class UserAutocompleteTest extends TestCase
 
     public function test_autocomplete_sorts_results_by_name_asc(): void
     {
-        $admin = $this->userWithPermission('view users');
-        User::factory()->create(['name' => 'Zeta Sorted']);
-        User::factory()->create(['name' => 'Alpha Sorted']);
-        User::factory()->create(['name' => 'Mike Sorted']);
+        $admin = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        $this->addMember($tenant, User::factory()->create(['name' => 'Zeta Sorted']));
+        $this->addMember($tenant, User::factory()->create(['name' => 'Alpha Sorted']));
+        $this->addMember($tenant, User::factory()->create(['name' => 'Mike Sorted']));
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=Sorted');
 
@@ -129,7 +176,7 @@ final class UserAutocompleteTest extends TestCase
 
     public function test_autocomplete_requires_view_users_permission(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithPermission();
 
         $response = $this->actingAs($user)->getJson('/users/autocomplete?q=ab');
 
@@ -145,7 +192,7 @@ final class UserAutocompleteTest extends TestCase
 
     public function test_autocomplete_does_not_collide_with_user_edit_route(): void
     {
-        $admin = $this->userWithPermission('view users');
+        $admin = $this->userWithPermission('view employees');
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=xy');
 

@@ -22,13 +22,17 @@ final class UserListItemData extends Data
         public readonly string $created_at,
     ) {}
 
+    /**
+     * `is_active` reflects the membership row for the active tenant, not the global
+     * user record — the caller must eager-load `memberships` constrained to that tenant.
+     */
     public static function fromModel(User $user): self
     {
         return new self(
             id: $user->id,
             name: $user->name,
             email: $user->email,
-            is_active: $user->is_active,
+            is_active: (bool) $user->memberships->first()?->is_active,
             locale: $user->locale,
             roles: $user->roles->pluck('name')->sort()->values()->toArray(),
             created_at: $user->created_at?->toIso8601String() ?? '',

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Data;
 
 use App\Models\Role;
-use App\Services\RoleService;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -28,7 +27,7 @@ final class RoleDetailData extends Data
             name: $role->name,
             permissions: $role->permissions->pluck('name')->sort()->values()->toArray(),
             users_count: $role->users()->count(),
-            is_system: in_array($role->name, RoleService::SYSTEM_ROLES, true),
+            is_system: $role->isSystem(),
         );
     }
 }

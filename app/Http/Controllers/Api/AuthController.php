@@ -28,7 +28,7 @@ final class AuthController extends Controller
     #[Response(['message' => 'The provided credentials are incorrect.'], 422, 'Invalid credentials')]
     public function login(LoginData $data): JsonResponse
     {
-        if (! Auth::attempt(['email' => $data->email, 'password' => $data->password])) {
+        if (! Auth::attempt(['email' => $data->email, 'password' => $data->password, 'is_active' => true])) {
             throw ValidationException::withMessages([
                 'email' => [__('app.invalid_credentials')],
             ]);
@@ -36,6 +36,15 @@ final class AuthController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
+
+        if (! $user->hasActiveMembership()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => [__('app.no_active_tenant')],
+            ]);
+        }
+
         $user->load('roles');
 
         return response()->json(AuthTokenData::make($user, $user->createToken('api')->plainTextToken));

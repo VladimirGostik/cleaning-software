@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Models\Media;
 use App\Services\MediaUrlResolver;
 use Spatie\LaravelData\Data;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]

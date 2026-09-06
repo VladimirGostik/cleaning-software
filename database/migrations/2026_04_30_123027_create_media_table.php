@@ -14,6 +14,7 @@ return new class extends Migration
             $table->id();
 
             $table->uuidMorphs('model');
+            $table->uuid('tenant_id')->index();
             $table->uuid()->nullable()->unique();
             $table->string('collection_name');
             $table->string('name');

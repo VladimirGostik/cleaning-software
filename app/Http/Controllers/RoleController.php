@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\CreateRoleData;
+use App\Data\PermissionGroupData;
 use App\Data\RoleDetailData;
 use App\Data\RoleListItemData;
 use App\Data\UpdateRoleData;
+use App\Enums\PermissionEnum;
 use App\Models\Role;
 use App\Navigation\NavItem;
 use App\Services\RoleService;
@@ -27,10 +29,10 @@ final class RoleController extends Controller
     ) {}
 
     #[Authorize('viewAny', Role::class)]
-    #[NavItem(label: 'app.roles', route: 'roles.index', icon: 'ShieldCheckIcon', permission: 'view roles', order: 30)]
+    #[NavItem(label: 'app.roles', route: 'roles.index', icon: 'ShieldCheckIcon', permission: PermissionEnum::ViewRoles->value, order: 30)]
     public function index(Request $request): Response
     {
-        $roles = QueryBuilder::for(Role::class)
+        $roles = QueryBuilder::for(Role::inTenant(current_tenant_id()))
             ->allowedFilters(
                 AllowedFilter::search(['name']),
             )
@@ -38,13 +40,7 @@ final class RoleController extends Controller
             ->defaultSort('name')
             ->paginate($request->integer('per_page', 25))
             ->withQueryString()
-            ->through(fn (Role $role) => new RoleListItemData(
-                id: $role->id,
-                name: $role->name,
-                permissions_count: (int) $role->permissions_count,
-                users_count: (int) $role->users_count,
-                is_system: in_array($role->name, RoleService::SYSTEM_ROLES, true),
-            ));
+            ->through(fn (Role $role) => RoleListItemData::fromModel($role));
 
         return Inertia::render('Roles/Index', [
             'roles' => $roles,
@@ -56,7 +52,7 @@ final class RoleController extends Controller
     public function create(): Response
     {
         return Inertia::render('Roles/Form', [
-            'permissions' => $this->roleService->getPermissionsGrouped(),
+            'permissions' => PermissionGroupData::collect($this->roleService->getPermissionsGrouped()),
         ]);
     }
 
@@ -79,7 +75,7 @@ final class RoleController extends Controller
 
         return Inertia::render('Roles/Form', [
             'role' => RoleDetailData::fromModel($role),
-            'permissions' => $this->roleService->getPermissionsGrouped(),
+            'permissions' => PermissionGroupData::collect($this->roleService->getPermissionsGrouped()),
         ]);
     }
 

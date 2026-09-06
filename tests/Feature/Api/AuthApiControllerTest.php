@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,11 +14,19 @@ final class AuthApiControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function withActiveMembership(User $user): User
+    {
+        $tenant = Tenant::factory()->forOwner($user)->create();
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
+
+        return $user;
+    }
+
     // ── login ─────────────────────────────────────────────────────────────────
 
     public function test_login_with_valid_credentials_returns_token_and_user(): void
     {
-        $user = User::factory()->create(['email' => 'test@example.com']);
+        $user = $this->withActiveMembership(User::factory()->create(['email' => 'test@example.com']));
 
         $response = $this->postJson('/api/auth/login', [
             'email' => 'test@example.com',
@@ -34,7 +44,7 @@ final class AuthApiControllerTest extends TestCase
 
     public function test_login_with_wrong_password_returns_422(): void
     {
-        User::factory()->create(['email' => 'test@example.com']);
+        $this->withActiveMembership(User::factory()->create(['email' => 'test@example.com']));
 
         $response = $this->postJson('/api/auth/login', [
             'email' => 'test@example.com',
@@ -74,6 +84,33 @@ final class AuthApiControllerTest extends TestCase
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['email', 'password']);
+    }
+
+    public function test_login_without_active_membership_returns_422(): void
+    {
+        User::factory()->create(['email' => 'no-tenant@example.com']);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'no-tenant@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['email']);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_login_with_inactive_account_returns_422(): void
+    {
+        $user = $this->withActiveMembership(User::factory()->inactive()->create(['email' => 'inactive@example.com']));
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'inactive@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['email']);
     }
 
     // ── logout ────────────────────────────────────────────────────────────────

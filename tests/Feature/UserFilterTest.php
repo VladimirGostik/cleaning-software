@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use App\Utils\SymbolOperators;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,6 +22,21 @@ final class UserFilterTest extends TestCase
         parent::setUp();
 
         $this->artisan('app:demo')->assertSuccessful();
+    }
+
+    private function tenantOf(User $admin): Tenant
+    {
+        return Tenant::where('owner_id', $admin->id)->firstOrFail();
+    }
+
+    private function addMember(Tenant $tenant, User $user, bool $active = true): void
+    {
+        TenantMembership::create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'is_active' => $active,
+            'joined_at' => now(),
+        ]);
     }
 
     public function test_symbol_operators_parse_handles_not_equal(): void
@@ -42,12 +59,15 @@ final class UserFilterTest extends TestCase
     public function test_not_equal_filter_on_boolean_excludes_active_users(): void
     {
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
+        $tenant = $this->tenantOf($admin);
 
-        User::factory()->inactive()->create(['name' => 'Inactive Carol']);
+        $this->addMember($tenant, User::factory()->create(['name' => 'Inactive Carol']), active: false);
 
         $sql = $this->captureUserSql($admin, '/users?filter%5Bis_active%5D=%21%3D%3A1');
 
-        $this->assertContainsSqlFragment($sql, '"is_active" != ?');
+        // is_active now lives on the tenant_memberships pivot — "not equal" becomes a
+        // `not exists` correlated subquery rather than a direct column comparison.
+        $this->assertContainsSqlFragment($sql, 'not exists');
 
         $names = $this->fetchUserNames($admin, '/users?filter%5Bis_active%5D=%21%3D%3A1&per_page=100');
 
@@ -58,8 +78,9 @@ final class UserFilterTest extends TestCase
     public function test_equal_filter_on_boolean_returns_only_active_users(): void
     {
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
+        $tenant = $this->tenantOf($admin);
 
-        User::factory()->inactive()->create(['name' => 'Inactive Dave']);
+        $this->addMember($tenant, User::factory()->create(['name' => 'Inactive Dave']), active: false);
 
         $names = $this->fetchUserNames($admin, '/users?filter%5Bis_active%5D=1&per_page=100');
 
@@ -70,12 +91,14 @@ final class UserFilterTest extends TestCase
     public function test_not_equal_filter_on_role_excludes_users_with_that_role(): void
     {
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
+        $tenant = $this->tenantOf($admin);
+        $this->addMember($tenant, User::factory()->create(['name' => 'Roleless Bob']));
 
-        $sql = $this->captureUserSql($admin, '/users?filter%5Brole%5D=%21%3D%3Aadmin');
+        $sql = $this->captureUserSql($admin, '/users?filter%5Brole%5D=%21%3D%3AAdmin');
 
         $this->assertContainsSqlFragment($sql, 'not exists');
 
-        $names = $this->fetchUserNames($admin, '/users?filter%5Brole%5D=%21%3D%3Aadmin&per_page=100');
+        $names = $this->fetchUserNames($admin, '/users?filter%5Brole%5D=%21%3D%3AAdmin&per_page=100');
 
         $this->assertNotContains('Admin', $names);
         $this->assertNotEmpty($names);
@@ -85,7 +108,7 @@ final class UserFilterTest extends TestCase
     {
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
 
-        $names = $this->fetchUserNames($admin, '/users?filter%5Brole%5D=admin&per_page=100');
+        $names = $this->fetchUserNames($admin, '/users?filter%5Brole%5D=Admin&per_page=100');
 
         $this->assertSame(['Admin'], $names);
     }

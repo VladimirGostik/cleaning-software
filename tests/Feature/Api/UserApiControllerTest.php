@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Api;
 
 use App\Models\Role;
+use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -25,12 +27,25 @@ final class UserApiControllerTest extends TestCase
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
+    private function addMember(Tenant $tenant, User $user, bool $active = true): void
+    {
+        TenantMembership::create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'is_active' => $active,
+            'joined_at' => now(),
+        ]);
+    }
+
     // ── index ─────────────────────────────────────────────────────────────────
 
     public function test_index_returns_paginated_users(): void
     {
-        $user = $this->userWithPermission('view users');
-        User::factory()->count(3)->create();
+        $user = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        $this->addMember($tenant, User::factory()->create());
+        $this->addMember($tenant, User::factory()->create());
+        $this->addMember($tenant, User::factory()->create());
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/users');
@@ -61,9 +76,10 @@ final class UserApiControllerTest extends TestCase
 
     public function test_index_filters_users_by_search_query(): void
     {
-        $user = $this->userWithPermission('view users');
-        User::factory()->create(['name' => 'Searchable Person', 'email' => 'searchable@example.com']);
-        User::factory()->create(['name' => 'Other Person', 'email' => 'other@example.com']);
+        $user = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        $this->addMember($tenant, User::factory()->create(['name' => 'Searchable Person', 'email' => 'searchable@example.com']));
+        $this->addMember($tenant, User::factory()->create(['name' => 'Other Person', 'email' => 'other@example.com']));
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/users?filter[search]=Searchable');
@@ -75,8 +91,9 @@ final class UserApiControllerTest extends TestCase
 
     public function test_index_respects_per_page_parameter(): void
     {
-        $user = $this->userWithPermission('view users');
-        User::factory()->count(5)->create();
+        $user = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        User::factory()->count(5)->create()->each(fn (User $u) => $this->addMember($tenant, $u));
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/users?per_page=2');
@@ -88,9 +105,10 @@ final class UserApiControllerTest extends TestCase
 
     public function test_index_filters_users_by_active_status(): void
     {
-        $user = $this->userWithPermission('view users');
-        User::factory()->create(['is_active' => true]);
-        User::factory()->inactive()->create();
+        $user = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
+        $this->addMember($tenant, User::factory()->create(), active: true);
+        $this->addMember($tenant, User::factory()->create(), active: false);
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/users?filter[is_active]=true');
@@ -101,12 +119,26 @@ final class UserApiControllerTest extends TestCase
         }
     }
 
+    public function test_index_only_lists_members_of_active_tenant(): void
+    {
+        $user = $this->userWithPermission('view employees');
+        $outsider = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/users');
+
+        $response->assertOk();
+        $this->assertNotContains($outsider->id, collect($response->json('data'))->pluck('id'));
+    }
+
     // ── show ──────────────────────────────────────────────────────────────────
 
     public function test_show_returns_user(): void
     {
-        $actor = $this->userWithPermission('view users');
+        $actor = $this->userWithPermission('view employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create(['name' => 'Target User']);
+        $this->addMember($tenant, $target);
         Sanctum::actingAs($actor);
 
         $response = $this->getJson("/api/users/{$target->id}");
@@ -127,9 +159,20 @@ final class UserApiControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    public function test_show_of_user_outside_tenant_is_forbidden(): void
+    {
+        $actor = $this->userWithPermission('view employees');
+        $target = User::factory()->create();
+        Sanctum::actingAs($actor);
+
+        $response = $this->getJson("/api/users/{$target->id}");
+
+        $response->assertForbidden();
+    }
+
     public function test_show_returns_404_for_nonexistent_user(): void
     {
-        $actor = $this->userWithPermission('view users');
+        $actor = $this->userWithPermission('view employees');
         Sanctum::actingAs($actor);
 
         $response = $this->getJson('/api/users/00000000-0000-0000-0000-000000000000');
@@ -150,9 +193,11 @@ final class UserApiControllerTest extends TestCase
 
     public function test_update_changes_user_data_in_database(): void
     {
-        $actor = $this->userWithPermission('edit users');
+        $actor = $this->userWithPermission('edit employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create(['name' => 'Old Name']);
-        $role = Role::firstOrCreate(['name' => 'member', 'guard_name' => 'web']);
+        $this->addMember($tenant, $target);
+        $role = Role::create(['name' => 'member', 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
         Sanctum::actingAs($actor);
 
         $response = $this->putJson("/api/users/{$target->id}", [
@@ -184,8 +229,10 @@ final class UserApiControllerTest extends TestCase
 
     public function test_update_with_missing_name_returns_422(): void
     {
-        $actor = $this->userWithPermission('edit users');
+        $actor = $this->userWithPermission('edit employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create();
+        $this->addMember($tenant, $target);
         Sanctum::actingAs($actor);
 
         $response = $this->putJson("/api/users/{$target->id}", [
@@ -201,9 +248,11 @@ final class UserApiControllerTest extends TestCase
 
     public function test_update_with_email_of_another_user_returns_422(): void
     {
-        $actor = $this->userWithPermission('edit users');
+        $actor = $this->userWithPermission('edit employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
         User::factory()->create(['email' => 'taken@example.com']);
         $target = User::factory()->create();
+        $this->addMember($tenant, $target);
         Sanctum::actingAs($actor);
 
         $response = $this->putJson("/api/users/{$target->id}", [
@@ -233,16 +282,19 @@ final class UserApiControllerTest extends TestCase
 
     // ── destroy ───────────────────────────────────────────────────────────────
 
-    public function test_destroy_deletes_user(): void
+    public function test_destroy_removes_membership_but_keeps_user_row(): void
     {
-        $actor = $this->userWithPermission('delete users');
+        $actor = $this->userWithPermission('delete employees');
+        $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create();
+        $this->addMember($tenant, $target);
         Sanctum::actingAs($actor);
 
         $response = $this->deleteJson("/api/users/{$target->id}");
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+        $this->assertDatabaseHas('users', ['id' => $target->id]);
+        $this->assertDatabaseMissing('tenant_memberships', ['user_id' => $target->id, 'tenant_id' => $tenant->id]);
     }
 
     public function test_destroy_is_forbidden_without_permission(): void
@@ -258,7 +310,7 @@ final class UserApiControllerTest extends TestCase
 
     public function test_destroy_is_forbidden_when_deleting_self(): void
     {
-        $actor = $this->userWithPermission('delete users');
+        $actor = $this->userWithPermission('delete employees');
         Sanctum::actingAs($actor);
 
         $response = $this->deleteJson("/api/users/{$actor->id}");
@@ -269,7 +321,7 @@ final class UserApiControllerTest extends TestCase
 
     public function test_destroy_returns_404_for_nonexistent_user(): void
     {
-        $actor = $this->userWithPermission('delete users');
+        $actor = $this->userWithPermission('delete employees');
         Sanctum::actingAs($actor);
 
         $response = $this->deleteJson('/api/users/00000000-0000-0000-0000-000000000000');

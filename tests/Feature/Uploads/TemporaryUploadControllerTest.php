@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Uploads;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -66,7 +65,7 @@ final class TemporaryUploadControllerTest extends TestCase
 
     public function test_store_is_forbidden_without_permission(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithPermission();
         $file = UploadedFile::fake()->image('photo.jpg');
 
         $response = $this->actingAs($user)
@@ -115,13 +114,13 @@ final class TemporaryUploadControllerTest extends TestCase
     public function test_destroy_is_forbidden_without_permission(): void
     {
         $owner = $this->userWithPermission('upload files');
-        $other = User::factory()->create();
+        $other = $this->userWithPermission();
         $headers = ['Accept' => 'application/json'];
 
         $storeResponse = $this->actingAs($owner)->withHeaders($headers)->post('/uploads', ['file' => UploadedFile::fake()->image('photo.jpg')]);
         $uuid = $storeResponse->json('uuid');
 
-        $response = $this->actingAs($other)->delete("/uploads/{$uuid}");
+        $response = $this->actingAs($other)->withHeaders($headers)->delete("/uploads/{$uuid}");
 
         $response->assertForbidden();
     }

@@ -6,20 +6,21 @@ namespace App\Http\Controllers;
 
 use App\Data\MediaIndexFilterData;
 use App\Data\MediaListItemData;
+use App\Enums\PermissionEnum;
+use App\Models\Media;
 use App\Navigation\NavItem;
 use App\Services\MediaService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 final class MediaController extends Controller
 {
     public function __construct(private readonly MediaService $service) {}
 
     #[Authorize('viewAny', Media::class)]
-    #[NavItem(label: 'app.media', route: 'media.index', icon: 'PhotoIcon', permission: 'viewAny', policyModel: Media::class, order: 50)]
+    #[NavItem(label: 'app.media', route: 'media.index', icon: 'PhotoIcon', permission: PermissionEnum::ViewMedia->value, order: 50)]
     public function index(MediaIndexFilterData $filter, Request $request): Response
     {
         $paginator = $this->service->index($filter)

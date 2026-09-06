@@ -31,6 +31,7 @@ final class UpdateUserData extends Data
 
         return [
             'email' => [Rule::unique('users', 'email')->ignore($userId)],
+            'roles.*' => [Rule::exists('roles', 'name')->where('tenant_id', current_tenant_id())],
         ];
     }
 }

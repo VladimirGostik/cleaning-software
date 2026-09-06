@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
 use Database\Factories\TemporaryUploadFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,11 +14,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['session_id', 'user_id'])]
+#[Fillable(['session_id', 'user_id', 'tenant_id'])]
 final class TemporaryUpload extends Model implements HasMedia
 {
     /** @use HasFactory<TemporaryUploadFactory> */
-    use HasFactory, HasUuids, InteractsWithMedia;
+    use BelongsToTenant, HasFactory, HasUuids, InteractsWithMedia;
 
     public function registerMediaCollections(): void
     {

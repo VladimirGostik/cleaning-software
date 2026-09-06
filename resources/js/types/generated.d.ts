@@ -49,8 +49,8 @@ readonly permissions: string[],
 export type CreateUserData = {
 readonly name: string,
 readonly email: string,
-readonly password: string,
-readonly password_confirmation: string,
+readonly password: string | null,
+readonly password_confirmation: string | null,
 readonly is_active: boolean,
 readonly roles: string[],
 };
@@ -119,6 +119,16 @@ readonly password_confirmation: string,
 export type PasswordResetLinkData = {
 readonly email: string,
 };
+export type PermissionGroupData = {
+readonly group: string,
+readonly group_label: string,
+readonly permissions: App.Data.PermissionItemData[],
+};
+export type PermissionItemData = {
+readonly id: string,
+readonly name: App.Enums.PermissionEnum,
+readonly label: string,
+};
 export type RoleDetailData = {
 readonly id: string,
 readonly name: string,
@@ -173,8 +183,48 @@ readonly locale: string,
 readonly roles: string[],
 readonly created_at: string,
 };
+namespace Auth {
+export type MeData = {
+readonly userId: string,
+readonly activeTenantId: string,
+readonly permissions: App.Enums.PermissionEnum[],
+};
+}
+namespace Invitations {
+export type AcceptInvitationData = {
+readonly password: string,
+readonly name: string | null,
+};
+export type InvitationAcceptPageData = {
+readonly state: App.Enums.InvitationAcceptStateEnum,
+readonly token: string,
+readonly email: string | null,
+readonly tenant_name: string | null,
+readonly role_name: string | null,
+readonly invited_email: string | null,
+};
+}
+namespace Tenants {
+export type AddTenantData = {
+readonly name: string,
+readonly ico: string,
+readonly color: App.Enums.TenantColorEnum | null,
+readonly copy_settings: boolean,
+readonly leader_email: string | null,
+};
+export type TenantListItemData = {
+readonly id: string,
+readonly name: string,
+readonly is_active: boolean,
+readonly color: App.Enums.TenantColorEnum | null,
+};
+}
 }
 namespace Enums {
-export type SupportedLanguage = "sk" | "en";
+export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
+export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
+export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications";
+export type SupportedLanguage = "sk" | "en" | "uk";
+export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";
 }
 }

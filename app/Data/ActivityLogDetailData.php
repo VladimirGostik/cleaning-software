@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data;
 
-use Spatie\Activitylog\Models\Activity;
+use App\Models\Activity;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 

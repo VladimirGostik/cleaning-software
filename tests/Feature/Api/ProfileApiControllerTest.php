@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -14,11 +16,19 @@ final class ProfileApiControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function withActiveMembership(User $user): User
+    {
+        $tenant = Tenant::factory()->forOwner($user)->create();
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
+
+        return $user;
+    }
+
     // ── show ──────────────────────────────────────────────────────────────────
 
     public function test_show_returns_authenticated_user_profile(): void
     {
-        $user = User::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
+        $user = $this->withActiveMembership(User::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']));
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/profile');
@@ -40,7 +50,7 @@ final class ProfileApiControllerTest extends TestCase
 
     public function test_update_changes_profile_data_in_database(): void
     {
-        $user = User::factory()->create(['name' => 'Old Name', 'email' => 'old@example.com', 'locale' => 'sk']);
+        $user = $this->withActiveMembership(User::factory()->create(['name' => 'Old Name', 'email' => 'old@example.com', 'locale' => 'sk']));
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile', [
@@ -62,7 +72,7 @@ final class ProfileApiControllerTest extends TestCase
 
     public function test_update_with_missing_name_returns_422(): void
     {
-        $user = User::factory()->create();
+        $user = $this->withActiveMembership(User::factory()->create());
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile', [
@@ -77,7 +87,7 @@ final class ProfileApiControllerTest extends TestCase
 
     public function test_update_with_invalid_email_returns_422(): void
     {
-        $user = User::factory()->create();
+        $user = $this->withActiveMembership(User::factory()->create());
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile', [
@@ -105,7 +115,7 @@ final class ProfileApiControllerTest extends TestCase
 
     public function test_change_password_with_correct_current_password_succeeds(): void
     {
-        $user = User::factory()->create(['password' => Hash::make('current-password')]);
+        $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('current-password')]));
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile/password', [
@@ -120,7 +130,7 @@ final class ProfileApiControllerTest extends TestCase
 
     public function test_change_password_with_wrong_current_password_returns_422(): void
     {
-        $user = User::factory()->create(['password' => Hash::make('correct-password')]);
+        $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('correct-password')]));
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile/password', [
@@ -135,7 +145,7 @@ final class ProfileApiControllerTest extends TestCase
 
     public function test_change_password_with_mismatched_confirmation_returns_422(): void
     {
-        $user = User::factory()->create(['password' => Hash::make('current-password')]);
+        $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('current-password')]));
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile/password', [
@@ -150,7 +160,7 @@ final class ProfileApiControllerTest extends TestCase
 
     public function test_change_password_with_too_short_password_returns_422(): void
     {
-        $user = User::factory()->create(['password' => Hash::make('current-password')]);
+        $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('current-password')]));
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile/password', [

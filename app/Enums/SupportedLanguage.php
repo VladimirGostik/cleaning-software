@@ -11,12 +11,14 @@ enum SupportedLanguage: string
 {
     case Slovak = 'sk';
     case English = 'en';
+    case Ukrainian = 'uk';
 
     public function getDisplayName(): string
     {
         return match ($this) {
             self::Slovak => 'Slovenčina',
             self::English => 'English',
+            self::Ukrainian => 'Українська',
         };
     }
 
@@ -25,6 +27,7 @@ enum SupportedLanguage: string
         return match ($this) {
             self::Slovak => '🇸🇰',
             self::English => '🇬🇧',
+            self::Ukrainian => '🇺🇦',
         };
     }
 
@@ -71,6 +74,7 @@ enum SupportedLanguage: string
         return match ($this) {
             self::Slovak => 'blue',
             self::English => 'green',
+            self::Ukrainian => 'yellow',
         };
     }
 
