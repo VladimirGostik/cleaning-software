@@ -34,7 +34,7 @@ final class InvoiceListFilterTest extends TestCase
         $response = $this->get(route('invoices.index', ['filter[status]' => 'issued']));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index', shouldExist: false)->has('invoices.data', 3));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 3));
     }
 
     public function test_filter_by_client_id(): void
@@ -48,7 +48,7 @@ final class InvoiceListFilterTest extends TestCase
         $response = $this->get(route('invoices.index', ['filter[client_id]' => $clientA->id]));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index', shouldExist: false)->has('invoices.data', 2));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 2));
     }
 
     public function test_filter_by_search_matches_number_and_customer_name(): void
@@ -60,7 +60,7 @@ final class InvoiceListFilterTest extends TestCase
         $response = $this->get(route('invoices.index', ['filter[search]' => 'Alpha']));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index', shouldExist: false)->has('invoices.data', 1));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 1));
     }
 
     public function test_filter_by_issue_date_between(): void
@@ -73,7 +73,7 @@ final class InvoiceListFilterTest extends TestCase
         $response = $this->get(route('invoices.index', ['filter[issue_date]' => 'between:2026-01-01,2026-03-01']));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index', shouldExist: false)->has('invoices.data', 2));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 2));
     }
 
     public function test_filter_by_total_greater_than_or_equal(): void
@@ -85,7 +85,7 @@ final class InvoiceListFilterTest extends TestCase
         $response = $this->get(route('invoices.index', ['filter[total]' => '>=:100']));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index', shouldExist: false)->has('invoices.data', 1));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 1));
     }
 
     public function test_cross_tenant_invoices_never_returned(): void
@@ -98,6 +98,6 @@ final class InvoiceListFilterTest extends TestCase
         $response = $this->get(route('invoices.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index', shouldExist: false)->has('invoices.data', 2));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 2));
     }
 }

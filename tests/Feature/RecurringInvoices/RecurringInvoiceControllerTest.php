@@ -106,7 +106,7 @@ final class RecurringInvoiceControllerTest extends TestCase
         $response = $this->get(route('recurring-invoices.show', $ri));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('RecurringInvoices/Show', shouldExist: false)->where('recurringInvoice.id', $ri->id));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('RecurringInvoices/Show')->where('recurringInvoice.id', $ri->id));
     }
 
     public function test_show_generated_invoices_do_not_produce_n_plus_1_queries(): void

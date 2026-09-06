@@ -61,7 +61,7 @@ final class InvoiceSettingsTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Settings/Invoicing', shouldExist: false)
+                ->component('Settings/Invoicing')
                 ->where('settings.name', $tenant->name),
         );
     }

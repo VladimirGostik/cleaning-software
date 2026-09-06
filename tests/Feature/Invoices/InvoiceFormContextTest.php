@@ -38,7 +38,7 @@ final class InvoiceFormContextTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Invoices/Create', shouldExist: false)
+                ->component('Invoices/Create')
                 ->has('context.objects', 1),
         );
     }
@@ -60,7 +60,7 @@ final class InvoiceFormContextTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Invoices/Edit', shouldExist: false)
+                ->component('Invoices/Edit')
                 ->has('context.objects', 2),
         );
 
@@ -79,7 +79,7 @@ final class InvoiceFormContextTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Invoices/Create', shouldExist: false)
+                ->component('Invoices/Create')
                 ->has('context.clients', 2),
         );
     }
