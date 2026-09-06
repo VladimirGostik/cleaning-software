@@ -44,7 +44,7 @@ final class EmployeeControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Employees/Index', shouldExist: false)
+                ->component('Employees/Index')
                 ->has('employees.data')
                 ->has('filterOptions.roles'),
         );
@@ -68,7 +68,7 @@ final class EmployeeControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Employees/Create', shouldExist: false)
+                ->component('Employees/Create')
                 ->has('context.roles')
                 ->has('context.permission_groups'),
         );
@@ -97,7 +97,7 @@ final class EmployeeControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Employees/Show', shouldExist: false)
+                ->component('Employees/Show')
                 ->where('employee.id', $membership->id)
                 ->where('employee.can.update', true)
                 ->where('employee.can.deactivate', true),
@@ -125,7 +125,7 @@ final class EmployeeControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Employees/Edit', shouldExist: false)
+                ->component('Employees/Edit')
                 ->where('employee.id', $membership->id),
         );
     }

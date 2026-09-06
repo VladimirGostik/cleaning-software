@@ -10,6 +10,7 @@ import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
 import ObjectDetailCard from '@/Components/Objects/ObjectDetailCard.vue';
 import ObjectAccessCard from '@/Components/Objects/ObjectAccessCard.vue';
+import ObjectWorkBreakdownsCard from '@/Components/Objects/ObjectWorkBreakdownsCard.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
@@ -21,6 +22,7 @@ const { allows } = useAuthorization();
 const props = defineProps<{
     object: App.Data.Objects.ObjectDetailData;
     clients: App.Data.Clients.ClientOptionData[];
+    workBreakdowns: App.Data.Schedule.WorkBreakdownDetailData[];
 }>();
 
 const breadcrumbs: Breadcrumb[] = [
@@ -106,6 +108,8 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                         <p v-else class="text-base-content/60">{{ t('object_no_instructions') }}</p>
                     </div>
                 </div>
+
+                <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />
             </div>
 
             <div>

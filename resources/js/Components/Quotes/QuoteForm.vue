@@ -21,11 +21,11 @@ import InvoiceItemsEditor, { type ItemRow } from '@/Components/Invoices/InvoiceI
 import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
-import { CURRENCIES, currencyKey, enumOptions } from '@/utils/enums';
+import { CURRENCIES, currencyKey, enumOptions, TASK_FREQUENCIES, taskFrequencyKey } from '@/utils/enums';
 
 type QuoteItemRow = ItemRow & {
     id: string | null;
-    frequency: string | null;
+    frequency: App.Enums.TaskFrequencyEnum | null;
     note: string | null;
     line_base: number | null;
     line_vat: number | null;
@@ -162,6 +162,10 @@ const totals = useInvoiceTotals(
 
 const isDocument = computed(() => form.kind === 'document');
 const currencyOptions = computed<SelectOption[]>(() => enumOptions(CURRENCIES, currencyKey, t));
+const frequencyOptions = computed<SelectOption[]>(() => [
+    { value: '', label: t('quote_item_frequency_none') },
+    ...enumOptions(TASK_FREQUENCIES, taskFrequencyKey, t),
+]);
 const documentAccept = computed(() => props.context.document_allowed_mimes.join(','));
 const canSubmit = computed(() => !(isDocument.value && !isEditing.value && !form.document_uuid));
 
@@ -253,11 +257,10 @@ function submit(): void {
                         >
                             <template #row-extra="{ row, index, setField, errors }">
                                 <div class="space-y-2">
-                                    <TextInput
+                                    <SelectInput
                                         :model-value="(row.frequency as string | null) ?? ''"
                                         :label="t('quote_item_frequency')"
-                                        :placeholder="t('quote_item_frequency_placeholder')"
-                                        maxlength="50"
+                                        :options="frequencyOptions"
                                         :error="errors[`items.${index}.frequency`]"
                                         @update:model-value="setField(index, 'frequency', $event || null)"
                                     />

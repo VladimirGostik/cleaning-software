@@ -32,7 +32,7 @@ final class ScheduledJobControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Schedule/Index', shouldExist: false)
+                ->component('Schedule/Index')
                 ->has('jobs.data', 2)
                 ->has('filterOptions.objects')
                 ->has('filterOptions.memberships'),
@@ -56,7 +56,7 @@ final class ScheduledJobControllerTest extends TestCase
 
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Schedule/Index', shouldExist: false)
+                ->component('Schedule/Index')
                 ->where('filterOptions.memberships', []),
         );
     }
@@ -76,7 +76,7 @@ final class ScheduledJobControllerTest extends TestCase
 
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Schedule/Index', shouldExist: false)
+                ->component('Schedule/Index')
                 ->has('filterOptions.objects', 1)
                 ->where('filterOptions.objects.0.id', $activeObject->id),
         );
@@ -92,7 +92,7 @@ final class ScheduledJobControllerTest extends TestCase
 
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Schedule/Index', shouldExist: false)
+                ->component('Schedule/Index')
                 ->has(
                     'filterOptions.memberships',
                     fn (AssertableJson $memberships) => $memberships->each(
@@ -112,7 +112,7 @@ final class ScheduledJobControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Schedule/Create', shouldExist: false)
+                ->component('Schedule/Create')
                 ->has('context.objects')
                 ->has('context.memberships'),
         );
@@ -162,7 +162,7 @@ final class ScheduledJobControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Schedule/Show', shouldExist: false)
+                ->component('Schedule/Show')
                 ->where('job.id', $job->id)
                 ->where('job.can.update', true)
                 ->where('job.can.assign', true)

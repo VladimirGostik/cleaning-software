@@ -164,3 +164,42 @@ export const CONTRACT_CATEGORY_CONTRACTABLE: Record<
     gdpr: null,
     other: null,
 };
+
+export const JOB_TYPES: readonly App.Enums.JobTypeEnum[] = ['regular', 'one_off', 'special'];
+
+export const JOB_STATUSES: readonly App.Enums.JobStatusEnum[] = [
+    'unassigned',
+    'planned',
+    'in_progress',
+    'completed',
+    'unapproved',
+    'cancelled',
+];
+
+export const TASK_FREQUENCIES: readonly App.Enums.TaskFrequencyEnum[] = [
+    'one_time',
+    'weekly_1x',
+    'weekly_2x',
+    'weekly_3x',
+    'biweekly',
+    'monthly',
+    'bimonthly',
+    'seasonal',
+];
+
+export function jobTypeKey(type: App.Enums.JobTypeEnum): string {
+    return `job_type_${type}`;
+}
+
+export function jobStatusKey(status: App.Enums.JobStatusEnum): string {
+    return `job_status_${status}`;
+}
+
+export function taskFrequencyKey(frequency: App.Enums.TaskFrequencyEnum): string {
+    return `task_frequency_${frequency}`;
+}
+
+// Mirrors PermissionEnum::label() (BE) — flat "view employees" -> "permission_view_employees".
+export function permissionLabelKey(name: App.Enums.PermissionEnum): string {
+    return `permission_${name.replace(/\s+/g, '_')}`;
+}

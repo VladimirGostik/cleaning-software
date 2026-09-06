@@ -28,6 +28,8 @@ import {
     BanknotesIcon,
     DocumentCheckIcon,
     RectangleStackIcon,
+    CalendarDaysIcon,
+    IdentificationIcon,
 } from '@heroicons/vue/24/outline';
 import type { ToastPayload } from '@/Composables/useToast';
 
@@ -61,6 +63,8 @@ const ICONS: Record<string, object> = {
     BanknotesIcon,
     DocumentCheckIcon,
     RectangleStackIcon,
+    CalendarDaysIcon,
+    IdentificationIcon,
 };
 
 function resolveIcon(name: string): object {
