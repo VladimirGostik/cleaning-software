@@ -4,21 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Data\Clients\ClientOptionData;
 use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceListItemData;
-use App\Data\Objects\ObjectOptionData;
 use App\Data\RecurringInvoices\RecurringInvoiceDetailData;
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
 use App\Enums\PermissionEnum;
-use App\Models\CleaningObject;
-use App\Models\Client;
+use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\Tenant;
 use App\Navigation\NavItem;
 use App\Services\RecurringInvoiceService;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +24,8 @@ use Inertia\Response as InertiaResponse;
 
 final class RecurringInvoiceController extends Controller
 {
+    use ProvidesSubjectOptions;
+
     public function __construct(private readonly RecurringInvoiceService $service) {}
 
     #[Authorize('viewAny', RecurringInvoice::class)]
@@ -132,32 +130,5 @@ final class RecurringInvoiceController extends Controller
         $this->service->cancel($recurringInvoice);
 
         return to_route('recurring-invoices.show', $recurringInvoice)->with('success', __('app.recurring_invoice_cancelled'));
-    }
-
-    /** @return array<int, ClientOptionData> */
-    private function clientOptions(): array
-    {
-        return Client::query()
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn (Client $client) => ClientOptionData::fromModel($client))
-            ->all();
-    }
-
-    /** @return array<int, ObjectOptionData> */
-    private function objectOptions(?string $keepObjectId = null): array
-    {
-        return CleaningObject::query()
-            ->where(function (Builder $query) use ($keepObjectId): void {
-                $query->where('is_active', true);
-
-                if ($keepObjectId !== null) {
-                    $query->orWhere('id', $keepObjectId);
-                }
-            })
-            ->orderBy('name')
-            ->get()
-            ->map(fn (CleaningObject $object) => ObjectOptionData::fromModel($object))
-            ->all();
     }
 }

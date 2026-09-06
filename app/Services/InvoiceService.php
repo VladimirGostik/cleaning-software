@@ -33,6 +33,7 @@ final readonly class InvoiceService
     public function __construct(
         private InvoiceNumberService $numberService,
         private DatabaseManager $db,
+        private DocumentTotalsCalculator $totals,
     ) {}
 
     /**
@@ -412,9 +413,7 @@ final readonly class InvoiceService
         $invoice->items()->delete();
 
         foreach ($items as $position => $itemData) {
-            $rate = $isVatPayer ? $itemData->vat_rate : 0.0;
-            $base = round($itemData->quantity * $itemData->unit_price * (1 - $itemData->discount_percent / 100), 2);
-            $vat = round($base * $rate / 100, 2);
+            $line = $this->totals->line($itemData->quantity, $itemData->unit_price, $itemData->discount_percent, $itemData->vat_rate, $isVatPayer);
 
             InvoiceItem::create([
                 'tenant_id' => $tenantId,
@@ -425,9 +424,9 @@ final readonly class InvoiceService
                 'unit_price' => $itemData->unit_price,
                 'discount_percent' => $itemData->discount_percent,
                 'vat_rate' => $itemData->vat_rate,
-                'line_base' => $base,
-                'line_vat' => $vat,
-                'line_total' => round($base + $vat, 2),
+                'line_base' => $line['line_base'],
+                'line_vat' => $line['line_vat'],
+                'line_total' => $line['line_total'],
                 'position' => $position,
             ]);
         }
@@ -440,38 +439,11 @@ final readonly class InvoiceService
     {
         $invoice->loadMissing('items');
 
-        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => (float) $item->line_base);
-        $vatAmount = $invoice->items->sum(fn (InvoiceItem $item) => (float) $item->line_vat);
-        $totalPre = round($subtotal + $vatAmount, 2);
-
-        $roundingMode = $invoice->rounding_mode;
-        $total = round($roundingMode->round($totalPre), 2);
-        $roundingAmount = round($total - $totalPre, 2);
-
-        $groups = [];
-        /** @var InvoiceItem $item */
-        foreach ($invoice->items as $item) {
-            $rate = (float) $item->vat_rate;
-            $key = (string) $rate;
-            if (! isset($groups[$key])) {
-                $groups[$key] = ['rate' => $rate, 'base' => 0.0, 'vat' => 0.0, 'total' => 0.0];
-            }
-
-            $groups[$key]['base'] = round($groups[$key]['base'] + (float) $item->line_base, 2);
-            $groups[$key]['vat'] = round($groups[$key]['vat'] + (float) $item->line_vat, 2);
-            $groups[$key]['total'] = round($groups[$key]['total'] + (float) $item->line_total, 2);
-        }
-
-        $vatBreakdown = $invoice->is_vat_payer ? array_values($groups) : [];
-        usort($vatBreakdown, fn (array $a, array $b) => $b['rate'] <=> $a['rate']);
-
-        return [
-            'subtotal' => $subtotal,
-            'vat_amount' => $vatAmount,
-            'total' => $total,
-            'rounding_amount' => $roundingAmount,
-            'vat_breakdown' => $vatBreakdown ?: null,
-        ];
+        return $this->totals->totals(
+            $invoice->items->map(fn (InvoiceItem $item) => $item->only(['vat_rate', 'line_base', 'line_vat', 'line_total']))->all(),
+            $invoice->is_vat_payer,
+            $invoice->rounding_mode,
+        );
     }
 
     /**

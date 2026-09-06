@@ -6,20 +6,16 @@ namespace App\Http\Controllers;
 
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersInvoicePdf;
-use App\Data\Clients\ClientOptionData;
 use App\Data\Invoices\InvoiceDetailData;
 use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoiceUpsertData;
-use App\Data\Objects\ObjectOptionData;
 use App\Enums\PermissionEnum;
-use App\Models\CleaningObject;
-use App\Models\Client;
+use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Navigation\NavItem;
 use App\Services\InvoiceService;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -31,6 +27,8 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 
 final class InvoiceController extends Controller
 {
+    use ProvidesSubjectOptions;
+
     public function __construct(private readonly InvoiceService $invoices) {}
 
     #[Authorize('viewAny', Invoice::class)]
@@ -68,7 +66,7 @@ final class InvoiceController extends Controller
     #[Authorize('view', 'invoice')]
     public function show(Invoice $invoice, GeneratesPaymentQr $qr): InertiaResponse
     {
-        $invoice->load(['items', 'client', 'tenant']);
+        $invoice->load(['items', 'client', 'tenant', 'quote:id,number']);
 
         return Inertia::render('Invoices/Show', [
             'invoice' => InvoiceDetailData::fromModel($invoice, $qr->dataUri($invoice)),
@@ -78,7 +76,7 @@ final class InvoiceController extends Controller
     #[Authorize('update', 'invoice')]
     public function edit(Invoice $invoice): InertiaResponse
     {
-        $invoice->load(['items', 'client', 'tenant']);
+        $invoice->load(['items', 'client', 'tenant', 'quote:id,number']);
 
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
 
@@ -163,32 +161,5 @@ final class InvoiceController extends Controller
                 Str::ascii($filename),
             ),
         ]);
-    }
-
-    /** @return array<int, ClientOptionData> */
-    private function clientOptions(): array
-    {
-        return Client::query()
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn (Client $client) => ClientOptionData::fromModel($client))
-            ->all();
-    }
-
-    /** @return array<int, ObjectOptionData> */
-    private function objectOptions(?string $keepObjectId = null): array
-    {
-        return CleaningObject::query()
-            ->where(function (Builder $query) use ($keepObjectId): void {
-                $query->where('is_active', true);
-
-                if ($keepObjectId !== null) {
-                    $query->orWhere('id', $keepObjectId);
-                }
-            })
-            ->orderBy('name')
-            ->get()
-            ->map(fn (CleaningObject $object) => ObjectOptionData::fromModel($object))
-            ->all();
     }
 }

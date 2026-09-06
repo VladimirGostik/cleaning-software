@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\ExpireQuotes;
 use App\Console\Commands\GenerateRecurringInvoices;
 use App\Console\Commands\MarkOverdueInvoices;
 use App\Console\Commands\PurgeTemporaryUploadsCommand;
@@ -16,3 +17,4 @@ Artisan::command('inspire', function () {
 Schedule::command(PurgeTemporaryUploadsCommand::class)->daily();
 Schedule::command(MarkOverdueInvoices::class)->daily();
 Schedule::command(GenerateRecurringInvoices::class)->daily();
+Schedule::command(ExpireQuotes::class)->daily();

@@ -10,7 +10,7 @@ use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RoundingModeEnum;
-use App\Models\CleaningObject;
+use App\Rules\ObjectBelongsToClient;
 use Closure;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
@@ -112,28 +112,7 @@ final class RecurringInvoiceUpsertData extends Data
                 'nullable',
                 'string',
                 Rule::exists('objects', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
-                function (string $attribute, mixed $value, Closure $fail): void {
-                    if ($value === null) {
-                        return;
-                    }
-
-                    $clientId = request()->input('client_id');
-                    if ($clientId === null) {
-                        $fail(__('app.invoice_object_requires_client'));
-
-                        return;
-                    }
-
-                    $exists = CleaningObject::withoutGlobalScopes()
-                        ->where('id', $value)
-                        ->where('client_id', $clientId)
-                        ->whereNull('deleted_at')
-                        ->exists();
-
-                    if (! $exists) {
-                        $fail(__('app.invoice_object_not_of_client'));
-                    }
-                },
+                new ObjectBelongsToClient,
             ],
             'day_of_month' => ['required', 'integer', 'between:1,28'],
             'start_date' => ['required', 'date'],

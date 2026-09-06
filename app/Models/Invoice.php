@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
+use App\Concerns\HasPdfFilename;
 use App\Concerns\HasUuids;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
@@ -33,6 +34,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $cleaning_object_id
  * @property string|null $credited_invoice_id
  * @property string|null $recurring_invoice_id
+ * @property string|null $quote_id
  * @property InvoiceStatusEnum $status
  * @property InvoiceTypeEnum $type
  * @property InvoiceTemplateEnum $template
@@ -70,6 +72,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'cleaning_object_id',
     'credited_invoice_id',
     'recurring_invoice_id',
+    'quote_id',
     'type',
     'status',
     'template',
@@ -131,7 +134,7 @@ use Spatie\Activitylog\Support\LogOptions;
 final class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
-    use BelongsToTenant, HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasPdfFilename, HasUuids, LogsActivity, SoftDeletes;
 
     /**
      * @return array<string, string>
@@ -229,6 +232,14 @@ final class Invoice extends Model
         return $this->belongsTo(RecurringInvoice::class);
     }
 
+    /**
+     * @return BelongsTo<Quote, $this>
+     */
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
     public function isEditable(): bool
     {
         return $this->status === InvoiceStatusEnum::Draft;
@@ -237,18 +248,5 @@ final class Invoice extends Model
     public function canBeCancelled(): bool
     {
         return in_array($this->status, [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue], true);
-    }
-
-    /**
-     * Safe base filename (no extension) for PDF/attachment downloads. Strips characters
-     * that would break a `Content-Disposition` header (quotes, control chars, path
-     * separators, `%`) out of the user-influenced invoice number.
-     */
-    public function pdfFilenameBase(): string
-    {
-        $number = $this->number ?? 'draft';
-        $safe = preg_replace('/[\x00-\x1F\x7F"\/\\%]/', '', $number);
-
-        return $safe !== null && $safe !== '' ? $safe : 'draft';
     }
 }

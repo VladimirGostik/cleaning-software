@@ -16,6 +16,7 @@ use App\Http\Controllers\NewPasswordController;
 use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\PasswordResetLinkController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TemporaryUploadController;
@@ -105,6 +106,23 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/objects', [ObjectController::class, 'store'])->name('objects.store');
         Route::match(['PUT', 'PATCH'], '/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->whereUuid('object');
+    });
+
+    Route::get('/quotes', [QuoteController::class, 'index'])->name('quotes.index');
+    Route::get('/quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
+    Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->name('quotes.show')->whereUuid('quote');
+    Route::get('/quotes/{quote}/edit', [QuoteController::class, 'edit'])->name('quotes.edit')->whereUuid('quote');
+    Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy')->whereUuid('quote');
+    Route::post('/quotes/{quote}/send', [QuoteController::class, 'send'])->name('quotes.send')->whereUuid('quote');
+    Route::post('/quotes/{quote}/accept', [QuoteController::class, 'accept'])->name('quotes.accept')->whereUuid('quote');
+    Route::post('/quotes/{quote}/reject', [QuoteController::class, 'reject'])->name('quotes.reject')->whereUuid('quote');
+    Route::post('/quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate')->whereUuid('quote');
+    Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice'])->name('quotes.convert-to-invoice')->whereUuid('quote');
+    Route::get('/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('quotes.pdf')->whereUuid('quote');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/quotes', [QuoteController::class, 'store'])->name('quotes.store');
+        Route::match(['PUT', 'PATCH'], '/quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update')->whereUuid('quote');
+        Route::post('/quotes/{quote}/attach-client', [QuoteController::class, 'attachClient'])->name('quotes.attach-client')->whereUuid('quote');
     });
 
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
