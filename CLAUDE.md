@@ -93,6 +93,9 @@ Vite is started directly from `node_modules/.bin/vite` in `compose.yml` (pnpm 11
 lint.tools: [pint, phpstan, vue-tsc, eslint, prettier]
 lint.runner: docker
 lint.asked: true
+lint.notes: |
+  - PHPStan at level max with phpstan-baseline.neon (136 entries). Run with `--memory-limit=1G` to avoid OOM.
+  Baseline burn-down pending: test closures, AllowedFilter generics, QueryBuilder mixed chains, ActivityLog DTOs, Scribe strategies.
 
 ## Deployment Status
 - **Deployed to production:** no

@@ -7,7 +7,7 @@ laravel-be + inertia-fe
 
 ## Stack snapshot
 
-**Backend:** Laravel 13.7 (PHP 8.5) + Inertia 3.0.6 (Vue 3 + TS + Tailwind 4 + DaisyUI 5) · Spatie Data 4.22 / Permission 7.4.1 (teams OFF, will enable teams=true, team_foreign_key=tenant_id on port) / Activitylog 5.0 (uuid morphs) / MediaLibrary 11.22 / QueryBuilder 7.2 / TypeScript-Transformer 3 · Sanctum 4.3.2 (Bearer API; tokenable_id is bigint, needs uuidMorphs fix) · Scribe 5.9 · Postgres 16 (compose) · PHPUnit 12 on SQLite :memory: · 177 tests · Docker: `docker compose exec app php artisan …`
+**Backend:** Laravel 13.7 (PHP 8.5) + Inertia 3.0.6 (Vue 3 + TS + Tailwind 4 + DaisyUI 5) · Spatie Data 4.22 / Permission 7.4.1 (teams OFF, will enable teams=true, team_foreign_key=tenant_id on port) / Activitylog 5.0 (uuid morphs) / MediaLibrary 11.22 / QueryBuilder 7.2 / TypeScript-Transformer 3 · Sanctum 4.3.2 (Bearer API + uuidMorphs fix applied 2026-09-06) · Scribe 5.9 · Postgres 16 (compose) · PHPUnit 12 on Postgres `cleanmaster_admin_testing` (phpunit.xml force=true, init SQL docker/postgres/init-testing-db.sql) · 181 tests · Docker: `docker compose exec app php artisan …`
 
 **Frontend:** @inertiajs/vue3 ^3.0.3 + Vue ^3.5.33 + TS ^6 strict + Vite 8 + laravel-vite-plugin ^3 · NO Pinia (none today; will add for notifications/capabilities polling on port) · NO Ziggy (0 route() calls; all URLs string literals) · i18n = vue-i18n ^11 (legacy:false), messages bundled from resources/lang/{sk,en}/app.json + locale from Inertia prop (sk default, will add uk on port) · Theme: DaisyUI 5 themes:false + [data-theme='app-theme'] OKLCH token block in resources/css/app.css; Instrument Sans via bunny.net · Icons @heroicons/vue · Dates date-fns (utils/date.ts) · RichTextEditorInput @tiptap · ESLint 10 flat (no ref ban yet), Prettier, Lefthook pre-commit + pre-push vue-tsc. No FE test runner.
 
@@ -45,7 +45,7 @@ laravel-be + inertia-fe
 
 **Flow:**
 - GET /users → UserController@index (#[Authorize('viewAny', User::class)]) → QueryBuilder::for(User::with('roles')) + AllowedFilter filters → ->through(UserListItemData::fromModel) → Inertia render Users/Index {users: Paginator<UserListItemData>, filters, filterOptions.roles: RoleListItemData[]}.
-- POST /users (+Precognition) → @store(CreateUserData) → UserService::create → redirect users.index + flash success. PUT /users/{user} → @update(UpdateUserData, User) → UserService::update. DELETE /users/{user} → UserService::delete. GET /users/autocomplete?q= → JSON UserAutocompleteItemData[] (active only, limit 20).
+- POST /users (+Precognition) → @store(CreateUserData) → UserService::create → redirect users.index + flash success. PUT /users/{user} → @update(UpdateUserData, User) → UserService::update. DELETE /users/{user} → UserService::delete. GET /users/autocomplete?q= → JSON UserAutocompleteItemData[] (private const AUTOCOMPLETE_MIN_CHARS=2; empty q→active users first 20 asc name; 1-char q→[]; ≥2 chars→ilike search).
 - GET|POST /roles, GET /roles/create, GET /roles/{role}/edit, PUT|DELETE /roles/{role} → RoleController → RoleService → Inertia render Roles/{Index,Form} {roles|role: RoleDetailData, permissions: grouped array}.
 - GET /profile → Inertia render Profile/Show (no props; reads shared auth.user). PUT /profile → ProfileService::updateProfile. PUT /profile/password → Hash::check + update inline in controller (web + API).
 - API mirror (Sanctum): GET /api/users, GET|PUT|DELETE /api/users/{user}, GET|PUT /api/profile, PUT /api/profile/password → same services, JSON UserListItemData (paginated).
@@ -141,7 +141,7 @@ laravel-be + inertia-fe
 
 **Flow:**
 - POST /uploads (multipart file) → #[Authorize('create', TemporaryUpload::class)] → TemporaryUploadService::store → 201 JSON {uuid,name,file_name,mime_type,size,url} (bare array). DELETE /uploads/{uuid} → 204. Consumer contract: form DTO holds uuid validated by OwnedTemporaryMedia → service calls moveToModel($owner,'collection',$uuid).
-- GET /media → MediaController@index(MediaIndexFilterData, Request) → Media/Index {media: Paginator<MediaListItemData>, filters}. GET /media/{media} → Media/Show {media: MediaDetailData}.
+- GET /media → MediaController@index(MediaIndexFilterData, Request) → Media/Index {media: Paginator<MediaListItemData>, filters}. GET /media/{media} (whereNumber constraint → 404 for non-numeric id) → Media/Show {media: MediaDetailData}.
 
 **Depends on:** identity, auth, AllowedFilter, config/media-urls.php.
 
@@ -216,7 +216,7 @@ can.<camelVerbResource> booleans (manually enumerated in HandleInertiaRequests.p
 
 1. Spatie Permission teams OFF. config/permission.php:48 teams=false, team_foreign_key team_id (:39). roles/model_has_roles/model_has_permissions have no team column (psql-verified). Port needs teams=true, team_foreign_key=tenant_id, and migration 2026_04_30_123027_create_permission_tables.php types team column unsignedBigInteger (:44,:66,:86) → must become uuid('tenant_id') before migrate:fresh. Every seeder/test/job must call setPermissionsTeamId() (none do today: tests/Support/CreatesUsers.php, PermissionSeeder, UserSeeder).
 
-2. Sanctum personal_access_tokens.tokenable_id is bigint (morphs) vs users.id uuid → createToken() throws on Postgres; the 8 API auth tests pass only on SQLite :memory: (phpunit.xml:26-27). Fix uuidMorphs('tokenable') in 2026_05_13_093224_create_personal_access_tokens_table.php. Blocks mobile/Bearer work.
+2. ~~Sanctum personal_access_tokens.tokenable_id is bigint (morphs) vs users.id uuid~~ — FIXED 2026-09-06: uuidMorphs('tokenable') applied. Tests now run on Postgres.
 
 3. activity_log morph columns uuid (nullableUuidMorphs subject/causer). Non-UUID-PK LogsActivity subjects (TenantInterface bigint, vendor Media) fail on Postgres. Decide at port: keep uuid morphs and forbid logging bigint models, or switch to string morphs as the old codebase did.
 
@@ -234,7 +234,7 @@ can.<camelVerbResource> booleans (manually enumerated in HandleInertiaRequests.p
 
 10. UserSeeder seeds admin@example.com/password + 5 faker users; app:demo runs migrate:fresh --force. CLAUDE.md on main said bootstrap via app:create-owner (not in skeleton).
 
-11. Dead code: DTOs UserIndexFilterData, RoleIndexFilterData, ActivityLogIndexFilterData, LanguageSwitchData; AllowedFilter::callbackWithOperator + FilterPrice/FiltersCallbackWithOperator references; OwnedTemporaryMedia no callers (by design).
+11. Dead code: DTOs UserIndexFilterData, RoleIndexFilterData, ActivityLogIndexFilterData, LanguageSwitchData; OwnedTemporaryMedia no callers (by design). AllowedFilter issues (callbackWithOperator, FilterPrice, relationExact contains operator) fixed 2026-09-06.
 
 12. Roles/Form permissions prop is a bare grouped array (TS any).
 
@@ -245,6 +245,10 @@ can.<camelVerbResource> booleans (manually enumerated in HandleInertiaRequests.p
 15. db:table artisan fails in container (intl missing) — use `docker compose exec postgres psql`.
 
 16. No morph map, no preventLazyLoading, no SoftDeletes on any model — business models from the port add SoftDeletes + BelongsToTenant + TenantScope (none exist yet).
+
+17. PHPStan level max runs against `phpstan-baseline.neon` (136 entries, regenerated 2026-09-06 after fixes). Regenerate baseline only when reducing errors; run with `--memory-limit=1G` to avoid OOM with parallel workers. Excluded paths: vendor-published migrations (spatie/permission). Burn-down follow-up targets: test closures `AssertableInertia $page` typing (~60), AllowedFilter generics, QueryBuilder mixed chains, ActivityLog DTO causer access, Scribe strategies.
+
+18. `compose.yml` injects `DB_CONNECTION=pgsql`, `DB_DATABASE=cleanmaster_admin` into container process env (in `$_SERVER`). PHPUnit `<env>` blocks without `force="true"` are overridden; apply `force="true"` to both `<env>` and `<server>` (phpdotenv reads both) to isolate test DB. Testing DB `cleanmaster_admin_testing` created by `docker/postgres/init-testing-db.sql` on first volume init; on existing volumes, create manually per CLAUDE.md runbook.
 
 ### Frontend (all 10 from port map, verbose)
 
@@ -272,7 +276,7 @@ can.<camelVerbResource> booleans (manually enumerated in HandleInertiaRequests.p
 
 **Last full scan:** 2026-09-06 (degraded — Laravel Boost MCP unavailable; used docker compose exec + direct psql / grep instead).
 
-**Last delta:** —
+**Last delta:** 2026-09-06 (skeleton hardening: tests on Postgres, Sanctum uuidMorphs, media 404 constraint, autocomplete min-length, AllowedFilter fixes, PHPStan baseline 136 entries, compose env isolation).
 
 **Certainty audit:**
 - All relationships verified by: live route:list output, migration file + docker exec postgres psql information_schema queries, grep of every cited callsite + direct reads.
