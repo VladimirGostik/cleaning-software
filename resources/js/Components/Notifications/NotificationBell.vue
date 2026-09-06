@@ -6,7 +6,7 @@ import { BellIcon } from '@heroicons/vue/24/outline';
 import { useNotificationBell } from '@/Composables/useNotificationBell';
 import NotificationItem from './NotificationItem.vue';
 
-defineProps<{ compact?: boolean }>();
+defineProps<{ compact?: boolean; iconOnly?: boolean }>();
 
 const { t } = useI18n();
 const { state, refresh, markReadLocally, markAllReadLocally } = useNotificationBell();
@@ -53,14 +53,20 @@ function markAllRead(): void {
 </script>
 
 <template>
-    <div class="dropdown" :class="compact ? 'dropdown-end' : 'dropdown-top w-full'">
+    <div class="dropdown" :class="compact ? 'dropdown-end' : iconOnly ? 'dropdown-top static' : 'dropdown-top w-full'">
         <div
             tabindex="0"
             role="button"
             aria-haspopup="menu"
             :aria-label="ariaLabel"
-            class="btn btn-sm btn-ghost text-neutral-content/70 hover:text-white hover:bg-white/5"
-            :class="compact ? 'btn-square' : 'w-full justify-start gap-2'"
+            class="text-neutral-content/70 transition hover:text-white"
+            :class="
+                compact
+                    ? 'btn btn-sm btn-ghost btn-square hover:bg-white/5'
+                    : iconOnly
+                      ? 'relative flex size-9 items-center justify-center rounded-lg hover:bg-white/5'
+                      : 'btn btn-sm btn-ghost w-full justify-start gap-2 hover:bg-white/5'
+            "
         >
             <span class="indicator">
                 <BellIcon class="size-4" />
@@ -68,19 +74,26 @@ function markAllRead(): void {
                     {{ badgeText }}
                 </span>
             </span>
-            <span v-if="!compact">{{ t('notifications_bell_label') }}</span>
+            <span v-if="!compact && !iconOnly">{{ t('notifications_bell_label') }}</span>
         </div>
 
         <!-- Plain `div` shell, not DaisyUI `.menu` — `.menu :where(li) > *` forces
              `display:grid; grid-auto-flow:column` on any nested `li` direct child anywhere in
-             the subtree, which broke row truncation/width. `w-full max-w-full` (not `w-80`)
-             for the sidebar variant so the dropdown never exceeds the parent `.dropdown`'s
-             (already `w-full`) resolved width; `w-80` stays fixed for the compact navbar bell. -->
+             the subtree, which broke row truncation/width. Panel positioning per variant:
+             `w-80` fixed for the compact navbar bell (dropdown-end handles alignment); for the
+             icon-only sidebar-footer bell the trigger is only `size-9`, so a `dropdown-end`
+             panel anchored to it overflows the sidebar's left edge — instead the `.dropdown`
+             root is `static` so its containing block becomes the footer (which is `relative`
+             in AppLayout.vue), and the panel is `absolute inset-x-0 bottom-full` so its left/
+             right edges align with the footer's own box (= the full sidebar width) rather than
+             the trigger, opening above row 1 regardless of trigger position; `w-full max-w-full`
+             for the (unused today) full-width label variant so it never exceeds the parent
+             `.dropdown`'s (already `w-full`) resolved width. -->
         <div
             tabindex="0"
             role="menu"
             class="dropdown-content min-w-0 rounded-box bg-base-100 p-0 text-base-content shadow-lg z-50"
-            :class="compact ? 'w-80' : 'w-full max-w-full'"
+            :class="compact ? 'w-80' : iconOnly ? 'absolute inset-x-0 bottom-full mb-2 w-auto' : 'w-full max-w-full'"
         >
             <div class="flex min-w-0 items-center justify-between gap-2 px-3 py-2">
                 <span class="font-semibold">{{ t('notifications') }}</span>

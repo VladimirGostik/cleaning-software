@@ -254,52 +254,43 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     </ul>
                 </nav>
 
-                <!-- Footer: user card, notification bell, logout, language switcher -->
-                <div class="mt-auto border-t border-white/[0.06]">
-                    <div v-if="auth.user" class="p-4 border-b border-white/[0.06]">
-                        <div class="flex items-center gap-3">
-                            <span
-                                class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-content shrink-0"
-                            >
-                                {{ auth.user.name.charAt(0).toUpperCase() }}
-                            </span>
-                            <div class="min-w-0">
-                                <p class="text-[13px] font-semibold text-white truncate">
-                                    {{ auth.user.name }}
-                                </p>
-                                <p class="text-xs text-neutral-content/60 truncate">
-                                    {{ auth.user.email }}
-                                </p>
-                            </div>
+                <!-- Footer: identity + bell row, logout + language row -->
+                <div class="relative mt-auto space-y-2 border-t border-white/[0.06] p-3">
+                    <div v-if="auth.user" class="flex items-center gap-3">
+                        <span
+                            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-content"
+                        >
+                            {{ auth.user.name.charAt(0).toUpperCase() }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium text-white">{{ auth.user.name }}</p>
+                            <p class="truncate text-xs text-white/60">{{ auth.user.email }}</p>
                         </div>
+                        <NotificationBell v-if="canViewNotifications" icon-only />
                     </div>
 
-                    <div v-if="auth.user && canViewNotifications" class="px-4 py-3 border-b border-white/[0.06]">
-                        <NotificationBell />
-                    </div>
-
-                    <div class="p-3 space-y-1">
+                    <div class="flex items-center justify-between gap-2">
                         <button
                             type="button"
-                            class="btn btn-sm btn-ghost w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
+                            class="btn btn-ghost btn-sm justify-start gap-2 text-white/80 hover:text-white hover:bg-white/5"
                             @click="logout"
                         >
                             <ArrowRightOnRectangleIcon class="size-4" />
                             {{ t('logout') }}
                         </button>
 
-                        <div v-if="languages && languages.length > 1" class="dropdown dropdown-top w-full">
+                        <div v-if="languages && languages.length > 1" class="dropdown dropdown-top dropdown-end">
                             <div
                                 tabindex="0"
                                 role="button"
-                                class="btn btn-sm btn-ghost w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
+                                class="btn btn-ghost btn-sm justify-start gap-2 text-white/80 hover:text-white hover:bg-white/5"
                             >
                                 <GlobeAltIcon class="size-4" />
                                 <span>{{ locale.toUpperCase() }}</span>
                             </div>
                             <ul
                                 tabindex="0"
-                                class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-full p-1"
+                                class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-40 p-1"
                             >
                                 <li v-for="lang in languages" :key="lang.value">
                                     <a :href="`/language/${lang.value}`" :class="{ active: locale === lang.value }">
