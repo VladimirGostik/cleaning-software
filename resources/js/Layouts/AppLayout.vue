@@ -13,6 +13,8 @@ import {
     HomeIcon,
     ClipboardDocumentListIcon,
     UsersIcon,
+    UserGroupIcon,
+    BuildingOffice2Icon,
     ShieldCheckIcon,
     UserCircleIcon,
     Cog6ToothIcon,
@@ -39,6 +41,8 @@ const isAddTenantOpen = ref(false);
 const ICONS: Record<string, object> = {
     HomeIcon,
     UsersIcon,
+    UserGroupIcon,
+    BuildingOffice2Icon,
     ShieldCheckIcon,
     ClipboardDocumentListIcon,
     PhotoIcon,

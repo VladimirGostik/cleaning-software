@@ -1,14 +1,19 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
 defineProps<{
     isOpen: boolean;
     title: string;
     description: string;
+    confirmLabel?: string;
 }>();
 
 const emit = defineEmits<{
     cancel: [];
     confirm: [];
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -18,10 +23,10 @@ const emit = defineEmits<{
             <p class="py-4 text-base-content/70">{{ description }}</p>
             <div class="modal-action">
                 <button type="button" class="btn btn-ghost" @click="emit('cancel')">
-                    {{ $t('cancel') }}
+                    {{ t('cancel') }}
                 </button>
                 <button type="button" class="btn btn-error" @click="emit('confirm')">
-                    {{ $t('delete') }}
+                    {{ confirmLabel ?? t('delete') }}
                 </button>
             </div>
         </div>
