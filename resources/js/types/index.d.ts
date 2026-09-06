@@ -49,18 +49,6 @@ export interface UserOption {
     email: string;
 }
 
-export interface SharedLanguage {
-    value: string;
-    label: string;
-    flag?: string;
-}
-
-export interface SharedUser {
-    id: string | number;
-    name: string;
-    email: string;
-}
-
 export interface SharedFlash {
     success?: string | null;
     error?: string | null;
@@ -68,24 +56,36 @@ export interface SharedFlash {
     status?: string | null;
 }
 
-export interface SharedCan {
-    viewUsers?: boolean;
-    viewRoles?: boolean;
-    viewAuditLogs?: boolean;
-    viewMedia?: boolean;
-    [key: string]: boolean | undefined;
+export interface SharedUser {
+    id: string;
+    name: string;
+    email: string;
+    locale: App.Enums.SupportedLanguage;
 }
 
-declare module '@inertiajs/core' {
-    interface InertiaConfig {
-        sharedPageProps: {
-            flash: SharedFlash;
-            auth: {
-                user: SharedUser | null;
-            };
-            can: SharedCan;
-            locale: string;
-            languages: SharedLanguage[];
-        };
-    }
+export interface SharedLanguage {
+    value: App.Enums.SupportedLanguage;
+    label: string;
+    flag?: string;
+}
+
+export interface SharedTenant {
+    active: App.Data.Tenants.TenantListItemData | null;
+    available: App.Data.Tenants.TenantListItemData[];
+}
+
+export interface TenantColorOption {
+    value: App.Enums.TenantColorEnum;
+    label: string;
+}
+
+export interface SharedProps {
+    flash: SharedFlash;
+    auth: { user: SharedUser | null };
+    can: Record<string, boolean>;
+    locale: string;
+    languages: SharedLanguage[];
+    navigation: App.Data.NavigationItemData[];
+    tenant: SharedTenant;
+    tenantColors: TenantColorOption[];
 }

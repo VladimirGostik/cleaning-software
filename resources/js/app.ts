@@ -9,12 +9,14 @@ import { createI18n } from 'vue-i18n';
 
 import enApp from '../lang/en/app.json';
 import skApp from '../lang/sk/app.json';
+import ukApp from '../lang/uk/app.json';
 
 const appName = (import.meta.env.VITE_APP_NAME as string | undefined) ?? 'App';
 
 const messages = {
     en: { ...enApp },
     sk: { ...skApp },
+    uk: { ...ukApp },
 };
 
 void createInertiaApp({

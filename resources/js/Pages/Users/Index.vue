@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -8,21 +7,20 @@ import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 
 import { formatDatetime } from '@/utils/date';
+import { useAuthorization } from '@/Composables/useAuthorization';
 import type { Breadcrumb, Paginator, TableColumn } from '@/types';
 import type { FilterConfig } from '@/types/table';
 
 const { t } = useI18n();
-const page = usePage();
+const { allows } = useAuthorization();
 
 const props = defineProps<{
     users: Paginator<App.Data.UserListItemData>;
-    query?: Record<string, unknown>;
+    filters?: Record<string, unknown>;
     filterOptions: {
         roles: App.Data.RoleListItemData[];
     };
 }>();
-
-const can = page.props.can as Record<string, boolean>;
 
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('users') }];
 
@@ -30,7 +28,7 @@ const columns: TableColumn[] = [
     { key: 'name', label: t('name'), sortable: true },
     { key: 'email', label: t('email'), sortable: true },
     { key: 'roles', label: t('roles'), sortable: false },
-    { key: 'is_active', label: t('is_active'), sortable: true },
+    { key: 'is_active', label: t('membership_active'), sortable: true },
     { key: 'created_at', label: t('created_at'), sortable: true },
 ];
 
@@ -69,7 +67,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
     },
     {
         property: 'is_active',
-        label: t('is_active'),
+        label: t('membership_active'),
         type: 'select',
         placeholder: t('select_status'),
         defaultOperator: '=',
@@ -93,7 +91,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
     <AppLayout>
         <Header :title="t('users')" :breadcrumbs="breadcrumbs">
             <template #actions>
-                <a v-if="can.createUsers" href="/users/create" class="btn btn-primary btn-sm">
+                <a v-if="allows('create employees')" href="/users/create" class="btn btn-primary btn-sm">
                     {{ t('create') }}
                 </a>
             </template>
@@ -105,9 +103,8 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     :columns="columns"
                     :rows="users"
                     :filters="filterDefinitions"
-                    route-name="users.index"
-                    :can-edit="!!can.editUsers"
-                    :can-delete="!!can.deleteUsers"
+                    :can-edit="allows('edit employees')"
+                    :can-delete="allows('delete employees')"
                     :edit-url="(row: App.Data.UserListItemData) => `/users/${row.id}/edit`"
                     :delete-url="(row: App.Data.UserListItemData) => `/users/${row.id}`"
                 >
@@ -125,7 +122,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
                     <template #cell-is_active="{ value }">
                         <span v-if="value" class="badge badge-success badge-sm">
-                            {{ t('active') }}
+                            {{ t('membership_active') }}
                         </span>
                         <span v-else class="badge badge-ghost badge-sm">
                             {{ t('inactive') }}

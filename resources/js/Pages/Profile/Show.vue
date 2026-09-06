@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { usePage, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
@@ -8,25 +8,26 @@ import TextInput from '@/Components/Forms/TextInput.vue';
 import PasswordInput from '@/Components/Forms/PasswordInput.vue';
 import SelectInput from '@/Components/Forms/SelectInput.vue';
 import FormProvider from '@/Components/Forms/FormProvider.vue';
+import { usePageProps } from '@/Composables/usePageProps';
 import type { Breadcrumb } from '@/types';
 import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
 
 const { t } = useI18n();
-const page = usePage();
+const pageProps = usePageProps();
 
-const user = page.props.auth.user;
-const languages = page.props.languages;
+const user = computed(() => pageProps.value.auth.user);
+const languages = computed(() => pageProps.value.languages);
 
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('profile') }];
 
 const languageOptions = computed<SelectOption[]>(() =>
-    languages.map((l: { value: string; label: string }) => ({ value: l.value, label: l.label })),
+    languages.value.map((l) => ({ value: l.value, label: l.label })),
 );
 
 const profileForm = useForm('put', '/profile', {
-    name: user?.name ?? '',
-    email: user?.email ?? '',
-    locale: page.props.locale,
+    name: user.value?.name ?? '',
+    email: user.value?.email ?? '',
+    locale: user.value?.locale ?? pageProps.value.locale,
 });
 
 const passwordForm = useForm('put', '/profile/password', {

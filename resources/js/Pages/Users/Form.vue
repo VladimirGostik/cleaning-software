@@ -13,6 +13,15 @@ import FormProvider from '@/Components/Forms/FormProvider.vue';
 import type { Breadcrumb } from '@/types';
 import type { CheckboxOption } from '@/Components/Forms/CheckboxGroup.vue';
 
+interface UserFormData {
+    name: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+    is_active: boolean;
+    roles: string[];
+}
+
 const { t } = useI18n();
 
 const props = defineProps<{
@@ -30,14 +39,18 @@ const breadcrumbs: Breadcrumb[] = [
 
 const roleOptions = computed<CheckboxOption[]>(() => props.roles.map((r) => ({ value: r.name, label: r.name })));
 
-const form = useForm(isEditing.value ? 'put' : 'post', isEditing.value ? `/users/${props.user!.id}` : '/users', {
-    name: props.user?.name ?? '',
-    email: props.user?.email ?? '',
-    password: '',
-    password_confirmation: '',
-    is_active: props.user?.is_active ?? true,
-    roles: [...(props.user?.roles ?? [])] as string[],
-});
+const form = useForm<UserFormData>(
+    isEditing.value ? 'put' : 'post',
+    isEditing.value ? `/users/${props.user!.id}` : '/users',
+    {
+        name: props.user?.name ?? '',
+        email: props.user?.email ?? '',
+        password: '',
+        password_confirmation: '',
+        is_active: props.user?.is_active ?? true,
+        roles: [...(props.user?.roles ?? [])] as string[],
+    },
+);
 
 function submit() {
     form.submit();
@@ -67,12 +80,11 @@ function submit() {
                             <TextInput field="email" :label="t('email')" type="email" autocomplete="email" required />
 
                             <template v-if="!isEditing">
-                                <PasswordInput
-                                    field="password"
-                                    :label="t('password')"
-                                    autocomplete="new-password"
-                                    required
-                                />
+                                <p class="text-sm text-base-content/60 md:col-span-2">
+                                    {{ t('user_link_existing_hint') }}
+                                </p>
+
+                                <PasswordInput field="password" :label="t('password')" autocomplete="new-password" />
 
                                 <PasswordInput
                                     field="password_confirmation"
@@ -82,7 +94,7 @@ function submit() {
                             </template>
 
                             <div class="md:col-span-2">
-                                <ToggleInput field="is_active" :label="t('is_active')" />
+                                <ToggleInput field="is_active" :label="t('membership_active')" />
                             </div>
                         </div>
                     </div>

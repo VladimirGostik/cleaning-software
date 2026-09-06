@@ -56,7 +56,7 @@ final class InvitationAcceptTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Invitations/Accept', shouldExist: false)
+            ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::Expired->value),
         );
     }
@@ -71,7 +71,7 @@ final class InvitationAcceptTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Invitations/Accept', shouldExist: false)
+            ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::WrongUser->value)
             ->where('invitation.invited_email', 'invited@example.com'),
         );
@@ -87,7 +87,7 @@ final class InvitationAcceptTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Invitations/Accept', shouldExist: false)
+            ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::ExistingUser->value),
         );
     }
@@ -101,7 +101,7 @@ final class InvitationAcceptTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Invitations/Accept', shouldExist: false)
+            ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::NewUser->value)
             ->where('invitation.tenant_name', $tenant->name)
             ->where('invitation.role_name', 'Vedúca'),

@@ -1,13 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-
-interface Permission {
-    id: string | number;
-    name: string;
-}
-
 const props = defineProps<{
-    permissions: Permission[];
+    groups: App.Data.PermissionGroupData[];
     modelValue: string[];
 }>();
 
@@ -15,34 +8,20 @@ const emit = defineEmits<{
     'update:modelValue': [value: string[]];
 }>();
 
-// Group permissions by resource (last word after the action verb)
-const grouped = computed(() => {
-    const groups: Record<string, Permission[]> = {};
-
-    for (const permission of props.permissions) {
-        const parts = permission.name.split(' ');
-        // e.g. "view users" -> resource = "users"
-        const resource = parts.slice(1).join(' ') || parts[0];
-
-        if (!groups[resource]) {
-            groups[resource] = [];
-        }
-        groups[resource].push(permission);
-    }
-
-    return groups;
-});
-
-function isChecked(permissionName: string): boolean {
-    return props.modelValue.includes(permissionName);
+function names(group: App.Data.PermissionGroupData): string[] {
+    return group.permissions.map((p) => p.name);
 }
 
-function toggle(permissionName: string) {
+function isChecked(name: string): boolean {
+    return props.modelValue.includes(name);
+}
+
+function toggle(name: string) {
     const current = [...props.modelValue];
-    const index = current.indexOf(permissionName);
+    const index = current.indexOf(name);
 
     if (index === -1) {
-        current.push(permissionName);
+        current.push(name);
     } else {
         current.splice(index, 1);
     }
@@ -50,21 +29,26 @@ function toggle(permissionName: string) {
     emit('update:modelValue', current);
 }
 
-function isGroupAllChecked(resource: string): boolean {
-    return (grouped.value[resource] ?? []).every((p) => props.modelValue.includes(p.name));
+function isGroupAllChecked(group: App.Data.PermissionGroupData): boolean {
+    return names(group).every((name) => props.modelValue.includes(name));
 }
 
-function toggleGroup(resource: string) {
-    const group = grouped.value[resource] ?? [];
-    const allChecked = isGroupAllChecked(resource);
+function isGroupPartial(group: App.Data.PermissionGroupData): boolean {
+    const groupNames = names(group);
+    const checkedCount = groupNames.filter((name) => props.modelValue.includes(name)).length;
+    return checkedCount > 0 && checkedCount < groupNames.length;
+}
+
+function toggleGroup(group: App.Data.PermissionGroupData) {
+    const allChecked = isGroupAllChecked(group);
     const current = [...props.modelValue];
 
-    for (const permission of group) {
-        const index = current.indexOf(permission.name);
+    for (const name of names(group)) {
+        const index = current.indexOf(name);
         if (allChecked && index !== -1) {
             current.splice(index, 1);
         } else if (!allChecked && index === -1) {
-            current.push(permission.name);
+            current.push(name);
         }
     }
 
@@ -74,32 +58,28 @@ function toggleGroup(resource: string) {
 
 <template>
     <div class="space-y-4">
-        <div v-for="(group, resource) in grouped" :key="resource" class="card bg-base-200">
+        <div v-for="group in groups" :key="group.group" class="card bg-base-200">
             <div class="card-body p-4">
                 <div class="flex items-center gap-3 mb-2">
                     <input
                         type="checkbox"
                         class="checkbox checkbox-sm"
-                        :checked="isGroupAllChecked(String(resource))"
-                        @change="toggleGroup(String(resource))"
+                        :checked="isGroupAllChecked(group)"
+                        :indeterminate="isGroupPartial(group)"
+                        :aria-label="group.group_label"
+                        @change="toggleGroup(group)"
                     />
-                    <h4 class="font-semibold capitalize">{{ resource }}</h4>
+                    <h4 class="font-semibold">{{ group.group_label }}</h4>
                 </div>
                 <div class="flex flex-wrap gap-4 pl-7">
-                    <label
-                        v-for="permission in group"
-                        :key="permission.id"
-                        class="flex items-center gap-2 cursor-pointer"
-                    >
+                    <label v-for="p in group.permissions" :key="p.id" class="flex items-center gap-2 cursor-pointer">
                         <input
                             type="checkbox"
                             class="checkbox checkbox-sm checkbox-primary"
-                            :checked="isChecked(permission.name)"
-                            @change="toggle(permission.name)"
+                            :checked="isChecked(p.name)"
+                            @change="toggle(p.name)"
                         />
-                        <span class="text-sm capitalize">
-                            {{ permission.name.split(' ')[0] }}
-                        </span>
+                        <span class="text-sm">{{ p.label }}</span>
                     </label>
                 </div>
             </div>

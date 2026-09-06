@@ -12,19 +12,9 @@ import type { Breadcrumb } from '@/types';
 
 const { t } = useI18n();
 
-interface PermissionItem {
-    id: number;
-    name: string;
-}
-
-interface PermissionGroup {
-    group: string;
-    permissions: PermissionItem[];
-}
-
 const props = defineProps<{
     role?: App.Data.RoleDetailData;
-    permissions: PermissionGroup[];
+    permissions: App.Data.PermissionGroupData[];
 }>();
 
 const isEditing = computed(() => !!props.role);
@@ -39,8 +29,6 @@ const form = useForm(isEditing.value ? 'put' : 'post', isEditing.value ? `/roles
     name: props.role?.name ?? '',
     permissions: (props.role?.permissions ?? []) as string[],
 });
-
-const flatPermissions = computed<PermissionItem[]>(() => props.permissions.flatMap((g) => g.permissions));
 
 function updatePermissions(value: string[]) {
     form.permissions = value;
@@ -87,7 +75,7 @@ function submit() {
                     <div class="card-body">
                         <h2 class="card-title text-base">{{ t('permissions') }}</h2>
                         <PermissionManager
-                            :permissions="flatPermissions"
+                            :groups="permissions"
                             :model-value="form.permissions"
                             @update:model-value="updatePermissions"
                         />

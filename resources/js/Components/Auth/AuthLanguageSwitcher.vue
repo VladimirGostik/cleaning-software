@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { usePageProps } from '@/Composables/usePageProps';
 
-const page = usePage();
+const props = usePageProps();
 
-const languages = computed(() => page.props.languages);
-const locale = computed(() => page.props.locale);
+const languages = computed(() => props.value.languages);
+const locale = computed(() => props.value.locale);
 </script>
 
 <template>

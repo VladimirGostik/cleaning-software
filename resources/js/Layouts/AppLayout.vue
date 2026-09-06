@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BrandMark from '@/Components/BrandMark.vue';
+import TenantSwitcher from '@/Components/Tenants/TenantSwitcher.vue';
+import AddTenantModal from '@/Components/Tenants/AddTenantModal.vue';
+import { usePageProps } from '@/Composables/usePageProps';
+import { useTenantTheme } from '@/Composables/useTenantTheme';
 
 type NavigationItem = App.Data.NavigationItemData;
 import {
@@ -21,11 +25,16 @@ import type { ToastPayload } from '@/Composables/useToast';
 
 const { t } = useI18n();
 const page = usePage();
+const props = usePageProps();
+const { themeStyle } = useTenantTheme();
 
-const auth = computed(() => page.props.auth);
-const locale = computed(() => page.props.locale);
-const languages = computed(() => page.props.languages);
-const navigation = computed(() => page.props.navigation ?? []);
+const auth = computed(() => props.value.auth);
+const locale = computed(() => props.value.locale);
+const languages = computed(() => props.value.languages);
+const navigation = computed(() => props.value.navigation ?? []);
+const tenant = computed(() => props.value.tenant);
+const tenantColors = computed(() => props.value.tenantColors);
+const isAddTenantOpen = ref(false);
 
 const ICONS: Record<string, object> = {
     HomeIcon,
@@ -108,7 +117,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
 </script>
 
 <template>
-    <div class="drawer lg:drawer-open" data-theme="app-theme">
+    <div class="drawer lg:drawer-open" data-theme="app-theme" :style="themeStyle">
         <input id="app-drawer" type="checkbox" class="drawer-toggle" />
 
         <!-- Page content -->
@@ -142,6 +151,9 @@ function toastAlertClass(type: ToastMessage['type']): string {
                         <span class="text-lg font-bold">{{ t('app_name') }}</span>
                     </a>
                 </div>
+                <div v-if="tenant.available.length > 0" class="flex-none">
+                    <TenantSwitcher :tenant="tenant" compact @add-tenant="isAddTenantOpen = true" />
+                </div>
             </div>
 
             <!-- Main content -->
@@ -164,6 +176,10 @@ function toastAlertClass(type: ToastMessage['type']): string {
                         </span>
                         <span class="text-[16px] font-bold tracking-tight">{{ t('app_name') }}</span>
                     </a>
+                </div>
+
+                <div v-if="tenant.available.length > 0" class="px-3 pb-3">
+                    <TenantSwitcher :tenant="tenant" @add-tenant="isAddTenantOpen = true" />
                 </div>
 
                 <!-- User info -->
@@ -252,6 +268,8 @@ function toastAlertClass(type: ToastMessage['type']): string {
                 </div>
             </aside>
         </div>
+
+        <AddTenantModal :open="isAddTenantOpen" :colors="tenantColors" @close="isAddTenantOpen = false" />
     </div>
 
     <!-- Toast container -->
