@@ -287,6 +287,52 @@ DTOs injected as controller params, #[TypeScript] on all → resources/js/types/
 ### Navigation (BE-driven discovery)
 App\Navigation\NavItem attribute (repeatable, method-level: label, route, icon, permission, policyModel, group, order) discovered by NavigationRegistry via router reflection; visibility Gate::forUser()->allows(permission, policyModel) or $user->can (:79-89); groups NavigationRegistry::GROUPS (settings). Shared as navigation: NavigationItemData[], rendered Layouts/AppLayout.vue:215. FE: hardcoded ICONS map (HomeIcon, UsersIcon, ShieldCheckIcon, ClipboardDocumentListIcon, PhotoIcon, EnvelopeIcon, UserCircleIcon, Cog6ToothIcon; unknown → HomeIcon) — every new NavItem icon must be added. translateLabel strips app. prefix then t(). Active = page.url.startsWith(href). Nav links plain <a> (full page load). On port: add NavItems for clients, objects, quotes, contracts, invoices, recurring invoices, schedule, employees, notifications + extend ICONS map.
 
+### PDF generation (spatie/laravel-pdf, chrome driver via Alpine apk) — Phase 4
+
+**Backend:**
+- `config/laravel-pdf.php` (published + configured): driver `chrome` (env LARAVEL_PDF_DRIVER), chrome_binary `env('CHROMIUM_PATH', '/usr/bin/chromium-browser')`, no_sandbox true, custom_flags `['--disable-gpu', '--disable-dev-shm-usage']`, timeouts (30s startup, 30000ms, 5000ms operation).
+- `spatie/laravel-pdf` with `chrome-php/chrome` (pure-PHP DevTools, no Node at runtime).
+- Alpine Dockerfile: `apk add chromium nss freetype harfburst ca-certificates ttf-dejavu font-noto`, smoke test `chromium-browser --headless --version`.
+- Contracts: `RendersInvoicePdf { public function render(Invoice $invoice): string; }` (testable via mock).
+- Services: `InvoicePdfService` renders `resources/views/pdf/invoices/{classic,modern,minimal}.blade.php` via chrome driver.
+- Routes: `GET /invoices/{invoice}/pdf` (Content-Disposition: attachment, filename sanitised via `Invoice::pdfFilenameBase` + `HeaderUtils::makeDisposition`).
+- Tests: mocked via `$this->mock(RendersInvoicePdf::class)` (no real Chromium in test DB).
+
+**Frontend:**
+- Link: `<a :href="`/invoices/${id}/pdf`" target="_blank">` (native browser download).
+
+### Queue (Laravel queue, database driver + queue compose service) — Phase 4
+
+**Backend:**
+- `QUEUE_CONNECTION=database` (dev + test); composed `queue` service in production.
+- Queue table `jobs` pre-migrated.
+- Notifications: `InvoiceIssued` implements `ShouldQueue`, `#[Tries(3)]` `#[Backoff([10,30,60])]` `#[Timeout(120)]`, `afterCommit()` in ctor (mail + PDF).
+- Jobs: `GenerateRecurringInvoiceJob` (ShouldQueue, ShouldBeUnique, retries 3).
+- Commands: `MarkOverdueInvoices` / `GenerateRecurringInvoices` scheduled daily via `routes/console.php`.
+- Dev: `queue:work` runs in dedicated `queue` compose service (mirrors prod supervisor).
+- Tests: `QUEUE_CONNECTION=sync` in phpunit.xml (jobs execute immediately).
+
+**DevOps:**
+- Compose: `queue` service (same image as `app`, php artisan queue:work).
+- Supervisor (prod): `[program:scheduler]` runs `php artisan schedule:work` (daily crons).
+- `.env`: `MAIL_MAILER=smtp`, `MAIL_HOST=mailpit`, `MAIL_PORT=1025` (dev Mailpit service).
+
+### Mail (Mailpit in dev, smtp) — Phase 4
+
+**Backend:**
+- `.env.example` + `.env`: `MAIL_MAILER=smtp`, `MAIL_HOST=mailpit`, `MAIL_PORT=1025`, `MAIL_SCHEME=null` (no TLS for Mailpit).
+- Notifications: `InvoiceIssued` queued, via('mail') → customer_email, attach PDF.
+- Dev: browse Mailpit UI at `http://localhost:8025` to view sent mails + attachments.
+- Tests: `MAIL_MAILER=array` (phpunit.xml), Mail::fake() in tests.
+
+### TypeScript code generation (php artisan typescript:transform) — Phase 2+
+
+**All DTOs + Enums carry `#[TypeScript]` attribute.** Run after every schema change (columns) or DTO/Enum change to regenerate `resources/js/types/generated.d.ts`. FE imports App.Data.* and App.Enums.* from there (never hand-edit). Laravel TypeScript Transformer 3 (config/typescript-transformer.php): scans app/Data + app/Enums, GlobalNamespaceWriter outputs to resources/js/types/generated.d.ts.
+
+### MergeValidationRules + Precognition — Phase 2+
+
+**Validation ruleset merging.** `#[MergeValidationRules]` on DTOs that extend a parent DTO (e.g., `UpdateUserData` extends base) — merges parent rules via Spatie Data trait. Precognition (HandlePrecognitiveRequests middleware) wraps every POST|PUT mutation; FE useForm auto-detects Precognition support and debounces field validation requests (blurred field → POST with Validate-Only header → 422 on that field only). Cross-field rules (e.g., DTO closure on client_id existence) execute on full payload only (deferred until submit unless Precognition-Validate-Only happens to include that field).
+
 ### Localisation (BE + FE sync) — Phase 2 uk added
 
 **Core:**
@@ -476,6 +522,164 @@ No queued jobs today (QUEUE_CONNECTION sync in tests). Only schedule PurgeTempor
 
 **Keywords (SK):** objekt, lokalita, kancelária, byt, dom, spoločné priestory, prístupový kód, kľúč, deaktivácia, citlivé údaje.
 
+### invoices — Draft / issue / pay / cancel + credit notes, SK VAT, Pay-by-Square QR (Phase 4, 2026-09-06)
+
+**Core:**
+- `App\Models\Invoice` — UUIDv7; traits BelongsToTenant, HasFactory, HasUuids, LogsActivity (logOnlyDirty status/number/total/client_id/issued_at/paid_at/cancelled_at/sent_at), SoftDeletes. Columns: tenant_id FK, nullable client_id FK → clients (withTrashed), nullable cleaning_object_id FK → objects (withTrashed), nullable recurring_invoice_id FK → recurring_invoices (restrictOnDelete), nullable credited_invoice_id self-FK (restrictOnDelete), type (InvoiceTypeEnum: monthly/one_off/special), status (InvoiceStatusEnum: draft/issued/paid/overdue/cancelled), template (InvoiceTemplateEnum: classic/modern/minimal), nullable number (50 chars, partial unique index tenant_id + number WHERE deleted_at IS NULL AND number IS NOT NULL), variable_symbol (10 chars, derived from number digits only), dates (period_from/period_to/issue_date/delivery_date/due_date nullable except issue_date), timestamps issued_at/sent_at/paid_at/cancelled_at nullable, **customer snapshot** (customer_name required, representative/ico/dic/vat_number/street/city/postal_code/country/email nullable), **object snapshot** (object_name/street/city/postal_code nullable), **supplier snapshot** (supplier_name required, ico/dic/vat_number/iban/swift/address_line/city/postal_code/country/contact_email/contact_phone/registration_info nullable, snapshot at issue from Tenant), bool is_vat_payer, nullable vat_rate (decimal), money columns (subtotal/vat_amount/total/deposit/rounding_amount default 0, all decimal:12,2), json vat_breakdown (nullable, frozen at issue), **SK fields** (constant_symbol/specific_symbol/payment_type/currency/rounding_mode/header_text/footer_text all nullable except currency EUR default), nullable note, reserved efa_status/efa_id (spec: IS EFA phase 8+), timestamps, soft_deletes. Indexes (tenant_id,status), (tenant_id,due_date), (tenant_id,issue_date), (tenant_id,client_id), recurring_invoice_id, credited_invoice_id. Relations: `client()->withTrashed()`, `cleaningObject()->withTrashed()`, `items(): HasMany<InvoiceItem>` ordered position, `creditedInvoice(): BelongsTo`, `creditNote(): HasOne credited_invoice_id`, `recurringInvoice(): BelongsTo`. Methods: `balanceDue(): Attribute` (total - deposit float), `isEditable(): bool` (Draft), `canBeCancelled(): bool` (Issued | Overdue).
+- `App\Models\InvoiceItem` — UUIDv7; traits BelongsToTenant, HasFactory, HasUuids. Columns: tenant_id FK, invoice_id FK (restrictOnDelete), description, qty/unit/unit_price (decimal:10,2), discount_percent (decimal:5,2), vat_rate (decimal:5,2), computed line_base/line_vat/line_total (decimal:12,2), position (smallInt). Index invoice_id. Relation: `invoice(): BelongsTo`.
+- `App\Models\InvoiceNumberSequence` — UUIDv7; traits BelongsToTenant, HasUuids. Columns: tenant_id FK, year (smallInt), last_number (int), timestamps. Unique (tenant_id, year). No activity logging (operational).
+- `App\Services\InvoiceNumberService` — `next(Tenant, DateTimeInterface): string` (firstOrCreate + lockForUpdate + collision loop honouring `{YYYY}/{YY}/{MM}/{X+}` format placeholders), `variableSymbol(string): ?string` (digits max 10 chars).
+- `App\Services\InvoiceService` (final readonly, ctor InvoiceNumberService, DatabaseManager) — `paginate(Request): LengthAwarePaginator<InvoiceListItemData>` (QueryBuilder AllowedFilter search/number/status/type/client_id/customer_name/issue_date/due_date/total/created_at, sorts default -created_at, eager load client), `stats(): InvoiceStatsData` (issued this month / overdue / pending / recurring monthly), `create(InvoiceUpsertData): Invoice` (transaction: snapshot customer/object/supplier + items + computeTotals with VAT breakdown + rounding), `update(Invoice, InvoiceUpsertData): Invoice` (guard isEditable), `issue(Invoice, InvoiceIssueData): Invoice` (guard Draft, tenant-scoped number exists check, set number/variable_symbol/status/issued_at), `markPaid(Invoice): Invoice` (guard canTransitionTo(Paid)), `cancel(Invoice): Invoice` (transaction: mark Cancelled + create credit note with negated items/SK fields), `duplicate(Invoice): Invoice` (Draft copy, no number), `delete(Invoice): void` (guard isEditable), `send(Invoice): void` (guard Issued + customer_email, dispatch InvoiceIssued queued notification).
+- `App\Services\InvoiceSettingsService` — `update(Tenant, InvoiceSettingsData): void` (transaction: write tenant supplier + invoicing fields, write interface invoice defaults).
+- Contracts: `RendersInvoicePdf { public function render(Invoice $invoice): string; }`, `GeneratesPaymentQr { public function dataUri(Invoice $invoice): ?string; }`.
+- `App\Services\Pdf\InvoicePdfService implements RendersInvoicePdf` — chrome driver, Blade-based 3 templates (Classic/Modern/Minimal).
+- `App\Services\Pdf\PayBySquareService implements GeneratesPaymentQr` — null unless Issued|Overdue + IBAN + EUR + balance_due > 0.
+- `App\Notifications\InvoiceIssued` — queued (ShouldQueue, #[Tries(3)] #[Backoff] #[Timeout(120)]), afterCommit, mail-only, PDF attachment via RendersInvoicePdf, sent_at stamped by StampInvoiceSentAt listener on NotificationSent event.
+- `App\Events\InvoiceMarkedOverdue` — domain event dispatched by MarkOverdueInvoices command (no phase-4 listeners; phase-5 notifications subscribes).
+- `App\Console\Commands\MarkOverdueInvoices` — daily cron, flips Issued past due_date → Overdue, dispatches InvoiceMarkedOverdue.
+
+**Satellites (BE):**
+- Enums: InvoiceStatusEnum (draft/issued/paid/overdue/cancelled, `canTransitionTo(self $to): bool`), InvoiceTypeEnum (monthly/one_off/special), InvoiceTemplateEnum (classic/modern/minimal, `view(): string`), PaymentTypeEnum (transfer/cash/card/cod/other), CurrencyEnum (EUR/CZK/USD uppercase), RoundingModeEnum (none/document/cash_005, `round(float): float`).
+- DTOs: `InvoiceUpsertData` (client_id nullable, object_id nullable, type/template/dates, customer_* snapshot fields, items, SK fields, payment fields, deposit), `InvoiceItemData` (description/qty/unit/unit_price/discount/vat_rate + line_* nullable), `InvoiceIssueData { ?string $number }`, `InvoiceListItemData` (id/number/status/type/customer_name/client_id/client_name/object_name/currency/total/balance_due/issue_date/due_date), `InvoiceDetailData` (full DTO + vat_breakdown array + qr_data_uri), `InvoiceSupplierData`, `VatBreakdownLineData`, `InvoiceStatCardData`, `InvoiceStatsData`, `InvoiceFormContextData` (clients/objects/is_vat_payer/defaults/recurring_default_state), `InvoiceSettingsData` (supplier name/ico/dic/vat_number/is_vat_payer/address/contact + invoice defaults template/number_format + recurring defaults), `ObjectOptionData` (for pickers).
+- Policies: InvoicePolicy (viewAny/view/create/update/issue/markPaid/send/cancel/delete/downloadPdf per PermissionEnum).
+- Controllers: InvoiceController (#[NavItem] invoices), InvoiceSettingsController (#[NavItem] invoicing_settings, ManageBillingSettings gate).
+- Routes: GET|POST /invoices; GET|PUT|DELETE /invoices/{invoice}; POST /invoices/{invoice}/issue/pay/cancel/duplicate/send; GET /invoices/{invoice}/pdf; GET|PUT /settings/invoicing; GET /settings/invoicing/preview/{template}.
+- Commands: MarkOverdueInvoices (routes/console.php), GenerateRecurringInvoices (routes/console.php).
+- Factories: InvoiceFactory (states forClient/forObject/issued/paid/overdue/cancelled/vatPayer/nonVatPayer/withDeposit), InvoiceItemFactory.
+- i18n keys: nav (invoices, invoicing_settings); enums; flash (invoice_created/updated/issued/paid/cancelled/duplicated/send_queued); errors (invoice_not_editable, invoice_not_draft, invoice_number_taken, invoice_cannot_mark_paid, invoice_cannot_cancel, invoice_no_customer_email, invoice_object_requires_client); PDF (40 keys: invoice_pdf_{title,customer,supplier,ico,…,payment_type,note,non_vat_payer_clause}), mail (subject/greeting/body).
+
+**FE Satellites:**
+- Composables: `useInvoiceTotals(items, isVatPayer, deposit, roundingMode)` → lines/subtotal/vatAmount/total/roundingAmount/balanceDue/vatBreakdown (mirrors BE math with RoundingModeEnum::round).
+- Components: `InvoiceStatusBadge`, `InvoiceTypeBadge` (with credit-note variant), `InvoiceVatRecap`, `InvoiceTotalsPanel`, `InvoiceItemsEditor` (card-per-row custom field, FormProvider-aware, per-row quantity/unit/unit_price/discount/vat_rate grid), `InvoiceSubjectPicker` (client/object/standalone radios), `InvoiceItemsTable` (read-only), `InvoiceIssueModal` (Precognition form, number field), `InvoiceStatsCards` (4 cards: issued/overdue/pending/recurring), `InvoiceFormSummary` (summary panel for forms).
+- Pages: `Invoices/{Index,Create,Edit,Show}` (Index with stats + DataTable + filters; Create/Edit with InvoiceForm; Show with parties/meta/items/totals/actions).
+- Settings pages: `Settings/Invoicing` (supplier/bank/numbering/templates/defaults).
+- i18n: 60+ FE keys (see phase4-invoicing-fe.md §"i18n").
+
+**Money math (mirror `InvoiceService::computeTotals`):**
+- `line_base = round2(qty * price * (1 - discount/100))`; `line_vat = round2(line_base * rate/100)` (0 if !isVatPayer); `line_total = round2(line_base + line_vat)`.
+- `subtotal = Σline_base`; `vatAmount = Σline_vat`; `totalBeforeRounding = round2(subtotal + vatAmount)`.
+- `roundAmount(amount, mode)`: none→amount; document→Math.round(amount); cash_005→round to 0.05.
+- `total = round2(roundAmount(totalBeforeRounding, mode))`; `roundingAmount = round2(total - totalBeforeRounding)`.
+- `balanceDue = round2(total - deposit)`; `vatBreakdown` grouped by rate desc, empty when !isVatPayer.
+- **Snapshot timing:** customer/object/supplier columns written on create/update; `issue` freezes them (invoice becomes non-editable). Non-editable invoices can still be marked paid/overdue/cancelled.
+- **Credit notes:** cancel (Issued|Overdue) creates Issued credit note with negated items/subtotal/vat/total/deposit/rounding/vat_breakdown + all SK fields copied + own number via `next(tenant, now())`, linked via `credited_invoice_id`.
+
+**Lifecycle guards:**
+- Draft (edit/delete/issue allowed). Issued (no edit; pay/cancel/send/pdf allowed). Paid/Overdue (no edit; cancel allowed). Cancelled (no further actions except view/pdf).
+- Status transitions: Draft→Issued (issue action); Issued→Paid/Overdue/Cancelled (mark-paid / cron / cancel); Overdue→Paid/Cancelled; Paid/Cancelled terminal.
+
+**Flow (all within auth + tenant.required):**
+- **Create:** POST /invoices (Precognition) → InvoiceFormContextData renders form → InvoiceService::create (snapshot + items + totals) → 302 show + flash success.
+- **Issue:** Draft invoice → InvoiceIssueModal or POST /invoices/{id}/issue (Precognition on number, InvoiceIssueData) → InvoiceService::issue (number assignment via lockForUpdate loop, status/issued_at/variable_symbol set) → 302 show + flash.
+- **Pay:** Issued/Overdue → POST /invoices/{id}/pay → InvoiceService::markPaid (paid_at set) → 302 show + flash. List row action or card button.
+- **Cancel:** Issued/Overdue → POST /invoices/{id}/cancel + confirm → InvoiceService::cancel (transaction: Cancelled, cancelled_at, credit note created) → 302 show + flash. Both invoices linked (original.credited_invoice_id ← note.id, note.credited_invoice_id ← original.id).
+- **Send:** Issued + email → POST /invoices/{id}/send → guard + dispatch InvoiceIssued job → sent_at stamped by listener → 302 show + flash. PDF attachment via mocked (test) or real Chromium.
+- **PDF:** GET /invoices/{id}/pdf (Content-Disposition: attachment) → RendersInvoicePdf renders via chrome driver, filename from invoice.pdfFilenameBase + `HeaderUtils::makeDisposition`.
+- **Duplicate:** Draft only → POST /invoices/{id}/duplicate → InvoiceService::duplicate (copy without number/VS) → 302 edit + flash.
+
+**Depends on:** tenancy (tenant_id FK, BelongsToTenant, TenantScope), clients (client_id FK + rule, withTrashed relation), objects (cleaning_object_id FK + rule, withTrashed relation), recurring-invoices (recurring_invoice_id FK).
+
+**Depended on by:** recurring-invoices (InvoiceService consumed by RecurringInvoiceService::generateInvoiceFromTemplate), contracts phase 4 (convertToInvoice backlink quote_id deferred phase 5).
+
+**If you change Core, check:**
+- InvoiceStatusEnum canTransitionTo matrix (Draft→Issued; Issued→Paid|Overdue|Cancelled; Overdue→Paid|Cancelled; Paid/Cancelled terminal).
+- InvoiceService::issue lockForUpdate loop + collision detection vs manual number override (InvoiceIssueData).
+- InvoiceService::cancel credit-note generation (negated items + all SK fields copied, own number, two-way linked).
+- InvoicePdfService chrome driver setup (config/laravel-pdf.php CHROMIUM_PATH, env LARAVEL_PDF_DRIVER, docker apk packages).
+- PayBySquareService null conditions (Issued|Overdue, IBAN, EUR, balance_due > 0).
+- InvoiceIssued notification queued discipline (afterCommit, retries, timeout), attachment via contract interface (testable via mock).
+- computeTotals money math (line_base formula, vat_breakdown grouping, rounding modes, balanceDue logic).
+- Snapshot timing (create/update write, issue freezes, non-editable invoice pay/cancel unaffected).
+- MarkOverdueInvoices cron (withoutGlobalScope TenantScope, per-invoice event dispatch) + test idempotency.
+
+**Keywords (SK):** faktúra, návrh, vydaná, splatnosť, overdue, zaplatená, stornovaná, dobropis, číslovanie, DPH, jednotková sadzba, záloha, Pay-by-Square QR, zokrúhlenie.
+
+### recurring-invoices — Template-driven auto-generation on schedule (Phase 4, 2026-09-06)
+
+**Core:**
+- `App\Models\RecurringInvoice` — UUIDv7; traits BelongsToTenant, HasFactory, HasUuids, LogsActivity (logOnlyDirty status/frequency/next_run_at/start_date/occurrences_generated), SoftDeletes. Columns: tenant_id FK, nullable client_id FK (withTrashed), nullable cleaning_object_id FK → objects (withTrashed), name (255), type (InvoiceTypeEnum, immutable after create), template nullable (InvoiceTemplateEnum), frequency (RecurringFrequencyEnum: monthly/every_2_months/quarterly/semi_annually/annually), day_of_month (1–28), status (RecurringInvoiceStatusEnum: active/paused/completed/cancelled), bool auto_issue, dates (start_date, end_date nullable, period_from/period_to nullable), occurrences_limit nullable, occurrences_generated default 0, next_run_at/last_generated_at nullable, **customer snapshot** (customer_name/representative/ico/dic/vat_number/street/city/postal_code/country/email nullable, same as Invoice), **SK fields** (constant_symbol/payment_type/currency/rounding_mode/header_text/footer_text/deposit), due_days (14 default), nullable note, timestamps, soft_deletes. Relations: `client()->withTrashed()`, `cleaningObject()->withTrashed()`, `items(): HasMany<RecurringInvoiceItem>`, `generatedInvoices(): HasMany<Invoice>` (`recurring_invoice_id` FK). Methods: `isRunnable(): bool` (active + today ≤ next_run_at), `hasReachedLimit(): bool`, `hasReachedEndDate(Carbon): bool`.
+- `App\Models\RecurringInvoiceItem` — UUIDv7; traits BelongsToTenant, HasFactory, HasUuids. Columns: tenant_id FK, recurring_invoice_id FK (restrictOnDelete), description, qty/unit/unit_price (decimal:10,2), discount_percent (decimal:5,2), vat_rate (decimal:5,2), position. Index recurring_invoice_id.
+- `App\Services\RecurringInvoiceService` (final readonly, ctor InvoiceService, DatabaseManager) — `paginate(Request): LengthAwarePaginator<RecurringInvoiceListItemData>` (QueryBuilder AllowedFilter search/name/customer_name/status/frequency/client_id/next_run_at/created_at, default -created_at), `create/update/delete`, `pause/resume/cancel` (state transitions with 422 guards), `generateInvoiceFromTemplate(RecurringInvoice): Invoice` (build InvoiceUpsertData with per-item vat_rate/discount + SK fields + deposit, call InvoiceService::create, link via recurring_invoice_id, optionally auto-issue per flag or tenant default), `resolveTenantDefaultState(tenantId): RecurringDefaultStateEnum`.
+- `App\Jobs\GenerateRecurringInvoiceJob` (ShouldQueue, ShouldBeUnique) — queued from GenerateRecurringInvoices command, `uniqueId() = recurring_id`, `uniqueFor() = 3600`, idempotency guard (isRunnable && next_run_at ≤ today), binds `app()->instance('current_tenant_id')`, transaction: generate via service, auto-issue if flag or tenant default, advance next_run_at/occurrences_generated/last_generated_at, mark Completed on limit/end-date.
+- `App\Console\Commands\GenerateRecurringInvoices` — daily cron, finds Active rows with next_run_at ≤ today, dispatches job per row.
+
+**Satellites (BE):**
+- Enums: RecurringFrequencyEnum (monthly/every_2_months/quarterly/semi_annually/annually, `monthsInterval(): int`, `nextRunDate(Carbon $from, int $dayOfMonth): Carbon` — clamps to daysInMonth, startOfDay), RecurringInvoiceStatusEnum (active/paused/completed/cancelled, `isRunnable(): bool`), RecurringDefaultStateEnum (draft/issued).
+- DTOs: `RecurringInvoiceUpsertData` (name/type/frequency/day_of_month/auto_issue/start_date/end_date/occurrences_limit, customer_* snapshot, SK fields, items, due_days), `RecurringInvoiceItemData` (description/qty/unit/unit_price/discount/vat_rate), `RecurringInvoiceListItemData`, `RecurringInvoiceDetailData` (full + lastGenerated invoice timestamp + generated invoices list).
+- Policies: RecurringInvoicePolicy (per PermissionEnum cases).
+- Controllers: RecurringInvoiceController (#[NavItem] recurring_invoices).
+- Factories: RecurringInvoiceFactory (states active/paused/completed/cancelled/dueToday), RecurringInvoiceItemFactory.
+- i18n keys: nav recurring_invoices; enum labels (frequency, status); flash; errors (termination validation: both end_date + limit, can't pause completed/cancelled, can't resume non-paused).
+
+**FE Satellites:**
+- Components: `RecurringStatusBadge`, `RecurringFrequencyBadge`, `RecurringInvoiceForm` (name, subject picker shared with invoices, frequency radio + day-of-month + 3-way termination radio, template, items editor shared, SK fields, deposit), form renders `InvoiceFormSummary` (dates set to start_date + due_days).
+- Pages: `RecurringInvoices/{Index,Create,Edit,Show}`.
+- i18n: recurring_* keys (§phase4-invoicing-fe.md).
+
+**Frequency logic:**
+- `RecurringFrequencyEnum::monthsInterval()` returns interval (1, 2, 3, 6, 12).
+- `RecurringFrequencyEnum::nextRunDate(from, dayOfMonth)` anchors on startOfMonth (month-end clamp via `daysInMonth`, e.g., day 28 in Feb → last day of Feb).
+
+**Lifecycle:**
+- Active (scheduled, next_run_at populated, job dispatches at due time).
+- Paused (manual pause, next_run_at frozen, resume restarts from last next_run_at).
+- Completed (auto on termination limit reached or end_date passed, or manual complete via cancel if reached limit first).
+- Cancelled (manual cancel terminal).
+
+**Flow:**
+- Create (form) → RecurringInvoiceService::create → Active with computed next_run_at.
+- Daily `app:generate-recurring-invoices` command → finds Active + due → dispatches GenerateRecurringInvoiceJob per row.
+- Job (ShouldBeUnique 3600s window) → generateInvoiceFromTemplate (calls InvoiceService::create) → optionally auto-issue per flag or tenant default → links via recurring_invoice_id → advance next_run_at → mark Completed if limit/end-date reached.
+
+**Depends on:** invoices (InvoiceService::create/issue), tenancy (tenant_id FK, BelongsToTenant).
+
+**If you change Core, check:**
+- RecurringFrequencyEnum nextRunDate month-end clamp (Feb day 28 → last Feb).
+- GenerateRecurringInvoiceJob uniqueness window (3600s, idempotency guard on isRunnable + next_run_at ≤ today).
+- RecurringInvoiceService generateInvoiceFromTemplate: per-item vat_rate/discount + SK fields snapshot + auto-issue logic (flag vs tenant default).
+- Termination logic: end_date vs occurrences_limit (both provided = 422), Completed state, can't pause completed/cancelled.
+
+**Keywords (SK):** opakovaná faktúra, harmonogram, frekvencia, výtvorenosť, podmienky ukončenia, automatické vydanie.
+
+### settings-invoicing — Tenant supplier data + invoice defaults (Phase 4, 2026-09-06)
+
+**Core:**
+- `App\Models\TenantInterface` (existing, extended in Phase 4) — adds columns to phase 2 baseline: `invoice_template` (InvoiceTemplateEnum, default 'classic'), `recurring_default_state` (RecurringDefaultStateEnum, default 'draft'), `default_constant_symbol` (10 chars nullable), `default_payment_type` (PaymentTypeEnum, default 'transfer'), `default_currency` (CurrencyEnum, default 'EUR'), `default_rounding_mode` (RoundingModeEnum, default 'none'). Extended logOnly with these six fields.
+- `App\Models\Tenant` (extended) — adds supplier columns: `dic` (32 nullable), `vat_number` (32 nullable), `address_line` (255 nullable), `city` (255 nullable), `postal_code` (16 nullable), `country` (2 nullable), `contact_email` (255 nullable), `contact_phone` (30 nullable), `swift_bic` (11 nullable, SWIFT-BIC format). Extended logOnly + @property docblocks. Existing: `name` (255), `ico` (20 nullable), `is_vat_payer` (bool), `iban` (34 nullable), `invoice_number_format` (255, default 'FA-{YYYY}-{XXXX}'), `registration_info` (text nullable), `vat_rate` (decimal:5,2).
+- `App\Services\InvoiceSettingsService` — `update(Tenant, InvoiceSettingsData): void` (transaction: write Tenant supplier + invoicing fields, write TenantInterface invoice defaults + recurring defaults).
+
+**Satellites (BE):**
+- DTOs: `InvoiceSettingsData` (supplier: name/ico/dic/vat_number/is_vat_payer/address_line/city/postal_code/country/contact_email/contact_phone; invoicing: invoice_template/invoice_number_format/iban/swift_bic/vat_rate/registration_info; recurring: recurring_default_state; defaults: default_constant_symbol/default_payment_type/default_currency/default_rounding_mode). Rules: country 2 chars, IBAN format, SWIFT-BIC format, number format with {X+} placeholder validation, constant symbol digits only, vat_rate 0–100.
+- Policies: no policy (owner-only gate via ManageBillingSettings permission).
+- Controllers: `InvoiceSettingsController` (final readonly, ctor InvoiceSettingsService) — `#[Authorize(ManageBillingSettings)]` on show/update, `#[NavItem(invoicing_settings, ManageBillingSettings, settings group)]`. Routes: GET /settings/invoicing → InvoiceSettingsData::fromTenant(current_tenant); PUT /settings/invoicing (Precognition) → InvoiceSettingsService::update.
+
+**FE Satellites:**
+- Pages: `Settings/Invoicing` (supplier section, bank section, number format preset/custom, template picker, defaults, recurring state).
+- Components: `InvoiceSettingsSupplierCard`, `InvoiceSettingsBankCard`, `InvoiceNumberFormatField` (presets + custom with live example), `InvoiceTemplatePicker` + `InvoiceTemplateThumbnail` (with preview iframe), `InvoiceSettingsDefaultsCard`.
+- i18n: settings keys (§phase4-invoicing-fe.md).
+
+**Defaults propagation:**
+- New Invoice form: `InvoiceFormContextData::fromTenant` loads interface.default_* → `context.defaults` → form initializes SK fields + deposit from defaults.
+- New RecurringInvoice form: same propagation + `context.recurring_default_state` used in hint.
+- Settings page: GET shows current values (fromTenant), PUT persists changes. Next invoice forms receive updated defaults.
+
+**Number format:**
+- Presets: `FA-{YYYY}-{XXXX}`, `{YYYY}{XXXX}`, `{YYYY}/{XXX}`, `{YY}{MM}{XXX}`.
+- Custom: regex `{X+}` placeholder (required, caught by validation).
+- Placeholder substitution in `InvoiceNumberService::next`: `{YYYY}` → year, `{YY}` → last 2 digits, `{MM}` → month zero-padded, `{X+}` → sequence number zero-padded to length of X run.
+- InvoiceTemplatePicker live preview: substitutes placeholders in real-time.
+
+**Depends on:** tenancy (Tenant/TenantInterface models), invoices (defaults used in forms).
+
+**If you change Core, check:**
+- TenantInterface logOnly: six new fields added (invoice_template, recurring_default_state, default_*).
+- Tenant logOnly: 11 new supplier fields + existing (name, ico, is_vat_payer, iban, invoice_number_format, registration_info, vat_rate).
+- InvoiceSettingsService::update: transaction scope, Tenant + TenantInterface both updated.
+- Number format validation regex (must include {X+}).
+- Defaults propagation in InvoiceFormContextData::fromTenant (stale defaults if not re-fetched on page load).
+
+**Keywords (SK):** nastavenia, dodávateľ, číslovanie, šablóna, SK polia, záloha.
+
 ### BE ↔ FE API (Sanctum, routes/api.php) — Phase 2 tenancy + /api/me
 
 **Web SPA (Inertia) note:**
@@ -605,11 +809,29 @@ No queued jobs today (QUEUE_CONNECTION sync in tests). Only schedule PurgeTempor
 
 11. **NEW (Phase 2):** FormActions (form component) gains optional cancel emit (cancelHref becomes optional; modal uses emit('cancel') as button). Backwards-compatible; existing pages unchanged.
 
+### Phase 4 additions (7 new gotchas)
+
+23. **RecurringFrequencyEnum::nextRunDate month-end clamp.** `nextRunDate(from, dayOfMonth)` clamps Feb 28 (not 30/31) → last Feb day, avoiding `startOfDay()` overflow. Fixed in initial port.
+
+24. **PDF filename sanitisation.** `GET /invoices/{id}/pdf` uses `Invoice::pdfFilenameBase` → `HeaderUtils::makeDisposition('attachment', filename)` to prevent directory traversal. Invoice number null → filename `'draft.pdf'`.
+
+25. **`?->` null-safe before `??` coalescing is redundant.** PHPStan `nullsafe.neverNull`: e.g., `$invoice->client?->name ?? 'Unknown'` flips to `$invoice->client->name ?? 'Unknown'` (if client exists, name is string or null, not another object). House style: use `$invoice->client?->name` alone (no coalesce when the property itself is nullable string).
+
+26. **Tailwind v4 has no safelist.** Never build class names dynamically (e.g., `'badge-' + status`). Hardcode all variants in components (badge-error, badge-success, badge-warning, badge-ghost, badge-primary) or use ternary maps (TailwindCSS limitation — all classes must appear in source code).
+
+27. **Spatie QueryBuilder throws InvalidSortQuery on disallowed sorts.** Allowed sorts must match FE DataTable column definitions exactly. If column changes name or becomes unsortable (date field with date_range operator), update both BE `allowedSorts` and FE `filters.config` simultaneously (no global error handler per spec).
+
+28. **TenantInterface always exists post-bootstrap.** `app('current_tenant_id')` is safe to read in tenant-scoped contexts; TenantInterface is unguarded (no auth check). If tenant needs interface customization, update via `InvoiceSettingsService::update` (owned by ManageBillingSettings permission).
+
+29. **Send disabled without customer e-mail.** `POST /invoices/{id}/send` guards `customer_email` presence; FE button `:disabled="!customer_email"` with `:title="t('invoice_no_customer_email')"`. User-facing message on 422 via DTO `messages()` override or inline validation error.
+
+30. **php artisan test needs 512M CLI memory limit.** `php artisan test --compact` runs on Postgres; if OOM: `php -d memory_limit=512M vendor/bin/phpunit` or `MEMORY_LIMIT=512M php artisan test`. Dev Docker env already sets 512M. On macOS host, `composer.json` scripts can set via `php -d`.
+
 ## Verification status
 
 **Last full scan:** 2026-09-06 (Phase 1 initial; degraded — Laravel Boost MCP unavailable; used docker compose exec + direct psql / grep instead).
 
-**Last delta:** 2026-09-06 (Phase 3 clients + objects complete: 386 tests, PHPStan [OK] no new baseline entries, Pint clean, FE lint/typecheck/build green. BE: clients CRUD with contacts (primary auto-promotion), ClientService soft-cascade delete (soft-deletes objects + contacts), IČO uniqueness DTO rule + DB partial index, ObjectService with visibleTo scope (D2 fail-closed, phase-7 job-scoped TODO), object lifecycle (direct deactivation via is_active toggle, soft-delete cascade from client deletion; D1 hybrid SoftDeletes + is_active). FE: drawer pattern (SideDrawer component + ContactsListField custom field), ClientForm with contact editor, ObjectForm with access section, dedicated POST /objects/{object}/reactivate endpoint, four Badges (ClientType/ObjectType/ObjectStatus), EmptyState + confirm-cascade copy. Permissions: ViewClients/CreateClients/EditClients/DeleteClients + ViewObjects/CreateObjects/EditObjects/DeleteObjects/ViewAllObjects (breadth modifier). i18n: both en/sk/uk (FE plan keys appended to shared app.json). Browser verified: clients index/detail/drawer create/edit/delete-cascade, objects index/detail/drawer create/edit/deactivate/reactivate via dedicated endpoint with button state gating, filters search+operators, soft-deleted objects excluded from queries via global scope, own-only scoping hint shown.)
+**Last delta:** 2026-09-06 (Phase 4 invoicing complete: 544 tests, PHPStan [OK] +2 baseline entries for existing PendingCommand pattern, Pint clean, FE lint/typecheck/build green, real Chromium PDF verified 37 KB, browser-verified create → issue auto-number FA-2026-0001 + PDF download, queue service running. BE: invoices CRUD with snapshot customer/object/supplier data, SK fields (payment_type/currency/rounding_mode/constant_symbol), per-item VAT rate + discount + line breakdown, deposit + balance_due, credit notes (negated items + own number, two-way linked), per-tenant per-year numbering with lockForUpdate + manual override, status lifecycle (draft/issued/paid/overdue/cancelled) with canTransitionTo matrix, softDeletes, full Spatie permission gating (view/create/edit/cancel invoices, manage billing settings). RecurringInvoice template-driven auto-generation on rolling 30-day horizon via daily `GenerateRecurringInvoices` command → `GenerateRecurringInvoiceJob` (ShouldBeUnique, idempotent), 3-way termination (forever/until_date/count), auto-issue flag or tenant default state (draft/issued). InvoiceSettings supplier identity (name/ico/dic/vat_number/address/contact) + invoice defaults (template/number_format/iban/swift_bic/vat_rate/registration_info) + recurring defaults, per-tenant defaults propagated to new invoice forms. Money math mirrors InvoiceService::computeTotals exactly (line_base formula, vat_breakdown grouping, rounding modes: none/document/cash_005). PDF generation via spatie/laravel-pdf chrome driver (Chromium from Alpine apk /usr/bin/chromium-browser, 3 Blade templates classic/modern/minimal), mocked in tests. Mail via queued InvoiceIssued notification (3 retries, 120s timeout, PDF attachment, sent_at stamped by listener). Pay-by-Square QR via engazan/pay-by-square + bacon/bacon-qr-code (EUR-only, balance_due). FE: Items editor as card-per-row custom field (FormProvider-aware, Precognition on change), totals live in one place (useInvoiceTotals composable + InvoiceTotalsPanel component, stacked on mobile), subject modes via RadioGroup (client/object/standalone), confirm modals via useDeleteConfirm + ConfirmDeleteModal (`confirmVariant` prop for success/warning), InvoiceIssueModal (Precognition form), InvoiceStatsCards (4 cards), InvoiceTemplatePicker with preview iframe + thumbnail SVG. Pages: Invoices/{Index,Create,Edit,Show}, RecurringInvoices/{Index,Create,Edit,Show}, Settings/Invoicing. Queue service runs `queue:work`, supervisor scheduler (prod) runs `schedule:work`. Mailpit service available at http://localhost:8025 (mail infrastructure ready). Permissions: ViewInvoices/CreateInvoices/EditInvoices/CancelInvoices + ViewRecurringInvoices/CreateRecurringInvoices/EditRecurringInvoices/DeleteRecurringInvoices + ManageBillingSettings (owner only). i18n: 80+ keys (enum labels, nav, flash, errors, PDF, mail, FE component labels). Tests: 7 files Invoices/*, 4 files RecurringInvoices/*, 1 file Settings/; Invoices suites cover service (CRUD/snapshot/statuses/math/rounding), issue/cancel/duplicate/pay/send/PDF/QR, stats/filters, form context, overdue cron, Precognition cross-field rules; RecurringInvoices suites cover service lifecycle, frequency logic, job idempotency, command scheduling, customer display (N+1 safe); Settings tests cover read/write, defaults propagation, validation (format, IBAN, SWIFT, enum values), number format preview).)
 
 **Certainty audit:**
 - All relationships verified by: live route:list output (php artisan route:list), migration files + docker exec postgres psql schema queries, grep of every cited callsite + direct reads.

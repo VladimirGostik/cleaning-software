@@ -8,7 +8,10 @@ Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonic
 - Backend: Laravel 13, PHP 8.5 (Docker: `docker compose exec app php artisan ...`)
 - Frontend: Inertia v3 + Vue 3 + TypeScript, Tailwind 4 + DaisyUI 5
 - DB: PostgreSQL 16 (compose service `postgres`), Redis 7
-- Main packages: Spatie Data 4, Permission 7, Activitylog 5, MediaLibrary 11, QueryBuilder 7 + `App\Utils\AllowedFilter`,
+- Mail: Mailpit (compose service `:8025`), SMTP in dev/test
+- Queue: Database driver, background `queue` service (prod: supervisor) for InvoiceIssued + GenerateRecurringInvoiceJob
+- PDF/QR: spatie/laravel-pdf (chrome driver), chrome-php/chrome (pure-PHP DevTools), Alpine apk Chromium (arm64 native), pay-by-square + bacon QR code
+- Main packages: Spatie Data 4, Permission 7 (teams mode), Activitylog 5, MediaLibrary 11, QueryBuilder 7 + `App\Utils\AllowedFilter`,
   TypeScript Transformer 3, Laravel Boost 2, Scribe; PHPUnit 12; Pint, PHPStan (Larastan), ESLint, Prettier, vue-tsc, Lefthook
 
 ## Stack target
@@ -51,20 +54,29 @@ Governs how the `laravel-13-conventions` skill generates controllers, policies, 
 ## Working with this repo
 
 ```bash
-docker compose up -d                      # app :8000, vite :5173, postgres :5432, redis :6379
+docker compose build app queue vite && docker compose up -d # rebuild app/queue on code change (phase 4: Chromium apk)
+# Services: app :8000, vite :5173, postgres :5432, redis :6379, mailpit :8025, queue (background worker)
+
 docker compose exec app php artisan test --compact
 # Tests run on Postgres DB `cleanmaster_admin_testing` (phpunit.xml force=true; never the dev DB).
 # Created automatically on first volume init (docker/postgres/init-testing-db.sql); on an existing volume:
 docker compose exec postgres psql -U postgres -c 'CREATE DATABASE cleanmaster_admin_testing;'
+
 docker compose exec app php artisan migrate:fresh --seed
 docker compose exec app php artisan typescript:transform
 docker compose exec app vendor/bin/pint --dirty --format agent
-docker compose exec app vendor/bin/phpstan analyse
+docker compose exec app vendor/bin/phpstan analyse --memory-limit=1G
 docker compose exec app pnpm lint:js && docker compose exec app pnpm lint:prettier && docker compose exec app pnpm typecheck
+
+# Phase 4: Queue + mail + schedule
+docker compose logs -f queue                              # watch background job worker
+docker compose exec app php artisan schedule:run          # trigger daily crons manually (MarkOverdueInvoices, GenerateRecurringInvoices)
+# Browse Mailpit (queued invoices) at http://localhost:8025
 ```
 
 Login (canonical skeleton admin, never change): `admin@example.com` / `password`.
 Vite is started directly from `node_modules/.bin/vite` in `compose.yml` (pnpm 11 deps check bypass); lefthook build recorded in `pnpm-workspace.yaml`.
+Phase 4 Chromium: Alpine apk `/usr/bin/chromium-browser` (no Playwright Node download); rebuild image after pull if CHROMIUM_PATH env changes.
 
 ## Bootstrap (Phase 2)
 
@@ -94,6 +106,12 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - clients (BE) — Client/ClientContact models (UUIDv7, SoftDeletes, LogsActivity), ClientService (paginate/create/update with syncContacts, delete with soft-delete cascade of all objects + contacts), ClientPolicy (RBAC full), ClientController with #[NavItem], ClientTypeEnum (#[TypeScript]). Routes: GET|POST|PUT|DELETE /clients{,/{client}}.
 - objects (FE) — Pages/Objects/{Index,Show}.vue, Components/Objects/{ObjectTypeBadge,ObjectStatusBadge,ObjectForm,ObjectFormDrawer,ObjectDetailCard,ObjectAccessCard}.vue, drawer-based CRUD with deactivation (is_active toggle), dedicated reactivate endpoint, ObjectAccessCard (sensitive data warning).
 - objects (BE) — CleaningObject model (UUIDv7, hybrid is_active+SoftDeletes per D1 override, LogsActivity, withTrashed client relation), ObjectService (paginate with visibleTo actor scoping D2 fail-closed, deactivate action, reactivate action), ObjectPolicy with isVisibleTo guards (D2), ObjectController with #[NavItem], ObjectTypeEnum (#[TypeScript]). Routes: GET|POST|PUT /objects{,/{object}}, POST /objects/{object}/deactivate, POST /objects/{object}/reactivate. Permissions: ViewObjects/CreateObjects/EditObjects/DeleteObjects + ViewAllObjects breadth modifier.
+- invoices (FE) — Pages/Invoices/{Index,Create,Edit,Show}.vue, Components/Invoices/{InvoiceStatusBadge,InvoiceTypeBadge,InvoiceItemsEditor,InvoiceSubjectPicker,InvoiceTotalsPanel,InvoiceStatsCards,InvoiceForm,InvoiceFormSummary,InvoiceIssueModal,InvoicePartiesBlock,InvoiceMetaGrid,InvoicePaymentInfo,InvoiceActionsCard,InvoiceLinksCard,InvoiceVatRecap,InvoiceItemsTable}.vue, composable useInvoiceTotals, utils money.ts.
+- invoices (BE) — Invoice/InvoiceItem/InvoiceNumberSequence models (UUIDv7, SoftDeletes, LogsActivity), InvoiceService (paginate/stats/create/update/issue/markPaid/cancel/duplicate/delete/send), InvoiceNumberService (lockForUpdate numbering), InvoiceSettingsService, contracts RendersInvoicePdf/GeneratesPaymentQr, InvoicePdfService (chrome driver 3 templates), PayBySquareService (QR generation), InvoiceIssued notification (queued, retries), StampInvoiceSentAt listener, InvoiceMarkedOverdue event, MarkOverdueInvoices command. Enums: InvoiceStatusEnum, InvoiceTypeEnum, InvoiceTemplateEnum, PaymentTypeEnum, CurrencyEnum, RoundingModeEnum. Routes: GET|POST /invoices, GET|PUT|DELETE /invoices/{invoice}, POST /invoices/{invoice}/issue/pay/cancel/duplicate/send, GET /invoices/{invoice}/pdf. Policies: InvoicePolicy (per PermissionEnum cases). Permissions: ViewInvoices/CreateInvoices/EditInvoices/CancelInvoices.
+- recurring-invoices (FE) — Pages/RecurringInvoices/{Index,Create,Edit,Show}.vue, Components/RecurringInvoices/{RecurringStatusBadge,RecurringFrequencyBadge,RecurringInvoiceForm,RecurringCustomerCard,RecurringScheduleCard,RecurringGeneratedInvoicesCard,RecurringActionsCard}.vue.
+- recurring-invoices (BE) — RecurringInvoice/RecurringInvoiceItem models (UUIDv7, SoftDeletes, LogsActivity), RecurringInvoiceService (paginate/create/update/delete/pause/resume/cancel, generateInvoiceFromTemplate), GenerateRecurringInvoiceJob (queued, ShouldBeUnique), GenerateRecurringInvoices command. Enums: RecurringFrequencyEnum (monthsInterval, nextRunDate), RecurringInvoiceStatusEnum, RecurringDefaultStateEnum. Routes: GET|POST /recurring-invoices, GET|PUT|DELETE /recurring-invoices/{recurringInvoice}, POST /recurring-invoices/{recurringInvoice}/pause|resume|cancel. Policies: RecurringInvoicePolicy. Permissions: ViewRecurringInvoices/CreateRecurringInvoices/EditRecurringInvoices/DeleteRecurringInvoices.
+- settings-invoicing (FE) — Pages/Settings/Invoicing.vue, Components/Invoices/{InvoiceSettingsSupplierCard,InvoiceSettingsBankCard,InvoiceNumberFormatField,InvoiceTemplatePicker,InvoiceTemplateThumbnail,InvoiceSettingsDefaultsCard}.vue.
+- settings-invoicing (BE) — InvoiceSettingsService, TenantInterface extended (invoice_template, recurring_default_state, default_constant_symbol/payment_type/currency/rounding_mode), Tenant extended (supplier columns: dic, vat_number, address_line, city, postal_code, country, contact_email, contact_phone, swift_bic). Routes: GET|PUT /settings/invoicing, GET /settings/invoicing/preview/{template}. Permission: ManageBillingSettings (owner only).
 - dashboard (FE) — Pages/Dashboard.vue welcome card.
 - dashboard (BE) — placeholder GET / route, no props.
 - profile (FE) — Pages/Profile/Show.vue, two useForm('put') forms, locale select from shared languages (now sk/en/uk).
@@ -101,7 +119,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - users (FE) — Pages/Users/{Index,Form}.vue, DataTable filters (tenant-scoped members), CheckboxGroup roles, allows(...) gating.
 - users (BE) — CRUD + autocomplete (tenant members only), QueryBuilder filters, UserPolicy, create-or-link by email, RoleAssignmentGuard escalation checks, TenantMembership pivot scope.
 - roles (FE) — Pages/Roles/{Index,Form}.vue, PermissionManager (now PermissionGroupData typed), system-role guard.
-- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases → 57+ with clients/objects), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy.
+- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy.
 - audit-logs (FE) — Pages/AuditLogs/{Index,Show}.vue, read-only DataTable + JSON diff.
 - audit-logs (BE) — read-only viewer over App\Models\Activity (Activity::visibleInTenant scope, tenant_id nullable for login events), filters + policy.
 - media (FE) — Pages/Media/{Index,Show}.vue; FileUploadInput/RichTextEditorInput → POST|DELETE /uploads.
@@ -110,16 +128,16 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - localisation (BE) — SupportedLanguage enum (sk/en/uk, #[TypeScript]), LocaleMiddleware (user.locale → session → cookie → default sk), JSON translations resources/lang/{sk,en,uk}/{app,validation}.json.
 - api-me (BE) — GET /api/me (Sanctum + tenant.required) returns MeData (userId, activeTenantId, permissions per team scope), reserved for mobile app phase 2.
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
-- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm, types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
+- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm (+ confirmVariant prop phase 4), types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
 
-**Note:** Phase 3+ modules (Clients, Objects, Quotes, Invoices, RecurringInvoices, Contracts, ContractTemplates, Employees, Schedule/Jobs, Notifications) ported per `.claude/plans/port-from-cleaning-software.md` phase order. Each domain: tenant-scoped (BelongsToTenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate.
+**Note:** Phase 3–4 modules (Clients, Objects, Invoices, RecurringInvoices, Settings/Invoicing, Quotes, Contracts, ContractTemplates, Employees, Schedule/Jobs, Notifications) ported per `.claude/plans/port-from-cleaning-software.md` phase order. Each domain: tenant-scoped (BelongsToTenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate.
 
 ## Lint
 lint.tools: [pint, phpstan, vue-tsc, eslint, prettier]
 lint.runner: docker
 lint.asked: true
 lint.notes: |
-  - PHPStan at level max with phpstan-baseline.neon (188 entries, regenerated 2026-09-06 after tenancy changes). Run with `--memory-limit=1G` to avoid OOM.
+  - PHPStan at level max with phpstan-baseline.neon (190 entries, regenerated 2026-09-06 after phase 4 invoicing; +2 existing PendingCommand pattern). Run with `--memory-limit=1G` to avoid OOM.
   Baseline burn-down deferred Phase 3+ (targets: test closures ~60, AllowedFilter generics, QueryBuilder chains, Scribe strategies).
 
 ## Deployment Status
