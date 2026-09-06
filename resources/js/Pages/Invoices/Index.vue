@@ -12,8 +12,11 @@ import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
 import InvoiceTypeBadge from '@/Components/Invoices/InvoiceTypeBadge.vue';
 import InvoiceStatsCards from '@/Components/Invoices/InvoiceStatsCards.vue';
 import InvoiceIssueModal from '@/Components/Invoices/InvoiceIssueModal.vue';
+import InvoiceSettingsDrawer from '@/Components/Invoices/InvoiceSettingsDrawer.vue';
+import Can from '@/Components/Can.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
+import { useInvoiceSettingsDrawer } from '@/Composables/useInvoiceSettingsDrawer';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 import { readSpatieQuery } from '@/Composables/useSpatieTableQuery';
@@ -130,12 +133,23 @@ const cancelConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceListItemData>({
     getTitle: () => t('invoice_action_cancel'),
     getDescription: () => t('invoice_cancel_confirm'),
 });
+
+const settingsDrawer = useInvoiceSettingsDrawer();
+
+function onSettingsSaved(): void {
+    settingsDrawer.close();
+}
 </script>
 
 <template>
     <AppLayout>
         <Header :title="t('invoices')" :breadcrumbs="breadcrumbs">
             <template #actions>
+                <Can permission="manage billing settings">
+                    <button type="button" class="btn btn-ghost btn-sm" @click="settingsDrawer.open">
+                        {{ t('invoicing_settings') }}
+                    </button>
+                </Can>
                 <a v-if="allows('create invoices')" href="/invoices/create" class="btn btn-primary btn-sm">
                     {{ t('invoice_add') }}
                 </a>
@@ -243,6 +257,15 @@ const cancelConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceListItemData>({
         </div>
 
         <InvoiceIssueModal :open="ui.issueFor !== null" :invoice-id="ui.issueFor" @close="ui.issueFor = null" />
+
+        <InvoiceSettingsDrawer
+            :open="settingsDrawer.state.isOpen"
+            :status="settingsDrawer.state.status"
+            :settings="settingsDrawer.state.settings"
+            @close="settingsDrawer.close"
+            @retry="settingsDrawer.open"
+            @saved="onSettingsSaved"
+        />
 
         <ConfirmDeleteModal
             :is-open="payConfirm.state.isOpen"

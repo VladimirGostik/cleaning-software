@@ -13,6 +13,8 @@ import {
     roundingModeKey,
 } from '@/utils/enums';
 
+withDefaults(defineProps<{ compact?: boolean }>(), { compact: false });
+
 const { t } = useI18n();
 
 const paymentTypeOptions = computed<SelectOption[]>(() => enumOptions(PAYMENT_TYPES, paymentTypeKey, t));
@@ -25,7 +27,7 @@ const roundingModeOptions = computed<SelectOption[]>(() => enumOptions(ROUNDING_
         <div class="card-body space-y-4">
             <h2 class="card-title text-base">{{ t('invoice_settings_section_defaults') }}</h2>
 
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': !compact }">
                 <TextInput field="default_constant_symbol" :label="t('invoice_settings_default_constant_symbol')" />
                 <SelectInput
                     field="default_payment_type"

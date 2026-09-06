@@ -16,8 +16,11 @@ import InvoiceTotalsPanel from '@/Components/Invoices/InvoiceTotalsPanel.vue';
 import InvoicePaymentInfo from '@/Components/Invoices/InvoicePaymentInfo.vue';
 import InvoiceActionsCard from '@/Components/Invoices/InvoiceActionsCard.vue';
 import InvoiceLinksCard from '@/Components/Invoices/InvoiceLinksCard.vue';
+import SupplierIncompleteAlert from '@/Components/Invoices/SupplierIncompleteAlert.vue';
+import InvoiceSettingsDrawer from '@/Components/Invoices/InvoiceSettingsDrawer.vue';
 
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
+import { useInvoiceSettingsDrawer } from '@/Composables/useInvoiceSettingsDrawer';
 import { toNumber } from '@/utils/money';
 import type { Breadcrumb } from '@/types';
 
@@ -68,6 +71,13 @@ const deleteConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
 function duplicate(): void {
     router.post(`/invoices/${props.invoice.id}/duplicate`);
 }
+
+const settingsDrawer = useInvoiceSettingsDrawer();
+
+function onSettingsSaved(): void {
+    settingsDrawer.close();
+    router.reload({ only: ['invoice'] });
+}
 </script>
 
 <template>
@@ -78,6 +88,11 @@ function duplicate(): void {
                 <InvoiceTypeBadge :type="invoice.type" :credit-note="invoice.credited_invoice_id !== null" />
             </template>
         </Header>
+
+        <SupplierIncompleteAlert
+            :missing-fields="invoice.supplier_missing_fields"
+            @open-settings="settingsDrawer.open"
+        />
 
         <div v-if="invoice.credited_invoice_id" class="alert alert-warning mb-4">
             <span>{{ t('invoice_credit_note_for') }}</span>
@@ -184,6 +199,14 @@ function duplicate(): void {
             :confirm-label="t('delete')"
             @cancel="deleteConfirm.closeModal"
             @confirm="deleteConfirm.confirmDelete"
+        />
+        <InvoiceSettingsDrawer
+            :open="settingsDrawer.state.isOpen"
+            :status="settingsDrawer.state.status"
+            :settings="settingsDrawer.state.settings"
+            @close="settingsDrawer.close"
+            @retry="settingsDrawer.open"
+            @saved="onSettingsSaved"
         />
     </AppLayout>
 </template>

@@ -3,6 +3,8 @@ import { useI18n } from 'vue-i18n';
 import TextInput from '@/Components/Forms/TextInput.vue';
 import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 
+withDefaults(defineProps<{ compact?: boolean }>(), { compact: false });
+
 const { t } = useI18n();
 </script>
 
@@ -11,12 +13,12 @@ const { t } = useI18n();
         <div class="card-body space-y-4">
             <h2 class="card-title text-base">{{ t('invoice_settings_section_supplier') }}</h2>
 
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': !compact }">
                 <TextInput field="name" :label="t('name')" required />
                 <TextInput field="ico" :label="t('client_ico')" />
                 <TextInput field="dic" :label="t('client_dic')" />
                 <TextInput field="vat_number" :label="t('client_vat_number')" />
-                <div class="md:col-span-2">
+                <div :class="{ 'md:col-span-2': !compact }">
                     <ToggleInput field="is_vat_payer" :label="t('client_is_vat_payer')" />
                 </div>
                 <TextInput field="address_line" :label="t('street')" />

@@ -79,6 +79,13 @@ readonly model_url: string | null,
 readonly url: string,
 readonly created_at: string,
 };
+export type MediaFileData = {
+readonly uuid: string,
+readonly file_name: string,
+readonly mime_type: string | null,
+readonly size: number,
+readonly download_url: string,
+};
 export type MediaIndexFilterData = {
 readonly search: string | null,
 readonly model_type: string | null,
@@ -275,6 +282,8 @@ readonly cleaning_object_id: string | null,
 readonly credited_invoice_id: string | null,
 readonly credit_note_id: string | null,
 readonly recurring_invoice_id: string | null,
+readonly quote_id: string | null,
+readonly quote_number: string | null,
 readonly type: App.Enums.InvoiceTypeEnum,
 readonly status: App.Enums.InvoiceStatusEnum,
 readonly template: App.Enums.InvoiceTemplateEnum,
@@ -509,6 +518,106 @@ readonly floor: number | null,
 readonly is_active: boolean,
 };
 }
+namespace Quotes {
+export type QuoteAttachClientData = {
+readonly client_id: string,
+readonly cleaning_object_id: string | null,
+};
+export type QuoteDetailData = {
+readonly id: string,
+readonly client_id: string | null,
+readonly client_name: string | null,
+readonly cleaning_object_id: string | null,
+readonly object_name: string | null,
+readonly status: App.Enums.QuoteStatusEnum,
+readonly kind: App.Enums.QuoteKindEnum,
+readonly number: string | null,
+readonly subject: string | null,
+readonly issue_date: string,
+readonly valid_until: string,
+readonly sent_at: string | null,
+readonly accepted_at: string | null,
+readonly rejected_at: string | null,
+readonly is_vat_payer: boolean,
+readonly vat_rate: string | null,
+readonly currency: App.Enums.CurrencyEnum,
+readonly subtotal: string,
+readonly vat_amount: string,
+readonly total: string,
+readonly note: string | null,
+readonly customer_name: string,
+readonly customer_email: string | null,
+readonly customer_street: string | null,
+readonly customer_city: string | null,
+readonly customer_postal_code: string | null,
+readonly items: App.Data.Quotes.QuoteItemData[],
+readonly vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
+readonly document: App.Data.MediaFileData | null,
+readonly invoices: App.Data.Quotes.QuoteInvoiceLinkData[],
+};
+export type QuoteFormContextData = {
+readonly clients: App.Data.Clients.ClientOptionData[],
+readonly objects: App.Data.Objects.ObjectOptionData[],
+readonly is_vat_payer: boolean,
+readonly vat_rate: string | null,
+readonly vat_rate_options: number[],
+readonly default_validity_days: number,
+readonly document_allowed_mimes: string[],
+readonly document_max_size_kb: number,
+readonly default_currency: App.Enums.CurrencyEnum,
+};
+export type QuoteInvoiceLinkData = {
+readonly id: string,
+readonly number: string | null,
+readonly status: App.Enums.InvoiceStatusEnum,
+};
+export type QuoteItemData = {
+readonly id: string | null,
+readonly description: string,
+readonly frequency: string | null,
+readonly quantity: number,
+readonly unit: string | null,
+readonly unit_price: number,
+readonly discount_percent: number,
+readonly vat_rate: number,
+readonly line_base: number | null,
+readonly line_vat: number | null,
+readonly line_total: number | null,
+};
+export type QuoteListItemData = {
+readonly id: string,
+readonly number: string | null,
+readonly status: App.Enums.QuoteStatusEnum,
+readonly kind: App.Enums.QuoteKindEnum,
+readonly subject: string | null,
+readonly customer_name: string,
+readonly client_id: string | null,
+readonly object_name: string | null,
+readonly currency: App.Enums.CurrencyEnum,
+readonly total: string,
+readonly issue_date: string,
+readonly valid_until: string,
+readonly has_document: boolean,
+};
+export type QuoteUpsertData = {
+readonly client_id: string | null,
+readonly cleaning_object_id: string | null,
+readonly subject: string | null,
+readonly issue_date: string,
+readonly valid_until: string,
+readonly note: string | null,
+readonly items: App.Data.Quotes.QuoteItemData[],
+readonly customer_name: string | null,
+readonly customer_email: string | null,
+readonly customer_street: string | null,
+readonly customer_city: string | null,
+readonly customer_postal_code: string | null,
+readonly number: string | null,
+readonly document_uuid: string | null,
+readonly kind: App.Enums.QuoteKindEnum,
+readonly currency: App.Enums.CurrencyEnum,
+};
+}
 namespace RecurringInvoices {
 export type RecurringInvoiceDetailData = {
 readonly id: string,
@@ -652,6 +761,8 @@ export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications";
+export type QuoteKindEnum = "itemized" | "document";
+export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type RecurringDefaultStateEnum = "draft" | "issued";
 export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" | "semi_annually" | "annually";
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";

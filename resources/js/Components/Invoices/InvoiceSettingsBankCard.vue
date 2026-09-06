@@ -7,6 +7,8 @@ import TextareaInput from '@/Components/Forms/TextareaInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
 import { callValidate } from '@/Components/Forms/useFieldError';
 
+withDefaults(defineProps<{ compact?: boolean }>(), { compact: false });
+
 const { t } = useI18n();
 const form = useFormContext();
 
@@ -36,7 +38,7 @@ function updateRegistrationInfo(value: string): void {
         <div class="card-body space-y-4">
             <h2 class="card-title text-base">{{ t('invoice_settings_section_bank') }}</h2>
 
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': !compact }">
                 <TextInput field="iban" :label="t('invoice_settings_iban')" placeholder="SK0000000000000000000000" />
                 <TextInput
                     field="swift_bic"
