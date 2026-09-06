@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
 import ObjectTypeBadge from './ObjectTypeBadge.vue';
@@ -26,9 +27,9 @@ const { t } = useI18n();
                 <div class="flex justify-between gap-4">
                     <dt class="text-base-content/60">{{ t('client') }}</dt>
                     <dd class="text-right">
-                        <a v-if="object.client_name" :href="`/clients/${object.client_id}`" class="link link-hover">
+                        <Link v-if="object.client_name" :href="`/clients/${object.client_id}`" class="link link-hover">
                             {{ object.client_name }}
-                        </a>
+                        </Link>
                         <span v-else>{{ t('empty_dash') }}</span>
                     </dd>
                 </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
@@ -13,13 +14,13 @@ const { t } = useI18n();
         <div class="card-body">
             <h2 class="card-title text-base">{{ t('invoice_pdf_customer') }}</h2>
 
-            <a
+            <Link
                 v-if="props.recurringInvoice.client_id"
                 :href="`/clients/${props.recurringInvoice.client_id}`"
                 class="link link-hover font-medium"
             >
                 {{ props.recurringInvoice.customer_display_name }}
-            </a>
+            </Link>
             <p v-else class="font-medium">
                 {{ props.recurringInvoice.customer_display_name ?? t('recurring_invoice_no_customer') }}
             </p>

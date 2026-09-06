@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PauseIcon, PencilSquareIcon, PlayIcon, TrashIcon, XCircleIcon } from '@heroicons/vue/24/outline';
@@ -29,13 +30,13 @@ const isActiveOrPaused = computed(() => isActive.value || isPaused.value);
             <h2 class="card-title text-base">{{ t('invoice_section_actions') }}</h2>
 
             <Can v-if="isActiveOrPaused" permission="edit recurring_invoices">
-                <a
+                <Link
                     :href="`/recurring-invoices/${props.recurringInvoice.id}/edit`"
                     class="btn btn-sm w-full justify-start"
                 >
                     <PencilSquareIcon class="size-4" />
                     {{ t('edit') }}
-                </a>
+                </Link>
             </Can>
 
             <Can v-if="isActive" permission="edit recurring_invoices">

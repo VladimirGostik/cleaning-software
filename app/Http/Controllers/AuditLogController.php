@@ -20,7 +20,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 final class AuditLogController extends Controller
 {
     #[Authorize('viewAny', Activity::class)]
-    #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: 'ClipboardDocumentListIcon', permission: PermissionEnum::ViewAuditLogs->value, order: 40)]
+    #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: 'ClipboardDocumentListIcon', permission: PermissionEnum::ViewAuditLogs->value, group: 'settings', order: 50)]
     public function index(Request $request): Response
     {
         $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';

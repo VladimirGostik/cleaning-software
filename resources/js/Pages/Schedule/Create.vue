@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import JobForm from '@/Components/Schedule/JobForm.vue';
 
@@ -21,8 +19,6 @@ const breadcrumbs: Breadcrumb[] = [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('schedule_add')" :breadcrumbs="breadcrumbs" />
-        <JobForm :context="context" />
-    </AppLayout>
+    <Header :title="t('schedule_add')" :breadcrumbs="breadcrumbs" />
+    <JobForm :context="context" />
 </template>

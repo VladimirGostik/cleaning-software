@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import JobStatusBadge from '@/Components/Schedule/JobStatusBadge.vue';
@@ -39,46 +37,44 @@ const cancelConfirm = useDeleteConfirm<App.Data.Schedule.JobDetailData>({
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="job.object_name" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <JobStatusBadge :status="job.status" />
-                <JobTypeBadge :type="job.type" />
-            </template>
-        </Header>
+    <Header :title="job.object_name" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <JobStatusBadge :status="job.status" />
+            <JobTypeBadge :type="job.type" />
+        </template>
+    </Header>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-            <div class="space-y-6">
-                <JobDetailCard :job="job" />
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+        <div class="space-y-6">
+            <JobDetailCard :job="job" />
 
-                <div v-if="workBreakdown" class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('schedule_section_breakdown') }}</h2>
-                        <WorkBreakdownView :breakdown="workBreakdown" :highlight-task-id="job.work_breakdown_task_id" />
-                    </div>
+            <div v-if="workBreakdown" class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-base">{{ t('schedule_section_breakdown') }}</h2>
+                    <WorkBreakdownView :breakdown="workBreakdown" :highlight-task-id="job.work_breakdown_task_id" />
                 </div>
-            </div>
-
-            <div class="space-y-6">
-                <JobActionsCard :job="job" @cancel="cancelConfirm.openModal(job)" />
-                <JobAssignPanel
-                    v-if="job.can.assign"
-                    :job-id="job.id"
-                    :current-membership-id="job.assigned_membership_id"
-                    :membership-options="membershipOptions"
-                />
-                <JobLinksCard :job="job" />
             </div>
         </div>
 
-        <ConfirmDeleteModal
-            :is-open="cancelConfirm.state.isOpen"
-            :title="cancelConfirm.getModalTitle()"
-            :description="cancelConfirm.getModalDescription()"
-            confirm-variant="warning"
-            :confirm-label="t('schedule_action_cancel')"
-            @cancel="cancelConfirm.closeModal"
-            @confirm="cancelConfirm.confirmDelete"
-        />
-    </AppLayout>
+        <div class="space-y-6">
+            <JobActionsCard :job="job" @cancel="cancelConfirm.openModal(job)" />
+            <JobAssignPanel
+                v-if="job.can.assign"
+                :job-id="job.id"
+                :current-membership-id="job.assigned_membership_id"
+                :membership-options="membershipOptions"
+            />
+            <JobLinksCard :job="job" />
+        </div>
+    </div>
+
+    <ConfirmDeleteModal
+        :is-open="cancelConfirm.state.isOpen"
+        :title="cancelConfirm.getModalTitle()"
+        :description="cancelConfirm.getModalDescription()"
+        confirm-variant="warning"
+        :confirm-label="t('schedule_action_cancel')"
+        @cancel="cancelConfirm.closeModal"
+        @confirm="cancelConfirm.confirmDelete"
+    />
 </template>

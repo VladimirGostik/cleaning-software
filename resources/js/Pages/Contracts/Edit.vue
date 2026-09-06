@@ -1,8 +1,7 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import ContractForm from '@/Components/Contracts/ContractForm.vue';
 
@@ -24,14 +23,12 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('contract_edit')" :breadcrumbs="breadcrumbs" />
+    <Header :title="t('contract_edit')" :breadcrumbs="breadcrumbs" />
 
-        <div v-if="!contract.is_editable" class="alert alert-warning">
-            <span>{{ t('contract_not_editable') }}</span>
-            <a :href="`/contracts/${contract.id}`" class="link link-hover font-medium">{{ t('view') }}</a>
-        </div>
+    <div v-if="!contract.is_editable" class="alert alert-warning">
+        <span>{{ t('contract_not_editable') }}</span>
+        <Link :href="`/contracts/${contract.id}`" class="link link-hover font-medium">{{ t('view') }}</Link>
+    </div>
 
-        <ContractForm v-else :context="context" :contract="contract" />
-    </AppLayout>
+    <ContractForm v-else :context="context" :contract="contract" />
 </template>

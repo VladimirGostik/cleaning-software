@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EyeIcon, TrashIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -76,94 +75,92 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('clients')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <button
-                    v-if="allows('create clients')"
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    @click="ui.createOpen = true"
-                >
-                    {{ t('client_add') }}
-                </button>
-            </template>
-        </Header>
+    <Header :title="t('clients')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <button
+                v-if="allows('create clients')"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="ui.createOpen = true"
+            >
+                {{ t('client_add') }}
+            </button>
+        </template>
+    </Header>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('clients_empty')"
-            :description="t('clients_empty_hint')"
-            :icon="UserGroupIcon"
-        >
-            <template #cta>
-                <button
-                    v-if="allows('create clients')"
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    @click="ui.createOpen = true"
-                >
-                    {{ t('client_add') }}
-                </button>
-            </template>
-        </EmptyState>
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('clients_empty')"
+        :description="t('clients_empty_hint')"
+        :icon="UserGroupIcon"
+    >
+        <template #cta>
+            <button
+                v-if="allows('create clients')"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="ui.createOpen = true"
+            >
+                {{ t('client_add') }}
+            </button>
+        </template>
+    </EmptyState>
 
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="clients" :filters="filterDefinitions">
-                    <template #cell-name="{ row }">
-                        <a :href="`/clients/${row.id}`" class="link link-hover font-medium">{{ row.name }}</a>
-                    </template>
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="clients" :filters="filterDefinitions">
+                <template #cell-name="{ row }">
+                    <Link :href="`/clients/${row.id}`" class="link link-hover font-medium">{{ row.name }}</Link>
+                </template>
 
-                    <template #cell-type="{ row }">
-                        <ClientTypeBadge :type="row.type" />
-                    </template>
+                <template #cell-type="{ row }">
+                    <ClientTypeBadge :type="row.type" />
+                </template>
 
-                    <template #cell-ico="{ value }">
-                        {{ value ?? t('empty_dash') }}
-                    </template>
+                <template #cell-ico="{ value }">
+                    {{ value ?? t('empty_dash') }}
+                </template>
 
-                    <template #cell-city="{ value }">
-                        {{ value ?? t('empty_dash') }}
-                    </template>
+                <template #cell-city="{ value }">
+                    {{ value ?? t('empty_dash') }}
+                </template>
 
-                    <template #cell-primary_contact_email="{ row }">
-                        <div class="text-sm">
-                            <div v-if="row.primary_contact_email || row.primary_contact_phone">
-                                <div v-if="row.primary_contact_email">{{ row.primary_contact_email }}</div>
-                                <div v-if="row.primary_contact_phone">{{ row.primary_contact_phone }}</div>
-                            </div>
-                            <span v-else>{{ t('empty_dash') }}</span>
+                <template #cell-primary_contact_email="{ row }">
+                    <div class="text-sm">
+                        <div v-if="row.primary_contact_email || row.primary_contact_phone">
+                            <div v-if="row.primary_contact_email">{{ row.primary_contact_email }}</div>
+                            <div v-if="row.primary_contact_phone">{{ row.primary_contact_phone }}</div>
                         </div>
-                    </template>
+                        <span v-else>{{ t('empty_dash') }}</span>
+                    </div>
+                </template>
 
-                    <template #buttons="{ row }">
-                        <a :href="`/clients/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                            <EyeIcon class="size-4" />
-                        </a>
+                <template #buttons="{ row }">
+                    <Link :href="`/clients/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
+                        <EyeIcon class="size-4" />
+                    </Link>
 
-                        <button
-                            v-if="allows('delete clients')"
-                            type="button"
-                            class="btn btn-ghost btn-xs text-error"
-                            :title="t('delete')"
-                            @click="openModal(row)"
-                        >
-                            <TrashIcon class="size-4" />
-                        </button>
-                    </template>
-                </DataTable>
-            </div>
+                    <button
+                        v-if="allows('delete clients')"
+                        type="button"
+                        class="btn btn-ghost btn-xs text-error"
+                        :title="t('delete')"
+                        @click="openModal(row)"
+                    >
+                        <TrashIcon class="size-4" />
+                    </button>
+                </template>
+            </DataTable>
         </div>
+    </div>
 
-        <ClientFormDrawer :open="ui.createOpen" @close="ui.createOpen = false" />
+    <ClientFormDrawer :open="ui.createOpen" @close="ui.createOpen = false" />
 
-        <ConfirmDeleteModal
-            :is-open="state.isOpen"
-            :title="getModalTitle()"
-            :description="getModalDescription()"
-            @cancel="closeModal"
-            @confirm="confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="state.isOpen"
+        :title="getModalTitle()"
+        :description="getModalDescription()"
+        @cancel="closeModal"
+        @confirm="confirmDelete"
+    />
 </template>

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import EmployeeForm from '@/Components/Employees/EmployeeForm.vue';
 
@@ -24,8 +22,6 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('employee_edit')" :breadcrumbs="breadcrumbs" />
-        <EmployeeForm :context="context" :employee="employee" />
-    </AppLayout>
+    <Header :title="t('employee_edit')" :breadcrumbs="breadcrumbs" />
+    <EmployeeForm :context="context" :employee="employee" />
 </template>

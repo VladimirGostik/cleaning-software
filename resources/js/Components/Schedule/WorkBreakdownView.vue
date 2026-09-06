@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';
 import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue';
@@ -18,21 +19,21 @@ const { t } = useI18n();
             <div class="flex flex-wrap items-center gap-2">
                 <span class="font-semibold text-sm">{{ props.breakdown.name }}</span>
                 <ObjectStatusBadge :is-active="props.breakdown.is_active" />
-                <a
+                <Link
                     v-if="props.breakdown.contract_id"
                     :href="`/contracts/${props.breakdown.contract_id}`"
                     class="link link-hover text-sm"
                 >
                     {{ props.breakdown.contract_title }}
-                </a>
+                </Link>
                 <ContractStatusBadge v-if="props.breakdown.contract_status" :status="props.breakdown.contract_status" />
-                <a
+                <Link
                     v-if="props.breakdown.source_quote_id"
                     :href="`/quotes/${props.breakdown.source_quote_id}`"
                     class="link link-hover text-xs"
                 >
                     {{ t('work_breakdown_source_quote') }}
-                </a>
+                </Link>
             </div>
 
             <p v-if="props.breakdown.tasks.length === 0" class="text-sm text-base-content/60">

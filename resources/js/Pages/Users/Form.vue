@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import TextInput from '@/Components/Forms/TextInput.vue';
 import PasswordInput from '@/Components/Forms/PasswordInput.vue';
@@ -58,62 +57,58 @@ function submit() {
 </script>
 
 <template>
-    <AppLayout>
-        <Header
-            :title="
-                isEditing ? `${t('edit')} ${t('users').toLowerCase()}` : `${t('create')} ${t('users').toLowerCase()}`
-            "
-            :breadcrumbs="breadcrumbs"
-        >
-            <template #actions>
-                <a href="/users" class="btn btn-ghost btn-sm">{{ t('cancel') }}</a>
-            </template>
-        </Header>
+    <Header
+        :title="isEditing ? `${t('edit')} ${t('users').toLowerCase()}` : `${t('create')} ${t('users').toLowerCase()}`"
+        :breadcrumbs="breadcrumbs"
+    >
+        <template #actions>
+            <Link href="/users" class="btn btn-ghost btn-sm">{{ t('cancel') }}</Link>
+        </template>
+    </Header>
 
-        <FormProvider :form="form">
-            <form novalidate @submit.prevent="submit">
-                <div class="card bg-base-100 shadow-sm mb-6">
-                    <div class="card-body">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <TextInput field="name" :label="t('name')" autocomplete="name" required />
+    <FormProvider :form="form">
+        <form novalidate @submit.prevent="submit">
+            <div class="card bg-base-100 shadow-sm mb-6">
+                <div class="card-body">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <TextInput field="name" :label="t('name')" autocomplete="name" required />
 
-                            <TextInput field="email" :label="t('email')" type="email" autocomplete="email" required />
+                        <TextInput field="email" :label="t('email')" type="email" autocomplete="email" required />
 
-                            <template v-if="!isEditing">
-                                <p class="text-sm text-base-content/60 md:col-span-2">
-                                    {{ t('user_link_existing_hint') }}
-                                </p>
+                        <template v-if="!isEditing">
+                            <p class="text-sm text-base-content/60 md:col-span-2">
+                                {{ t('user_link_existing_hint') }}
+                            </p>
 
-                                <PasswordInput field="password" :label="t('password')" autocomplete="new-password" />
+                            <PasswordInput field="password" :label="t('password')" autocomplete="new-password" />
 
-                                <PasswordInput
-                                    field="password_confirmation"
-                                    :label="t('confirm_password')"
-                                    autocomplete="new-password"
-                                />
-                            </template>
+                            <PasswordInput
+                                field="password_confirmation"
+                                :label="t('confirm_password')"
+                                autocomplete="new-password"
+                            />
+                        </template>
 
-                            <div class="md:col-span-2">
-                                <ToggleInput field="is_active" :label="t('membership_active')" />
-                            </div>
+                        <div class="md:col-span-2">
+                            <ToggleInput field="is_active" :label="t('membership_active')" />
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="card bg-base-100 shadow-sm mb-6">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('assign_roles') }}</h2>
-                        <CheckboxGroup field="roles" :options="roleOptions" />
-                    </div>
+            <div class="card bg-base-100 shadow-sm mb-6">
+                <div class="card-body">
+                    <h2 class="card-title text-base">{{ t('assign_roles') }}</h2>
+                    <CheckboxGroup field="roles" :options="roleOptions" />
                 </div>
+            </div>
 
-                <FormActions
-                    cancel-href="/users"
-                    :cancel-label="t('cancel')"
-                    :submit-label="t('save')"
-                    :processing="form.processing"
-                />
-            </form>
-        </FormProvider>
-    </AppLayout>
+            <FormActions
+                cancel-href="/users"
+                :cancel-label="t('cancel')"
+                :submit-label="t('save')"
+                :processing="form.processing"
+            />
+        </form>
+    </FormProvider>
 </template>

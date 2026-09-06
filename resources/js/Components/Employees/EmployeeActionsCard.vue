@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ArrowPathIcon, ArrowsRightLeftIcon, NoSymbolIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
@@ -25,14 +26,14 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
 <template>
     <div v-if="hasActions" class="card bg-base-100 shadow-sm">
         <div class="card-body space-y-2">
-            <a
+            <Link
                 v-if="props.canUpdate"
                 :href="`/employees/${props.employee.id}/edit`"
                 class="btn btn-sm w-full justify-start"
             >
                 <PencilSquareIcon class="size-4" />
                 {{ t('edit') }}
-            </a>
+            </Link>
 
             <button
                 v-if="props.canAssignRole"

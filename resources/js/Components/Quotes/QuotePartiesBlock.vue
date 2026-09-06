@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import QuoteRoughBadge from './QuoteRoughBadge.vue';
 
@@ -15,9 +16,9 @@ const { t } = useI18n();
             <h3 class="text-sm font-semibold text-base-content/70">{{ t('quote_section_customer') }}</h3>
 
             <p class="flex items-center gap-2 font-medium">
-                <a v-if="props.quote.client_id" :href="`/clients/${props.quote.client_id}`" class="link link-hover">
+                <Link v-if="props.quote.client_id" :href="`/clients/${props.quote.client_id}`" class="link link-hover">
                     {{ props.quote.customer_name }}
-                </a>
+                </Link>
                 <span v-else>{{ props.quote.customer_name }}</span>
                 <QuoteRoughBadge v-if="props.quote.client_id === null" />
             </p>

@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { CalendarDaysIcon, ListBulletIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { TableFilters } from '@/Components/DataTable';
@@ -125,79 +124,77 @@ watch(
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('schedule')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <div class="join" role="group" :aria-label="t('schedule_view_mode')">
-                    <button
-                        type="button"
-                        class="btn btn-sm join-item"
-                        :class="{ 'btn-active': ui.viewMode === 'list' }"
-                        :aria-pressed="ui.viewMode === 'list'"
-                        @click="ui.viewMode = 'list'"
-                    >
-                        <ListBulletIcon class="size-4" />
-                        {{ t('schedule_view_list') }}
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-sm join-item"
-                        :class="{ 'btn-active': ui.viewMode === 'calendar' }"
-                        :aria-pressed="ui.viewMode === 'calendar'"
-                        @click="ui.viewMode = 'calendar'"
-                    >
-                        <CalendarDaysIcon class="size-4" />
-                        {{ t('schedule_view_calendar') }}
-                    </button>
-                </div>
+    <Header :title="t('schedule')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <div class="join" role="group" :aria-label="t('schedule_view_mode')">
+                <button
+                    type="button"
+                    class="btn btn-sm join-item"
+                    :class="{ 'btn-active': ui.viewMode === 'list' }"
+                    :aria-pressed="ui.viewMode === 'list'"
+                    @click="ui.viewMode = 'list'"
+                >
+                    <ListBulletIcon class="size-4" />
+                    {{ t('schedule_view_list') }}
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-sm join-item"
+                    :class="{ 'btn-active': ui.viewMode === 'calendar' }"
+                    :aria-pressed="ui.viewMode === 'calendar'"
+                    @click="ui.viewMode = 'calendar'"
+                >
+                    <CalendarDaysIcon class="size-4" />
+                    {{ t('schedule_view_calendar') }}
+                </button>
+            </div>
 
-                <a v-if="allows('create schedule')" href="/jobs/create" class="btn btn-primary btn-sm">
-                    {{ t('schedule_add') }}
-                </a>
-            </template>
-        </Header>
+            <Link v-if="allows('create schedule')" href="/jobs/create" class="btn btn-primary btn-sm">
+                {{ t('schedule_add') }}
+            </Link>
+        </template>
+    </Header>
 
-        <div v-if="!allows('view all schedule')" class="alert alert-info mb-4">
-            <span>{{ t('schedule_own_only_hint') }}</span>
+    <div v-if="!allows('view all schedule')" class="alert alert-info mb-4">
+        <span>{{ t('schedule_own_only_hint') }}</span>
+    </div>
+
+    <TableFilters
+        :filters="filterDefinitions"
+        :query-filters="query.filters"
+        :disable-search="ui.viewMode === 'calendar'"
+        class="mb-4"
+        @change="changeFilter"
+        @clear="clearFilters"
+    />
+
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('schedule_empty')"
+        :description="allows('view all schedule') ? t('schedule_empty_hint') : t('schedule_empty_own_hint')"
+        :icon="CalendarDaysIcon"
+    >
+        <template v-if="allows('create schedule')" #cta>
+            <Link href="/jobs/create" class="btn btn-primary btn-sm">{{ t('schedule_add') }}</Link>
+        </template>
+    </EmptyState>
+
+    <template v-else>
+        <div v-if="ui.viewMode === 'list'" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <JobList :jobs="props.jobs" />
+            </div>
         </div>
 
-        <TableFilters
-            :filters="filterDefinitions"
-            :query-filters="query.filters"
-            :disable-search="ui.viewMode === 'calendar'"
-            class="mb-4"
-            @change="changeFilter"
-            @clear="clearFilters"
-        />
-
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('schedule_empty')"
-            :description="allows('view all schedule') ? t('schedule_empty_hint') : t('schedule_empty_own_hint')"
-            :icon="CalendarDaysIcon"
-        >
-            <template v-if="allows('create schedule')" #cta>
-                <a href="/jobs/create" class="btn btn-primary btn-sm">{{ t('schedule_add') }}</a>
-            </template>
-        </EmptyState>
-
-        <template v-else>
-            <div v-if="ui.viewMode === 'list'" class="card bg-base-100 shadow-sm">
-                <div class="card-body">
-                    <JobList :jobs="props.jobs" />
-                </div>
-            </div>
-
-            <div v-else>
-                <p class="mb-2 text-xs text-base-content/60">{{ t('schedule_calendar_filters_hint') }}</p>
-                <JobCalendar
-                    :events="calendar.state.events"
-                    :loading="calendar.state.loading"
-                    :error="calendar.state.error"
-                    @dates-set="calendar.load"
-                    @retry="calendar.reload"
-                />
-            </div>
-        </template>
-    </AppLayout>
+        <div v-else>
+            <p class="mb-2 text-xs text-base-content/60">{{ t('schedule_calendar_filters_hint') }}</p>
+            <JobCalendar
+                :events="calendar.state.events"
+                :loading="calendar.state.loading"
+                :error="calendar.state.error"
+                @dates-set="calendar.load"
+                @retry="calendar.reload"
+            />
+        </div>
+    </template>
 </template>

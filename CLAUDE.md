@@ -151,19 +151,19 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - profile (BE) — self-service name/email/locale + password change (web + API), ProfileService, LocaleMiddleware binding.
 - users (FE) — Pages/Users/{Index,Form}.vue, DataTable filters (tenant-scoped members), CheckboxGroup roles, allows(...) gating.
 - users (BE) — CRUD + autocomplete (tenant members only), QueryBuilder filters, UserPolicy, create-or-link by email, RoleAssignmentGuard escalation checks, TenantMembership pivot scope.
-- roles (FE) — Pages/Roles/{Index,Form}.vue, PermissionManager (now PermissionGroupData typed), system-role guard.
-- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy.
-- audit-logs (FE) — Pages/AuditLogs/{Index,Show}.vue, read-only DataTable + JSON diff.
-- audit-logs (BE) — read-only viewer over App\Models\Activity (Activity::visibleInTenant scope, tenant_id nullable for login events), filters + policy.
-- media (FE) — Pages/Media/{Index,Show}.vue; FileUploadInput/RichTextEditorInput → POST|DELETE /uploads.
-- media (BE) — read-only MediaLibrary viewer (App\Models\Media tenant_id NOT NULL), TemporaryUpload staging (tenant_id FK), OwnedTemporaryMedia rule, moveToModel contract, daily purge.
+- roles (FE) — Pages/Roles/{Index,Form}.vue, PermissionManager (now PermissionGroupData typed), system-role guard. AppLayout nav settings group order 40.
+- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy. RoleController #[NavItem] group:settings order:40.
+- audit-logs (FE) — Pages/AuditLogs/{Index,Show}.vue, read-only DataTable + JSON diff. AppLayout nav settings group order 50.
+- audit-logs (BE) — read-only viewer over App\Models\Activity (Activity::visibleInTenant scope, tenant_id nullable for login events), filters + policy. AuditLogController #[NavItem] group:settings order:50.
+- media (FE) — Pages/Media/{Index,Show}.vue; FileUploadInput/RichTextEditorInput → POST|DELETE /uploads. AppLayout nav settings group order 60.
+- media (BE) — read-only MediaLibrary viewer (App\Models\Media tenant_id NOT NULL), TemporaryUpload staging (tenant_id FK), OwnedTemporaryMedia rule, moveToModel contract, daily purge. MediaController #[NavItem] group:settings order:60.
 - localisation (FE) — AppLayout language dropdown (sk/en/uk data-driven from shared languages), GET /language/{locale} full reload.
 - localisation (BE) — SupportedLanguage enum (sk/en/uk, #[TypeScript]), LocaleMiddleware (user.locale → session → cookie → default sk), JSON translations resources/lang/{sk,en,uk}/{app,validation}.json.
 - api-me (BE) — GET /api/me (Sanctum + tenant.required) returns MeData (userId, activeTenantId, permissions per team scope), reserved for mobile app phase 2.
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
-- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm (+ confirmVariant prop phase 4), types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
+- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation, persistent via createInertiaApp layout resolver in app.ts, mobile drawer closes on router navigate), Layouts/Header.vue (breadcrumbs + title), Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm (+ confirmVariant prop phase 4), types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens. Internal navigation via Inertia `<Link>` (no full-page load). Logout button moved from user card to sidebar footer (above language switcher, `router.post('/logout')`). Pages do not wrap `<AppLayout>` (layout is app-level, only Auth/* and Invitations/* pages render without it). Full-width main area + InvoiceSettingsForm width cap removed.
 
-**Note:** Phases 1–8 complete (2026-09-06). Phase 8: Notifications module (in-app centre, bell, mail prefs, 6 event listeners). Phase 9+ deferred: mobile portal (cleaner + supervisor), customer portal, analytics, integrations. All 8 implemented domains: tenant-scoped (BelongsToTenant; notifications scoped manually by tenant_id), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate (no soft-delete on WorkBreakdownTask, Notification, only cascade). Cleaner role (Interná upratovačka) has own-only scoping via absent "all" permissions + ScheduledJob::scopeVisibleTo / CleaningObject::scopeVisibleTo (D3 override: any assigned job reachability). 952 tests total (phase 8 +40).
+**Note:** Phases 1–8 complete (2026-09-06). Phase 8: Notifications module (in-app centre, bell, mail prefs, 6 event listeners). Shell UX: persistent layout via Inertia default-layout resolver; internal nav via Link (no full-page reload); user card + bell + logout moved to sidebar footer; settings group (Roles/AuditLogs/Media orders 40/50/60); mobile drawer closes on navigate. Phase 9+ deferred: mobile portal (cleaner + supervisor), customer portal, analytics, integrations. All 8 implemented domains: tenant-scoped (BelongsToTenant; notifications scoped manually by tenant_id), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate (no soft-delete on WorkBreakdownTask, Notification, only cascade). Cleaner role (Interná upratovačka) has own-only scoping via absent "all" permissions + ScheduledJob::scopeVisibleTo / CleaningObject::scopeVisibleTo (D3 override: any assigned job reachability). 955 tests total (phase 8 +40, shell UX +3).
 
 ## Lint
 lint.tools: [pint, phpstan, vue-tsc, eslint, prettier]
@@ -175,7 +175,7 @@ lint.notes: |
 
 ## Deployment Status
 - **Deployed to production:** no
-- **Last verified:** 2026-09-06 (Phase 8 complete: Notifications module + 6 event listeners, 952 tests)
+- **Last verified:** 2026-09-06 (Shell UX fix: persistent layout, Link nav, logout moved, settings group, 955 tests)
 
 ## Review rules
 

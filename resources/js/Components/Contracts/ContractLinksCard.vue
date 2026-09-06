@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -22,16 +23,16 @@ const hasLinks = computed(
 
             <p v-if="props.contract.quote_id">
                 <span class="text-base-content/60">{{ t('contract_link_quote') }}:</span>
-                <a :href="`/quotes/${props.contract.quote_id}`" class="link link-hover ml-1">
+                <Link :href="`/quotes/${props.contract.quote_id}`" class="link link-hover ml-1">
                     {{ props.contract.quote_number ?? t('quote_no_number') }}
-                </a>
+                </Link>
             </p>
 
             <p v-if="isObjectParty">
                 <span class="text-base-content/60">{{ t('contract_link_object') }}:</span>
-                <a :href="`/objects/${props.contract.contractable_id}`" class="link link-hover ml-1">
+                <Link :href="`/objects/${props.contract.contractable_id}`" class="link link-hover ml-1">
                     {{ props.contract.contractable_label }}
-                </a>
+                </Link>
             </p>
 
             <p v-if="props.contract.contract_template_name">

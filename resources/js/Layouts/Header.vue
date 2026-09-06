@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import type { Breadcrumb } from '@/types';
 
 defineProps<{
@@ -13,9 +14,9 @@ defineProps<{
         <div v-if="breadcrumbs && breadcrumbs.length > 0" class="breadcrumbs text-sm">
             <ul>
                 <li v-for="(crumb, index) in breadcrumbs" :key="index">
-                    <a v-if="crumb.url" :href="crumb.url">
+                    <Link v-if="crumb.url" :href="crumb.url">
                         {{ crumb.label }}
-                    </a>
+                    </Link>
                     <span v-else>{{ crumb.label }}</span>
                 </li>
             </ul>

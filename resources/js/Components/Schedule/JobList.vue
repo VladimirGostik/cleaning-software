@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { EyeIcon } from '@heroicons/vue/24/outline';
 
@@ -40,9 +41,9 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
         :reload-only="['jobs', 'filters']"
     >
         <template #cell-scheduled_date="{ row }">
-            <a :href="`/jobs/${row.id}`" class="link link-hover font-medium font-mono">
+            <Link :href="`/jobs/${row.id}`" class="link link-hover font-medium font-mono">
                 {{ formatDate(row.scheduled_date) }}
-            </a>
+            </Link>
         </template>
 
         <template #cell-start_time="{ row }">
@@ -53,7 +54,7 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
         </template>
 
         <template #cell-object_name="{ row }">
-            <a :href="`/objects/${row.cleaning_object_id}`" class="link link-hover">{{ row.object_name }}</a>
+            <Link :href="`/objects/${row.cleaning_object_id}`" class="link link-hover">{{ row.object_name }}</Link>
         </template>
 
         <template #cell-client_name="{ row }">
@@ -75,9 +76,9 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
         </template>
 
         <template #buttons="{ row }">
-            <a :href="`/jobs/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')" :aria-label="t('view')">
+            <Link :href="`/jobs/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')" :aria-label="t('view')">
                 <EyeIcon class="size-4" />
-            </a>
+            </Link>
         </template>
     </DataTable>
 </template>

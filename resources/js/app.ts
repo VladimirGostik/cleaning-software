@@ -4,6 +4,7 @@ import '../css/app.css';
 
 import { createApp, h, type DefineComponent, type Plugin } from 'vue';
 import { createInertiaApp, router } from '@inertiajs/vue3';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createI18n } from 'vue-i18n';
 
@@ -23,6 +24,7 @@ void createInertiaApp({
     title: (title: string | null) => (title ? `${title} - ${appName}` : appName),
     resolve: (name: string) =>
         resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob<DefineComponent>('./Pages/**/*.vue')),
+    layout: (name: string) => (name.startsWith('Auth/') || name.startsWith('Invitations/') ? undefined : AppLayout),
     setup: ({
         el,
         App,

@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { CheckCircleIcon, DocumentCheckIcon, EyeIcon, XCircleIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -116,111 +115,109 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('contracts')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <a v-if="allows('create contracts')" href="/contracts/create" class="btn btn-primary btn-sm">
-                    {{ t('contract_add') }}
-                </a>
-            </template>
-        </Header>
+    <Header :title="t('contracts')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <Link v-if="allows('create contracts')" href="/contracts/create" class="btn btn-primary btn-sm">
+                {{ t('contract_add') }}
+            </Link>
+        </template>
+    </Header>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('contracts_empty')"
-            :description="t('contracts_empty_hint')"
-            :icon="DocumentCheckIcon"
-        >
-            <template #cta>
-                <a v-if="allows('create contracts')" href="/contracts/create" class="btn btn-primary btn-sm">
-                    {{ t('contract_add') }}
-                </a>
-            </template>
-        </EmptyState>
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('contracts_empty')"
+        :description="t('contracts_empty_hint')"
+        :icon="DocumentCheckIcon"
+    >
+        <template #cta>
+            <Link v-if="allows('create contracts')" href="/contracts/create" class="btn btn-primary btn-sm">
+                {{ t('contract_add') }}
+            </Link>
+        </template>
+    </EmptyState>
 
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="contracts" :filters="filterDefinitions">
-                    <template #cell-title="{ row }">
-                        <a :href="`/contracts/${row.id}`" class="link link-hover font-medium">{{ row.title }}</a>
-                        <p v-if="row.number" class="font-mono text-xs text-base-content/60">{{ row.number }}</p>
-                    </template>
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="contracts" :filters="filterDefinitions">
+                <template #cell-title="{ row }">
+                    <Link :href="`/contracts/${row.id}`" class="link link-hover font-medium">{{ row.title }}</Link>
+                    <p v-if="row.number" class="font-mono text-xs text-base-content/60">{{ row.number }}</p>
+                </template>
 
-                    <template #cell-contractable_label="{ row }">
-                        {{ row.contractable_label }}
-                        <p class="text-xs text-base-content/60">{{ t(contractableTypeKey(row.contractable_type)) }}</p>
-                    </template>
+                <template #cell-contractable_label="{ row }">
+                    {{ row.contractable_label }}
+                    <p class="text-xs text-base-content/60">{{ t(contractableTypeKey(row.contractable_type)) }}</p>
+                </template>
 
-                    <template #cell-category="{ row }">
-                        <ContractCategoryBadge :category="row.category" />
-                    </template>
+                <template #cell-category="{ row }">
+                    <ContractCategoryBadge :category="row.category" />
+                </template>
 
-                    <template #cell-status="{ row }">
-                        <ContractStatusBadge :status="row.status" />
-                    </template>
+                <template #cell-status="{ row }">
+                    <ContractStatusBadge :status="row.status" />
+                </template>
 
-                    <template #cell-term_type="{ row }">
-                        <ContractTermBadge :term-type="row.term_type" />
-                    </template>
+                <template #cell-term_type="{ row }">
+                    <ContractTermBadge :term-type="row.term_type" />
+                </template>
 
-                    <template #cell-valid_from="{ row }">{{ formatDate(row.valid_from) }}</template>
+                <template #cell-valid_from="{ row }">{{ formatDate(row.valid_from) }}</template>
 
-                    <template #cell-end_date="{ row }">
-                        <span :class="{ 'text-error': row.status === 'expired' }">
-                            {{ row.end_date ? formatDate(row.end_date) : t('contract_end_date_indefinite') }}
-                        </span>
-                    </template>
+                <template #cell-end_date="{ row }">
+                    <span :class="{ 'text-error': row.status === 'expired' }">
+                        {{ row.end_date ? formatDate(row.end_date) : t('contract_end_date_indefinite') }}
+                    </span>
+                </template>
 
-                    <template #buttons="{ row }">
-                        <a
-                            :href="`/contracts/${row.id}`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('view')"
-                            :aria-label="t('view')"
-                        >
-                            <EyeIcon class="size-4" />
-                        </a>
+                <template #buttons="{ row }">
+                    <Link
+                        :href="`/contracts/${row.id}`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon class="size-4" />
+                    </Link>
 
-                        <button
-                            v-if="allows('edit contracts') && row.can_be_signed"
-                            type="button"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('contract_action_sign')"
-                            :aria-label="t('contract_action_sign')"
-                            @click="signConfirm.openModal(row)"
-                        >
-                            <CheckCircleIcon class="size-4" />
-                        </button>
+                    <button
+                        v-if="allows('edit contracts') && row.can_be_signed"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('contract_action_sign')"
+                        :aria-label="t('contract_action_sign')"
+                        @click="signConfirm.openModal(row)"
+                    >
+                        <CheckCircleIcon class="size-4" />
+                    </button>
 
-                        <button
-                            v-if="allows('terminate contracts') && row.can_be_terminated"
-                            type="button"
-                            class="btn btn-ghost btn-xs text-warning"
-                            :title="t('contract_action_terminate')"
-                            :aria-label="t('contract_action_terminate')"
-                            @click="ui.terminateFor = row.id"
-                        >
-                            <XCircleIcon class="size-4" />
-                        </button>
-                    </template>
-                </DataTable>
-            </div>
+                    <button
+                        v-if="allows('terminate contracts') && row.can_be_terminated"
+                        type="button"
+                        class="btn btn-ghost btn-xs text-warning"
+                        :title="t('contract_action_terminate')"
+                        :aria-label="t('contract_action_terminate')"
+                        @click="ui.terminateFor = row.id"
+                    >
+                        <XCircleIcon class="size-4" />
+                    </button>
+                </template>
+            </DataTable>
         </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="signConfirm.state.isOpen"
-            :title="signConfirm.getModalTitle()"
-            :description="signConfirm.getModalDescription()"
-            :confirm-label="t('contract_action_sign')"
-            confirm-variant="success"
-            @cancel="signConfirm.closeModal"
-            @confirm="signConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="signConfirm.state.isOpen"
+        :title="signConfirm.getModalTitle()"
+        :description="signConfirm.getModalDescription()"
+        :confirm-label="t('contract_action_sign')"
+        confirm-variant="success"
+        @cancel="signConfirm.closeModal"
+        @confirm="signConfirm.confirmDelete"
+    />
 
-        <ContractTerminateModal
-            :open="ui.terminateFor !== null"
-            :contract-id="ui.terminateFor"
-            @close="ui.terminateFor = null"
-        />
-    </AppLayout>
+    <ContractTerminateModal
+        :open="ui.terminateFor !== null"
+        :contract-id="ui.terminateFor"
+        @close="ui.terminateFor = null"
+    />
 </template>

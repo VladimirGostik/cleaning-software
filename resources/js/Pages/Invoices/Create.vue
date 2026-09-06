@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import InvoiceForm from '@/Components/Invoices/InvoiceForm.vue';
 import SupplierIncompleteAlert from '@/Components/Invoices/SupplierIncompleteAlert.vue';
@@ -32,23 +30,21 @@ function onSettingsSaved(): void {
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('invoice_add')" :breadcrumbs="breadcrumbs" />
+    <Header :title="t('invoice_add')" :breadcrumbs="breadcrumbs" />
 
-        <SupplierIncompleteAlert
-            :missing-fields="props.context.supplier_missing_fields"
-            @open-settings="settingsDrawer.open"
-        />
+    <SupplierIncompleteAlert
+        :missing-fields="props.context.supplier_missing_fields"
+        @open-settings="settingsDrawer.open"
+    />
 
-        <InvoiceForm :context="context" />
+    <InvoiceForm :context="context" />
 
-        <InvoiceSettingsDrawer
-            :open="settingsDrawer.state.isOpen"
-            :status="settingsDrawer.state.status"
-            :settings="settingsDrawer.state.settings"
-            @close="settingsDrawer.close"
-            @retry="settingsDrawer.open"
-            @saved="onSettingsSaved"
-        />
-    </AppLayout>
+    <InvoiceSettingsDrawer
+        :open="settingsDrawer.state.isOpen"
+        :status="settingsDrawer.state.status"
+        :settings="settingsDrawer.state.settings"
+        @close="settingsDrawer.close"
+        @retry="settingsDrawer.open"
+        @saved="onSettingsSaved"
+    />
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { formatDatetime } from '@/utils/date';
 
@@ -16,9 +17,9 @@ const { t } = useI18n();
 
             <p v-if="props.invoice.client_id">
                 <span class="text-base-content/60">{{ t('invoice_link_client') }}:</span>
-                <a :href="`/clients/${props.invoice.client_id}`" class="link link-hover ml-1">
+                <Link :href="`/clients/${props.invoice.client_id}`" class="link link-hover ml-1">
                     {{ props.invoice.client_name }}
-                </a>
+                </Link>
             </p>
 
             <p v-if="props.invoice.object_name">
@@ -28,30 +29,30 @@ const { t } = useI18n();
 
             <p v-if="props.invoice.recurring_invoice_id">
                 <span class="text-base-content/60">{{ t('invoice_link_recurring') }}:</span>
-                <a :href="`/recurring-invoices/${props.invoice.recurring_invoice_id}`" class="link link-hover ml-1">
+                <Link :href="`/recurring-invoices/${props.invoice.recurring_invoice_id}`" class="link link-hover ml-1">
                     {{ t('invoice_link_recurring') }}
-                </a>
+                </Link>
             </p>
 
             <p v-if="props.invoice.quote_id">
                 <span class="text-base-content/60">{{ t('invoice_link_quote') }}:</span>
-                <a :href="`/quotes/${props.invoice.quote_id}`" class="link link-hover ml-1">
+                <Link :href="`/quotes/${props.invoice.quote_id}`" class="link link-hover ml-1">
                     {{ props.invoice.quote_number ?? t('quote_no_number') }}
-                </a>
+                </Link>
             </p>
 
             <p v-if="props.invoice.credited_invoice_id">
                 <span class="text-base-content/60">{{ t('invoice_credit_note_for') }}:</span>
-                <a :href="`/invoices/${props.invoice.credited_invoice_id}`" class="link link-hover ml-1">
+                <Link :href="`/invoices/${props.invoice.credited_invoice_id}`" class="link link-hover ml-1">
                     {{ t('invoice_view_original') }}
-                </a>
+                </Link>
             </p>
 
             <p v-if="props.invoice.credit_note_id">
                 <span class="text-base-content/60">{{ t('invoice_credit_note_link') }}:</span>
-                <a :href="`/invoices/${props.invoice.credit_note_id}`" class="link link-hover ml-1">
+                <Link :href="`/invoices/${props.invoice.credit_note_id}`" class="link link-hover ml-1">
                     {{ t('invoice_credit_note') }}
-                </a>
+                </Link>
             </p>
 
             <div class="divider my-1" />

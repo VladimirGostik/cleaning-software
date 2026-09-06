@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { BellIcon } from '@heroicons/vue/24/outline';
 import { useNotificationBell } from '@/Composables/useNotificationBell';
@@ -53,7 +53,7 @@ function markAllRead(): void {
 </script>
 
 <template>
-    <div class="dropdown" :class="compact ? 'dropdown-end' : 'dropdown-bottom w-full'">
+    <div class="dropdown" :class="compact ? 'dropdown-end' : 'dropdown-top w-full'">
         <div
             tabindex="0"
             role="button"
@@ -110,14 +110,18 @@ function markAllRead(): void {
                 <p class="text-base-content/50">{{ t('notifications_empty') }}</p>
             </div>
 
-            <div v-else class="flex max-h-80 w-full min-w-0 flex-col overflow-y-auto">
+            <div
+                v-else
+                class="flex w-full min-w-0 flex-col overflow-y-auto"
+                :class="compact ? 'max-h-80' : 'max-h-[50vh]'"
+            >
                 <NotificationItem v-for="n in state.recent" :key="n.id" :notification="n" @select="select" />
             </div>
 
             <div class="border-t border-base-300 px-3 py-2">
-                <a href="/notifications" class="link link-primary text-xs" @click="close">
+                <Link href="/notifications" class="link link-primary text-xs" @click="close">
                     {{ t('notifications_see_all') }}
-                </a>
+                </Link>
             </div>
         </div>
     </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ContractEmploymentCard from '@/Components/Contracts/ContractEmploymentCard.vue';
 import { permissionLabelKey } from '@/utils/enums';
@@ -36,12 +37,12 @@ const { t } = useI18n();
 
                 <template v-if="props.employee.employment_contract">
                     <ContractEmploymentCard :employment="props.employee.employment_contract" />
-                    <a
+                    <Link
                         :href="`/contracts/${props.employee.employment_contract_id}`"
                         class="link link-hover text-sm mt-2 inline-block"
                     >
                         {{ t('employee_view_contract') }}
-                    </a>
+                    </Link>
                 </template>
                 <p v-else class="text-base-content/60">{{ t('employee_no_employment') }}</p>
             </div>

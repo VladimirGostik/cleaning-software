@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { usePage, router } from '@inertiajs/vue3';
+import { usePage, router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BrandMark from '@/Components/BrandMark.vue';
 import TenantSwitcher from '@/Components/Tenants/TenantSwitcher.vue';
@@ -51,6 +51,7 @@ const tenant = computed(() => props.value.tenant);
 const tenantColors = computed(() => props.value.tenantColors);
 const isAddTenantOpen = ref(false);
 const canViewNotifications = computed(() => allows('view notifications'));
+const drawerOpen = ref(false);
 
 const ICONS: Record<string, object> = {
     HomeIcon,
@@ -118,12 +119,18 @@ watch(
     { immediate: true, deep: true },
 );
 
+let removeNavigate: (() => void) | undefined;
+
 onMounted(() => {
     window.addEventListener('app-toast', handleToastEvent);
+    removeNavigate = router.on('navigate', () => {
+        drawerOpen.value = false;
+    });
 });
 
 onUnmounted(() => {
     window.removeEventListener('app-toast', handleToastEvent);
+    removeNavigate?.();
 });
 
 function logout() {
@@ -146,7 +153,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
 
 <template>
     <div class="drawer lg:drawer-open" data-theme="app-theme" :style="themeStyle">
-        <input id="app-drawer" type="checkbox" class="drawer-toggle" />
+        <input id="app-drawer" v-model="drawerOpen" type="checkbox" class="drawer-toggle" />
 
         <!-- Page content -->
         <div class="drawer-content flex flex-col min-h-screen">
@@ -170,14 +177,14 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     </label>
                 </div>
                 <div class="flex-1">
-                    <a href="/" class="flex items-center gap-2">
+                    <Link href="/" class="flex items-center gap-2">
                         <span
                             class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary/80 to-primary text-white"
                         >
                             <BrandMark class="h-4 w-4" />
                         </span>
                         <span class="text-lg font-bold">{{ t('app_name') }}</span>
-                    </a>
+                    </Link>
                 </div>
                 <div v-if="tenant.available.length > 0" class="flex-none">
                     <TenantSwitcher :tenant="tenant" compact @add-tenant="isAddTenantOpen = true" />
@@ -196,63 +203,36 @@ function toastAlertClass(type: ToastMessage['type']): string {
         <!-- Sidebar -->
         <div class="drawer-side z-20">
             <label for="app-drawer" class="drawer-overlay" />
-            <aside class="w-64 min-h-screen bg-neutral text-neutral-content flex flex-col">
+            <aside class="w-64 h-screen overflow-hidden bg-neutral text-neutral-content flex flex-col">
                 <!-- Brand -->
                 <div class="px-4 pt-4 pb-5">
-                    <a href="/" class="flex items-center gap-2 text-white hover:opacity-90 transition">
+                    <Link href="/" class="flex items-center gap-2 text-white hover:opacity-90 transition">
                         <span
                             class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary/80 to-primary shrink-0"
                         >
                             <BrandMark class="h-4 w-4" />
                         </span>
                         <span class="text-[16px] font-bold tracking-tight">{{ t('app_name') }}</span>
-                    </a>
+                    </Link>
                 </div>
 
                 <div v-if="tenant.available.length > 0" class="px-3 pb-3">
                     <TenantSwitcher :tenant="tenant" @add-tenant="isAddTenantOpen = true" />
                 </div>
 
-                <!-- User info -->
-                <div v-if="auth.user" class="p-4 border-y border-white/[0.06]">
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-content shrink-0"
-                        >
-                            {{ auth.user.name.charAt(0).toUpperCase() }}
-                        </span>
-                        <div class="min-w-0">
-                            <p class="text-[13px] font-semibold text-white truncate">
-                                {{ auth.user.name }}
-                            </p>
-                            <p class="text-xs text-neutral-content/60 truncate">
-                                {{ auth.user.email }}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        class="btn btn-sm btn-ghost mt-2 w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
-                        @click="logout"
-                    >
-                        <ArrowRightOnRectangleIcon class="size-4" />
-                        {{ t('logout') }}
-                    </button>
-                    <NotificationBell v-if="canViewNotifications" class="mt-1" />
-                </div>
-
                 <!-- Navigation -->
-                <nav class="flex-1 p-3">
+                <nav class="flex-1 overflow-y-auto p-3">
                     <ul class="menu menu-sm gap-0.5 p-0">
                         <template v-for="item in navigation" :key="item.key">
                             <li v-if="item.children.length === 0">
-                                <a
+                                <Link
                                     :href="item.href"
                                     :class="{ active: isActive(item.href) }"
                                     class="flex items-center gap-2"
                                 >
                                     <component :is="resolveIcon(item.icon)" class="size-4" />
                                     {{ translateLabel(item.label) }}
-                                </a>
+                                </Link>
                             </li>
                             <li v-else>
                                 <details :open="item.children.some((c: NavigationItem) => isActive(c.href))">
@@ -262,10 +242,10 @@ function toastAlertClass(type: ToastMessage['type']): string {
                                     </summary>
                                     <ul>
                                         <li v-for="child in item.children" :key="child.key">
-                                            <a :href="child.href" :class="{ active: isActive(child.href) }">
+                                            <Link :href="child.href" :class="{ active: isActive(child.href) }">
                                                 <component :is="resolveIcon(child.icon)" class="size-4" />
                                                 {{ translateLabel(child.label) }}
-                                            </a>
+                                            </Link>
                                         </li>
                                     </ul>
                                 </details>
@@ -274,28 +254,61 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     </ul>
                 </nav>
 
-                <!-- Language switcher -->
-                <div v-if="languages && languages.length > 1" class="p-3 border-t border-white/[0.06]">
-                    <div class="dropdown dropdown-top w-full">
-                        <div
-                            tabindex="0"
-                            role="button"
-                            class="btn btn-sm btn-ghost w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
-                        >
-                            <GlobeAltIcon class="size-4" />
-                            <span>{{ locale.toUpperCase() }}</span>
+                <!-- Footer: user card, notification bell, logout, language switcher -->
+                <div class="mt-auto border-t border-white/[0.06]">
+                    <div v-if="auth.user" class="p-4 border-b border-white/[0.06]">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-content shrink-0"
+                            >
+                                {{ auth.user.name.charAt(0).toUpperCase() }}
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-[13px] font-semibold text-white truncate">
+                                    {{ auth.user.name }}
+                                </p>
+                                <p class="text-xs text-neutral-content/60 truncate">
+                                    {{ auth.user.email }}
+                                </p>
+                            </div>
                         </div>
-                        <ul
-                            tabindex="0"
-                            class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-full p-1"
+                    </div>
+
+                    <div v-if="auth.user && canViewNotifications" class="px-4 py-3 border-b border-white/[0.06]">
+                        <NotificationBell />
+                    </div>
+
+                    <div class="p-3 space-y-1">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-ghost w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
+                            @click="logout"
                         >
-                            <li v-for="lang in languages" :key="lang.value">
-                                <a :href="`/language/${lang.value}`" :class="{ active: locale === lang.value }">
-                                    <span v-if="lang.flag">{{ lang.flag }}</span>
-                                    {{ lang.label }}
-                                </a>
-                            </li>
-                        </ul>
+                            <ArrowRightOnRectangleIcon class="size-4" />
+                            {{ t('logout') }}
+                        </button>
+
+                        <div v-if="languages && languages.length > 1" class="dropdown dropdown-top w-full">
+                            <div
+                                tabindex="0"
+                                role="button"
+                                class="btn btn-sm btn-ghost w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
+                            >
+                                <GlobeAltIcon class="size-4" />
+                                <span>{{ locale.toUpperCase() }}</span>
+                            </div>
+                            <ul
+                                tabindex="0"
+                                class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-full p-1"
+                            >
+                                <li v-for="lang in languages" :key="lang.value">
+                                    <a :href="`/language/${lang.value}`" :class="{ active: locale === lang.value }">
+                                        <span v-if="lang.flag">{{ lang.flag }}</span>
+                                        {{ lang.label }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </aside>

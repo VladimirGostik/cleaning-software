@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import { formatDatetime } from '@/utils/date';
@@ -62,65 +62,63 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('media_library')" :breadcrumbs="breadcrumbs" />
+    <Header :title="t('media_library')" :breadcrumbs="breadcrumbs" />
 
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="media" :filters="filterDefinitions" route-name="media.index">
-                    <template #cell-file_name="{ row }">
-                        <a
-                            :href="`/media/${(row as App.Data.MediaListItemData).id}`"
-                            class="link link-hover font-medium"
-                        >
-                            {{ (row as App.Data.MediaListItemData).file_name }}
-                        </a>
-                    </template>
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="media" :filters="filterDefinitions" route-name="media.index">
+                <template #cell-file_name="{ row }">
+                    <Link
+                        :href="`/media/${(row as App.Data.MediaListItemData).id}`"
+                        class="link link-hover font-medium"
+                    >
+                        {{ (row as App.Data.MediaListItemData).file_name }}
+                    </Link>
+                </template>
 
-                    <template #cell-mime_type="{ value }">
-                        <span v-if="value" class="badge badge-ghost badge-sm">{{ value }}</span>
-                        <span v-else class="text-base-content/40">—</span>
-                    </template>
+                <template #cell-mime_type="{ value }">
+                    <span v-if="value" class="badge badge-ghost badge-sm">{{ value }}</span>
+                    <span v-else class="text-base-content/40">—</span>
+                </template>
 
-                    <template #cell-size="{ value }">
-                        <span class="text-sm">{{ formatBytes(value as number) }}</span>
-                    </template>
+                <template #cell-size="{ value }">
+                    <span class="text-sm">{{ formatBytes(value as number) }}</span>
+                </template>
 
-                    <template #cell-collection_name="{ value }">
-                        <span class="badge badge-outline badge-sm">{{ value }}</span>
-                    </template>
+                <template #cell-collection_name="{ value }">
+                    <span class="badge badge-outline badge-sm">{{ value }}</span>
+                </template>
 
-                    <template #cell-model_type_label="{ row }">
-                        <span class="text-sm">{{ (row as App.Data.MediaListItemData).model_type_label }}</span>
-                    </template>
+                <template #cell-model_type_label="{ row }">
+                    <span class="text-sm">{{ (row as App.Data.MediaListItemData).model_type_label }}</span>
+                </template>
 
-                    <template #cell-model_url="{ row }">
-                        <a
-                            v-if="(row as App.Data.MediaListItemData).model_url"
-                            :href="(row as App.Data.MediaListItemData).model_url!"
-                            class="link link-primary text-sm inline-flex items-center gap-1"
-                        >
-                            <ArrowTopRightOnSquareIcon class="size-3" />
-                            {{ t('open_owner') }}
-                        </a>
-                        <span v-else class="text-base-content/40">—</span>
-                    </template>
+                <template #cell-model_url="{ row }">
+                    <Link
+                        v-if="(row as App.Data.MediaListItemData).model_url"
+                        :href="(row as App.Data.MediaListItemData).model_url!"
+                        class="link link-primary text-sm inline-flex items-center gap-1"
+                    >
+                        <ArrowTopRightOnSquareIcon class="size-3" />
+                        {{ t('open_owner') }}
+                    </Link>
+                    <span v-else class="text-base-content/40">—</span>
+                </template>
 
-                    <template #cell-created_at="{ value }">
-                        <span class="text-sm text-base-content/70">{{ formatDatetime(value as string | null) }}</span>
-                    </template>
+                <template #cell-created_at="{ value }">
+                    <span class="text-sm text-base-content/70">{{ formatDatetime(value as string | null) }}</span>
+                </template>
 
-                    <template #buttons="{ row }">
-                        <a
-                            :href="`/media/${(row as App.Data.MediaListItemData).id}`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('details')"
-                        >
-                            <EyeIcon class="size-4" />
-                        </a>
-                    </template>
-                </DataTable>
-            </div>
+                <template #buttons="{ row }">
+                    <Link
+                        :href="`/media/${(row as App.Data.MediaListItemData).id}`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('details')"
+                    >
+                        <EyeIcon class="size-4" />
+                    </Link>
+                </template>
+            </DataTable>
         </div>
-    </AppLayout>
+    </div>
 </template>

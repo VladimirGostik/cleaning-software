@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { BuildingOffice2Icon, EyeIcon, NoSymbolIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -101,95 +100,93 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('objects')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <button
-                    v-if="allows('create objects') && filterOptions.clients.length > 0"
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    @click="ui.createOpen = true"
-                >
-                    {{ t('object_add') }}
-                </button>
-            </template>
-        </Header>
+    <Header :title="t('objects')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <button
+                v-if="allows('create objects') && filterOptions.clients.length > 0"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="ui.createOpen = true"
+            >
+                {{ t('object_add') }}
+            </button>
+        </template>
+    </Header>
 
-        <div v-if="!allows('view all objects')" class="alert alert-info mb-4">
-            <span>{{ t('objects_own_only_hint') }}</span>
+    <div v-if="!allows('view all objects')" class="alert alert-info mb-4">
+        <span>{{ t('objects_own_only_hint') }}</span>
+    </div>
+
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('objects_empty')"
+        :description="t('objects_empty_hint')"
+        :icon="BuildingOffice2Icon"
+    >
+        <template #cta>
+            <button
+                v-if="allows('create objects') && filterOptions.clients.length > 0"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="ui.createOpen = true"
+            >
+                {{ t('object_add') }}
+            </button>
+        </template>
+    </EmptyState>
+
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="objects" :filters="filterDefinitions">
+                <template #cell-name="{ row }">
+                    <Link :href="`/objects/${row.id}`" class="link link-hover font-medium">{{ row.name }}</Link>
+                </template>
+
+                <template #cell-type="{ row }">
+                    <ObjectTypeBadge :type="row.type" />
+                </template>
+
+                <template #cell-client_name="{ row }">
+                    <Link :href="`/clients/${row.client_id}`" class="link link-hover">
+                        {{ row.client_name ?? t('empty_dash') }}
+                    </Link>
+                </template>
+
+                <template #cell-area_sqm="{ row }">
+                    {{ row.area_sqm !== null ? `${row.area_sqm} m²` : t('empty_dash') }}
+                </template>
+
+                <template #cell-is_active="{ row }">
+                    <ObjectStatusBadge :is-active="row.is_active" />
+                </template>
+
+                <template #buttons="{ row }">
+                    <Link :href="`/objects/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
+                        <EyeIcon class="size-4" />
+                    </Link>
+
+                    <button
+                        v-if="allows('delete objects') && row.is_active"
+                        type="button"
+                        class="btn btn-ghost btn-xs text-warning"
+                        :title="t('object_deactivate')"
+                        @click="openModal(row)"
+                    >
+                        <NoSymbolIcon class="size-4" />
+                    </button>
+                </template>
+            </DataTable>
         </div>
+    </div>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('objects_empty')"
-            :description="t('objects_empty_hint')"
-            :icon="BuildingOffice2Icon"
-        >
-            <template #cta>
-                <button
-                    v-if="allows('create objects') && filterOptions.clients.length > 0"
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    @click="ui.createOpen = true"
-                >
-                    {{ t('object_add') }}
-                </button>
-            </template>
-        </EmptyState>
+    <ObjectFormDrawer :open="ui.createOpen" :clients="filterOptions.clients" @close="ui.createOpen = false" />
 
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="objects" :filters="filterDefinitions">
-                    <template #cell-name="{ row }">
-                        <a :href="`/objects/${row.id}`" class="link link-hover font-medium">{{ row.name }}</a>
-                    </template>
-
-                    <template #cell-type="{ row }">
-                        <ObjectTypeBadge :type="row.type" />
-                    </template>
-
-                    <template #cell-client_name="{ row }">
-                        <a :href="`/clients/${row.client_id}`" class="link link-hover">
-                            {{ row.client_name ?? t('empty_dash') }}
-                        </a>
-                    </template>
-
-                    <template #cell-area_sqm="{ row }">
-                        {{ row.area_sqm !== null ? `${row.area_sqm} m²` : t('empty_dash') }}
-                    </template>
-
-                    <template #cell-is_active="{ row }">
-                        <ObjectStatusBadge :is-active="row.is_active" />
-                    </template>
-
-                    <template #buttons="{ row }">
-                        <a :href="`/objects/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                            <EyeIcon class="size-4" />
-                        </a>
-
-                        <button
-                            v-if="allows('delete objects') && row.is_active"
-                            type="button"
-                            class="btn btn-ghost btn-xs text-warning"
-                            :title="t('object_deactivate')"
-                            @click="openModal(row)"
-                        >
-                            <NoSymbolIcon class="size-4" />
-                        </button>
-                    </template>
-                </DataTable>
-            </div>
-        </div>
-
-        <ObjectFormDrawer :open="ui.createOpen" :clients="filterOptions.clients" @close="ui.createOpen = false" />
-
-        <ConfirmDeleteModal
-            :is-open="state.isOpen"
-            :title="getModalTitle()"
-            :description="getModalDescription()"
-            :confirm-label="t('object_deactivate')"
-            @cancel="closeModal"
-            @confirm="confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="state.isOpen"
+        :title="getModalTitle()"
+        :description="getModalDescription()"
+        :confirm-label="t('object_deactivate')"
+        @cancel="closeModal"
+        @confirm="confirmDelete"
+    />
 </template>

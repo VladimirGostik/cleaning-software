@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
 import FormProvider from '@/Components/Forms/FormProvider.vue';
@@ -129,7 +129,7 @@ function submit(): void {
             <div v-else class="alert alert-info">
                 <span>
                     {{ t('employee_employment_edit_hint') }}
-                    <a href="/contracts" class="link link-hover">{{ t('contracts') }}</a>
+                    <Link href="/contracts" class="link link-hover">{{ t('contracts') }}</Link>
                 </span>
             </div>
 

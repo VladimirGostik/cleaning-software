@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PencilSquareIcon, XCircleIcon } from '@heroicons/vue/24/outline';
@@ -21,10 +22,14 @@ const hasActions = computed(() => props.job.can.update || props.job.can.cancel);
         <div class="card-body space-y-2">
             <h2 class="card-title text-base">{{ t('schedule_section_actions') }}</h2>
 
-            <a v-if="props.job.can.update" :href="`/jobs/${props.job.id}/edit`" class="btn btn-sm w-full justify-start">
+            <Link
+                v-if="props.job.can.update"
+                :href="`/jobs/${props.job.id}/edit`"
+                class="btn btn-sm w-full justify-start"
+            >
                 <PencilSquareIcon class="size-4" />
                 {{ t('edit') }}
-            </a>
+            </Link>
 
             <button
                 v-if="props.job.can.cancel"

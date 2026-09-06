@@ -3,8 +3,6 @@ import { computed, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { ExclamationTriangleIcon, NoSymbolIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
@@ -61,71 +59,69 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="object.name" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <button v-if="canEdit" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
-                    <PencilSquareIcon class="size-4" />
-                    {{ t('edit') }}
-                </button>
-
-                <button
-                    v-if="allows('delete objects') && object.is_active"
-                    type="button"
-                    class="btn btn-ghost btn-sm text-warning"
-                    @click="openModal(object)"
-                >
-                    <NoSymbolIcon class="size-4" />
-                    {{ t('object_deactivate') }}
-                </button>
-            </template>
-        </Header>
-
-        <div v-if="!object.is_active" class="alert alert-warning mb-6">
-            <ExclamationTriangleIcon class="size-5" />
-            <span>{{ t('object_inactive_banner') }}</span>
-            <button
-                v-if="canEdit"
-                type="button"
-                class="btn btn-sm btn-primary"
-                :disabled="reactivating"
-                @click="reactivate"
-            >
-                {{ t('object_reactivate') }}
+    <Header :title="object.name" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <button v-if="canEdit" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
+                <PencilSquareIcon class="size-4" />
+                {{ t('edit') }}
             </button>
-        </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div class="space-y-6 lg:col-span-2">
-                <ObjectAccessCard :object="object" />
+            <button
+                v-if="allows('delete objects') && object.is_active"
+                type="button"
+                class="btn btn-ghost btn-sm text-warning"
+                @click="openModal(object)"
+            >
+                <NoSymbolIcon class="size-4" />
+                {{ t('object_deactivate') }}
+            </button>
+        </template>
+    </Header>
 
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('object_special_instructions') }}</h2>
-                        <p v-if="object.special_instructions" class="whitespace-pre-wrap">
-                            {{ object.special_instructions }}
-                        </p>
-                        <p v-else class="text-base-content/60">{{ t('object_no_instructions') }}</p>
-                    </div>
+    <div v-if="!object.is_active" class="alert alert-warning mb-6">
+        <ExclamationTriangleIcon class="size-5" />
+        <span>{{ t('object_inactive_banner') }}</span>
+        <button
+            v-if="canEdit"
+            type="button"
+            class="btn btn-sm btn-primary"
+            :disabled="reactivating"
+            @click="reactivate"
+        >
+            {{ t('object_reactivate') }}
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="space-y-6 lg:col-span-2">
+            <ObjectAccessCard :object="object" />
+
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-base">{{ t('object_special_instructions') }}</h2>
+                    <p v-if="object.special_instructions" class="whitespace-pre-wrap">
+                        {{ object.special_instructions }}
+                    </p>
+                    <p v-else class="text-base-content/60">{{ t('object_no_instructions') }}</p>
                 </div>
-
-                <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />
             </div>
 
-            <div>
-                <ObjectDetailCard :object="object" />
-            </div>
+            <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />
         </div>
 
-        <ObjectFormDrawer :open="ui.editOpen" :object="object" :clients="clients" @close="ui.editOpen = false" />
+        <div>
+            <ObjectDetailCard :object="object" />
+        </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="state.isOpen"
-            :title="getModalTitle()"
-            :description="getModalDescription()"
-            :confirm-label="t('object_deactivate')"
-            @cancel="closeModal"
-            @confirm="confirmDelete"
-        />
-    </AppLayout>
+    <ObjectFormDrawer :open="ui.editOpen" :object="object" :clients="clients" @close="ui.editOpen = false" />
+
+    <ConfirmDeleteModal
+        :is-open="state.isOpen"
+        :title="getModalTitle()"
+        :description="getModalDescription()"
+        :confirm-label="t('object_deactivate')"
+        @cancel="closeModal"
+        @confirm="confirmDelete"
+    />
 </template>

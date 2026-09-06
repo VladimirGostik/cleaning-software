@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import { formatDatetime } from '@/utils/date';
@@ -45,55 +45,48 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('audit_logs')" :breadcrumbs="breadcrumbs" />
+    <Header :title="t('audit_logs')" :breadcrumbs="breadcrumbs" />
 
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable
-                    :columns="columns"
-                    :rows="activities"
-                    :filters="filterDefinitions"
-                    route-name="audit-logs.index"
-                >
-                    <template #cell-created_at="{ value }">
-                        {{ formatDatetime(value as string | null) }}
-                    </template>
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="activities" :filters="filterDefinitions" route-name="audit-logs.index">
+                <template #cell-created_at="{ value }">
+                    {{ formatDatetime(value as string | null) }}
+                </template>
 
-                    <template #cell-causer_name="{ row }">
-                        <div>
-                            <span class="font-medium">{{
-                                (row as App.Data.ActivityLogListItemData).causer_name ?? '-'
-                            }}</span>
-                            <br />
-                            <span class="text-xs text-base-content/60">
-                                {{ (row as App.Data.ActivityLogListItemData).causer_email ?? '' }}
-                            </span>
-                        </div>
-                    </template>
-
-                    <template #cell-event="{ value }">
-                        <span v-if="value" class="badge badge-ghost badge-sm">
-                            {{ value }}
+                <template #cell-causer_name="{ row }">
+                    <div>
+                        <span class="font-medium">{{
+                            (row as App.Data.ActivityLogListItemData).causer_name ?? '-'
+                        }}</span>
+                        <br />
+                        <span class="text-xs text-base-content/60">
+                            {{ (row as App.Data.ActivityLogListItemData).causer_email ?? '' }}
                         </span>
-                        <span v-else>-</span>
-                    </template>
+                    </div>
+                </template>
 
-                    <template #cell-description="{ value }">
+                <template #cell-event="{ value }">
+                    <span v-if="value" class="badge badge-ghost badge-sm">
                         {{ value }}
-                    </template>
+                    </span>
+                    <span v-else>-</span>
+                </template>
 
-                    <template #buttons="{ row }">
-                        <a
-                            :href="`/audit-logs/${(row as App.Data.ActivityLogListItemData).id}`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('details')"
-                        >
-                            <EyeIcon class="size-4" />
-                        </a>
-                    </template>
-                </DataTable>
-            </div>
+                <template #cell-description="{ value }">
+                    {{ value }}
+                </template>
+
+                <template #buttons="{ row }">
+                    <Link
+                        :href="`/audit-logs/${(row as App.Data.ActivityLogListItemData).id}`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('details')"
+                    >
+                        <EyeIcon class="size-4" />
+                    </Link>
+                </template>
+            </DataTable>
         </div>
-    </AppLayout>
+    </div>
 </template>

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import InvoiceSettingsForm from '@/Components/Invoices/InvoiceSettingsForm.vue';
 
@@ -17,10 +15,8 @@ const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label:
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('invoicing_settings')" :breadcrumbs="breadcrumbs" />
-        <p class="mb-6 text-base-content/60">{{ t('invoice_settings_subtitle') }}</p>
+    <Header :title="t('invoicing_settings')" :breadcrumbs="breadcrumbs" />
+    <p class="mb-6 text-base-content/60">{{ t('invoice_settings_subtitle') }}</p>
 
-        <InvoiceSettingsForm :settings="settings" />
-    </AppLayout>
+    <InvoiceSettingsForm :settings="settings" />
 </template>

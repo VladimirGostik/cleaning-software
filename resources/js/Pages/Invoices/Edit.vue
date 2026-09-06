@@ -2,8 +2,6 @@
 import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import InvoiceForm from '@/Components/Invoices/InvoiceForm.vue';
 import SupplierIncompleteAlert from '@/Components/Invoices/SupplierIncompleteAlert.vue';
@@ -35,29 +33,27 @@ function onSettingsSaved(): void {
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('invoice_edit')" :breadcrumbs="breadcrumbs" />
+    <Header :title="t('invoice_edit')" :breadcrumbs="breadcrumbs" />
 
-        <div v-if="invoice.status !== 'draft'" class="alert alert-warning">
-            <span>{{ t('invoice_not_editable') }}</span>
-        </div>
+    <div v-if="invoice.status !== 'draft'" class="alert alert-warning">
+        <span>{{ t('invoice_not_editable') }}</span>
+    </div>
 
-        <template v-else>
-            <SupplierIncompleteAlert
-                :missing-fields="context.supplier_missing_fields"
-                @open-settings="settingsDrawer.open"
-            />
-
-            <InvoiceForm :context="context" :invoice="invoice" />
-        </template>
-
-        <InvoiceSettingsDrawer
-            :open="settingsDrawer.state.isOpen"
-            :status="settingsDrawer.state.status"
-            :settings="settingsDrawer.state.settings"
-            @close="settingsDrawer.close"
-            @retry="settingsDrawer.open"
-            @saved="onSettingsSaved"
+    <template v-else>
+        <SupplierIncompleteAlert
+            :missing-fields="context.supplier_missing_fields"
+            @open-settings="settingsDrawer.open"
         />
-    </AppLayout>
+
+        <InvoiceForm :context="context" :invoice="invoice" />
+    </template>
+
+    <InvoiceSettingsDrawer
+        :open="settingsDrawer.state.isOpen"
+        :status="settingsDrawer.state.status"
+        :settings="settingsDrawer.state.settings"
+        @close="settingsDrawer.close"
+        @retry="settingsDrawer.open"
+        @saved="onSettingsSaved"
+    />
 </template>

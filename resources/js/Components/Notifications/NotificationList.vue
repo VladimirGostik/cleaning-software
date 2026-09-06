@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline';
@@ -86,7 +87,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         </template>
 
         <template #buttons="{ row }">
-            <a
+            <Link
                 v-if="(row as NotificationRow).url"
                 :href="(row as NotificationRow).url!"
                 class="btn btn-ghost btn-xs"
@@ -94,7 +95,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 :aria-label="t('view')"
             >
                 <ArrowTopRightOnSquareIcon class="size-4" />
-            </a>
+            </Link>
             <button
                 v-if="(row as NotificationRow).read_at === null"
                 type="button"

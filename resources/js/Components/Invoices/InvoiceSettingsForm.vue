@@ -83,7 +83,7 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="space-y-6" :class="{ 'max-w-4xl': !compact }" @submit.prevent="submit">
+        <form novalidate class="space-y-6" @submit.prevent="submit">
             <InvoiceSettingsSupplierCard :compact="compact" />
             <InvoiceSettingsBankCard :compact="compact" />
 

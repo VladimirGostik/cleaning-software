@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -45,10 +46,10 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
             <h2 class="card-title text-base">{{ t('quote_section_actions') }}</h2>
 
             <Can v-if="isDraft" permission="edit quotes">
-                <a :href="`/quotes/${props.quote.id}/edit`" class="btn btn-sm w-full justify-start">
+                <Link :href="`/quotes/${props.quote.id}/edit`" class="btn btn-sm w-full justify-start">
                     <PencilSquareIcon class="size-4" />
                     {{ t('edit') }}
-                </a>
+                </Link>
             </Can>
 
             <Can v-if="isDraft && isItemized" permission="send quotes">

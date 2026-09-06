@@ -2,8 +2,6 @@
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { differenceInCalendarDays, parseISO, startOfToday } from 'date-fns';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue';
@@ -65,92 +63,90 @@ const deleteConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="contract.title" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <ContractStatusBadge :status="contract.status" />
-                <ContractCategoryBadge :category="contract.category" />
-            </template>
-        </Header>
+    <Header :title="contract.title" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <ContractStatusBadge :status="contract.status" />
+            <ContractCategoryBadge :category="contract.category" />
+        </template>
+    </Header>
 
-        <div v-if="showExpiringWarning" class="alert alert-warning mb-4">
-            <span>
-                {{ t('contract_expiring_warning', { days: daysToEnd, date: formatDate(contract.end_date) }) }}
-            </span>
-        </div>
+    <div v-if="showExpiringWarning" class="alert alert-warning mb-4">
+        <span>
+            {{ t('contract_expiring_warning', { days: daysToEnd, date: formatDate(contract.end_date) }) }}
+        </span>
+    </div>
 
-        <div v-if="contract.status === 'terminated'" class="alert alert-error mb-4">
-            <span>{{ t('contract_terminated_title') }}: {{ formatDatetime(contract.terminated_at) }}</span>
-        </div>
+    <div v-if="contract.status === 'terminated'" class="alert alert-error mb-4">
+        <span>{{ t('contract_terminated_title') }}: {{ formatDatetime(contract.terminated_at) }}</span>
+    </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-            <div class="space-y-6">
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body space-y-6">
-                        <div>
-                            <h2 class="card-title text-base">{{ t('contract_section_parties') }}</h2>
-                            <ContractPartiesCard :contract="contract" />
-                        </div>
-
-                        <div>
-                            <h2 class="card-title text-base">{{ t('contract_section_term') }}</h2>
-                            <ContractTermCard :contract="contract" />
-                        </div>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+        <div class="space-y-6">
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="card-title text-base">{{ t('contract_section_parties') }}</h2>
+                        <ContractPartiesCard :contract="contract" />
                     </div>
-                </div>
 
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('contract_section_body') }}</h2>
-                        <ContractBodyPreview :body="contract.body" />
-                    </div>
-                </div>
-
-                <div v-if="contract.employment" class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('contract_section_employment') }}</h2>
-                        <ContractEmploymentCard :employment="contract.employment" />
-                    </div>
-                </div>
-
-                <div v-if="contract.notes" class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('contract_section_notes') }}</h2>
-                        <p class="whitespace-pre-wrap text-sm text-base-content/70">{{ contract.notes }}</p>
+                    <div>
+                        <h2 class="card-title text-base">{{ t('contract_section_term') }}</h2>
+                        <ContractTermCard :contract="contract" />
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-6">
-                <ContractActionsCard
-                    :contract="contract"
-                    @sign="signConfirm.openModal(contract)"
-                    @terminate="ui.terminateOpen = true"
-                    @delete="deleteConfirm.openModal(contract)"
-                />
-                <ContractLinksCard :contract="contract" />
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-base">{{ t('contract_section_body') }}</h2>
+                    <ContractBodyPreview :body="contract.body" />
+                </div>
+            </div>
+
+            <div v-if="contract.employment" class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-base">{{ t('contract_section_employment') }}</h2>
+                    <ContractEmploymentCard :employment="contract.employment" />
+                </div>
+            </div>
+
+            <div v-if="contract.notes" class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-base">{{ t('contract_section_notes') }}</h2>
+                    <p class="whitespace-pre-wrap text-sm text-base-content/70">{{ contract.notes }}</p>
+                </div>
             </div>
         </div>
 
-        <ConfirmDeleteModal
-            :is-open="signConfirm.state.isOpen"
-            :title="signConfirm.getModalTitle()"
-            :description="signConfirm.getModalDescription()"
-            :confirm-label="t('contract_action_sign')"
-            confirm-variant="success"
-            @cancel="signConfirm.closeModal"
-            @confirm="signConfirm.confirmDelete"
-        />
+        <div class="space-y-6">
+            <ContractActionsCard
+                :contract="contract"
+                @sign="signConfirm.openModal(contract)"
+                @terminate="ui.terminateOpen = true"
+                @delete="deleteConfirm.openModal(contract)"
+            />
+            <ContractLinksCard :contract="contract" />
+        </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="deleteConfirm.state.isOpen"
-            :title="deleteConfirm.getModalTitle()"
-            :description="deleteConfirm.getModalDescription()"
-            :confirm-label="t('delete')"
-            @cancel="deleteConfirm.closeModal"
-            @confirm="deleteConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="signConfirm.state.isOpen"
+        :title="signConfirm.getModalTitle()"
+        :description="signConfirm.getModalDescription()"
+        :confirm-label="t('contract_action_sign')"
+        confirm-variant="success"
+        @cancel="signConfirm.closeModal"
+        @confirm="signConfirm.confirmDelete"
+    />
 
-        <ContractTerminateModal :open="ui.terminateOpen" :contract-id="contract.id" @close="ui.terminateOpen = false" />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="deleteConfirm.state.isOpen"
+        :title="deleteConfirm.getModalTitle()"
+        :description="deleteConfirm.getModalDescription()"
+        :confirm-label="t('delete')"
+        @cancel="deleteConfirm.closeModal"
+        @confirm="deleteConfirm.confirmDelete"
+    />
+
+    <ContractTerminateModal :open="ui.terminateOpen" :contract-id="contract.id" @close="ui.terminateOpen = false" />
 </template>

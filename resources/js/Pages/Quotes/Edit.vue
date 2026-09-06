@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import QuoteForm from '@/Components/Quotes/QuoteForm.vue';
 
@@ -24,13 +22,11 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('quote_edit')" :breadcrumbs="breadcrumbs" />
+    <Header :title="t('quote_edit')" :breadcrumbs="breadcrumbs" />
 
-        <div v-if="quote.status !== 'draft'" class="alert alert-warning">
-            <span>{{ t('quote_not_editable') }}</span>
-        </div>
+    <div v-if="quote.status !== 'draft'" class="alert alert-warning">
+        <span>{{ t('quote_not_editable') }}</span>
+    </div>
 
-        <QuoteForm v-else :context="context" :quote="quote" />
-    </AppLayout>
+    <QuoteForm v-else :context="context" :quote="quote" />
 </template>

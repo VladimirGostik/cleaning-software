@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import {
     ArrowDownTrayIcon,
@@ -29,10 +30,10 @@ const { t } = useI18n();
             <h2 class="card-title text-base">{{ t('contract_section_actions') }}</h2>
 
             <Can v-if="props.contract.is_editable" permission="edit contracts">
-                <a :href="`/contracts/${props.contract.id}/edit`" class="btn btn-sm w-full justify-start">
+                <Link :href="`/contracts/${props.contract.id}/edit`" class="btn btn-sm w-full justify-start">
                     <PencilSquareIcon class="size-4" />
                     {{ t('edit') }}
-                </a>
+                </Link>
             </Can>
 
             <Can v-if="props.contract.can_be_signed" permission="edit contracts">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -26,9 +27,9 @@ const canEdit = computed(() => allows('edit quotes') && props.quote.status === '
                     {{ props.quote.document.mime_type ?? t('empty_dash') }} ·
                     {{ formatBytes(props.quote.document.size) }}
                 </p>
-                <a v-if="canEdit" :href="`/quotes/${props.quote.id}/edit`" class="link link-hover text-xs">
+                <Link v-if="canEdit" :href="`/quotes/${props.quote.id}/edit`" class="link link-hover text-xs">
                     {{ t('quote_document_replace_hint') }}
-                </a>
+                </Link>
             </div>
             <a :href="props.quote.document.download_url" target="_blank" rel="noopener" class="btn btn-sm shrink-0">
                 {{ t('quote_document_download') }}
@@ -39,9 +40,13 @@ const canEdit = computed(() => allows('edit quotes') && props.quote.status === '
             <div>
                 <h3 class="font-semibold">{{ t('quote_document_missing_title') }}</h3>
                 <p class="text-sm">{{ t('quote_document_missing_hint') }}</p>
-                <a v-if="canEdit" :href="`/quotes/${props.quote.id}/edit`" class="link link-hover text-sm font-medium">
+                <Link
+                    v-if="canEdit"
+                    :href="`/quotes/${props.quote.id}/edit`"
+                    class="link link-hover text-sm font-medium"
+                >
                     {{ t('edit') }}
-                </a>
+                </Link>
             </div>
         </div>
     </div>

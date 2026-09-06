@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -8,8 +9,6 @@ import {
     PaperAirplaneIcon,
     XCircleIcon,
 } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -138,143 +137,139 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('quotes')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <a v-if="allows('create quotes')" href="/quotes/create" class="btn btn-primary btn-sm">
-                    {{ t('quote_add') }}
-                </a>
-            </template>
-        </Header>
+    <Header :title="t('quotes')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <Link v-if="allows('create quotes')" href="/quotes/create" class="btn btn-primary btn-sm">
+                {{ t('quote_add') }}
+            </Link>
+        </template>
+    </Header>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('quotes_empty')"
-            :description="t('quotes_empty_hint')"
-            :icon="DocumentDuplicateIcon"
-        >
-            <template #cta>
-                <a v-if="allows('create quotes')" href="/quotes/create" class="btn btn-primary btn-sm">
-                    {{ t('quote_add') }}
-                </a>
-            </template>
-        </EmptyState>
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('quotes_empty')"
+        :description="t('quotes_empty_hint')"
+        :icon="DocumentDuplicateIcon"
+    >
+        <template #cta>
+            <Link v-if="allows('create quotes')" href="/quotes/create" class="btn btn-primary btn-sm">
+                {{ t('quote_add') }}
+            </Link>
+        </template>
+    </EmptyState>
 
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="quotes" :filters="filterDefinitions">
-                    <template #cell-number="{ row }">
-                        <a :href="`/quotes/${row.id}`" class="link link-hover font-mono font-medium">
-                            {{ row.number ?? t('quote_no_number') }}
-                        </a>
-                    </template>
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="quotes" :filters="filterDefinitions">
+                <template #cell-number="{ row }">
+                    <Link :href="`/quotes/${row.id}`" class="link link-hover font-mono font-medium">
+                        {{ row.number ?? t('quote_no_number') }}
+                    </Link>
+                </template>
 
-                    <template #cell-kind="{ row }">
-                        <QuoteKindBadge :kind="row.kind" :has-document="row.has_document" />
-                    </template>
+                <template #cell-kind="{ row }">
+                    <QuoteKindBadge :kind="row.kind" :has-document="row.has_document" />
+                </template>
 
-                    <template #cell-status="{ row }">
-                        <QuoteStatusBadge :status="row.status" />
-                    </template>
+                <template #cell-status="{ row }">
+                    <QuoteStatusBadge :status="row.status" />
+                </template>
 
-                    <template #cell-customer_name="{ row }">
-                        <p class="flex items-center gap-2">
-                            <a v-if="row.client_id" :href="`/clients/${row.client_id}`" class="link link-hover">
-                                {{ row.customer_name }}
-                            </a>
-                            <span v-else>{{ row.customer_name }}</span>
-                            <QuoteRoughBadge v-if="row.client_id === null" />
-                        </p>
-                        <p v-if="row.subject" class="text-xs text-base-content/60">{{ row.subject }}</p>
-                    </template>
+                <template #cell-customer_name="{ row }">
+                    <p class="flex items-center gap-2">
+                        <Link v-if="row.client_id" :href="`/clients/${row.client_id}`" class="link link-hover">
+                            {{ row.customer_name }}
+                        </Link>
+                        <span v-else>{{ row.customer_name }}</span>
+                        <QuoteRoughBadge v-if="row.client_id === null" />
+                    </p>
+                    <p v-if="row.subject" class="text-xs text-base-content/60">{{ row.subject }}</p>
+                </template>
 
-                    <template #cell-object_name="{ row }">{{ row.object_name ?? t('empty_dash') }}</template>
+                <template #cell-object_name="{ row }">{{ row.object_name ?? t('empty_dash') }}</template>
 
-                    <template #cell-valid_until="{ row }">
-                        <span :class="{ 'text-error': row.status === 'expired' }">{{
-                            formatDate(row.valid_until)
-                        }}</span>
-                    </template>
+                <template #cell-valid_until="{ row }">
+                    <span :class="{ 'text-error': row.status === 'expired' }">{{ formatDate(row.valid_until) }}</span>
+                </template>
 
-                    <template #cell-total="{ row }">
-                        {{ row.kind === 'document' ? t('empty_dash') : money(row.total, row.currency) }}
-                    </template>
+                <template #cell-total="{ row }">
+                    {{ row.kind === 'document' ? t('empty_dash') : money(row.total, row.currency) }}
+                </template>
 
-                    <template #buttons="{ row }">
-                        <a
-                            :href="`/quotes/${row.id}`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('view')"
-                            :aria-label="t('view')"
-                        >
-                            <EyeIcon class="size-4" />
-                        </a>
+                <template #buttons="{ row }">
+                    <Link
+                        :href="`/quotes/${row.id}`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon class="size-4" />
+                    </Link>
 
-                        <button
-                            v-if="allows('send quotes') && row.status === 'draft' && row.kind === 'itemized'"
-                            type="button"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('quote_action_send')"
-                            :aria-label="t('quote_action_send')"
-                            @click="sendConfirm.openModal(row)"
-                        >
-                            <PaperAirplaneIcon class="size-4" />
-                        </button>
+                    <button
+                        v-if="allows('send quotes') && row.status === 'draft' && row.kind === 'itemized'"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('quote_action_send')"
+                        :aria-label="t('quote_action_send')"
+                        @click="sendConfirm.openModal(row)"
+                    >
+                        <PaperAirplaneIcon class="size-4" />
+                    </button>
 
-                        <button
-                            v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
-                            type="button"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('quote_action_accept')"
-                            :aria-label="t('quote_action_accept')"
-                            @click="acceptConfirm.openModal(row)"
-                        >
-                            <CheckCircleIcon class="size-4" />
-                        </button>
+                    <button
+                        v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('quote_action_accept')"
+                        :aria-label="t('quote_action_accept')"
+                        @click="acceptConfirm.openModal(row)"
+                    >
+                        <CheckCircleIcon class="size-4" />
+                    </button>
 
-                        <button
-                            v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
-                            type="button"
-                            class="btn btn-ghost btn-xs text-warning"
-                            :title="t('quote_action_reject')"
-                            :aria-label="t('quote_action_reject')"
-                            @click="rejectConfirm.openModal(row)"
-                        >
-                            <XCircleIcon class="size-4" />
-                        </button>
-                    </template>
-                </DataTable>
-            </div>
+                    <button
+                        v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
+                        type="button"
+                        class="btn btn-ghost btn-xs text-warning"
+                        :title="t('quote_action_reject')"
+                        :aria-label="t('quote_action_reject')"
+                        @click="rejectConfirm.openModal(row)"
+                    >
+                        <XCircleIcon class="size-4" />
+                    </button>
+                </template>
+            </DataTable>
         </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="sendConfirm.state.isOpen"
-            :title="sendConfirm.getModalTitle()"
-            :description="sendConfirm.getModalDescription()"
-            :confirm-label="t('quote_action_send')"
-            confirm-variant="primary"
-            @cancel="sendConfirm.closeModal"
-            @confirm="sendConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="sendConfirm.state.isOpen"
+        :title="sendConfirm.getModalTitle()"
+        :description="sendConfirm.getModalDescription()"
+        :confirm-label="t('quote_action_send')"
+        confirm-variant="primary"
+        @cancel="sendConfirm.closeModal"
+        @confirm="sendConfirm.confirmDelete"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="acceptConfirm.state.isOpen"
-            :title="acceptConfirm.getModalTitle()"
-            :description="acceptConfirm.getModalDescription()"
-            :confirm-label="t('quote_action_accept')"
-            confirm-variant="success"
-            @cancel="acceptConfirm.closeModal"
-            @confirm="acceptConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="acceptConfirm.state.isOpen"
+        :title="acceptConfirm.getModalTitle()"
+        :description="acceptConfirm.getModalDescription()"
+        :confirm-label="t('quote_action_accept')"
+        confirm-variant="success"
+        @cancel="acceptConfirm.closeModal"
+        @confirm="acceptConfirm.confirmDelete"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="rejectConfirm.state.isOpen"
-            :title="rejectConfirm.getModalTitle()"
-            :description="rejectConfirm.getModalDescription()"
-            :confirm-label="t('quote_action_reject')"
-            confirm-variant="warning"
-            @cancel="rejectConfirm.closeModal"
-            @confirm="rejectConfirm.confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="rejectConfirm.state.isOpen"
+        :title="rejectConfirm.getModalTitle()"
+        :description="rejectConfirm.getModalDescription()"
+        :confirm-label="t('quote_action_reject')"
+        confirm-variant="warning"
+        @cancel="rejectConfirm.closeModal"
+        @confirm="rejectConfirm.confirmDelete"
+    />
 </template>

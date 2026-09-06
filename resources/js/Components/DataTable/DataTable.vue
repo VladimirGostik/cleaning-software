@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TRow extends object">
 import { computed, ref, useSlots, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, Link } from '@inertiajs/vue3';
 import TableFilters from './TableFilters.vue';
 import TablePagination from './TablePagination.vue';
 import { readSpatieQuery, visitSpatieQuery } from '@/Composables/useSpatieTableQuery';
@@ -209,12 +209,12 @@ function confirmDelete(row: TRow, id: string | number) {
                                     >
                                         <slot name="buttons" :row="row" :index="index" />
 
-                                        <a
+                                        <Link
                                             v-if="canEdit && editUrl"
                                             :href="editUrl(row)"
                                             class="btn btn-ghost btn-xs"
                                             :title="$t('edit')"
-                                            >✎</a
+                                            >✎</Link
                                         >
 
                                         <div v-if="canDeleteThisRow(row)" class="relative">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { BuildingOffice2Icon } from '@heroicons/vue/24/outline';
 
@@ -33,9 +34,9 @@ const { t } = useI18n();
                     <tbody>
                         <tr v-for="object in objects" :key="object.id">
                             <td>
-                                <a :href="`/objects/${object.id}`" class="link link-hover font-medium">
+                                <Link :href="`/objects/${object.id}`" class="link link-hover font-medium">
                                     {{ object.name }}
-                                </a>
+                                </Link>
                                 <div v-if="object.city" class="text-xs text-base-content/60">{{ object.city }}</div>
                             </td>
                             <td><ObjectTypeBadge :type="object.type" /></td>

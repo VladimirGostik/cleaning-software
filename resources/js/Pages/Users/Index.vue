@@ -1,8 +1,7 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 
@@ -88,54 +87,52 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('users')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <a v-if="allows('create employees')" href="/users/create" class="btn btn-primary btn-sm">
-                    {{ t('create') }}
-                </a>
-            </template>
-        </Header>
+    <Header :title="t('users')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <Link v-if="allows('create employees')" href="/users/create" class="btn btn-primary btn-sm">
+                {{ t('create') }}
+            </Link>
+        </template>
+    </Header>
 
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable
-                    :columns="columns"
-                    :rows="users"
-                    :filters="filterDefinitions"
-                    :can-edit="allows('edit employees')"
-                    :can-delete="allows('delete employees')"
-                    :edit-url="(row: App.Data.UserListItemData) => `/users/${row.id}/edit`"
-                    :delete-url="(row: App.Data.UserListItemData) => `/users/${row.id}`"
-                >
-                    <template #cell-roles="{ row }">
-                        <div class="flex flex-wrap gap-1">
-                            <span v-for="role in row.roles" :key="role" class="badge badge-ghost badge-sm">
-                                {{ role }}
-                            </span>
-
-                            <span v-if="row.roles.length === 0" class="text-base-content/40 text-sm">
-                                {{ t('no_roles') }}
-                            </span>
-                        </div>
-                    </template>
-
-                    <template #cell-is_active="{ value }">
-                        <span v-if="value" class="badge badge-success badge-sm">
-                            {{ t('membership_active') }}
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable
+                :columns="columns"
+                :rows="users"
+                :filters="filterDefinitions"
+                :can-edit="allows('edit employees')"
+                :can-delete="allows('delete employees')"
+                :edit-url="(row: App.Data.UserListItemData) => `/users/${row.id}/edit`"
+                :delete-url="(row: App.Data.UserListItemData) => `/users/${row.id}`"
+            >
+                <template #cell-roles="{ row }">
+                    <div class="flex flex-wrap gap-1">
+                        <span v-for="role in row.roles" :key="role" class="badge badge-ghost badge-sm">
+                            {{ role }}
                         </span>
-                        <span v-else class="badge badge-ghost badge-sm">
-                            {{ t('inactive') }}
-                        </span>
-                    </template>
 
-                    <template #cell-created_at="{ value }">
-                        <span class="text-sm text-base-content/70">
-                            {{ formatDatetime(value as string | null) }}
+                        <span v-if="row.roles.length === 0" class="text-base-content/40 text-sm">
+                            {{ t('no_roles') }}
                         </span>
-                    </template>
-                </DataTable>
-            </div>
+                    </div>
+                </template>
+
+                <template #cell-is_active="{ value }">
+                    <span v-if="value" class="badge badge-success badge-sm">
+                        {{ t('membership_active') }}
+                    </span>
+                    <span v-else class="badge badge-ghost badge-sm">
+                        {{ t('inactive') }}
+                    </span>
+                </template>
+
+                <template #cell-created_at="{ value }">
+                    <span class="text-sm text-base-content/70">
+                        {{ formatDatetime(value as string | null) }}
+                    </span>
+                </template>
+            </DataTable>
         </div>
-    </AppLayout>
+    </div>
 </template>

@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ArrowPathIcon, CheckIcon, EyeIcon, PauseIcon, PlayIcon, XCircleIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -108,140 +107,136 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('recurring_invoices')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <a
-                    v-if="allows('create recurring_invoices')"
-                    href="/recurring-invoices/create"
-                    class="btn btn-primary btn-sm"
-                >
-                    {{ t('recurring_invoice_add') }}
-                </a>
-            </template>
-        </Header>
+    <Header :title="t('recurring_invoices')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <Link
+                v-if="allows('create recurring_invoices')"
+                href="/recurring-invoices/create"
+                class="btn btn-primary btn-sm"
+            >
+                {{ t('recurring_invoice_add') }}
+            </Link>
+        </template>
+    </Header>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('recurring_invoices_empty')"
-            :description="t('recurring_invoices_empty_hint')"
-            :icon="ArrowPathIcon"
-        >
-            <template #cta>
-                <a
-                    v-if="allows('create recurring_invoices')"
-                    href="/recurring-invoices/create"
-                    class="btn btn-primary btn-sm"
-                >
-                    {{ t('recurring_invoice_add') }}
-                </a>
-            </template>
-        </EmptyState>
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('recurring_invoices_empty')"
+        :description="t('recurring_invoices_empty_hint')"
+        :icon="ArrowPathIcon"
+    >
+        <template #cta>
+            <Link
+                v-if="allows('create recurring_invoices')"
+                href="/recurring-invoices/create"
+                class="btn btn-primary btn-sm"
+            >
+                {{ t('recurring_invoice_add') }}
+            </Link>
+        </template>
+    </EmptyState>
 
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="recurringInvoices" :filters="filterDefinitions">
-                    <template #cell-name="{ row }">
-                        <a :href="`/recurring-invoices/${row.id}`" class="link link-hover font-medium">{{
-                            row.name
-                        }}</a>
-                        <p class="text-xs text-base-content/60">
-                            {{ row.customer_display_name ?? t('recurring_invoice_no_customer') }}
-                        </p>
-                    </template>
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="recurringInvoices" :filters="filterDefinitions">
+                <template #cell-name="{ row }">
+                    <Link :href="`/recurring-invoices/${row.id}`" class="link link-hover font-medium">{{
+                        row.name
+                    }}</Link>
+                    <p class="text-xs text-base-content/60">
+                        {{ row.customer_display_name ?? t('recurring_invoice_no_customer') }}
+                    </p>
+                </template>
 
-                    <template #cell-frequency="{ row }"
-                        ><RecurringFrequencyBadge :frequency="row.frequency"
-                    /></template>
-                    <template #cell-status="{ row }"><RecurringStatusBadge :status="row.status" /></template>
-                    <template #cell-next_run_at="{ row }">{{ formatDate(row.next_run_at) }}</template>
+                <template #cell-frequency="{ row }"><RecurringFrequencyBadge :frequency="row.frequency" /></template>
+                <template #cell-status="{ row }"><RecurringStatusBadge :status="row.status" /></template>
+                <template #cell-next_run_at="{ row }">{{ formatDate(row.next_run_at) }}</template>
 
-                    <template #cell-occurrences="{ row }">
-                        {{ row.occurrences_generated }}/{{ row.occurrences_limit ?? '∞' }}
-                    </template>
+                <template #cell-occurrences="{ row }">
+                    {{ row.occurrences_generated }}/{{ row.occurrences_limit ?? '∞' }}
+                </template>
 
-                    <template #cell-auto_issue="{ row }">
-                        <CheckIcon v-if="row.auto_issue" class="size-4 text-success" />
-                        <span v-else>{{ t('empty_dash') }}</span>
-                    </template>
+                <template #cell-auto_issue="{ row }">
+                    <CheckIcon v-if="row.auto_issue" class="size-4 text-success" />
+                    <span v-else>{{ t('empty_dash') }}</span>
+                </template>
 
-                    <template #cell-start_date="{ row }">{{ formatDate(row.start_date) }}</template>
+                <template #cell-start_date="{ row }">{{ formatDate(row.start_date) }}</template>
 
-                    <template #buttons="{ row }">
-                        <a
-                            :href="`/recurring-invoices/${row.id}`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('view')"
-                            :aria-label="t('view')"
-                        >
-                            <EyeIcon class="size-4" />
-                        </a>
+                <template #buttons="{ row }">
+                    <Link
+                        :href="`/recurring-invoices/${row.id}`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon class="size-4" />
+                    </Link>
 
-                        <button
-                            v-if="allows('edit recurring_invoices') && row.status === 'active'"
-                            type="button"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('recurring_invoice_action_pause')"
-                            :aria-label="t('recurring_invoice_action_pause')"
-                            @click="pauseConfirm.openModal(row)"
-                        >
-                            <PauseIcon class="size-4" />
-                        </button>
+                    <button
+                        v-if="allows('edit recurring_invoices') && row.status === 'active'"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('recurring_invoice_action_pause')"
+                        :aria-label="t('recurring_invoice_action_pause')"
+                        @click="pauseConfirm.openModal(row)"
+                    >
+                        <PauseIcon class="size-4" />
+                    </button>
 
-                        <button
-                            v-if="allows('edit recurring_invoices') && row.status === 'paused'"
-                            type="button"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('recurring_invoice_action_resume')"
-                            :aria-label="t('recurring_invoice_action_resume')"
-                            @click="resumeConfirm.openModal(row)"
-                        >
-                            <PlayIcon class="size-4" />
-                        </button>
+                    <button
+                        v-if="allows('edit recurring_invoices') && row.status === 'paused'"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('recurring_invoice_action_resume')"
+                        :aria-label="t('recurring_invoice_action_resume')"
+                        @click="resumeConfirm.openModal(row)"
+                    >
+                        <PlayIcon class="size-4" />
+                    </button>
 
-                        <button
-                            v-if="allows('delete recurring_invoices') && ['active', 'paused'].includes(row.status)"
-                            type="button"
-                            class="btn btn-ghost btn-xs text-warning"
-                            :title="t('recurring_invoice_action_cancel')"
-                            :aria-label="t('recurring_invoice_action_cancel')"
-                            @click="cancelConfirm.openModal(row)"
-                        >
-                            <XCircleIcon class="size-4" />
-                        </button>
-                    </template>
-                </DataTable>
-            </div>
+                    <button
+                        v-if="allows('delete recurring_invoices') && ['active', 'paused'].includes(row.status)"
+                        type="button"
+                        class="btn btn-ghost btn-xs text-warning"
+                        :title="t('recurring_invoice_action_cancel')"
+                        :aria-label="t('recurring_invoice_action_cancel')"
+                        @click="cancelConfirm.openModal(row)"
+                    >
+                        <XCircleIcon class="size-4" />
+                    </button>
+                </template>
+            </DataTable>
         </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="pauseConfirm.state.isOpen"
-            :title="pauseConfirm.getModalTitle()"
-            :description="pauseConfirm.getModalDescription()"
-            :confirm-label="t('recurring_invoice_action_pause')"
-            confirm-variant="warning"
-            @cancel="pauseConfirm.closeModal"
-            @confirm="pauseConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="pauseConfirm.state.isOpen"
+        :title="pauseConfirm.getModalTitle()"
+        :description="pauseConfirm.getModalDescription()"
+        :confirm-label="t('recurring_invoice_action_pause')"
+        confirm-variant="warning"
+        @cancel="pauseConfirm.closeModal"
+        @confirm="pauseConfirm.confirmDelete"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="resumeConfirm.state.isOpen"
-            :title="resumeConfirm.getModalTitle()"
-            :description="resumeConfirm.getModalDescription()"
-            :confirm-label="t('recurring_invoice_action_resume')"
-            confirm-variant="success"
-            @cancel="resumeConfirm.closeModal"
-            @confirm="resumeConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="resumeConfirm.state.isOpen"
+        :title="resumeConfirm.getModalTitle()"
+        :description="resumeConfirm.getModalDescription()"
+        :confirm-label="t('recurring_invoice_action_resume')"
+        confirm-variant="success"
+        @cancel="resumeConfirm.closeModal"
+        @confirm="resumeConfirm.confirmDelete"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="cancelConfirm.state.isOpen"
-            :title="cancelConfirm.getModalTitle()"
-            :description="cancelConfirm.getModalDescription()"
-            :confirm-label="t('recurring_invoice_action_cancel')"
-            confirm-variant="warning"
-            @cancel="cancelConfirm.closeModal"
-            @confirm="cancelConfirm.confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="cancelConfirm.state.isOpen"
+        :title="cancelConfirm.getModalTitle()"
+        :description="cancelConfirm.getModalDescription()"
+        :confirm-label="t('recurring_invoice_action_cancel')"
+        confirm-variant="warning"
+        @cancel="cancelConfirm.closeModal"
+        @confirm="cancelConfirm.confirmDelete"
+    />
 </template>

@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { BanknotesIcon, CheckBadgeIcon, DocumentTextIcon, EyeIcon, XCircleIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -142,149 +141,147 @@ function onSettingsSaved(): void {
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('invoices')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <Can permission="manage billing settings">
-                    <button type="button" class="btn btn-ghost btn-sm" @click="settingsDrawer.open">
-                        {{ t('invoicing_settings') }}
+    <Header :title="t('invoices')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <Can permission="manage billing settings">
+                <button type="button" class="btn btn-ghost btn-sm" @click="settingsDrawer.open">
+                    {{ t('invoicing_settings') }}
+                </button>
+            </Can>
+            <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-primary btn-sm">
+                {{ t('invoice_add') }}
+            </Link>
+        </template>
+    </Header>
+
+    <InvoiceStatsCards :stats="stats" class="mb-6" />
+
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('invoices_empty')"
+        :description="t('invoices_empty_hint')"
+        :icon="DocumentTextIcon"
+    >
+        <template #cta>
+            <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-primary btn-sm">
+                {{ t('invoice_add') }}
+            </Link>
+        </template>
+    </EmptyState>
+
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="invoices" :filters="filterDefinitions">
+                <template #cell-number="{ row }">
+                    <Link :href="`/invoices/${row.id}`" class="link link-hover font-mono font-medium">
+                        {{ row.number ?? t('invoice_draft_number') }}
+                    </Link>
+                </template>
+
+                <template #cell-status="{ row }">
+                    <InvoiceStatusBadge :status="row.status" />
+                </template>
+
+                <template #cell-type="{ row }">
+                    <InvoiceTypeBadge :type="row.type" :credit-note="row.is_credit_note" />
+                </template>
+
+                <template #cell-customer_name="{ row }">
+                    <p>{{ row.customer_name }}</p>
+                    <Link
+                        v-if="row.client_id"
+                        :href="`/clients/${row.client_id}`"
+                        class="link link-hover text-xs text-base-content/60"
+                    >
+                        {{ row.client_name }}
+                    </Link>
+                </template>
+
+                <template #cell-issue_date="{ row }">{{ formatDate(row.issue_date) }}</template>
+
+                <template #cell-due_date="{ row }">
+                    <span :class="{ 'text-error': row.status === 'overdue' }">{{ formatDate(row.due_date) }}</span>
+                </template>
+
+                <template #cell-total="{ row }">{{ money(row.total, row.currency) }}</template>
+
+                <template #cell-balance_due="{ row }">{{ money(row.balance_due, row.currency) }}</template>
+
+                <template #buttons="{ row }">
+                    <Link
+                        :href="`/invoices/${row.id}`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon class="size-4" />
+                    </Link>
+
+                    <button
+                        v-if="allows('edit invoices') && row.status === 'draft'"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('invoice_action_issue')"
+                        :aria-label="t('invoice_action_issue')"
+                        @click="ui.issueFor = row.id"
+                    >
+                        <CheckBadgeIcon class="size-4" />
                     </button>
-                </Can>
-                <a v-if="allows('create invoices')" href="/invoices/create" class="btn btn-primary btn-sm">
-                    {{ t('invoice_add') }}
-                </a>
-            </template>
-        </Header>
 
-        <InvoiceStatsCards :stats="stats" class="mb-6" />
+                    <button
+                        v-if="allows('edit invoices') && ['issued', 'overdue'].includes(row.status)"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('invoice_action_mark_paid')"
+                        :aria-label="t('invoice_action_mark_paid')"
+                        @click="payConfirm.openModal(row)"
+                    >
+                        <BanknotesIcon class="size-4" />
+                    </button>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('invoices_empty')"
-            :description="t('invoices_empty_hint')"
-            :icon="DocumentTextIcon"
-        >
-            <template #cta>
-                <a v-if="allows('create invoices')" href="/invoices/create" class="btn btn-primary btn-sm">
-                    {{ t('invoice_add') }}
-                </a>
-            </template>
-        </EmptyState>
-
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="invoices" :filters="filterDefinitions">
-                    <template #cell-number="{ row }">
-                        <a :href="`/invoices/${row.id}`" class="link link-hover font-mono font-medium">
-                            {{ row.number ?? t('invoice_draft_number') }}
-                        </a>
-                    </template>
-
-                    <template #cell-status="{ row }">
-                        <InvoiceStatusBadge :status="row.status" />
-                    </template>
-
-                    <template #cell-type="{ row }">
-                        <InvoiceTypeBadge :type="row.type" :credit-note="row.is_credit_note" />
-                    </template>
-
-                    <template #cell-customer_name="{ row }">
-                        <p>{{ row.customer_name }}</p>
-                        <a
-                            v-if="row.client_id"
-                            :href="`/clients/${row.client_id}`"
-                            class="link link-hover text-xs text-base-content/60"
-                        >
-                            {{ row.client_name }}
-                        </a>
-                    </template>
-
-                    <template #cell-issue_date="{ row }">{{ formatDate(row.issue_date) }}</template>
-
-                    <template #cell-due_date="{ row }">
-                        <span :class="{ 'text-error': row.status === 'overdue' }">{{ formatDate(row.due_date) }}</span>
-                    </template>
-
-                    <template #cell-total="{ row }">{{ money(row.total, row.currency) }}</template>
-
-                    <template #cell-balance_due="{ row }">{{ money(row.balance_due, row.currency) }}</template>
-
-                    <template #buttons="{ row }">
-                        <a
-                            :href="`/invoices/${row.id}`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('view')"
-                            :aria-label="t('view')"
-                        >
-                            <EyeIcon class="size-4" />
-                        </a>
-
-                        <button
-                            v-if="allows('edit invoices') && row.status === 'draft'"
-                            type="button"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('invoice_action_issue')"
-                            :aria-label="t('invoice_action_issue')"
-                            @click="ui.issueFor = row.id"
-                        >
-                            <CheckBadgeIcon class="size-4" />
-                        </button>
-
-                        <button
-                            v-if="allows('edit invoices') && ['issued', 'overdue'].includes(row.status)"
-                            type="button"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('invoice_action_mark_paid')"
-                            :aria-label="t('invoice_action_mark_paid')"
-                            @click="payConfirm.openModal(row)"
-                        >
-                            <BanknotesIcon class="size-4" />
-                        </button>
-
-                        <button
-                            v-if="allows('cancel invoices') && ['issued', 'overdue'].includes(row.status)"
-                            type="button"
-                            class="btn btn-ghost btn-xs text-warning"
-                            :title="t('invoice_action_cancel')"
-                            :aria-label="t('invoice_action_cancel')"
-                            @click="cancelConfirm.openModal(row)"
-                        >
-                            <XCircleIcon class="size-4" />
-                        </button>
-                    </template>
-                </DataTable>
-            </div>
+                    <button
+                        v-if="allows('cancel invoices') && ['issued', 'overdue'].includes(row.status)"
+                        type="button"
+                        class="btn btn-ghost btn-xs text-warning"
+                        :title="t('invoice_action_cancel')"
+                        :aria-label="t('invoice_action_cancel')"
+                        @click="cancelConfirm.openModal(row)"
+                    >
+                        <XCircleIcon class="size-4" />
+                    </button>
+                </template>
+            </DataTable>
         </div>
+    </div>
 
-        <InvoiceIssueModal :open="ui.issueFor !== null" :invoice-id="ui.issueFor" @close="ui.issueFor = null" />
+    <InvoiceIssueModal :open="ui.issueFor !== null" :invoice-id="ui.issueFor" @close="ui.issueFor = null" />
 
-        <InvoiceSettingsDrawer
-            :open="settingsDrawer.state.isOpen"
-            :status="settingsDrawer.state.status"
-            :settings="settingsDrawer.state.settings"
-            @close="settingsDrawer.close"
-            @retry="settingsDrawer.open"
-            @saved="onSettingsSaved"
-        />
+    <InvoiceSettingsDrawer
+        :open="settingsDrawer.state.isOpen"
+        :status="settingsDrawer.state.status"
+        :settings="settingsDrawer.state.settings"
+        @close="settingsDrawer.close"
+        @retry="settingsDrawer.open"
+        @saved="onSettingsSaved"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="payConfirm.state.isOpen"
-            :title="payConfirm.getModalTitle()"
-            :description="payConfirm.getModalDescription()"
-            :confirm-label="t('invoice_action_mark_paid')"
-            confirm-variant="success"
-            @cancel="payConfirm.closeModal"
-            @confirm="payConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="payConfirm.state.isOpen"
+        :title="payConfirm.getModalTitle()"
+        :description="payConfirm.getModalDescription()"
+        :confirm-label="t('invoice_action_mark_paid')"
+        confirm-variant="success"
+        @cancel="payConfirm.closeModal"
+        @confirm="payConfirm.confirmDelete"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="cancelConfirm.state.isOpen"
-            :title="cancelConfirm.getModalTitle()"
-            :description="cancelConfirm.getModalDescription()"
-            :confirm-label="t('invoice_action_cancel')"
-            confirm-variant="warning"
-            @cancel="cancelConfirm.closeModal"
-            @confirm="cancelConfirm.confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="cancelConfirm.state.isOpen"
+        :title="cancelConfirm.getModalTitle()"
+        :description="cancelConfirm.getModalDescription()"
+        :confirm-label="t('invoice_action_cancel')"
+        confirm-variant="warning"
+        @cancel="cancelConfirm.closeModal"
+        @confirm="cancelConfirm.confirmDelete"
+    />
 </template>

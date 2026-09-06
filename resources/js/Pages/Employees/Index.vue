@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EyeIcon, PencilSquareIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -72,68 +71,68 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('employees')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <a v-if="allows('create employees')" href="/employees/create" class="btn btn-primary btn-sm">
-                    {{ t('employee_add') }}
-                </a>
-            </template>
-        </Header>
+    <Header :title="t('employees')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <Link v-if="allows('create employees')" href="/employees/create" class="btn btn-primary btn-sm">
+                {{ t('employee_add') }}
+            </Link>
+        </template>
+    </Header>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('employees_empty')"
-            :description="t('employees_empty_hint')"
-            :icon="UserGroupIcon"
-        >
-            <template v-if="allows('create employees')" #cta>
-                <a href="/employees/create" class="btn btn-primary btn-sm">{{ t('employee_add') }}</a>
-            </template>
-        </EmptyState>
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('employees_empty')"
+        :description="t('employees_empty_hint')"
+        :icon="UserGroupIcon"
+    >
+        <template v-if="allows('create employees')" #cta>
+            <Link href="/employees/create" class="btn btn-primary btn-sm">{{ t('employee_add') }}</Link>
+        </template>
+    </EmptyState>
 
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="employees" :filters="filterDefinitions" row-key="id">
-                    <template #cell-last_name="{ row }">
-                        <a :href="`/employees/${row.id}`" class="link link-hover font-medium">{{ row.display_name }}</a>
-                    </template>
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="employees" :filters="filterDefinitions" row-key="id">
+                <template #cell-last_name="{ row }">
+                    <Link :href="`/employees/${row.id}`" class="link link-hover font-medium">{{
+                        row.display_name
+                    }}</Link>
+                </template>
 
-                    <template #cell-role_name="{ row }">
-                        {{ row.role_name ?? t('empty_dash') }}
-                    </template>
+                <template #cell-role_name="{ row }">
+                    {{ row.role_name ?? t('empty_dash') }}
+                </template>
 
-                    <template #cell-position="{ row }">
-                        {{ row.position ?? t('empty_dash') }}
-                    </template>
+                <template #cell-position="{ row }">
+                    {{ row.position ?? t('empty_dash') }}
+                </template>
 
-                    <template #cell-employment_type="{ row }">
-                        {{ row.employment_type ? t(employmentTypeKey(row.employment_type)) : t('empty_dash') }}
-                    </template>
+                <template #cell-employment_type="{ row }">
+                    {{ row.employment_type ? t(employmentTypeKey(row.employment_type)) : t('empty_dash') }}
+                </template>
 
-                    <template #cell-is_active="{ row }">
-                        <ObjectStatusBadge :is-active="row.is_active" />
-                    </template>
+                <template #cell-is_active="{ row }">
+                    <ObjectStatusBadge :is-active="row.is_active" />
+                </template>
 
-                    <template #cell-joined_at="{ row }">
-                        {{ formatDate(row.joined_at) }}
-                    </template>
+                <template #cell-joined_at="{ row }">
+                    {{ formatDate(row.joined_at) }}
+                </template>
 
-                    <template #buttons="{ row }">
-                        <a :href="`/employees/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                            <EyeIcon class="size-4" />
-                        </a>
-                        <a
-                            v-if="allows('edit employees')"
-                            :href="`/employees/${row.id}/edit`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('edit')"
-                        >
-                            <PencilSquareIcon class="size-4" />
-                        </a>
-                    </template>
-                </DataTable>
-            </div>
+                <template #buttons="{ row }">
+                    <Link :href="`/employees/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
+                        <EyeIcon class="size-4" />
+                    </Link>
+                    <Link
+                        v-if="allows('edit employees')"
+                        :href="`/employees/${row.id}/edit`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('edit')"
+                    >
+                        <PencilSquareIcon class="size-4" />
+                    </Link>
+                </template>
+            </DataTable>
         </div>
-    </AppLayout>
+    </div>
 </template>

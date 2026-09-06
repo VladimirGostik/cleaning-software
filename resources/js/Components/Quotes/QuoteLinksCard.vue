@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
 import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue';
@@ -18,9 +19,9 @@ const { t } = useI18n();
 
             <p v-if="props.quote.client_id">
                 <span class="text-base-content/60">{{ t('quote_link_client') }}:</span>
-                <a :href="`/clients/${props.quote.client_id}`" class="link link-hover ml-1">
+                <Link :href="`/clients/${props.quote.client_id}`" class="link link-hover ml-1">
                     {{ props.quote.client_name }}
-                </a>
+                </Link>
             </p>
 
             <p v-if="props.quote.object_name">
@@ -32,9 +33,9 @@ const { t } = useI18n();
                 <p class="text-base-content/60">{{ t('quote_link_invoices') }}</p>
                 <ul v-if="props.quote.invoices.length > 0" class="mt-1 space-y-1">
                     <li v-for="invoice in props.quote.invoices" :key="invoice.id" class="flex items-center gap-2">
-                        <a :href="`/invoices/${invoice.id}`" class="link link-hover">
+                        <Link :href="`/invoices/${invoice.id}`" class="link link-hover">
                             {{ invoice.number ?? t('invoice_draft_number') }}
-                        </a>
+                        </Link>
                         <InvoiceStatusBadge :status="invoice.status" />
                     </li>
                 </ul>
@@ -45,9 +46,9 @@ const { t } = useI18n();
                 <p class="text-base-content/60">{{ t('quote_link_contracts') }}</p>
                 <ul v-if="props.quote.contracts.length > 0" class="mt-1 space-y-1">
                     <li v-for="contract in props.quote.contracts" :key="contract.id" class="flex items-center gap-2">
-                        <a :href="`/contracts/${contract.id}`" class="link link-hover">
+                        <Link :href="`/contracts/${contract.id}`" class="link link-hover">
                             {{ contract.title }}
-                        </a>
+                        </Link>
                         <ContractStatusBadge :status="contract.status" />
                     </li>
                 </ul>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { BuildingOffice2Icon, DocumentCheckIcon, DocumentTextIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
 
@@ -14,37 +15,37 @@ const { t } = useI18n();
         <div class="card-body space-y-2">
             <h2 class="card-title text-base">{{ t('schedule_section_links') }}</h2>
 
-            <a
+            <Link
                 v-if="props.job.client_id"
                 :href="`/clients/${props.job.client_id}`"
                 class="btn btn-sm w-full justify-start"
             >
                 <UserGroupIcon class="size-4" />
                 {{ props.job.client_name }}
-            </a>
+            </Link>
 
-            <a :href="`/objects/${props.job.cleaning_object_id}`" class="btn btn-sm w-full justify-start">
+            <Link :href="`/objects/${props.job.cleaning_object_id}`" class="btn btn-sm w-full justify-start">
                 <BuildingOffice2Icon class="size-4" />
                 {{ props.job.object_name }}
-            </a>
+            </Link>
 
-            <a
+            <Link
                 v-if="props.job.contract_id"
                 :href="`/contracts/${props.job.contract_id}`"
                 class="btn btn-sm w-full justify-start"
             >
                 <DocumentCheckIcon class="size-4" />
                 {{ props.job.contract_title ?? t('schedule_detail_contract') }}
-            </a>
+            </Link>
 
-            <a
+            <Link
                 v-if="props.job.invoice_id"
                 :href="`/invoices/${props.job.invoice_id}`"
                 class="btn btn-sm w-full justify-start"
             >
                 <DocumentTextIcon class="size-4" />
                 {{ t('schedule_detail_invoice') }}
-            </a>
+            </Link>
         </div>
     </div>
 </template>

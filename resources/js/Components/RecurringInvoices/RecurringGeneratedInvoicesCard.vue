@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -32,9 +33,9 @@ const { money } = useMoneyFormat();
                 <tbody>
                     <tr v-for="invoice in props.invoices" :key="invoice.id">
                         <td>
-                            <a :href="`/invoices/${invoice.id}`" class="link link-hover font-mono">
+                            <Link :href="`/invoices/${invoice.id}`" class="link link-hover font-mono">
                                 {{ invoice.number ?? t('invoice_draft_number') }}
-                            </a>
+                            </Link>
                         </td>
                         <td><InvoiceStatusBadge :status="invoice.status" /></td>
                         <td>{{ formatDate(invoice.issue_date) }}</td>

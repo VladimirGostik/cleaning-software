@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
 defineProps<{
@@ -18,7 +19,7 @@ const { t } = useI18n();
 
 <template>
     <div class="flex justify-end gap-2">
-        <a v-if="cancelHref" :href="cancelHref" class="btn btn-ghost">{{ cancelLabel ?? t('cancel') }}</a>
+        <Link v-if="cancelHref" :href="cancelHref" class="btn btn-ghost">{{ cancelLabel ?? t('cancel') }}</Link>
         <button v-else type="button" class="btn btn-ghost" @click="emit('cancel')">
             {{ cancelLabel ?? t('cancel') }}
         </button>

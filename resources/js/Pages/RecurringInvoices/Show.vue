@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import RecurringStatusBadge from '@/Components/RecurringInvoices/RecurringStatusBadge.vue';
@@ -68,99 +66,97 @@ const deleteConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="recurringInvoice.name" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <RecurringStatusBadge :status="recurringInvoice.status" />
-                <RecurringFrequencyBadge :frequency="recurringInvoice.frequency" />
-            </template>
-        </Header>
+    <Header :title="recurringInvoice.name" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <RecurringStatusBadge :status="recurringInvoice.status" />
+            <RecurringFrequencyBadge :frequency="recurringInvoice.frequency" />
+        </template>
+    </Header>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-            <div class="space-y-6">
-                <RecurringCustomerCard :recurring-invoice="recurringInvoice" />
-                <RecurringScheduleCard :recurring-invoice="recurringInvoice" />
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+        <div class="space-y-6">
+            <RecurringCustomerCard :recurring-invoice="recurringInvoice" />
+            <RecurringScheduleCard :recurring-invoice="recurringInvoice" />
 
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('invoice_section_items') }}</h2>
-                        <InvoiceItemsTable
-                            :items="recurringInvoice.items"
-                            :currency="recurringInvoice.currency"
-                            :is-vat-payer="recurringInvoice.is_vat_payer"
-                        />
-                        <InvoiceTotalsPanel
-                            :subtotal="totals.subtotal.value"
-                            :vat-amount="totals.vatAmount.value"
-                            :vat-breakdown="totals.vatBreakdown.value"
-                            :rounding-amount="totals.roundingAmount.value"
-                            :total="totals.total.value"
-                            :deposit="Number(recurringInvoice.deposit)"
-                            :balance-due="totals.balanceDue.value"
-                            :currency="recurringInvoice.currency"
-                            :is-vat-payer="recurringInvoice.is_vat_payer"
-                        />
-                    </div>
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body space-y-4">
+                    <h2 class="card-title text-base">{{ t('invoice_section_items') }}</h2>
+                    <InvoiceItemsTable
+                        :items="recurringInvoice.items"
+                        :currency="recurringInvoice.currency"
+                        :is-vat-payer="recurringInvoice.is_vat_payer"
+                    />
+                    <InvoiceTotalsPanel
+                        :subtotal="totals.subtotal.value"
+                        :vat-amount="totals.vatAmount.value"
+                        :vat-breakdown="totals.vatBreakdown.value"
+                        :rounding-amount="totals.roundingAmount.value"
+                        :total="totals.total.value"
+                        :deposit="Number(recurringInvoice.deposit)"
+                        :balance-due="totals.balanceDue.value"
+                        :currency="recurringInvoice.currency"
+                        :is-vat-payer="recurringInvoice.is_vat_payer"
+                    />
                 </div>
-
-                <div v-if="recurringInvoice.note" class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('note') }}</h2>
-                        <p class="whitespace-pre-wrap text-sm text-base-content/70">{{ recurringInvoice.note }}</p>
-                    </div>
-                </div>
-
-                <RecurringGeneratedInvoicesCard :invoices="generatedInvoices" />
             </div>
 
-            <div>
-                <RecurringActionsCard
-                    :recurring-invoice="recurringInvoice"
-                    @pause="pauseConfirm.openModal(recurringInvoice)"
-                    @resume="resumeConfirm.openModal(recurringInvoice)"
-                    @cancel="cancelConfirm.openModal(recurringInvoice)"
-                    @delete="deleteConfirm.openModal(recurringInvoice)"
-                />
+            <div v-if="recurringInvoice.note" class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-base">{{ t('note') }}</h2>
+                    <p class="whitespace-pre-wrap text-sm text-base-content/70">{{ recurringInvoice.note }}</p>
+                </div>
             </div>
+
+            <RecurringGeneratedInvoicesCard :invoices="generatedInvoices" />
         </div>
 
-        <ConfirmDeleteModal
-            :is-open="pauseConfirm.state.isOpen"
-            :title="pauseConfirm.getModalTitle()"
-            :description="pauseConfirm.getModalDescription()"
-            :confirm-label="t('recurring_invoice_action_pause')"
-            confirm-variant="warning"
-            @cancel="pauseConfirm.closeModal"
-            @confirm="pauseConfirm.confirmDelete"
-        />
+        <div>
+            <RecurringActionsCard
+                :recurring-invoice="recurringInvoice"
+                @pause="pauseConfirm.openModal(recurringInvoice)"
+                @resume="resumeConfirm.openModal(recurringInvoice)"
+                @cancel="cancelConfirm.openModal(recurringInvoice)"
+                @delete="deleteConfirm.openModal(recurringInvoice)"
+            />
+        </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="resumeConfirm.state.isOpen"
-            :title="resumeConfirm.getModalTitle()"
-            :description="resumeConfirm.getModalDescription()"
-            :confirm-label="t('recurring_invoice_action_resume')"
-            confirm-variant="success"
-            @cancel="resumeConfirm.closeModal"
-            @confirm="resumeConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="pauseConfirm.state.isOpen"
+        :title="pauseConfirm.getModalTitle()"
+        :description="pauseConfirm.getModalDescription()"
+        :confirm-label="t('recurring_invoice_action_pause')"
+        confirm-variant="warning"
+        @cancel="pauseConfirm.closeModal"
+        @confirm="pauseConfirm.confirmDelete"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="cancelConfirm.state.isOpen"
-            :title="cancelConfirm.getModalTitle()"
-            :description="cancelConfirm.getModalDescription()"
-            :confirm-label="t('recurring_invoice_action_cancel')"
-            confirm-variant="warning"
-            @cancel="cancelConfirm.closeModal"
-            @confirm="cancelConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="resumeConfirm.state.isOpen"
+        :title="resumeConfirm.getModalTitle()"
+        :description="resumeConfirm.getModalDescription()"
+        :confirm-label="t('recurring_invoice_action_resume')"
+        confirm-variant="success"
+        @cancel="resumeConfirm.closeModal"
+        @confirm="resumeConfirm.confirmDelete"
+    />
 
-        <ConfirmDeleteModal
-            :is-open="deleteConfirm.state.isOpen"
-            :title="deleteConfirm.getModalTitle()"
-            :description="deleteConfirm.getModalDescription()"
-            :confirm-label="t('delete')"
-            @cancel="deleteConfirm.closeModal"
-            @confirm="deleteConfirm.confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="cancelConfirm.state.isOpen"
+        :title="cancelConfirm.getModalTitle()"
+        :description="cancelConfirm.getModalDescription()"
+        :confirm-label="t('recurring_invoice_action_cancel')"
+        confirm-variant="warning"
+        @cancel="cancelConfirm.closeModal"
+        @confirm="cancelConfirm.confirmDelete"
+    />
+
+    <ConfirmDeleteModal
+        :is-open="deleteConfirm.state.isOpen"
+        :title="deleteConfirm.getModalTitle()"
+        :description="deleteConfirm.getModalDescription()"
+        :confirm-label="t('delete')"
+        @cancel="deleteConfirm.closeModal"
+        @confirm="deleteConfirm.confirmDelete"
+    />
 </template>

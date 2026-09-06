@@ -1,8 +1,7 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import Can from '@/Components/Can.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
@@ -34,38 +33,36 @@ const deleteConfirm = useDeleteConfirm<App.Data.ContractTemplates.ContractTempla
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="template.name" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <ContractCategoryBadge :category="template.category" />
-                <ObjectStatusBadge :is-active="template.is_active" />
+    <Header :title="template.name" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <ContractCategoryBadge :category="template.category" />
+            <ObjectStatusBadge :is-active="template.is_active" />
 
-                <Can permission="edit contract_templates">
-                    <a :href="`/contract-templates/${template.id}/edit`" class="btn btn-sm">{{ t('edit') }}</a>
-                </Can>
+            <Can permission="edit contract_templates">
+                <Link :href="`/contract-templates/${template.id}/edit`" class="btn btn-sm">{{ t('edit') }}</Link>
+            </Can>
 
-                <Can permission="delete contract_templates">
-                    <button type="button" class="btn btn-sm text-error" @click="deleteConfirm.openModal(template)">
-                        {{ t('delete') }}
-                    </button>
-                </Can>
-            </template>
-        </Header>
+            <Can permission="delete contract_templates">
+                <button type="button" class="btn btn-sm text-error" @click="deleteConfirm.openModal(template)">
+                    {{ t('delete') }}
+                </button>
+            </Can>
+        </template>
+    </Header>
 
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <h2 class="card-title text-base">{{ t('contract_template_section_body') }}</h2>
-                <ContractBodyPreview :body="template.body" />
-            </div>
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title text-base">{{ t('contract_template_section_body') }}</h2>
+            <ContractBodyPreview :body="template.body" />
         </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="deleteConfirm.state.isOpen"
-            :title="deleteConfirm.getModalTitle()"
-            :description="deleteConfirm.getModalDescription()"
-            :confirm-label="t('delete')"
-            @cancel="deleteConfirm.closeModal"
-            @confirm="deleteConfirm.confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="deleteConfirm.state.isOpen"
+        :title="deleteConfirm.getModalTitle()"
+        :description="deleteConfirm.getModalDescription()"
+        :confirm-label="t('delete')"
+        @cancel="deleteConfirm.closeModal"
+        @confirm="deleteConfirm.confirmDelete"
+    />
 </template>

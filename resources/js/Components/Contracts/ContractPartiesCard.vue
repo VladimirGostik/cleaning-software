@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePageProps } from '@/Composables/usePageProps';
@@ -26,13 +27,13 @@ const partyLabel = computed(() =>
 
         <div>
             <h3 class="text-sm font-semibold text-base-content/70">{{ partyLabel }}</h3>
-            <a
+            <Link
                 v-if="contract.contractable_type === 'cleaning_object'"
                 :href="`/objects/${contract.contractable_id}`"
                 class="link link-hover font-medium"
             >
                 {{ contract.contractable_label }}
-            </a>
+            </Link>
             <p v-else class="font-medium">{{ contract.contractable_label }}</p>
 
             <p v-if="contract.contract_template_name" class="mt-2 text-sm text-base-content/60">

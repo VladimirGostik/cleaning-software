@@ -3,8 +3,6 @@ import { computed, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';
@@ -65,65 +63,63 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="employee.display_name" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <ObjectStatusBadge :is-active="employee.is_active" />
-                <span v-if="employee.role_name" class="badge badge-primary badge-sm">{{ employee.role_name }}</span>
-            </template>
-        </Header>
+    <Header :title="employee.display_name" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <ObjectStatusBadge :is-active="employee.is_active" />
+            <span v-if="employee.role_name" class="badge badge-primary badge-sm">{{ employee.role_name }}</span>
+        </template>
+    </Header>
 
-        <div v-if="!employee.is_active" class="alert alert-warning mb-6">
-            <ExclamationTriangleIcon class="size-5" />
-            <span>{{ t('employee_inactive_banner') }}</span>
-            <button
-                v-if="canReactivate"
-                type="button"
-                class="btn btn-sm btn-primary"
-                :disabled="reactivating"
-                @click="reactivate"
-            >
-                {{ t('employee_reactivate') }}
-            </button>
+    <div v-if="!employee.is_active" class="alert alert-warning mb-6">
+        <ExclamationTriangleIcon class="size-5" />
+        <span>{{ t('employee_inactive_banner') }}</span>
+        <button
+            v-if="canReactivate"
+            type="button"
+            class="btn btn-sm btn-primary"
+            :disabled="reactivating"
+            @click="reactivate"
+        >
+            {{ t('employee_reactivate') }}
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+        <div class="space-y-6">
+            <EmployeeProfileCard :employee="employee" />
+            <EmployeeRoleCard :employee="employee" />
         </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-            <div class="space-y-6">
-                <EmployeeProfileCard :employee="employee" />
-                <EmployeeRoleCard :employee="employee" />
-            </div>
-
-            <div class="space-y-6">
-                <EmployeeActionsCard
-                    :employee="employee"
-                    :can-update="canUpdate"
-                    :can-deactivate="canDeactivate"
-                    :can-reactivate="canReactivate"
-                    :can-assign-role="canAssignRole"
-                    @deactivate="deactivateConfirm.openModal(employee)"
-                    @reactivate="reactivate"
-                    @change-role="ui.roleOpen = true"
-                />
-                <EmployeeMetaCard :employee="employee" />
-            </div>
+        <div class="space-y-6">
+            <EmployeeActionsCard
+                :employee="employee"
+                :can-update="canUpdate"
+                :can-deactivate="canDeactivate"
+                :can-reactivate="canReactivate"
+                :can-assign-role="canAssignRole"
+                @deactivate="deactivateConfirm.openModal(employee)"
+                @reactivate="reactivate"
+                @change-role="ui.roleOpen = true"
+            />
+            <EmployeeMetaCard :employee="employee" />
         </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="deactivateConfirm.state.isOpen"
-            :title="deactivateConfirm.getModalTitle()"
-            :description="deactivateConfirm.getModalDescription()"
-            confirm-variant="warning"
-            :confirm-label="t('employee_deactivate')"
-            @cancel="deactivateConfirm.closeModal"
-            @confirm="deactivateConfirm.confirmDelete"
-        />
+    <ConfirmDeleteModal
+        :is-open="deactivateConfirm.state.isOpen"
+        :title="deactivateConfirm.getModalTitle()"
+        :description="deactivateConfirm.getModalDescription()"
+        confirm-variant="warning"
+        :confirm-label="t('employee_deactivate')"
+        @cancel="deactivateConfirm.closeModal"
+        @confirm="deactivateConfirm.confirmDelete"
+    />
 
-        <EmployeeRoleModal
-            :open="ui.roleOpen"
-            :employee-id="employee.id"
-            :current-role="employee.role_name"
-            :roles="roleOptions"
-            @close="ui.roleOpen = false"
-        />
-    </AppLayout>
+    <EmployeeRoleModal
+        :open="ui.roleOpen"
+        :employee-id="employee.id"
+        :current-role="employee.role_name"
+        :roles="roleOptions"
+        @close="ui.roleOpen = false"
+    />
 </template>

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import ContractForm from '@/Components/Contracts/ContractForm.vue';
 
@@ -21,9 +19,7 @@ const breadcrumbs: Breadcrumb[] = [
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('contract_add')" :breadcrumbs="breadcrumbs" />
+    <Header :title="t('contract_add')" :breadcrumbs="breadcrumbs" />
 
-        <ContractForm :context="context" />
-    </AppLayout>
+    <ContractForm :context="context" />
 </template>

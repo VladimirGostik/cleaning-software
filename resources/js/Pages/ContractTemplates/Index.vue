@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EyeIcon, PencilSquareIcon, RectangleStackIcon, TrashIcon } from '@heroicons/vue/24/outline';
-
-import AppLayout from '@/Layouts/AppLayout.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -61,97 +60,95 @@ const deleteConfirm = useDeleteConfirm<App.Data.ContractTemplates.ContractTempla
 </script>
 
 <template>
-    <AppLayout>
-        <Header :title="t('contract_templates')" :breadcrumbs="breadcrumbs">
-            <template #actions>
-                <a
-                    v-if="allows('create contract_templates')"
-                    href="/contract-templates/create"
-                    class="btn btn-primary btn-sm"
-                >
-                    {{ t('contract_template_add') }}
-                </a>
-            </template>
-        </Header>
+    <Header :title="t('contract_templates')" :breadcrumbs="breadcrumbs">
+        <template #actions>
+            <Link
+                v-if="allows('create contract_templates')"
+                href="/contract-templates/create"
+                class="btn btn-primary btn-sm"
+            >
+                {{ t('contract_template_add') }}
+            </Link>
+        </template>
+    </Header>
 
-        <EmptyState
-            v-if="showEmptyState"
-            :title="t('contract_templates_empty')"
-            :description="t('contract_templates_empty_hint')"
-            :icon="RectangleStackIcon"
-        >
-            <template #cta>
-                <a
-                    v-if="allows('create contract_templates')"
-                    href="/contract-templates/create"
-                    class="btn btn-primary btn-sm"
-                >
-                    {{ t('contract_template_add') }}
-                </a>
-            </template>
-        </EmptyState>
+    <EmptyState
+        v-if="showEmptyState"
+        :title="t('contract_templates_empty')"
+        :description="t('contract_templates_empty_hint')"
+        :icon="RectangleStackIcon"
+    >
+        <template #cta>
+            <Link
+                v-if="allows('create contract_templates')"
+                href="/contract-templates/create"
+                class="btn btn-primary btn-sm"
+            >
+                {{ t('contract_template_add') }}
+            </Link>
+        </template>
+    </EmptyState>
 
-        <div v-else class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <DataTable :columns="columns" :rows="templates" :filters="filterDefinitions">
-                    <template #cell-name="{ row }">
-                        <a :href="`/contract-templates/${row.id}`" class="link link-hover font-medium">{{
-                            row.name
-                        }}</a>
-                    </template>
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <DataTable :columns="columns" :rows="templates" :filters="filterDefinitions">
+                <template #cell-name="{ row }">
+                    <Link :href="`/contract-templates/${row.id}`" class="link link-hover font-medium">{{
+                        row.name
+                    }}</Link>
+                </template>
 
-                    <template #cell-category="{ row }">
-                        <ContractCategoryBadge :category="row.category" />
-                    </template>
+                <template #cell-category="{ row }">
+                    <ContractCategoryBadge :category="row.category" />
+                </template>
 
-                    <template #cell-is_active="{ row }">
-                        <ObjectStatusBadge :is-active="row.is_active" />
-                    </template>
+                <template #cell-is_active="{ row }">
+                    <ObjectStatusBadge :is-active="row.is_active" />
+                </template>
 
-                    <template #cell-updated_at="{ row }">{{ formatDatetime(row.updated_at) }}</template>
+                <template #cell-updated_at="{ row }">{{ formatDatetime(row.updated_at) }}</template>
 
-                    <template #buttons="{ row }">
-                        <a
-                            :href="`/contract-templates/${row.id}`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('view')"
-                            :aria-label="t('view')"
-                        >
-                            <EyeIcon class="size-4" />
-                        </a>
+                <template #buttons="{ row }">
+                    <Link
+                        :href="`/contract-templates/${row.id}`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon class="size-4" />
+                    </Link>
 
-                        <a
-                            v-if="allows('edit contract_templates')"
-                            :href="`/contract-templates/${row.id}/edit`"
-                            class="btn btn-ghost btn-xs"
-                            :title="t('edit')"
-                            :aria-label="t('edit')"
-                        >
-                            <PencilSquareIcon class="size-4" />
-                        </a>
+                    <Link
+                        v-if="allows('edit contract_templates')"
+                        :href="`/contract-templates/${row.id}/edit`"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('edit')"
+                        :aria-label="t('edit')"
+                    >
+                        <PencilSquareIcon class="size-4" />
+                    </Link>
 
-                        <button
-                            v-if="allows('delete contract_templates')"
-                            type="button"
-                            class="btn btn-ghost btn-xs text-error"
-                            :title="t('delete')"
-                            :aria-label="t('delete')"
-                            @click="deleteConfirm.openModal(row)"
-                        >
-                            <TrashIcon class="size-4" />
-                        </button>
-                    </template>
-                </DataTable>
-            </div>
+                    <button
+                        v-if="allows('delete contract_templates')"
+                        type="button"
+                        class="btn btn-ghost btn-xs text-error"
+                        :title="t('delete')"
+                        :aria-label="t('delete')"
+                        @click="deleteConfirm.openModal(row)"
+                    >
+                        <TrashIcon class="size-4" />
+                    </button>
+                </template>
+            </DataTable>
         </div>
+    </div>
 
-        <ConfirmDeleteModal
-            :is-open="deleteConfirm.state.isOpen"
-            :title="deleteConfirm.getModalTitle()"
-            :description="deleteConfirm.getModalDescription()"
-            :confirm-label="t('delete')"
-            @cancel="deleteConfirm.closeModal"
-            @confirm="deleteConfirm.confirmDelete"
-        />
-    </AppLayout>
+    <ConfirmDeleteModal
+        :is-open="deleteConfirm.state.isOpen"
+        :title="deleteConfirm.getModalTitle()"
+        :description="deleteConfirm.getModalDescription()"
+        :confirm-label="t('delete')"
+        @cancel="deleteConfirm.closeModal"
+        @confirm="deleteConfirm.confirmDelete"
+    />
 </template>

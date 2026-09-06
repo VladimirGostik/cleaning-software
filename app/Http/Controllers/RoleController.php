@@ -29,7 +29,7 @@ final class RoleController extends Controller
     ) {}
 
     #[Authorize('viewAny', Role::class)]
-    #[NavItem(label: 'app.roles', route: 'roles.index', icon: 'ShieldCheckIcon', permission: PermissionEnum::ViewRoles->value, order: 30)]
+    #[NavItem(label: 'app.roles', route: 'roles.index', icon: 'ShieldCheckIcon', permission: PermissionEnum::ViewRoles->value, group: 'settings', order: 40)]
     public function index(Request $request): Response
     {
         $roles = QueryBuilder::for(Role::inTenant(current_tenant_id()))
