@@ -64,7 +64,7 @@ final class ContractControllerTest extends TestCase
         $response = $this->get(route('contracts.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Index', false)->has('contracts.data', 2));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Index')->has('contracts.data', 2));
     }
 
     public function test_index_excludes_other_tenant_contracts(): void
@@ -77,7 +77,7 @@ final class ContractControllerTest extends TestCase
 
         $response = $this->get(route('contracts.index'));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Index', false)->has('contracts.data', 0));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Index')->has('contracts.data', 0));
     }
 
     public function test_index_forbidden_without_permission(): void
@@ -105,7 +105,7 @@ final class ContractControllerTest extends TestCase
         $response = $this->get(route('contracts.create'));
 
         $response->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Contracts/Create', false)
+            fn (AssertableInertia $page) => $page->component('Contracts/Create')
                 ->has('context.objects', 1)
                 ->has('context.memberships', 2)
                 ->has('context.templates', 1)
@@ -188,7 +188,7 @@ final class ContractControllerTest extends TestCase
 
         $response = $this->get(route('contracts.show', $contract));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Show', false)->where('contract.id', $contract->id));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Show')->where('contract.id', $contract->id));
     }
 
     public function test_edit_keeps_inactive_current_object_in_options(): void
@@ -200,7 +200,7 @@ final class ContractControllerTest extends TestCase
 
         $response = $this->get(route('contracts.edit', $contract));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Edit', false)->has('context.objects', 1));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Contracts/Edit')->has('context.objects', 1));
     }
 
     public function test_update_persists_changes(): void

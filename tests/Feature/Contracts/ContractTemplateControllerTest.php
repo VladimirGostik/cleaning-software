@@ -38,7 +38,7 @@ final class ContractTemplateControllerTest extends TestCase
         $response = $this->get(route('contract-templates.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Index', false)->has('templates.data', 2));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Index')->has('templates.data', 2));
     }
 
     public function test_index_excludes_other_tenant_templates(): void
@@ -50,7 +50,7 @@ final class ContractTemplateControllerTest extends TestCase
 
         $response = $this->get(route('contract-templates.index'));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Index', false)->has('templates.data', 0));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Index')->has('templates.data', 0));
     }
 
     public function test_index_forbidden_without_permission(): void
@@ -68,7 +68,7 @@ final class ContractTemplateControllerTest extends TestCase
 
         $response = $this->get(route('contract-templates.create'));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Create', false)->has('tokens'));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Create')->has('tokens'));
     }
 
     public function test_store_creates_template_and_redirects_to_show(): void
@@ -100,7 +100,7 @@ final class ContractTemplateControllerTest extends TestCase
 
         $response = $this->get(route('contract-templates.show', $template));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Show', false)->where('template.id', $template->id));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Show')->where('template.id', $template->id));
     }
 
     public function test_edit_exposes_template_and_tokens(): void
@@ -111,7 +111,7 @@ final class ContractTemplateControllerTest extends TestCase
 
         $response = $this->get(route('contract-templates.edit', $template));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Edit', false)->has('tokens')->where('template.id', $template->id));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('ContractTemplates/Edit')->has('tokens')->where('template.id', $template->id));
     }
 
     public function test_update_persists_changes(): void
