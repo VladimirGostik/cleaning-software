@@ -9,6 +9,7 @@ use App\Data\MediaFileData;
 use App\Enums\CurrencyEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
+use App\Models\Contract;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteItem;
@@ -56,11 +57,14 @@ final class QuoteDetailData extends Data
         /** @var QuoteInvoiceLinkData[] */
         #[DataCollectionOf(QuoteInvoiceLinkData::class)]
         public readonly array $invoices,
+        /** @var QuoteContractLinkData[] */
+        #[DataCollectionOf(QuoteContractLinkData::class)]
+        public readonly array $contracts,
     ) {}
 
     public static function fromModel(Quote $quote): self
     {
-        $quote->loadMissing(['items', 'client', 'cleaningObject', 'media', 'invoices']);
+        $quote->loadMissing(['items', 'client', 'cleaningObject', 'media', 'invoices', 'contracts']);
 
         $media = $quote->getFirstMedia('document');
 
@@ -95,6 +99,7 @@ final class QuoteDetailData extends Data
             vat_breakdown: array_map(fn (array $l) => VatBreakdownLineData::from($l), $quote->vat_breakdown ?? []),
             document: $media !== null ? MediaFileData::fromMedia($media, route('quotes.pdf', $quote)) : null,
             invoices: $quote->invoices->map(fn (Invoice $invoice) => QuoteInvoiceLinkData::fromModel($invoice))->all(),
+            contracts: $quote->contracts->map(fn (Contract $contract) => QuoteContractLinkData::fromModel($contract))->all(),
         );
     }
 }

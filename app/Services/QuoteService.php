@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\Contracts\ContractUpsertData;
 use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceUpsertData;
+use App\Data\Quotes\QuoteConvertToContractData;
 use App\Data\Quotes\QuoteItemData;
 use App\Data\Quotes\QuoteListItemData;
 use App\Data\Quotes\QuoteUpsertData;
+use App\Enums\ContractableTypeEnum;
+use App\Enums\ContractCategoryEnum;
+use App\Enums\ContractTermTypeEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Enums\RoundingModeEnum;
 use App\Events\QuoteSent;
+use App\Models\Contract;
+use App\Models\ContractTemplate;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteItem;
@@ -33,6 +40,7 @@ final readonly class QuoteService
 {
     public function __construct(
         private InvoiceService $invoices,
+        private ContractService $contracts,
         private TemporaryUploadService $uploads,
         private DocumentTotalsCalculator $totals,
         private DatabaseManager $db,
@@ -320,6 +328,46 @@ final readonly class QuoteService
 
             return $invoice;
         });
+    }
+
+    public function convertToContract(Quote $quote, QuoteConvertToContractData $data): Contract
+    {
+        if ($quote->isDocument()) {
+            throw ValidationException::withMessages(['status' => [__('app.quote_document_not_convertible')]]);
+        }
+
+        if (! $quote->canBeConverted()) {
+            throw ValidationException::withMessages(['status' => [__('app.quote_not_acceptable_for_conversion')]]);
+        }
+
+        if ($quote->client_id === null) {
+            throw ValidationException::withMessages(['client_id' => [__('app.quote_client_required_for_contract')]]);
+        }
+
+        if ($quote->cleaning_object_id === null) {
+            throw ValidationException::withMessages(['cleaning_object_id' => [__('app.quote_object_required_for_contract')]]);
+        }
+
+        $template = $data->contract_template_id !== null
+            ? ContractTemplate::query()->findOrFail($data->contract_template_id)
+            : null;
+
+        $upsert = ContractUpsertData::from([
+            'title' => $quote->subject ?? __('app.contract_default_title_from_quote'),
+            'number' => $quote->number,
+            'category' => ContractCategoryEnum::ServiceAgreement->value,
+            'term_type' => ContractTermTypeEnum::Indefinite->value,
+            'contractable_type' => ContractableTypeEnum::CleaningObject->value,
+            'contractable_id' => $quote->cleaning_object_id,
+            'contract_template_id' => $template?->id,
+            'body' => $template !== null ? $template->body : '{{quote.items}}',
+            'valid_from' => now()->toDateString(),
+            'end_date' => null,
+            'notes' => $quote->note,
+            'employment' => null,
+        ]);
+
+        return $this->contracts->create($upsert, $quote);
     }
 
     private function guardLifecycleTransition(Quote $quote, QuoteStatusEnum $to): void

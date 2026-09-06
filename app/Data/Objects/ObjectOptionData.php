@@ -15,6 +15,7 @@ final class ObjectOptionData extends Data
         public readonly string $id,
         public readonly string $name,
         public readonly string $client_id,
+        public readonly ?string $client_name,
         public readonly bool $is_active,
     ) {}
 
@@ -24,6 +25,7 @@ final class ObjectOptionData extends Data
             id: $object->id,
             name: $object->name,
             client_id: $object->client_id,
+            client_name: $object->client?->name,
             is_active: (bool) $object->is_active,
         );
     }

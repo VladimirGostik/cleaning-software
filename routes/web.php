@@ -6,6 +6,8 @@ use App\Enums\PermissionEnum;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ContractController;
+use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
@@ -123,6 +125,30 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::post('/quotes', [QuoteController::class, 'store'])->name('quotes.store');
         Route::match(['PUT', 'PATCH'], '/quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update')->whereUuid('quote');
         Route::post('/quotes/{quote}/attach-client', [QuoteController::class, 'attachClient'])->name('quotes.attach-client')->whereUuid('quote');
+        Route::post('/quotes/{quote}/convert-to-contract', [QuoteController::class, 'convertToContract'])->name('quotes.convert-to-contract')->whereUuid('quote');
+    });
+
+    Route::get('/contract-templates', [ContractTemplateController::class, 'index'])->name('contract-templates.index');
+    Route::get('/contract-templates/create', [ContractTemplateController::class, 'create'])->name('contract-templates.create');
+    Route::get('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'show'])->name('contract-templates.show')->whereUuid('contractTemplate');
+    Route::get('/contract-templates/{contractTemplate}/edit', [ContractTemplateController::class, 'edit'])->name('contract-templates.edit')->whereUuid('contractTemplate');
+    Route::delete('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'destroy'])->name('contract-templates.destroy')->whereUuid('contractTemplate');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/contract-templates', [ContractTemplateController::class, 'store'])->name('contract-templates.store');
+        Route::match(['PUT', 'PATCH'], '/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'update'])->name('contract-templates.update')->whereUuid('contractTemplate');
+    });
+
+    Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+    Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
+    Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show')->whereUuid('contract');
+    Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->name('contracts.edit')->whereUuid('contract');
+    Route::delete('/contracts/{contract}', [ContractController::class, 'destroy'])->name('contracts.destroy')->whereUuid('contract');
+    Route::post('/contracts/{contract}/sign', [ContractController::class, 'sign'])->name('contracts.sign')->whereUuid('contract');
+    Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf')->whereUuid('contract');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
+        Route::match(['PUT', 'PATCH'], '/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update')->whereUuid('contract');
+        Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate')->whereUuid('contract');
     });
 
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');

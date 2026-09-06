@@ -53,6 +53,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property string|null $note
  * @property Collection<int, QuoteItem> $items
  * @property Collection<int, Invoice> $invoices
+ * @property Collection<int, Contract> $contracts
  * @property Client|null $client
  * @property CleaningObject|null $cleaningObject
  */
@@ -160,6 +161,14 @@ final class Quote extends Model implements HasMedia
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * @return HasMany<Contract, $this>
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
     }
 
     public function isEditable(): bool

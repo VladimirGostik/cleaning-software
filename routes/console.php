@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\CheckContractExpiry;
 use App\Console\Commands\ExpireQuotes;
 use App\Console\Commands\GenerateRecurringInvoices;
 use App\Console\Commands\MarkOverdueInvoices;
@@ -18,3 +19,4 @@ Schedule::command(PurgeTemporaryUploadsCommand::class)->daily();
 Schedule::command(MarkOverdueInvoices::class)->daily();
 Schedule::command(GenerateRecurringInvoices::class)->daily();
 Schedule::command(ExpireQuotes::class)->daily();
+Schedule::command(CheckContractExpiry::class)->daily();

@@ -253,6 +253,131 @@ readonly note: string | null,
 readonly contacts: App.Data.Clients.ClientContactData[],
 };
 }
+namespace ContractTemplates {
+export type ContractTemplateDetailData = {
+readonly id: string,
+readonly name: string,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly body: string,
+readonly is_active: boolean,
+};
+export type ContractTemplateListItemData = {
+readonly id: string,
+readonly name: string,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly is_active: boolean,
+readonly updated_at: string,
+};
+export type ContractTemplateOptionData = {
+readonly id: string,
+readonly name: string,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly body: string,
+};
+export type ContractTemplateUpsertData = {
+readonly name: string,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly body: string,
+readonly is_active: boolean,
+};
+}
+namespace Contracts {
+export type ContractDetailData = {
+readonly id: string,
+readonly title: string,
+readonly number: string | null,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly status: App.Enums.ContractStatusEnum,
+readonly term_type: App.Enums.ContractTermTypeEnum,
+readonly body: string,
+readonly valid_from: string,
+readonly end_date: string | null,
+readonly signed_at: string | null,
+readonly terminated_at: string | null,
+readonly termination_reason: string | null,
+readonly notes: string | null,
+readonly contractable_type: App.Enums.ContractableTypeEnum,
+readonly contractable_id: string,
+readonly contractable_label: string,
+readonly contract_template_id: string | null,
+readonly contract_template_name: string | null,
+readonly quote_id: string | null,
+readonly quote_number: string | null,
+readonly employment: App.Data.Contracts.EmploymentContractData | null,
+readonly is_editable: boolean,
+readonly can_be_signed: boolean,
+readonly can_be_terminated: boolean,
+};
+export type ContractFormContextData = {
+readonly objects: App.Data.Objects.ObjectOptionData[],
+readonly memberships: App.Data.Contracts.MembershipOptionData[],
+readonly templates: App.Data.ContractTemplates.ContractTemplateOptionData[],
+readonly tokens: App.Data.Contracts.PlaceholderCatalogData,
+};
+export type ContractListItemData = {
+readonly id: string,
+readonly title: string,
+readonly number: string | null,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly status: App.Enums.ContractStatusEnum,
+readonly term_type: App.Enums.ContractTermTypeEnum,
+readonly valid_from: string,
+readonly end_date: string | null,
+readonly contractable_type: App.Enums.ContractableTypeEnum,
+readonly contractable_label: string,
+readonly signed_at: string | null,
+readonly is_editable: boolean,
+readonly can_be_signed: boolean,
+readonly can_be_terminated: boolean,
+};
+export type ContractTerminateData = {
+readonly terminated_at: string,
+readonly termination_reason: string | null,
+};
+export type ContractUpsertData = {
+readonly title: string,
+readonly number: string | null,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly term_type: App.Enums.ContractTermTypeEnum,
+readonly contractable_type: App.Enums.ContractableTypeEnum,
+readonly contractable_id: string,
+readonly contract_template_id: string | null,
+readonly body: string,
+readonly valid_from: string,
+readonly end_date: string | null,
+readonly notes: string | null,
+readonly employment: App.Data.Contracts.EmploymentContractUpsertData | null,
+};
+export type EmploymentContractData = {
+readonly employment_type: App.Enums.EmploymentContractTypeEnum,
+readonly position: string | null,
+readonly hourly_rate: string | null,
+readonly monthly_salary: string | null,
+readonly weekly_hours: string | null,
+readonly probation_end_date: string | null,
+};
+export type EmploymentContractUpsertData = {
+readonly employment_type: App.Enums.EmploymentContractTypeEnum,
+readonly position: string | null,
+readonly hourly_rate: number | null,
+readonly monthly_salary: number | null,
+readonly weekly_hours: number | null,
+readonly probation_end_date: string | null,
+};
+export type MembershipOptionData = {
+readonly id: string,
+readonly label: string,
+readonly is_active: boolean,
+};
+export type PlaceholderCatalogData = {
+readonly cleaning_object: App.Data.Contracts.PlaceholderTokenData[],
+readonly tenant_membership: App.Data.Contracts.PlaceholderTokenData[],
+};
+export type PlaceholderTokenData = {
+readonly token: string,
+readonly label: string,
+};
+}
 namespace Invitations {
 export type AcceptInvitationData = {
 readonly password: string,
@@ -499,6 +624,7 @@ export type ObjectOptionData = {
 readonly id: string,
 readonly name: string,
 readonly client_id: string,
+readonly client_name: string | null,
 readonly is_active: boolean,
 };
 export type ObjectUpsertData = {
@@ -522,6 +648,15 @@ namespace Quotes {
 export type QuoteAttachClientData = {
 readonly client_id: string,
 readonly cleaning_object_id: string | null,
+};
+export type QuoteContractLinkData = {
+readonly id: string,
+readonly title: string,
+readonly number: string | null,
+readonly status: App.Enums.ContractStatusEnum,
+};
+export type QuoteConvertToContractData = {
+readonly contract_template_id: string | null,
 };
 export type QuoteDetailData = {
 readonly id: string,
@@ -554,6 +689,7 @@ readonly items: App.Data.Quotes.QuoteItemData[],
 readonly vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
 readonly document: App.Data.MediaFileData | null,
 readonly invoices: App.Data.Quotes.QuoteInvoiceLinkData[],
+readonly contracts: App.Data.Quotes.QuoteContractLinkData[],
 };
 export type QuoteFormContextData = {
 readonly clients: App.Data.Clients.ClientOptionData[],
@@ -753,7 +889,12 @@ readonly swift_bic: string | null,
 }
 namespace Enums {
 export type ClientTypeEnum = "corporate" | "private";
+export type ContractCategoryEnum = "service_agreement" | "employment" | "nda" | "gdpr" | "other";
+export type ContractStatusEnum = "draft" | "active" | "expired" | "terminated";
+export type ContractTermTypeEnum = "fixed" | "indefinite";
+export type ContractableTypeEnum = "cleaning_object" | "tenant_membership";
 export type CurrencyEnum = "EUR" | "CZK" | "USD";
+export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Client/object dropdown option builders shared by controllers that offer a
- * client + object subject picker (invoices, recurring invoices, quotes).
+ * client + object subject picker (invoices, recurring invoices, quotes, contracts).
  */
 trait ProvidesSubjectOptions
 {
@@ -30,6 +30,7 @@ trait ProvidesSubjectOptions
     private function objectOptions(?string $keepObjectId = null): array
     {
         return CleaningObject::query()
+            ->with('client:id,name')
             ->where(function (Builder $query) use ($keepObjectId): void {
                 $query->where('is_active', true);
 

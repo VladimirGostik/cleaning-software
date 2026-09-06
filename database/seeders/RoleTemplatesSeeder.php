@@ -65,6 +65,8 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::DeleteQuotes->value,
                 PermissionEnum::ViewContracts->value,
                 PermissionEnum::CreateContracts->value,
+                PermissionEnum::EditContracts->value,
+                PermissionEnum::TerminateContracts->value,
                 PermissionEnum::DeleteContracts->value,
                 PermissionEnum::ViewContractTemplates->value,
                 PermissionEnum::CreateContractTemplates->value,

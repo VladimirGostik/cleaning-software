@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\GeneratesPaymentQr;
+use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Contracts\RendersQuotePdf;
 use App\Listeners\LogAuthenticationActivity;
 use App\Listeners\StampInvoiceSentAt;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
+use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
 use App\Services\Pdf\QuotePdfService;
@@ -40,6 +42,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(RendersInvoicePdf::class, InvoicePdfService::class);
         $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);
         $this->app->bind(RendersQuotePdf::class, QuotePdfService::class);
+        $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
 
         $this->app->beforeResolving(BaseData::class, function (string $class, array $parameters, $app): void {
             /** @var Request $request */

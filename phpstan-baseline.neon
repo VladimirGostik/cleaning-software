@@ -607,6 +607,12 @@ parameters:
 			path: tests/Feature/AppDemoCommandTest.php
 
 		-
+			message: '#^Cannot call method assertExitCode\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Contracts/CheckContractExpiryCommandTest.php
+
+		-
 			message: '#^Cannot access property \$id on Spatie\\Activitylog\\Contracts\\Activity\|null\.$#'
 			identifier: property.nonObject
 			count: 3

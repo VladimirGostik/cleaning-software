@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Contracts\RendersQuotePdf;
+use App\Data\ContractTemplates\ContractTemplateOptionData;
 use App\Data\Quotes\QuoteAttachClientData;
+use App\Data\Quotes\QuoteConvertToContractData;
 use App\Data\Quotes\QuoteDetailData;
 use App\Data\Quotes\QuoteFormContextData;
 use App\Data\Quotes\QuoteUpsertData;
+use App\Enums\ContractCategoryEnum;
 use App\Enums\PermissionEnum;
 use App\Enums\QuoteKindEnum;
+use App\Enums\QuoteStatusEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
+use App\Models\ContractTemplate;
 use App\Models\Quote;
 use App\Models\Tenant;
 use App\Navigation\NavItem;
@@ -63,14 +68,19 @@ final class QuoteController extends Controller
     }
 
     #[Authorize('view', 'quote')]
-    public function show(Quote $quote): InertiaResponse
+    public function show(Quote $quote, Request $request): InertiaResponse
     {
         $isClientless = $quote->client_id === null;
+
+        $canConvertToContract = $quote->status === QuoteStatusEnum::Accepted
+            && $quote->kind === QuoteKindEnum::Itemized
+            && $request->user()?->can(PermissionEnum::CreateContracts->value);
 
         return Inertia::render('Quotes/Show', [
             'quote' => QuoteDetailData::fromModel($quote),
             'clients' => $isClientless ? $this->clientOptions() : null,
             'objects' => $isClientless ? $this->objectOptions() : null,
+            'contractTemplates' => $canConvertToContract ? $this->contractTemplateOptions() : [],
         ]);
     }
 
@@ -153,6 +163,14 @@ final class QuoteController extends Controller
         return to_route('invoices.show', $invoice)->with('success', __('app.quote_converted_to_invoice'));
     }
 
+    #[Authorize('convertToContract', 'quote')]
+    public function convertToContract(QuoteConvertToContractData $data, Quote $quote): RedirectResponse
+    {
+        $contract = $this->quotes->convertToContract($quote, $data);
+
+        return to_route('contracts.show', $contract)->with('success', __('app.quote_converted_to_contract'));
+    }
+
     #[Authorize('downloadPdf', 'quote')]
     public function pdf(Quote $quote, RendersQuotePdf $pdfService): Response
     {
@@ -186,5 +204,17 @@ final class QuoteController extends Controller
                 Str::ascii($filename),
             ),
         ]);
+    }
+
+    /** @return array<int, ContractTemplateOptionData> */
+    private function contractTemplateOptions(): array
+    {
+        return ContractTemplate::query()
+            ->active()
+            ->where('category', ContractCategoryEnum::ServiceAgreement->value)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (ContractTemplate $template) => ContractTemplateOptionData::fromModel($template))
+            ->all();
     }
 }
