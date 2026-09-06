@@ -24,8 +24,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 final class InvoiceController extends Controller
 {
@@ -151,11 +153,15 @@ final class InvoiceController extends Controller
     {
         $pdfContent = $pdfService->render($invoice);
 
-        $filename = ($invoice->number ?? 'draft').'.pdf';
+        $filename = $invoice->pdfFilenameBase().'.pdf';
 
         return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Disposition' => HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_ATTACHMENT,
+                $filename,
+                Str::ascii($filename),
+            ),
         ]);
     }
 

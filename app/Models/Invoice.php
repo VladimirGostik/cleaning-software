@@ -238,4 +238,17 @@ final class Invoice extends Model
     {
         return in_array($this->status, [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue], true);
     }
+
+    /**
+     * Safe base filename (no extension) for PDF/attachment downloads. Strips characters
+     * that would break a `Content-Disposition` header (quotes, control chars, path
+     * separators, `%`) out of the user-influenced invoice number.
+     */
+    public function pdfFilenameBase(): string
+    {
+        $number = $this->number ?? 'draft';
+        $safe = preg_replace('/[\x00-\x1F\x7F"\/\\%]/', '', $number);
+
+        return $safe !== null && $safe !== '' ? $safe : 'draft';
+    }
 }

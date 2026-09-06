@@ -66,6 +66,7 @@ final class RecurringInvoiceController extends Controller
     {
         /** @var Collection<int, Invoice> $generatedInvoices */
         $generatedInvoices = $recurringInvoice->generatedInvoices()
+            ->with('client:id,name')
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();

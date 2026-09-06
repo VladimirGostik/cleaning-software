@@ -34,7 +34,11 @@ enum RecurringFrequencyEnum: string
 
     public function nextRunDate(Carbon $from, int $dayOfMonth): Carbon
     {
-        $next = $from->copy()->addMonths($this->monthsInterval());
+        // Anchor on the 1st before adding months — addMonths() from a day 29-31 overflows
+        // into the following month (e.g. Jan 31 + 1 month = Mar 3), silently skipping
+        // February. Anchoring on day 1 makes the month arithmetic exact; day_of_month is
+        // clamped afterward against the *target* month's real length.
+        $next = $from->copy()->startOfMonth()->addMonths($this->monthsInterval());
         $maxDay = min($dayOfMonth, $next->daysInMonth);
         $next->setDay($maxDay);
 

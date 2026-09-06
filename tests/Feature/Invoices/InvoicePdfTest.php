@@ -69,7 +69,7 @@ final class InvoicePdfTest extends TestCase
         $response = $this->get(route('invoices.pdf', $invoice));
 
         $response->assertOk();
-        $response->assertHeader('Content-Disposition', 'attachment; filename="draft.pdf"');
+        $response->assertHeader('Content-Disposition', 'attachment; filename=draft.pdf');
     }
 
     public function test_download_pdf_missing_iban_still_renders(): void
@@ -80,6 +80,24 @@ final class InvoicePdfTest extends TestCase
         $this->mockPdfRenderer();
 
         $this->get(route('invoices.pdf', $invoice))->assertOk();
+    }
+
+    public function test_download_pdf_with_unsafe_characters_in_number_produces_well_formed_header(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'number' => 'FA"2026/01']);
+        $this->mockPdfRenderer();
+
+        $response = $this->get(route('invoices.pdf', $invoice));
+
+        $response->assertOk();
+        $disposition = $response->headers->get('Content-Disposition');
+        $this->assertNotNull($disposition);
+        $this->assertStringStartsWith('attachment; filename=', $disposition);
+        // The raw invoice number's `"` and `/` must never survive into the header value.
+        $this->assertStringNotContainsString('/', $disposition);
+        $this->assertSame('attachment; filename=FA202601.pdf', $disposition);
     }
 
     // -------------------------------------------------------------------------

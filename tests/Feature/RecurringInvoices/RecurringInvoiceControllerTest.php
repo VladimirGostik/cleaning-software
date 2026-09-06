@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature\RecurringInvoices;
 
+use App\Data\Invoices\InvoiceListItemData;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
+use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -103,6 +107,53 @@ final class RecurringInvoiceControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page->component('RecurringInvoices/Show', shouldExist: false)->where('recurringInvoice.id', $ri->id));
+    }
+
+    public function test_show_generated_invoices_do_not_produce_n_plus_1_queries(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $ri = $this->makeTemplate($tenant);
+
+        $twoRowsQueryCount = $this->queryCountForGeneratedInvoicesFetch($tenant, $ri, 2);
+        $fiveRowsQueryCount = $this->queryCountForGeneratedInvoicesFetch($tenant, $ri, 5);
+
+        // Eager loading (->with('client:id,name')) keeps the query count flat regardless
+        // of row count; an N+1 (one lazy client lookup per generated invoice) would grow
+        // this by 3 when going from 2 to 5 rows.
+        $this->assertSame(
+            $twoRowsQueryCount,
+            $fiveRowsQueryCount,
+            "Query count grew from {$twoRowsQueryCount} (2 rows) to {$fiveRowsQueryCount} (5 rows) — N+1 suspected.",
+        );
+    }
+
+    private function queryCountForGeneratedInvoicesFetch(Tenant $tenant, RecurringInvoice $ri, int $count): int
+    {
+        Invoice::where('recurring_invoice_id', $ri->id)->delete();
+
+        for ($i = 0; $i < $count; $i++) {
+            $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+            Invoice::factory()->create(['tenant_id' => $tenant->id, 'recurring_invoice_id' => $ri->id, 'client_id' => $client->id]);
+        }
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $generatedInvoices = $ri->generatedInvoices()
+            ->with('client:id,name')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        $items = $generatedInvoices->map(fn (Invoice $invoice) => InvoiceListItemData::fromModel($invoice))->all();
+
+        $queryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertCount($count, $items);
+
+        return $queryCount;
     }
 
     public function test_pause_sets_status_to_paused(): void

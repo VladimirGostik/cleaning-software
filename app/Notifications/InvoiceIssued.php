@@ -45,7 +45,7 @@ final class InvoiceIssued extends Notification implements ShouldQueue
 
         $pdfContent = app(RendersInvoicePdf::class)->render($invoice);
 
-        $filename = ($invoice->number ?? 'draft').'.pdf';
+        $filename = $invoice->pdfFilenameBase().'.pdf';
 
         return (new MailMessage)
             ->subject(__('app.invoice_mail_subject', ['number' => $invoice->number ?? __('app.invoice_pdf_draft')]))
