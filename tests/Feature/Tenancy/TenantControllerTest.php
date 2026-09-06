@@ -39,7 +39,7 @@ final class TenantControllerTest extends TestCase
             'ico' => '87654321',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('settings.invoicing'));
         $newTenant = Tenant::where('name', 'New Co')->firstOrFail();
         $this->assertSame($newTenant->id, session('active_tenant_id'));
         $this->assertSame($user->id, $newTenant->owner_id);

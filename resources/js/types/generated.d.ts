@@ -324,6 +324,7 @@ readonly items: App.Data.Invoices.InvoiceItemData[],
 readonly vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
 readonly qr_available: boolean,
 readonly qr_data_uri: string | null,
+readonly supplier_missing_fields: string[],
 };
 export type InvoiceFormContextData = {
 readonly clients: App.Data.Clients.ClientOptionData[],
@@ -333,6 +334,7 @@ readonly vat_rate: string | null,
 readonly vat_rate_options: number[],
 readonly defaults: App.Data.Invoices.InvoiceDefaultsData,
 readonly recurring_default_state: App.Enums.RecurringDefaultStateEnum,
+readonly supplier_missing_fields: string[],
 };
 export type InvoiceIssueData = {
 readonly number: string | null,
@@ -623,6 +625,19 @@ readonly id: string,
 readonly name: string,
 readonly is_active: boolean,
 readonly color: App.Enums.TenantColorEnum | null,
+};
+export type TenantSupplierProfileData = {
+readonly address_line: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly country: string,
+readonly dic: string | null,
+readonly vat_number: string | null,
+readonly is_vat_payer: boolean,
+readonly contact_email: string | null,
+readonly contact_phone: string | null,
+readonly iban: string | null,
+readonly swift_bic: string | null,
 };
 }
 }

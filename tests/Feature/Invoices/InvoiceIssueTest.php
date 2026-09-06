@@ -141,4 +141,71 @@ final class InvoiceIssueTest extends TestCase
 
         $this->assertSame('SAME-001', $issuedB->number);
     }
+
+    // -------------------------------------------------------------------------
+    // supplier completeness guard
+    // -------------------------------------------------------------------------
+
+    public function test_issue_blocked_when_supplier_address_line_missing(): void
+    {
+        $tenant = Tenant::factory()->create(['address_line' => null]);
+        $this->bindTenant($tenant);
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        try {
+            app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+            $this->fail('Expected ValidationException was not thrown.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('supplier', $e->errors());
+        }
+
+        $invoice->refresh();
+        $this->assertSame(InvoiceStatusEnum::Draft, $invoice->status);
+        $this->assertNull($invoice->number);
+    }
+
+    public function test_issue_blocked_when_vat_payer_missing_vat_number(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => true, 'vat_number' => null]);
+        $this->bindTenant($tenant);
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->expectException(ValidationException::class);
+
+        app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+    }
+
+    public function test_issue_allowed_for_non_vat_payer_without_dic_or_vat_number(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false, 'dic' => null, 'vat_number' => null]);
+        $this->bindTenant($tenant);
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+
+        $this->assertSame(InvoiceStatusEnum::Issued, $issued->status);
+    }
+
+    public function test_draft_create_and_update_are_allowed_on_incomplete_tenant(): void
+    {
+        $tenant = Tenant::factory()->create(['address_line' => null]);
+        $this->bindTenant($tenant);
+
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->assertSame(InvoiceStatusEnum::Draft, $invoice->status);
+    }
+
+    public function test_http_issue_on_incomplete_tenant_returns_session_errors(): void
+    {
+        $tenant = Tenant::factory()->create(['address_line' => null]);
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $response = $this->post(route('invoices.issue', $invoice), ['number' => null]);
+
+        $response->assertSessionHasErrors('supplier');
+        $invoice->refresh();
+        $this->assertSame(InvoiceStatusEnum::Draft, $invoice->status);
+    }
 }

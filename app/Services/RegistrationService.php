@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Tenants\AddTenantData;
+use App\Data\Tenants\TenantSupplierProfileData;
 use App\Enums\InvitationStatusEnum;
 use App\Enums\SupportedLanguage;
 use App\Enums\TenantColorEnum;
@@ -30,9 +31,15 @@ final readonly class RegistrationService
         private PermissionRegistrar $permissionRegistrar,
     ) {}
 
-    public function createOwner(string $name, string $email, string $password, string $companyName, string $ico): User
-    {
-        return $this->db->transaction(function () use ($name, $email, $password, $companyName, $ico): User {
+    public function createOwner(
+        string $name,
+        string $email,
+        string $password,
+        string $companyName,
+        string $ico,
+        ?TenantSupplierProfileData $supplier = null,
+    ): User {
+        return $this->db->transaction(function () use ($name, $email, $password, $companyName, $ico, $supplier): User {
             /** @var User $user */
             $user = User::create([
                 'name' => $name,
@@ -46,7 +53,7 @@ final readonly class RegistrationService
             // request input). This app has no email-verification flow — auto-verify on create.
             $user->forceFill(['email_verified_at' => now()])->save();
 
-            $this->bootstrapTenant($user, $companyName, $ico, color: null);
+            $this->bootstrapTenant($user, $companyName, $ico, color: null, supplier: $supplier);
 
             return $user;
         });
@@ -74,14 +81,20 @@ final readonly class RegistrationService
         });
     }
 
-    private function bootstrapTenant(User $user, string $name, string $ico, ?TenantColorEnum $color): Tenant
-    {
+    private function bootstrapTenant(
+        User $user,
+        string $name,
+        string $ico,
+        ?TenantColorEnum $color,
+        ?TenantSupplierProfileData $supplier = null,
+    ): Tenant {
         $tenant = Tenant::create([
             'owner_id' => $user->id,
             'name' => $name,
             'ico' => $ico,
             'country' => 'SK',
             'is_active' => true,
+            ...($supplier?->toTenantAttributes() ?? []),
         ]);
 
         TenantInterface::create([

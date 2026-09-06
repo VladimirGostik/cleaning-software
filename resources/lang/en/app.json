@@ -590,5 +590,7 @@
     "recurring_invoice_termination_until_date": "Until a date",
     "recurring_invoices_empty": "No recurring invoices",
     "recurring_invoices_empty_hint": "No recurring invoices have been created yet.",
-    "invoice_send_requires_email": "The invoice can only be emailed once the customer has an email address on file."
+    "invoice_send_requires_email": "The invoice can only be emailed once the customer has an email address on file.",
+    "invoice_supplier_incomplete": "The supplier profile is incomplete. Complete it in Invoicing settings before issuing an invoice.",
+    "tenant_created_complete_supplier": "Company was created. Complete the supplier profile for invoices."
 }

@@ -68,7 +68,7 @@ final class InvoiceController extends Controller
     #[Authorize('view', 'invoice')]
     public function show(Invoice $invoice, GeneratesPaymentQr $qr): InertiaResponse
     {
-        $invoice->load(['items', 'client']);
+        $invoice->load(['items', 'client', 'tenant']);
 
         return Inertia::render('Invoices/Show', [
             'invoice' => InvoiceDetailData::fromModel($invoice, $qr->dataUri($invoice)),
@@ -78,7 +78,7 @@ final class InvoiceController extends Controller
     #[Authorize('update', 'invoice')]
     public function edit(Invoice $invoice): InertiaResponse
     {
-        $invoice->load(['items', 'client']);
+        $invoice->load(['items', 'client', 'tenant']);
 
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
 

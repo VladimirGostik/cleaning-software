@@ -31,6 +31,8 @@ final class InvoiceFormContextData extends Data
         public readonly array $vat_rate_options,
         public readonly InvoiceDefaultsData $defaults,
         public readonly RecurringDefaultStateEnum $recurring_default_state,
+        /** @var string[] */
+        public readonly array $supplier_missing_fields,
     ) {}
 
     /**
@@ -60,6 +62,7 @@ final class InvoiceFormContextData extends Data
                 rounding_mode: $interface->default_rounding_mode ?? RoundingModeEnum::None,
             ),
             recurring_default_state: $interface->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
+            supplier_missing_fields: $tenant->missingSupplierFields(),
         );
     }
 }

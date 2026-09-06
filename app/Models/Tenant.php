@@ -87,6 +87,43 @@ final class Tenant extends Model
             ->dontLogEmptyChanges();
     }
 
+    /**
+     * Column names of required supplier fields still empty; [] = complete.
+     * Vocabulary is a stable FE contract: name|address_line|city|postal_code|ico|dic|vat_number.
+     *
+     * @return list<string>
+     */
+    public function missingSupplierFields(): array
+    {
+        $required = ['name', 'address_line', 'city', 'postal_code', 'ico'];
+
+        if ($this->is_vat_payer) {
+            $required[] = 'dic';
+            $required[] = 'vat_number';
+        }
+
+        return array_values(array_filter(
+            $required,
+            fn (string $field): bool => $this->isSupplierFieldEmpty($field),
+        ));
+    }
+
+    public function hasCompleteSupplierProfile(): bool
+    {
+        return $this->missingSupplierFields() === [];
+    }
+
+    private function isSupplierFieldEmpty(string $field): bool
+    {
+        $value = $this->getAttribute($field);
+
+        if ($value === null) {
+            return true;
+        }
+
+        return is_string($value) && trim($value) === '';
+    }
+
     /** @return BelongsTo<User, $this> */
     public function owner(): BelongsTo
     {

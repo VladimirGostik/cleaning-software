@@ -141,7 +141,13 @@ final readonly class InvoiceService
             throw ValidationException::withMessages(['status' => [__('app.invoice_not_draft')]]);
         }
 
-        return $this->db->transaction(function () use ($invoice, $data): Invoice {
+        $tenant = Tenant::withoutGlobalScopes()->findOrFail($invoice->tenant_id);
+
+        if ($tenant->missingSupplierFields() !== []) {
+            throw ValidationException::withMessages(['supplier' => [__('app.invoice_supplier_incomplete')]]);
+        }
+
+        return $this->db->transaction(function () use ($invoice, $data, $tenant): Invoice {
             if ($data->number !== null) {
                 $taken = Invoice::withoutGlobalScope(TenantScope::class)
                     ->where('tenant_id', $invoice->tenant_id)
@@ -156,7 +162,6 @@ final readonly class InvoiceService
 
                 $number = $data->number;
             } else {
-                $tenant = Tenant::withoutGlobalScopes()->findOrFail($invoice->tenant_id);
                 $number = $this->numberService->next($tenant, $invoice->issue_date);
             }
 

@@ -17,6 +17,8 @@ use App\Models\Tenant;
 use App\Models\TenantInterface;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use Mockery;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -208,5 +210,30 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
 
         $invoice = Invoice::withoutGlobalScopes()->where('recurring_invoice_id', $ri->id)->firstOrFail();
         $this->assertSame($tenantId, $invoice->tenant_id);
+    }
+
+    // -------------------------------------------------------------------------
+    // D2b — incomplete supplier profile skips auto-issue
+    // -------------------------------------------------------------------------
+
+    public function test_auto_issue_with_incomplete_supplier_profile_leaves_draft_and_logs_warning(): void
+    {
+        $ri = $this->createDueTemplate(['auto_issue' => true]);
+        Tenant::where('id', $ri->tenant_id)->update(['address_line' => null]);
+
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('recurring_invoice.auto_issue.skipped_supplier_incomplete', Mockery::on(
+                fn (array $context): bool => $context['recurring_invoice_id'] === $ri->id
+                    && $context['tenant_id'] === $ri->tenant_id
+                    && in_array('address_line', (array) $context['missing'], true),
+            ));
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $ri->refresh();
+        $invoice = Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail();
+        $this->assertSame(InvoiceStatusEnum::Draft, $invoice->status);
+        $this->assertNotNull($ri->next_run_at);
     }
 }

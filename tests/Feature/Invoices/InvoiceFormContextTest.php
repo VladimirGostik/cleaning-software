@@ -83,4 +83,74 @@ final class InvoiceFormContextTest extends TestCase
                 ->has('context.clients', 2),
         );
     }
+
+    // -------------------------------------------------------------------------
+    // supplier_missing_fields exposure
+    // -------------------------------------------------------------------------
+
+    public function test_create_context_exposes_missing_supplier_fields_for_incomplete_tenant(): void
+    {
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
+        $tenant = Tenant::factory()->forOwner($owner)->create(['address_line' => null]);
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $response = $this->get(route('invoices.create'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Invoices/Create')
+                ->where('context.supplier_missing_fields', ['address_line']),
+        );
+    }
+
+    public function test_create_context_supplier_missing_fields_is_empty_for_complete_tenant(): void
+    {
+        $tenant = $this->tenantAdmin();
+
+        $response = $this->get(route('invoices.create'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Invoices/Create')
+                ->where('context.supplier_missing_fields', []),
+        );
+    }
+
+    public function test_show_draft_invoice_exposes_missing_supplier_fields(): void
+    {
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
+        $tenant = Tenant::factory()->forOwner($owner)->create(['address_line' => null]);
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $response = $this->get(route('invoices.show', $invoice));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Invoices/Show')
+                ->where('invoice.supplier_missing_fields', ['address_line']),
+        );
+    }
+
+    public function test_show_issued_invoice_hides_missing_supplier_fields_even_if_tenant_incomplete(): void
+    {
+        $owner = User::factory()->create(['is_active' => true, 'locale' => 'sk']);
+        $tenant = Tenant::factory()->forOwner($owner)->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
+
+        $tenant->update(['address_line' => null]);
+
+        $response = $this->get(route('invoices.show', $invoice));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Invoices/Show')
+                ->where('invoice.supplier_missing_fields', []),
+        );
+    }
 }

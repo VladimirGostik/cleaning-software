@@ -8,6 +8,7 @@ use App\Data\Invoices\InvoiceIssueData;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\RecurringInvoice;
+use App\Models\Tenant;
 use App\Scopes\TenantScope;
 use App\Services\InvoiceService;
 use App\Services\RecurringInvoiceService;
@@ -70,8 +71,17 @@ final class GenerateRecurringInvoiceJob implements ShouldBeUnique, ShouldQueue
             $tenantDefault = $service->resolveTenantDefaultState($ri->tenant_id);
             $shouldAutoIssue = $ri->auto_issue || $tenantDefault === RecurringDefaultStateEnum::Issued;
 
-            if ($shouldAutoIssue) {
+            $tenant = Tenant::withoutGlobalScopes()->findOrFail($ri->tenant_id);
+            $missingSupplierFields = $tenant->missingSupplierFields();
+
+            if ($shouldAutoIssue && $missingSupplierFields === []) {
                 $invoiceService->issue($invoice, new InvoiceIssueData(number: null));
+            } elseif ($shouldAutoIssue) {
+                Log::warning('recurring_invoice.auto_issue.skipped_supplier_incomplete', [
+                    'recurring_invoice_id' => $ri->id,
+                    'tenant_id' => $ri->tenant_id,
+                    'missing' => $missingSupplierFields,
+                ]);
             }
 
             // Compute next_run_at from current next_run_at before refresh to avoid drift

@@ -80,11 +80,17 @@ final class InvoiceDetailData extends Data
         public readonly array $vat_breakdown,
         public readonly bool $qr_available,
         public readonly ?string $qr_data_uri = null,
+        /** @var string[] */
+        public readonly array $supplier_missing_fields = [],
     ) {}
 
     public static function fromModel(Invoice $invoice, ?string $qrDataUri): self
     {
         $invoice->loadMissing(['items', 'creditNote']);
+
+        $supplierMissingFields = $invoice->isEditable()
+            ? $invoice->loadMissing('tenant')->tenant?->missingSupplierFields() ?? []
+            : [];
 
         return new self(
             id: $invoice->id,
@@ -145,6 +151,7 @@ final class InvoiceDetailData extends Data
                 && $invoice->supplier_iban !== null
                 && $invoice->variable_symbol !== null,
             qr_data_uri: $qrDataUri,
+            supplier_missing_fields: $supplierMissingFields,
         );
     }
 }

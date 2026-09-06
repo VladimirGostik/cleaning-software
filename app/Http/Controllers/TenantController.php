@@ -28,7 +28,7 @@ final class TenantController extends Controller
 
         session(['active_tenant_id' => $tenant->id]);
 
-        return to_route('dashboard')->with('success', __('app.tenant_created'));
+        return to_route('settings.invoicing')->with('success', __('app.tenant_created_complete_supplier'));
     }
 
     #[Authorize('switchTo', 'tenant')]

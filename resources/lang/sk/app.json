@@ -590,5 +590,7 @@
     "recurring_invoice_termination_until_date": "K dátumu",
     "recurring_invoices_empty": "Žiadne opakované faktúry",
     "recurring_invoices_empty_hint": "Zatiaľ neboli vytvorené žiadne opakované faktúry.",
-    "invoice_send_requires_email": "Faktúru je možné odoslať e-mailom až po doplnení e-mailovej adresy zákazníka."
+    "invoice_send_requires_email": "Faktúru je možné odoslať e-mailom až po doplnení e-mailovej adresy zákazníka.",
+    "invoice_supplier_incomplete": "Údaje dodávateľa sú neúplné. Doplňte ich v Nastaveniach fakturácie pred vystavením faktúry.",
+    "tenant_created_complete_supplier": "Firma bola vytvorená. Doplňte údaje dodávateľa pre faktúry."
 }

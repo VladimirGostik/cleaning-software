@@ -693,13 +693,13 @@ parameters:
 		-
 			message: '#^Cannot call method assertFailed\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
 			identifier: method.nonObject
-			count: 4
+			count: 6
 			path: tests/Feature/Console/CreateOwnerCommandTest.php
 
 		-
 			message: '#^Cannot call method assertSuccessful\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
 			identifier: method.nonObject
-			count: 1
+			count: 3
 			path: tests/Feature/Console/CreateOwnerCommandTest.php
 
 		-
