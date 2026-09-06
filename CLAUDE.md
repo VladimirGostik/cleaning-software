@@ -9,8 +9,9 @@ Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonic
 - Frontend: Inertia v3 + Vue 3 + TypeScript, Tailwind 4 + DaisyUI 5
 - DB: PostgreSQL 16 (compose service `postgres`), Redis 7
 - Mail: Mailpit (compose service `:8025`), SMTP in dev/test
-- Queue: Database driver, background `queue` service (prod: supervisor) for InvoiceIssued + GenerateRecurringInvoiceJob
+- Queue: Database driver, background `queue` service (prod: supervisor) for InvoiceIssued + GenerateRecurringInvoiceJob + GenerateScheduledJobsJob
 - PDF/QR: spatie/laravel-pdf (chrome driver), chrome-php/chrome (pure-PHP DevTools), Alpine apk Chromium (arm64 native), pay-by-square + bacon QR code
+- Calendar: @fullcalendar/vue3 v6.1.21 (FullCalendar month/week view for schedule jobs)
 - Main packages: Spatie Data 4, Permission 7 (teams mode), Activitylog 5, MediaLibrary 11, QueryBuilder 7 + `App\Utils\AllowedFilter`,
   TypeScript Transformer 3, Laravel Boost 2, Scribe; PHPUnit 12; Pint, PHPStan (Larastan), ESLint, Prettier, vue-tsc, Lefthook
 
@@ -114,6 +115,8 @@ Creates User (owner) → Tenant (firma, company, optionally seeded with supplier
 
 Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=true + hasActiveMembership. Mid-session loss → next request logs out web user (RequireActiveTenant middleware).
 
+**Phase 7 demo cleaner:** ScheduleDemoSeeder creates signed contract → work breakdown → 30-day jobs (September 2026 horizon). Cleaner account: `cleaner@example.com` / `password`, Interná upratovačka role (own-only scoping via absent "all" permissions), 3 assigned jobs (Planned status). Use this account to test schedule index/show, job assignment, calendar view, work-breakdown visibility, Objects access via job linkage (D3 reachability).
+
 ## Modules
 
 - auth (FE) — Pages/Auth/{Login,ForgotPassword,ResetPassword}.vue + Components/Auth/{AuthShell, AuthHero, AuthTextField, AuthPasswordField, AuthCheckboxField, AuthSubmitButton, AuthLanguageSwitcher}, brown/amber hero + white form panel, FormProvider + Precognition, string URLs.
@@ -136,6 +139,10 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - contract-templates (BE) — ContractTemplate model (UUIDv7, BelongsToTenant, SoftDeletes, LogsActivity), ContractTemplateService (paginate/create/update/delete), Enums: ContractCategoryEnum. Routes: GET|POST /contract-templates, GET|PUT|DELETE /contract-templates/{contractTemplate}. Policies: ContractTemplatePolicy. Permissions: ViewContractTemplates/CreateContractTemplates/EditContractTemplates/DeleteContractTemplates.
 - contracts (FE) — Pages/Contracts/{Index,Create,Edit,Show}.vue, components ContractStatusBadge/ContractCategoryBadge/ContractTermBadge, ContractBodyEditor (TextareaInput.insertAtCursor), PlaceholderTokenList, ContractBodyPreview, ContractSubjectFields, EmploymentContractFields, ContractForm, ContractTerminateModal, detail cards (ContractPartiesCard/TermCard/EmploymentCard/ActionsCard/LinksCard).
 - contracts (BE) — Contract/EmploymentContract models (UUIDv7, BelongsToTenant, SoftDeletes, LogsActivity, polymorphic contractable, quote_id FK), ContractService (paginate/create/update/sign/terminate/delete), PlaceholderResolverService (token resolution), ContractPdfService (RendersContractPdf, chrome driver). Enums: ContractStatusEnum/ContractTermTypeEnum/EmploymentContractTypeEnum/ContractableTypeEnum. Events: ContractSigned/ContractExpired/ContractExpiring. Command: CheckContractExpiry (daily cron). Routes: GET|POST /contracts, GET|PUT|DELETE /contracts/{contract}, POST /contracts/{contract}/sign, POST /contracts/{contract}/terminate, GET /contracts/{contract}/pdf. Policies: ContractPolicy. Permissions: ViewContracts/CreateContracts/EditContracts/TerminateContracts/DeleteContracts. Quote integration: Quote::contracts() HasMany, QuoteService::convertToContract, QuoteDetailData.contracts, QuotePolicy::convertToContract.
+- employees (FE) — Pages/Employees/{Index,Create,Edit,Show}.vue, Components/Employees/{EmployeeForm,EmployeeFiltersBar,EmployeeStatusBadge,EmployeeRoleModal}, EmploymentContractFields reuse. AppLayout nav "Zamestnanci" order 20.
+- employees (BE) — EmployeeService (paginate/create/update/deactivate over TenantMembership), TenantMembership extended (profile fields first_name/last_name/phone/position, LogsActivity), RoleAssignmentGuard (escalation prevention 422), TenantMembershipPolicy (rbac-full instance checks), EmployeeController with #[NavItem] IdentificationIcon order 20. Routes: GET|POST /employees, GET|PUT|DELETE /employees/{employee}, POST /employees/{employee}/deactivate, POST /employees/{employee}/role. Permissions: ViewEmployees/CreateEmployees/EditEmployees/AssignEmployees/DeleteEmployees. Users module kept (nav settings order 15, both write tenant_memberships). Nullable User.password (invitation flow for new employees).
+- schedule (FE) — Pages/Schedule/{Index,Create,Edit,Show}.vue, Components/Schedule/{JobStatusBadge,JobTypeBadge,JobFiltersBar,JobList,JobCalendar (FullCalendar v6.1.21 month/week),JobForm,JobAssignPanel,WorkBreakdownView}, TimeInput.vue, Objects/Show gained read-only Rozpis prác card. Composable useJobCalendar. AppLayout nav "Rozvrh" order 32 + ICONS CalendarDaysIcon.
+- schedule (BE) — WorkBreakdown/WorkBreakdownTask/ScheduledJob (table `cleaning_jobs`, BelongsToTenant, LogsActivity, SoftDeletes) models, enums (TaskFrequencyEnum 8 values + recurrence, JobStatusEnum 6 states + matrix, JobTypeEnum 3 types, all #[TypeScript]), WorkBreakdownService (generateFromContract idempotent), JobService (paginate/create/update/assign/cancel/complete/unapprove/unassignFutureForMembership with actor scoping), ScheduledJob::scopeVisibleTo/isVisibleTo (cleaner own-only), CleaningObject::scopeVisibleTo/isVisibleTo (any job reachability D3 override), listener GenerateWorkBreakdownFromSignedContract (ContractSigned → generate → dispatch GenerateScheduledJobsJob afterCommit), GenerateScheduledJobsJob (queued ShouldBeUnique, rolling 30d), GenerateScheduledJobsCommand (daily cron), config/scheduling.php, ScheduleDemoSeeder. ScheduledJobPolicy (rbac-full + scopeVisibleTo), ScheduledJobController with #[NavItem] CalendarDaysIcon order 32. Routes: GET|POST /jobs, GET|PUT|DELETE /jobs/{job}, POST /jobs/{job}/{assign|cancel|complete|unapprove}, GET /jobs/calendar. Permissions: ViewSchedule/CreateSchedule/EditSchedule/AssignCleaners.
 - dashboard (FE) — Pages/Dashboard.vue welcome card.
 - dashboard (BE) — placeholder GET / route, no props.
 - profile (FE) — Pages/Profile/Show.vue, two useForm('put') forms, locale select from shared languages (now sk/en/uk).
@@ -154,7 +161,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
 - shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm (+ confirmVariant prop phase 4), types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
 
-**Note:** Phase 3–4 modules (Clients, Objects, Invoices, RecurringInvoices, Settings/Invoicing, Quotes, Contracts, ContractTemplates, Employees, Schedule/Jobs, Notifications) ported per `.claude/plans/port-from-cleaning-software.md` phase order. Each domain: tenant-scoped (BelongsToTenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate.
+**Note:** Phases 1–7 complete (2026-09-06). Phase 8+ deferred: Notifications listener wiring (InvoiceOverdue, ContractExpiring, QuoteSent/Expiring events zero-listener phase 7; mobile portal (cleaner + supervisor), customer portal, analytics, integrations. All 7 implemented domains: tenant-scoped (BelongsToTenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate (no soft-delete on WorkBreakdownTask, only cascade). Cleaner role (Interná upratovačka) has own-only scoping via absent "all" permissions + ScheduledJob::scopeVisibleTo / CleaningObject::scopeVisibleTo (D3 override: any assigned job reachability).
 
 ## Lint
 lint.tools: [pint, phpstan, vue-tsc, eslint, prettier]
@@ -166,7 +173,7 @@ lint.notes: |
 
 ## Deployment Status
 - **Deployed to production:** no
-- **Last verified:** 2026-09-06 (Phase 5 Quotes, 664 tests)
+- **Last verified:** 2026-09-06 (Phase 7 complete: Employees + Schedule + Cleaner scoping, 912 tests, ScheduleDemoSeeder)
 
 ## Review rules
 
