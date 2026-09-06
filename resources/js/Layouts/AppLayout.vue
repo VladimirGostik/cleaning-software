@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import BrandMark from '@/Components/BrandMark.vue';
 
 type NavigationItem = App.Data.NavigationItemData;
 import {
@@ -20,8 +21,6 @@ import type { ToastPayload } from '@/Composables/useToast';
 
 const { t } = useI18n();
 const page = usePage();
-
-const appName = (import.meta.env.VITE_APP_NAME as string | undefined) ?? 'App';
 
 const auth = computed(() => page.props.auth);
 const locale = computed(() => page.props.locale);
@@ -109,27 +108,15 @@ function toastAlertClass(type: ToastMessage['type']): string {
 </script>
 
 <template>
-    <div
-        class="drawer lg:drawer-open"
-        data-theme="app-theme"
-    >
-        <input
-            id="app-drawer"
-            type="checkbox"
-            class="drawer-toggle"
-        />
+    <div class="drawer lg:drawer-open" data-theme="app-theme">
+        <input id="app-drawer" type="checkbox" class="drawer-toggle" />
 
         <!-- Page content -->
         <div class="drawer-content flex flex-col min-h-screen">
             <!-- Mobile top bar -->
-            <div
-                class="navbar bg-base-100 shadow-sm lg:hidden sticky top-0 z-10"
-            >
+            <div class="navbar bg-base-100 shadow-sm lg:hidden sticky top-0 z-10">
                 <div class="flex-none">
-                    <label
-                        for="app-drawer"
-                        class="btn btn-square btn-ghost"
-                    >
+                    <label for="app-drawer" class="btn btn-square btn-ghost">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
@@ -146,61 +133,58 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     </label>
                 </div>
                 <div class="flex-1">
-                    <span class="text-lg font-bold">{{ appName }}</span>
+                    <a href="/" class="flex items-center gap-2">
+                        <span
+                            class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary/80 to-primary text-white"
+                        >
+                            <BrandMark class="h-4 w-4" />
+                        </span>
+                        <span class="text-lg font-bold">{{ t('app_name') }}</span>
+                    </a>
                 </div>
             </div>
 
             <!-- Main content -->
-            <main class="flex-1 p-6">
+            <main class="flex-1 p-7 bg-base-200">
                 <slot />
             </main>
         </div>
 
         <!-- Sidebar -->
         <div class="drawer-side z-20">
-            <label
-                for="app-drawer"
-                class="drawer-overlay"
-            />
-            <aside
-                class="w-64 min-h-screen bg-base-200 flex flex-col"
-            >
+            <label for="app-drawer" class="drawer-overlay" />
+            <aside class="w-64 min-h-screen bg-neutral text-neutral-content flex flex-col">
                 <!-- Brand -->
-                <div class="p-4 border-b border-base-300">
-                    <a
-                        href="/"
-                        class="text-xl font-bold text-primary"
-                    >
-                        {{ appName }}
+                <div class="px-4 pt-4 pb-5">
+                    <a href="/" class="flex items-center gap-2 text-white hover:opacity-90 transition">
+                        <span
+                            class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary/80 to-primary shrink-0"
+                        >
+                            <BrandMark class="h-4 w-4" />
+                        </span>
+                        <span class="text-[16px] font-bold tracking-tight">{{ t('app_name') }}</span>
                     </a>
                 </div>
 
                 <!-- User info -->
-                <div
-                    v-if="auth.user"
-                    class="p-4 border-b border-base-300"
-                >
+                <div v-if="auth.user" class="p-4 border-y border-white/[0.06]">
                     <div class="flex items-center gap-3">
-                        <div class="avatar placeholder">
-                            <div
-                                class="bg-neutral text-neutral-content rounded-full size-9 text-center pt-1"
-                            >
-                                <span class="text-xl">{{
-                                    auth.user.name.charAt(0).toUpperCase()
-                                }}</span>
-                            </div>
-                        </div>
+                        <span
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-content shrink-0"
+                        >
+                            {{ auth.user.name.charAt(0).toUpperCase() }}
+                        </span>
                         <div class="min-w-0">
-                            <p class="font-medium text-sm truncate">
+                            <p class="text-[13px] font-semibold text-white truncate">
                                 {{ auth.user.name }}
                             </p>
-                            <p class="text-xs text-base-content/60 truncate">
+                            <p class="text-xs text-neutral-content/60 truncate">
                                 {{ auth.user.email }}
                             </p>
                         </div>
                     </div>
                     <button
-                        class="btn btn-sm btn-ghost btn-error mt-2 w-full justify-start gap-2"
+                        class="btn btn-sm btn-ghost mt-2 w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
                         @click="logout"
                     >
                         <ArrowRightOnRectangleIcon class="size-4" />
@@ -210,46 +194,28 @@ function toastAlertClass(type: ToastMessage['type']): string {
 
                 <!-- Navigation -->
                 <nav class="flex-1 p-3">
-                    <ul class="menu menu-sm gap-1 p-0">
-                        <template
-                            v-for="item in navigation"
-                            :key="item.key"
-                        >
+                    <ul class="menu menu-sm gap-0.5 p-0">
+                        <template v-for="item in navigation" :key="item.key">
                             <li v-if="item.children.length === 0">
                                 <a
                                     :href="item.href"
                                     :class="{ active: isActive(item.href) }"
                                     class="flex items-center gap-2"
                                 >
-                                    <component
-                                        :is="resolveIcon(item.icon)"
-                                        class="size-4"
-                                    />
+                                    <component :is="resolveIcon(item.icon)" class="size-4" />
                                     {{ translateLabel(item.label) }}
                                 </a>
                             </li>
                             <li v-else>
                                 <details :open="item.children.some((c: NavigationItem) => isActive(c.href))">
                                     <summary class="flex items-center gap-2">
-                                        <component
-                                            :is="resolveIcon(item.icon)"
-                                            class="size-4"
-                                        />
+                                        <component :is="resolveIcon(item.icon)" class="size-4" />
                                         {{ translateLabel(item.label) }}
                                     </summary>
                                     <ul>
-                                        <li
-                                            v-for="child in item.children"
-                                            :key="child.key"
-                                        >
-                                            <a
-                                                :href="child.href"
-                                                :class="{ active: isActive(child.href) }"
-                                            >
-                                                <component
-                                                    :is="resolveIcon(child.icon)"
-                                                    class="size-4"
-                                                />
+                                        <li v-for="child in item.children" :key="child.key">
+                                            <a :href="child.href" :class="{ active: isActive(child.href) }">
+                                                <component :is="resolveIcon(child.icon)" class="size-4" />
                                                 {{ translateLabel(child.label) }}
                                             </a>
                                         </li>
@@ -261,31 +227,22 @@ function toastAlertClass(type: ToastMessage['type']): string {
                 </nav>
 
                 <!-- Language switcher -->
-                <div
-                    v-if="languages && languages.length > 1"
-                    class="p-3 border-t border-base-300"
-                >
+                <div v-if="languages && languages.length > 1" class="p-3 border-t border-white/[0.06]">
                     <div class="dropdown dropdown-top w-full">
                         <div
                             tabindex="0"
                             role="button"
-                            class="btn btn-sm btn-ghost w-full justify-start gap-2"
+                            class="btn btn-sm btn-ghost w-full justify-start gap-2 text-neutral-content/70 hover:text-white hover:bg-white/5"
                         >
                             <GlobeAltIcon class="size-4" />
                             <span>{{ locale.toUpperCase() }}</span>
                         </div>
                         <ul
                             tabindex="0"
-                            class="dropdown-content menu menu-sm bg-base-100 rounded-box shadow-lg z-50 w-full p-1"
+                            class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-full p-1"
                         >
-                            <li
-                                v-for="lang in languages"
-                                :key="lang.value"
-                            >
-                                <a
-                                    :href="`/language/${lang.value}`"
-                                    :class="{ active: locale === lang.value }"
-                                >
+                            <li v-for="lang in languages" :key="lang.value">
+                                <a :href="`/language/${lang.value}`" :class="{ active: locale === lang.value }">
                                     <span v-if="lang.flag">{{ lang.flag }}</span>
                                     {{ lang.label }}
                                 </a>
@@ -299,13 +256,31 @@ function toastAlertClass(type: ToastMessage['type']): string {
 
     <!-- Toast container -->
     <div class="toast toast-bottom toast-end z-50">
-        <div
-            v-for="toast in toasts"
-            :key="toast.id"
-            class="alert"
-            :class="toastAlertClass(toast.type)"
-        >
+        <div v-for="toast in toasts" :key="toast.id" class="alert" :class="toastAlertClass(toast.type)">
             <span>{{ toast.message }}</span>
         </div>
     </div>
 </template>
+
+<style scoped>
+nav .menu :is(a, summary) {
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: color-mix(in oklch, var(--color-neutral-content) 60%, transparent);
+    transition: all 0.12s;
+}
+nav .menu :is(a, summary):hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-neutral-content);
+}
+nav .menu a.active {
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+    box-shadow: 0 1px 3px color-mix(in oklch, var(--color-primary) 35%, transparent);
+}
+nav .menu a.active:hover {
+    background: color-mix(in oklch, var(--color-primary) 80%, black);
+}
+</style>

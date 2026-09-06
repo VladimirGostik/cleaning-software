@@ -4,13 +4,12 @@
     "profile_updated": "Profil bol úspešne aktualizovaný.",
     "password_changed": "Heslo bolo úspešne zmenené.",
     "language_changed": "Jazyk bol zmenený.",
-
-    "login": "Prihlásenie",
+    "login": "Prihlásiť sa",
     "logout": "Odhlásiť sa",
     "email": "E-mail",
     "password": "Heslo",
-    "remember_me": "Zapamätaj si ma",
-    "forgot_password": "Zabudli ste heslo?",
+    "remember_me": "Zapamätať si ma",
+    "forgot_password": "Zabudnuté heslo?",
     "forgot_password_description": "Zadajte svoju e-mailovú adresu a pošleme vám odkaz na obnovenie hesla.",
     "reset_password": "Obnoviť heslo",
     "send_reset_link": "Odoslať odkaz na obnovenie",
@@ -68,7 +67,6 @@
     "remove_filter": "Odstrániť filter",
     "select_role": "Vybrať rolu",
     "select_status": "Vybrať stav",
-
     "role_created": "Rola bola úspešne vytvorená.",
     "role_updated": "Rola bola úspešne aktualizovaná.",
     "role_deleted": "Rola bola úspešne odstránená.",
@@ -80,13 +78,11 @@
     "user_created": "Používateľ bol úspešne vytvorený.",
     "user_updated": "Používateľ bol úspešne aktualizovaný.",
     "user_deleted": "Používateľ bol úspešne odstránený.",
-
     "active": "Aktívny",
     "inactive": "Neaktívny",
     "is_active": "Aktívny",
     "assign_roles": "Priradiť roly",
     "no_roles": "Žiadne roly",
-
     "filter_op_eq": "rovná sa",
     "filter_op_neq": "nerovná sa",
     "filter_op_lt": "menší ako",
@@ -95,10 +91,8 @@
     "filter_op_gte": "väčší alebo rovný",
     "filter_op_between": "medzi",
     "filter_op_contains": "obsahuje",
-
     "unauthorized": "Pre prístup k tejto stránke musíte byť prihlásený.",
     "forbidden": "Nemáte oprávnenie na túto akciu.",
-
     "media": "Médiá",
     "media_library": "Knižnica médií",
     "media_detail": "Detail média",
@@ -130,13 +124,11 @@
     "max_file_size": "Max. veľkosť",
     "selected_files": "Vybrané súbory",
     "upload_files": "Nahrať súbory",
-
     "default_recipient": "Predvolený príjemca",
     "search_user": "Vyhľadať používateľa...",
     "type_to_search": "Zadajte aspoň {n} znaky...",
     "searching": "Vyhľadávam...",
     "autocomplete_failed": "Vyhľadávanie zlyhalo",
-
     "editor_bold": "Tučné",
     "editor_italic": "Kurzíva",
     "editor_strike": "Prečiarknuté",
@@ -151,5 +143,16 @@
     "editor_link_url": "URL odkazu",
     "editor_image": "Vložiť obrázok",
     "editor_undo": "Späť",
-    "editor_redo": "Vpred"
+    "editor_redo": "Vpred",
+    "app_name": "CleanMaster",
+    "auth_hero_title_1": "Celá vaša firma",
+    "auth_hero_title_2": "pod kontrolou.",
+    "auth_hero_subtitle": "Interný systém pre upratovacie firmy",
+    "auth_hero_feature_clients": "Klienti a objekty",
+    "auth_hero_feature_invoices": "Faktúry a zmluvy",
+    "auth_hero_feature_schedule": "Rozvrh prác",
+    "auth_welcome_back": "Vitajte späť. Zadajte svoje údaje.",
+    "footer_copy": "© 2026 CleanMaster s.r.o.",
+    "auth_show_password": "Zobraziť heslo",
+    "auth_hide_password": "Skryť heslo"
 }

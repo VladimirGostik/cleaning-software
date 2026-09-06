@@ -9,49 +9,142 @@
 @source '../js/**/*.{ts,vue}';
 
 [data-theme='app-theme'] {
-    --color-base-100: oklch(98% 0 0);
-    --color-base-200: oklch(95% 0 0);
-    --color-base-300: oklch(90% 0 0);
-    --color-base-content: oklch(20% 0.01 240);
+    color-scheme: light;
 
-    --color-primary: oklch(55% 0.21 263);
-    --color-primary-content: oklch(98% 0 0);
+    --color-base-100: oklch(99% 0.005 250);
+    --color-base-200: oklch(96% 0.008 250);
+    --color-base-300: oklch(92% 0.012 250);
+    --color-base-content: oklch(20% 0.04 250);
 
-    --color-secondary: oklch(70% 0.18 195);
-    --color-secondary-content: oklch(98% 0 0);
+    --color-primary: oklch(52% 0.14 72);
+    --color-primary-content: oklch(98% 0.005 72);
 
-    --color-accent: oklch(75% 0.2 70);
-    --color-accent-content: oklch(15% 0.01 240);
+    --color-secondary: oklch(35% 0.15 265);
+    --color-secondary-content: oklch(98% 0.005 265);
 
-    --color-neutral: oklch(35% 0.01 240);
-    --color-neutral-content: oklch(98% 0 0);
+    --color-accent: oklch(70% 0.18 150);
+    --color-accent-content: oklch(15% 0.04 150);
+
+    --color-neutral: oklch(21% 0.04 265);
+    --color-neutral-content: oklch(87% 0.025 256);
 
     --color-info: oklch(72% 0.15 230);
-    --color-info-content: oklch(98% 0 0);
+    --color-info-content: oklch(15% 0.04 230);
 
-    --color-success: oklch(70% 0.18 145);
-    --color-success-content: oklch(15% 0.01 240);
+    --color-success: oklch(70% 0.18 150);
+    --color-success-content: oklch(15% 0.04 150);
 
-    --color-warning: oklch(78% 0.17 80);
-    --color-warning-content: oklch(15% 0.01 240);
+    --color-warning: oklch(78% 0.18 80);
+    --color-warning-content: oklch(15% 0.04 80);
 
-    --color-error: oklch(60% 0.22 25);
-    --color-error-content: oklch(98% 0 0);
+    --color-error: oklch(62% 0.22 25);
+    --color-error-content: oklch(98% 0.005 25);
 
     --radius-selector: 0.5rem;
-    --radius-field: 0.375rem;
+    --radius-field: 0.5rem;
     --radius-box: 0.75rem;
-
     --size-selector: 0.25rem;
     --size-field: 0.25rem;
-
     --border: 1px;
     --depth: 1;
     --noise: 0;
 }
 
 @theme {
-    --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        letter-spacing: -0.005em;
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        letter-spacing: -0.02em;
+    }
+}
+
+:root {
+    --auth-gradient-from: #78350f;
+    --auth-gradient-mid: #a16207;
+    --auth-gradient-to: #713f12;
+    --auth-text-muted: rgba(255, 255, 255, 0.7);
+    --auth-text-bright: rgba(255, 255, 255, 0.9);
+    --auth-copyright: rgba(255, 255, 255, 0.6);
+    --auth-border-muted: #cbd5e1;
+    --auth-link: #1e3a8a;
+}
+
+/* Auth page utility classes (from main) */
+.auth-hero-bg {
+    background: linear-gradient(
+        135deg,
+        var(--auth-gradient-from) 0%,
+        var(--auth-gradient-mid) 45%,
+        var(--auth-gradient-to) 100%
+    );
+}
+
+.auth-mobile-logo-bg {
+    background: linear-gradient(to bottom right, var(--auth-gradient-mid), var(--auth-gradient-to));
+}
+
+.auth-input:focus {
+    border-color: var(--auth-gradient-mid);
+    --tw-ring-color: color-mix(in srgb, var(--auth-gradient-mid) 20%, transparent);
+    box-shadow: 0 0 0 2px var(--tw-ring-color);
+}
+
+.auth-checkbox-checked {
+    border-color: var(--auth-gradient-mid);
+    background-color: var(--auth-gradient-mid);
+    color: white;
+}
+
+.auth-checkbox-unchecked {
+    border-color: var(--auth-border-muted);
+    background-color: white;
+}
+
+.auth-link {
+    color: var(--auth-link);
+}
+
+.auth-submit-btn {
+    background-color: var(--auth-gradient-mid);
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+    background-color: var(--auth-gradient-to);
+}
+
+/* Replacements for main's inline style="" attributes (identical computed styles) */
+.auth-hero-overlay {
+    background-image:
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08), transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.06), transparent 40%);
+}
+
+.auth-logo-chip {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+}
+
+.auth-text-muted {
+    color: var(--auth-text-muted);
+}
+
+.auth-text-bright {
+    color: var(--auth-text-bright);
+}
+
+.auth-copyright {
+    color: var(--auth-copyright);
 }

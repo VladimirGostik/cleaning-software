@@ -4,13 +4,12 @@
     "profile_updated": "Profile updated successfully.",
     "password_changed": "Password changed successfully.",
     "language_changed": "Language changed.",
-
-    "login": "Login",
+    "login": "Sign in",
     "logout": "Log out",
     "email": "Email",
     "password": "Password",
     "remember_me": "Remember me",
-    "forgot_password": "Forgot your password?",
+    "forgot_password": "Forgot password?",
     "forgot_password_description": "Enter your email address and we'll send you a password reset link.",
     "reset_password": "Reset password",
     "send_reset_link": "Send reset link",
@@ -68,7 +67,6 @@
     "remove_filter": "Remove filter",
     "select_role": "Select role",
     "select_status": "Select status",
-
     "role_created": "Role created successfully.",
     "role_updated": "Role updated successfully.",
     "role_deleted": "Role deleted successfully.",
@@ -80,13 +78,11 @@
     "user_created": "User created successfully.",
     "user_updated": "User updated successfully.",
     "user_deleted": "User deleted successfully.",
-
     "active": "Active",
     "inactive": "Inactive",
     "is_active": "Active",
     "assign_roles": "Assign roles",
     "no_roles": "No roles",
-
     "filter_op_eq": "equals",
     "filter_op_neq": "not equals",
     "filter_op_lt": "less than",
@@ -95,10 +91,8 @@
     "filter_op_gte": "greater than or equal",
     "filter_op_between": "between",
     "filter_op_contains": "contains",
-
     "unauthorized": "You must be logged in to access this page.",
     "forbidden": "You do not have permission to perform this action.",
-
     "media": "Media",
     "media_library": "Media library",
     "media_detail": "Media detail",
@@ -130,13 +124,11 @@
     "max_file_size": "Max size",
     "selected_files": "Selected files",
     "upload_files": "Upload files",
-
     "default_recipient": "Default recipient",
     "search_user": "Search user...",
     "type_to_search": "Type at least {n} characters...",
     "searching": "Searching...",
     "autocomplete_failed": "Search failed",
-
     "editor_bold": "Bold",
     "editor_italic": "Italic",
     "editor_strike": "Strikethrough",
@@ -151,5 +143,16 @@
     "editor_link_url": "Link URL",
     "editor_image": "Insert image",
     "editor_undo": "Undo",
-    "editor_redo": "Redo"
+    "editor_redo": "Redo",
+    "app_name": "CleanMaster",
+    "auth_hero_title_1": "Your entire company",
+    "auth_hero_title_2": "under control.",
+    "auth_hero_subtitle": "Internal system for cleaning companies",
+    "auth_hero_feature_clients": "Clients and locations",
+    "auth_hero_feature_invoices": "Invoices and contracts",
+    "auth_hero_feature_schedule": "Work schedule",
+    "auth_welcome_back": "Welcome back. Enter your details.",
+    "footer_copy": "© 2026 CleanMaster s.r.o.",
+    "auth_show_password": "Show password",
+    "auth_hide_password": "Hide password"
 }

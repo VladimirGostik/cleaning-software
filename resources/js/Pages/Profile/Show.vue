@@ -17,10 +17,7 @@ const page = usePage();
 const user = page.props.auth.user;
 const languages = page.props.languages;
 
-const breadcrumbs: Breadcrumb[] = [
-    { label: t('dashboard'), url: '/' },
-    { label: t('profile') },
-];
+const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('profile') }];
 
 const languageOptions = computed<SelectOption[]>(() =>
     languages.map((l: { value: string; label: string }) => ({ value: l.value, label: l.label })),
@@ -53,10 +50,7 @@ function submitPassword() {
 
 <template>
     <AppLayout>
-        <Header
-            :title="t('profile')"
-            :breadcrumbs="breadcrumbs"
-        />
+        <Header :title="t('profile')" :breadcrumbs="breadcrumbs" />
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Profile form -->
@@ -67,40 +61,16 @@ function submitPassword() {
                     </h2>
 
                     <FormProvider :form="profileForm">
-                        <form
-                            class="space-y-2"
-                            novalidate
-                            @submit.prevent="submitProfile"
-                        >
-                            <TextInput
-                                field="name"
-                                :label="t('name')"
-                                autocomplete="name"
-                            />
+                        <form class="space-y-2" novalidate @submit.prevent="submitProfile">
+                            <TextInput field="name" :label="t('name')" autocomplete="name" />
 
-                            <TextInput
-                                field="email"
-                                :label="t('email')"
-                                type="email"
-                                autocomplete="email"
-                            />
+                            <TextInput field="email" :label="t('email')" type="email" autocomplete="email" />
 
-                            <SelectInput
-                                field="locale"
-                                :label="t('locale')"
-                                :options="languageOptions"
-                            />
+                            <SelectInput field="locale" :label="t('locale')" :options="languageOptions" />
 
                             <div class="flex justify-end mt-4">
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary"
-                                    :disabled="profileForm.processing"
-                                >
-                                    <span
-                                        v-if="profileForm.processing"
-                                        class="loading loading-spinner loading-xs"
-                                    />
+                                <button type="submit" class="btn btn-primary" :disabled="profileForm.processing">
+                                    <span v-if="profileForm.processing" class="loading loading-spinner loading-xs" />
                                     {{ t('save') }}
                                 </button>
                             </div>
@@ -116,25 +86,15 @@ function submitPassword() {
                         {{ t('change_password') }}
                     </h2>
 
-                    <FormErrorsAlert :errors="passwordForm.errors" />
-
                     <FormProvider :form="passwordForm">
-                        <form
-                            class="space-y-2"
-                            novalidate
-                            @submit.prevent="submitPassword"
-                        >
+                        <form class="space-y-2" novalidate @submit.prevent="submitPassword">
                             <PasswordInput
                                 field="current_password"
                                 :label="t('current_password')"
                                 autocomplete="current-password"
                             />
 
-                            <PasswordInput
-                                field="password"
-                                :label="t('new_password')"
-                                autocomplete="new-password"
-                            />
+                            <PasswordInput field="password" :label="t('new_password')" autocomplete="new-password" />
 
                             <PasswordInput
                                 field="password_confirmation"
@@ -143,15 +103,8 @@ function submitPassword() {
                             />
 
                             <div class="flex justify-end mt-4">
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary"
-                                    :disabled="passwordForm.processing"
-                                >
-                                    <span
-                                        v-if="passwordForm.processing"
-                                        class="loading loading-spinner loading-xs"
-                                    />
+                                <button type="submit" class="btn btn-primary" :disabled="passwordForm.processing">
+                                    <span v-if="passwordForm.processing" class="loading loading-spinner loading-xs" />
                                     {{ t('change_password') }}
                                 </button>
                             </div>

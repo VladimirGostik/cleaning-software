@@ -18,13 +18,9 @@ const messages = {
 };
 
 void createInertiaApp({
-    title: (title: string | null) =>
-        title ? `${title} - ${appName}` : appName,
+    title: (title: string | null) => (title ? `${title} - ${appName}` : appName),
     resolve: (name: string) =>
-        resolvePageComponent(
-            `./Pages/${name}.vue`,
-            import.meta.glob<DefineComponent>('./Pages/**/*.vue'),
-        ),
+        resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob<DefineComponent>('./Pages/**/*.vue')),
     setup: ({
         el,
         App,
@@ -59,5 +55,5 @@ void createInertiaApp({
             .use(i18n)
             .mount(el);
     },
-    progress: { color: '#4f46e5' },
+    progress: { color: '#a16207' },
 });
