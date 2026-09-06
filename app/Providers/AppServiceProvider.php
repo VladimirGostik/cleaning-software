@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Listeners\LogAuthenticationActivity;
+use App\Models\CleaningObject;
 use App\Models\TenantMembership;
 use App\Support\PrecognitiveDataValidatorResolver;
 use Illuminate\Auth\Events\Failed;
@@ -59,6 +60,7 @@ final class AppServiceProvider extends ServiceProvider
 
         Relation::morphMap([
             'tenant_membership' => TenantMembership::class,
+            'cleaning_object' => CleaningObject::class,
         ]);
 
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));

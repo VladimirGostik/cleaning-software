@@ -190,6 +190,62 @@ readonly activeTenantId: string,
 readonly permissions: App.Enums.PermissionEnum[],
 };
 }
+namespace Clients {
+export type ClientContactData = {
+readonly id: string | null,
+readonly name: string,
+readonly position: string | null,
+readonly email: string | null,
+readonly phone: string | null,
+readonly is_primary: boolean,
+};
+export type ClientDetailData = {
+readonly id: string,
+readonly type: App.Enums.ClientTypeEnum,
+readonly name: string,
+readonly ico: string | null,
+readonly dic: string | null,
+readonly vat_number: string | null,
+readonly is_vat_payer: boolean,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly country: string,
+readonly note: string | null,
+readonly contacts: App.Data.Clients.ClientContactData[],
+readonly created_at: string,
+};
+export type ClientListItemData = {
+readonly id: string,
+readonly type: App.Enums.ClientTypeEnum,
+readonly name: string,
+readonly ico: string | null,
+readonly city: string | null,
+readonly contacts_count: number,
+readonly objects_count: number,
+readonly primary_contact_email: string | null,
+readonly primary_contact_phone: string | null,
+readonly created_at: string,
+};
+export type ClientOptionData = {
+readonly id: string,
+readonly name: string,
+};
+export type ClientUpsertData = {
+readonly type: App.Enums.ClientTypeEnum,
+readonly name: string,
+readonly ico: string | null,
+readonly dic: string | null,
+readonly vat_number: string | null,
+readonly is_vat_payer: boolean,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly country: string,
+readonly note: string | null,
+readonly contacts: App.Data.Clients.ClientContactData[],
+};
+}
 namespace Invitations {
 export type AcceptInvitationData = {
 readonly password: string,
@@ -202,6 +258,54 @@ readonly email: string | null,
 readonly tenant_name: string | null,
 readonly role_name: string | null,
 readonly invited_email: string | null,
+};
+}
+namespace Objects {
+export type ObjectDetailData = {
+readonly id: string,
+readonly client_id: string,
+readonly client_name: string | null,
+readonly type: App.Enums.ObjectTypeEnum,
+readonly name: string,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly country: string,
+readonly access_code: string | null,
+readonly key_box_code: string | null,
+readonly key_count: number | null,
+readonly special_instructions: string | null,
+readonly area_sqm: string | null,
+readonly floor: number | null,
+readonly is_active: boolean,
+readonly created_at: string,
+};
+export type ObjectListItemData = {
+readonly id: string,
+readonly type: App.Enums.ObjectTypeEnum,
+readonly name: string,
+readonly city: string | null,
+readonly is_active: boolean,
+readonly client_id: string,
+readonly client_name: string | null,
+readonly area_sqm: string | null,
+readonly created_at: string,
+};
+export type ObjectUpsertData = {
+readonly client_id: string,
+readonly type: App.Enums.ObjectTypeEnum,
+readonly name: string,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly country: string,
+readonly access_code: string | null,
+readonly key_box_code: string | null,
+readonly key_count: number | null,
+readonly special_instructions: string | null,
+readonly area_sqm: number | null,
+readonly floor: number | null,
+readonly is_active: boolean,
 };
 }
 namespace Tenants {
@@ -221,10 +325,59 @@ readonly color: App.Enums.TenantColorEnum | null,
 }
 }
 namespace Enums {
+export type ClientTypeEnum = "corporate" | "private";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
+export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications";
 export type SupportedLanguage = "sk" | "en" | "uk";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";
+}
+}
+declare namespace Illuminate {
+export type CursorPaginator<TKey, TValue> = {
+data: TKey extends string ? Record<TKey, TValue> : TValue[],
+links: {
+url: string | null,
+label: string,
+active: boolean,
+}[],
+meta: {
+path: string,
+per_page: number,
+next_cursor: string | null,
+next_page_url: string | null,
+prev_cursor: string | null,
+prev_page_url: string | null,
+},
+};
+export type CursorPaginatorInterface<TKey, TValue> = Illuminate.CursorPaginator<TKey, TValue>;
+export type LengthAwarePaginator<TKey, TValue> = {
+data: TKey extends string ? Record<TKey, TValue> : TValue[],
+links: {
+url: string | null,
+label: string,
+active: boolean,
+}[],
+meta: {
+total: number,
+current_page: number,
+first_page_url: string,
+from: number | null,
+last_page: number,
+last_page_url: string,
+next_page_url: string | null,
+path: string,
+per_page: number,
+prev_page_url: string | null,
+to: number | null,
+},
+};
+export type LengthAwarePaginatorInterface<TKey, TValue> = Illuminate.LengthAwarePaginator<TKey, TValue>;
+}
+declare namespace Spatie {
+namespace LaravelData {
+export type CursorPaginatedDataCollection<TKey, TValue> = Illuminate.CursorPaginator<TKey, TValue>;
+export type PaginatedDataCollection<TKey, TValue> = Illuminate.LengthAwarePaginator<TKey, TValue>;
 }
 }

@@ -5,11 +5,13 @@ declare(strict_types=1);
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NewPasswordController;
+use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\PasswordResetLinkController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
@@ -83,6 +85,23 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    });
+
+    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+    Route::get('/clients/{client}', [ClientController::class, 'show'])->name('clients.show')->whereUuid('client');
+    Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy')->whereUuid('client');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+        Route::match(['PUT', 'PATCH'], '/clients/{client}', [ClientController::class, 'update'])->name('clients.update')->whereUuid('client');
+    });
+
+    Route::get('/objects', [ObjectController::class, 'index'])->name('objects.index');
+    Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('objects.show')->whereUuid('object');
+    Route::post('/objects/{object}/deactivate', [ObjectController::class, 'deactivate'])->name('objects.deactivate')->whereUuid('object');
+    Route::post('/objects/{object}/reactivate', [ObjectController::class, 'reactivate'])->name('objects.reactivate')->whereUuid('object');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/objects', [ObjectController::class, 'store'])->name('objects.store');
+        Route::match(['PUT', 'PATCH'], '/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->whereUuid('object');
     });
 
     Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
