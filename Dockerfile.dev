@@ -17,8 +17,15 @@ RUN install-php-extensions \
         redis
 
 # Runtime tools + pnpm via npm (corepack not bundled in node 24 alpine).
+# Chromium + fonts for spatie/laravel-pdf (chrome driver, chrome-php/chrome).
 RUN apk add --no-cache bash curl git nodejs npm \
+        chromium nss freetype harfbuzz ca-certificates ttf-dejavu font-noto \
     && npm install -g pnpm@latest
+
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
+
+# Build-time smoke test: fail the build if headless Chromium cannot launch.
+RUN chromium-browser --headless --no-sandbox --disable-gpu --version
 
 # Composer.
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

@@ -30,6 +30,12 @@ services:
             retries: 10
             start_period: 5s
 
+    mailpit:
+        image: axllent/mailpit:latest
+        ports:
+            - '8025:8025'
+            - '1025:1025'
+
     app:
         build:
             context: .
@@ -55,11 +61,45 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
+            mailpit:
+                condition: service_started
         command:
             [
                 'sh',
                 '-c',
                 'while [ ! -f vendor/autoload.php ]; do sleep 1; done && php artisan serve --host=0.0.0.0 --port=8000',
+            ]
+
+    queue:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        volumes:
+            - .:/app
+            - vendor_data:/app/vendor
+            - node_modules_data:/app/node_modules
+        working_dir: /app
+        environment:
+            DB_CONNECTION: pgsql
+            DB_HOST: postgres
+            DB_PORT: 5432
+            DB_DATABASE: cleanmaster_admin
+            DB_USERNAME: postgres
+            DB_PASSWORD: postgres
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            app:
+                condition: service_started
+        command:
+            [
+                'sh',
+                '-c',
+                'while [ ! -f vendor/autoload.php ]; do sleep 1; done && php artisan queue:work --sleep=3 --tries=3 --max-time=3600',
             ]
 
     vite:

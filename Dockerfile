@@ -31,6 +31,7 @@ RUN composer install \
 FROM php:8.5-fpm-alpine AS production
 
 # System dependencies
+# Chromium + fonts for spatie/laravel-pdf (chrome driver, chrome-php/chrome).
 RUN apk add --no-cache \
     bash \
     curl \
@@ -42,7 +43,19 @@ RUN apk add --no-cache \
     postgresql-dev \
     supervisor \
     nginx \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-dejavu \
+    font-noto \
     && rm -rf /var/cache/apk/*
+
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
+
+# Build-time smoke test: fail the build if headless Chromium cannot launch.
+RUN chromium-browser --headless --no-sandbox --disable-gpu --version
 
 # PHP extensions
 RUN docker-php-ext-configure gd \
