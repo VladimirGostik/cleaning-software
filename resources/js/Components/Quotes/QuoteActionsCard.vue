@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import {
     ArrowDownTrayIcon,
     CheckCircleIcon,
+    DocumentCheckIcon,
     DocumentDuplicateIcon,
     PaperAirplaneIcon,
     PencilSquareIcon,
@@ -25,6 +26,7 @@ const emit = defineEmits<{
     duplicate: [];
     delete: [];
     convertInvoice: [];
+    convertContract: [];
 }>();
 
 const { t } = useI18n();
@@ -34,6 +36,7 @@ const isSent = computed(() => props.quote.status === 'sent');
 const isAccepted = computed(() => props.quote.status === 'accepted');
 const isItemized = computed(() => props.quote.kind === 'itemized');
 const canDownloadPdf = computed(() => isItemized.value || props.quote.document !== null);
+const canConvertContract = computed(() => props.quote.client_id !== null && props.quote.cleaning_object_id !== null);
 </script>
 
 <template>
@@ -81,6 +84,27 @@ const canDownloadPdf = computed(() => isItemized.value || props.quote.document !
                     </button>
                     <p v-if="props.quote.invoices.length > 0" class="mt-1 pl-1 text-xs text-base-content/50">
                         {{ t('quote_converted_count', { count: props.quote.invoices.length }) }}
+                    </p>
+                </div>
+            </Can>
+
+            <Can v-if="isAccepted && isItemized" permission="create contracts">
+                <div>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-primary w-full justify-start"
+                        :disabled="!canConvertContract"
+                        :title="!canConvertContract ? t('quote_convert_contract_requires_object') : undefined"
+                        @click="emit('convertContract')"
+                    >
+                        <DocumentCheckIcon class="size-4" />
+                        {{ t('quote_action_convert_contract') }}
+                    </button>
+                    <p v-if="!canConvertContract" class="mt-1 pl-1 text-xs text-base-content/50">
+                        {{ t('quote_convert_contract_requires_object') }}
+                    </p>
+                    <p v-if="props.quote.contracts.length > 0" class="mt-1 pl-1 text-xs text-base-content/50">
+                        {{ t('quote_converted_contracts_count', { count: props.quote.contracts.length }) }}
                     </p>
                 </div>
             </Can>

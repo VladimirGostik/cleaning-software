@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
+import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue';
 import { formatDatetime } from '@/utils/date';
 
 const props = defineProps<{
@@ -38,6 +39,19 @@ const { t } = useI18n();
                     </li>
                 </ul>
                 <p v-else class="mt-1 text-base-content/50">{{ t('quote_link_no_invoices') }}</p>
+            </div>
+
+            <div>
+                <p class="text-base-content/60">{{ t('quote_link_contracts') }}</p>
+                <ul v-if="props.quote.contracts.length > 0" class="mt-1 space-y-1">
+                    <li v-for="contract in props.quote.contracts" :key="contract.id" class="flex items-center gap-2">
+                        <a :href="`/contracts/${contract.id}`" class="link link-hover">
+                            {{ contract.title }}
+                        </a>
+                        <ContractStatusBadge :status="contract.status" />
+                    </li>
+                </ul>
+                <p v-else class="mt-1 text-base-content/50">{{ t('quote_link_no_contracts') }}</p>
             </div>
 
             <div class="divider my-1" />

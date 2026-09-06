@@ -111,3 +111,56 @@ export function enumOptions<T extends string>(
 ): { value: T; label: string }[] {
     return values.map((value) => ({ value, label: t(keyFn(value)) }));
 }
+
+export const CONTRACT_STATUSES: readonly App.Enums.ContractStatusEnum[] = ['draft', 'active', 'expired', 'terminated'];
+
+export const CONTRACT_CATEGORIES: readonly App.Enums.ContractCategoryEnum[] = [
+    'service_agreement',
+    'employment',
+    'nda',
+    'gdpr',
+    'other',
+];
+
+export const CONTRACT_TERM_TYPES: readonly App.Enums.ContractTermTypeEnum[] = ['fixed', 'indefinite'];
+
+export const EMPLOYMENT_CONTRACT_TYPES: readonly App.Enums.EmploymentContractTypeEnum[] = [
+    'dpp',
+    'dpc',
+    'tpp',
+    'self_employed',
+];
+
+export const CONTRACTABLE_TYPES: readonly App.Enums.ContractableTypeEnum[] = ['cleaning_object', 'tenant_membership'];
+
+export function contractStatusKey(status: App.Enums.ContractStatusEnum): string {
+    return `contract_status_${status}`;
+}
+
+export function contractCategoryKey(category: App.Enums.ContractCategoryEnum): string {
+    return `contract_category_${category}`;
+}
+
+export function contractTermTypeKey(termType: App.Enums.ContractTermTypeEnum): string {
+    return `contract_term_type_${termType}`;
+}
+
+export function employmentTypeKey(type: App.Enums.EmploymentContractTypeEnum): string {
+    return `employment_type_${type}`;
+}
+
+export function contractableTypeKey(type: App.Enums.ContractableTypeEnum): string {
+    return `contractable_type_${type}`;
+}
+
+// Mirrors ContractCategoryEnum::expectedContractableType() (BE) — null means either party type is allowed.
+export const CONTRACT_CATEGORY_CONTRACTABLE: Record<
+    App.Enums.ContractCategoryEnum,
+    App.Enums.ContractableTypeEnum | null
+> = {
+    service_agreement: 'cleaning_object',
+    employment: 'tenant_membership',
+    nda: null,
+    gdpr: null,
+    other: null,
+};

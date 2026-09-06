@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { isBefore, parseISO, startOfToday } from 'date-fns';
@@ -17,6 +17,7 @@ import QuoteDocumentPanel from '@/Components/Quotes/QuoteDocumentPanel.vue';
 import QuoteActionsCard from '@/Components/Quotes/QuoteActionsCard.vue';
 import QuoteLinksCard from '@/Components/Quotes/QuoteLinksCard.vue';
 import QuoteAttachClientPanel from '@/Components/Quotes/QuoteAttachClientPanel.vue';
+import QuoteConvertToContractModal from '@/Components/Quotes/QuoteConvertToContractModal.vue';
 import InvoiceItemsTable from '@/Components/Invoices/InvoiceItemsTable.vue';
 import InvoiceTotalsPanel from '@/Components/Invoices/InvoiceTotalsPanel.vue';
 
@@ -29,9 +30,14 @@ const props = defineProps<{
     quote: App.Data.Quotes.QuoteDetailData;
     clients: App.Data.Clients.ClientOptionData[] | null;
     objects: App.Data.Objects.ObjectOptionData[] | null;
+    contractTemplates: App.Data.ContractTemplates.ContractTemplateOptionData[];
 }>();
 
 const { t } = useI18n();
+
+const ui = reactive({
+    convertContractOpen: false,
+});
 
 const breadcrumbs = computed<Breadcrumb[]>(() => [
     { label: t('dashboard'), url: '/' },
@@ -153,6 +159,7 @@ function duplicate(): void {
                     @duplicate="duplicate"
                     @delete="deleteConfirm.openModal(quote)"
                     @convert-invoice="onConvertInvoice"
+                    @convert-contract="ui.convertContractOpen = true"
                 />
                 <QuoteLinksCard :quote="quote" />
 
@@ -214,6 +221,13 @@ function duplicate(): void {
             confirm-variant="primary"
             @cancel="convertConfirm.closeModal"
             @confirm="convertConfirm.confirmDelete"
+        />
+
+        <QuoteConvertToContractModal
+            :open="ui.convertContractOpen"
+            :quote-id="quote.id"
+            :templates="contractTemplates"
+            @close="ui.convertContractOpen = false"
         />
     </AppLayout>
 </template>

@@ -36,3 +36,10 @@ export function formatMoney(
 export function formatPercent(rate: number, locale: string): string {
     return `${new Intl.NumberFormat(localeTag(locale), { maximumFractionDigits: 2 }).format(rate)} %`;
 }
+
+export function formatDecimal(value: string | number | null | undefined, locale: string, fractionDigits = 2): string {
+    return new Intl.NumberFormat(localeTag(locale), {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+    }).format(toNumber(value));
+}

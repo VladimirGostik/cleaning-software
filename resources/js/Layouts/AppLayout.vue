@@ -26,6 +26,8 @@ import {
     DocumentDuplicateIcon,
     ArrowPathIcon,
     BanknotesIcon,
+    DocumentCheckIcon,
+    RectangleStackIcon,
 } from '@heroicons/vue/24/outline';
 import type { ToastPayload } from '@/Composables/useToast';
 
@@ -57,6 +59,8 @@ const ICONS: Record<string, object> = {
     DocumentDuplicateIcon,
     ArrowPathIcon,
     BanknotesIcon,
+    DocumentCheckIcon,
+    RectangleStackIcon,
 };
 
 function resolveIcon(name: string): object {
