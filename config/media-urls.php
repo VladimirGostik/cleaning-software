@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\EmailTemplate;
 use App\Models\User;
 
 return [
@@ -13,6 +12,5 @@ return [
      */
     'models' => [
         User::class => ['name' => 'users.edit', 'param' => 'user'],
-        EmailTemplate::class => ['name' => 'email-templates.edit', 'param' => 'email_template'],
     ],
 ];

@@ -61,7 +61,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/audit-logs/{activity}', [AuditLogController::class, 'show'])->name('audit-logs.show');
 
     Route::get('/media', [MediaController::class, 'index'])->name('media.index');
-    Route::get('/media/{media}', [MediaController::class, 'show'])->name('media.show');
+    Route::get('/media/{media}', [MediaController::class, 'show'])->name('media.show')->whereNumber('media');
 
     Route::post('/uploads', [TemporaryUploadController::class, 'store'])->name('uploads.store');
     Route::delete('/uploads/{uuid}', [TemporaryUploadController::class, 'destroy'])->name('uploads.destroy');

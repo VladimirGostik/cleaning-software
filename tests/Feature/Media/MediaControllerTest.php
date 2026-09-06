@@ -186,7 +186,7 @@ final class MediaControllerTest extends TestCase
         $user = $this->userWithPermission('view media');
         $media = $this->createMedia([
             'model_type' => 'App\\Models\\UnknownModel',
-            'model_id' => '999',
+            'model_id' => (string) Str::uuid(),
         ]);
 
         // Act
@@ -198,5 +198,29 @@ final class MediaControllerTest extends TestCase
             ->component('Media/Show')
             ->where('media.model_url', null),
         );
+    }
+
+    public function test_show_returns_404_for_non_numeric_id(): void
+    {
+        // Arrange
+        $user = $this->userWithPermission('view media');
+
+        // Act
+        $response = $this->actingAs($user)->get('/media/not-a-number');
+
+        // Assert
+        $response->assertNotFound();
+    }
+
+    public function test_show_returns_404_for_unknown_id(): void
+    {
+        // Arrange
+        $user = $this->userWithPermission('view media');
+
+        // Act
+        $response = $this->actingAs($user)->get('/media/999999');
+
+        // Assert
+        $response->assertNotFound();
     }
 }

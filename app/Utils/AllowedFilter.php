@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Spatie\QueryBuilder\Enums\FilterOperator;
 use Spatie\QueryBuilder\Filters\Filter;
 use Spatie\QueryBuilder\Filters\FiltersOperator;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -27,36 +26,15 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
 {
     protected ?array $validationRules = null;
 
-    public static function callbackWithOperator(
-        string $name,
-        Closure $callback,
-        $internalName = null,
-        ?string $arrayValueDelimiter = null,
-        bool $addRelationConstraint = true,
-        FilterOperator $operator = FilterOperator::DYNAMIC,
-        string $boolean = 'and',
-    ): static {
-        return new self(
-            $name,
-            new FiltersCallbackWithOperator(
-                $callback,
-                $addRelationConstraint,
-                $operator,
-                $boolean,
-            ),
-            $internalName,
-        );
-    }
-
     public static function search(
         array $columns,
         string $name = 'search',
         ?string $internalName = null,
         ?string $arrayValueDelimiter = null,
     ): static {
-        $likeOperator = static::defaultLikeOperator();
+        $likeOperator = self::defaultLikeOperator();
 
-        return new static(
+        return new self(
             $name,
             new class($columns, $likeOperator) implements Filter
             {
@@ -150,13 +128,16 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
         string $column = 'id',
         ?string $arrayValueDelimiter = null,
     ): static {
+        $likeOperator = static::defaultLikeOperator();
+
         return new static(
             $name,
-            new class($relation, $column) implements Filter
+            new class($relation, $column, $likeOperator) implements Filter
             {
                 public function __construct(
                     private readonly string $relation,
                     private readonly string $column,
+                    private readonly string $likeOperator,
                 ) {}
 
                 public function __invoke(Builder $query, mixed $value, string $property): void
@@ -171,7 +152,7 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                         $query->whereHas($this->relation, function (Builder $query) use ($value): void {
                             $query->where(
                                 $this->column,
-                                AllowedFilter::defaultLikeOperator(),
+                                $this->likeOperator,
                                 '%'.Filters::escapeLikeValue((string) $value).'%',
                             );
                         });
@@ -242,7 +223,6 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
 
                 if (
                     $filterClass instanceof FiltersOperator
-                    || $filterClass instanceof FilterPrice
                     || $filterClass instanceof SymbolOperatorFilter
                 ) {
                     $valueWithoutOperator = SymbolOperators::cleanValue($item);

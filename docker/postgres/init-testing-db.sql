@@ -1,0 +1,1 @@
+CREATE DATABASE cleanmaster_admin_testing;

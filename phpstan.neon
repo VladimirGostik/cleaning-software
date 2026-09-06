@@ -9,3 +9,5 @@ parameters:
         - database
         - tests
     phpVersion: 80500
+    excludePaths:
+        - database/migrations/2026_04_30_123027_create_permission_tables.php

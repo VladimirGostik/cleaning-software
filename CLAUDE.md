@@ -53,6 +53,9 @@ Governs how the `laravel-13-conventions` skill generates controllers, policies, 
 ```bash
 docker compose up -d                      # app :8000, vite :5173, postgres :5432, redis :6379
 docker compose exec app php artisan test --compact
+# Tests run on Postgres DB `cleanmaster_admin_testing` (phpunit.xml force=true; never the dev DB).
+# Created automatically on first volume init (docker/postgres/init-testing-db.sql); on an existing volume:
+docker compose exec postgres psql -U postgres -c 'CREATE DATABASE cleanmaster_admin_testing;'
 docker compose exec app php artisan migrate:fresh --seed
 docker compose exec app php artisan typescript:transform
 docker compose exec app vendor/bin/pint --dirty --format agent

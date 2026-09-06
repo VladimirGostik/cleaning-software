@@ -73,15 +73,29 @@ final class UserAutocompleteTest extends TestCase
         $response->assertExactJson([]);
     }
 
-    public function test_autocomplete_returns_empty_when_no_query(): void
+    public function test_autocomplete_returns_initial_active_users_when_no_query(): void
     {
         $admin = $this->userWithPermission('view users');
         User::factory()->count(5)->create();
+        User::factory()->inactive()->create();
 
         $response = $this->actingAs($admin)->getJson('/users/autocomplete');
 
         $response->assertOk();
-        $response->assertExactJson([]);
+        $response->assertJsonCount(6);
+        $response->assertJsonStructure([['id', 'name', 'email']]);
+    }
+
+    public function test_autocomplete_treats_whitespace_only_query_as_empty(): void
+    {
+        $admin = $this->userWithPermission('view users');
+        User::factory()->count(5)->create();
+        User::factory()->inactive()->create();
+
+        $response = $this->actingAs($admin)->getJson('/users/autocomplete?q=%20%20');
+
+        $response->assertOk();
+        $response->assertJsonCount(6);
     }
 
     public function test_autocomplete_limits_to_twenty_results(): void

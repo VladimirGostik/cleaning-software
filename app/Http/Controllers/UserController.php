@@ -106,10 +106,16 @@ final class UserController extends Controller
         return redirect()->route('users.index')->with('success', __('app.user_deleted'));
     }
 
+    private const int AUTOCOMPLETE_MIN_CHARS = 2;
+
     #[Authorize('viewAny', User::class)]
     public function autocomplete(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
+
+        if ($q !== '' && mb_strlen($q) < self::AUTOCOMPLETE_MIN_CHARS) {
+            return response()->json([]);
+        }
 
         $users = User::query()
             ->where('is_active', true)

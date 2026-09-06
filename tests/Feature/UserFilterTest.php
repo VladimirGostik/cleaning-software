@@ -90,6 +90,19 @@ final class UserFilterTest extends TestCase
         $this->assertSame(['Admin'], $names);
     }
 
+    public function test_contains_operator_on_role_filter_matches_partial_role_name(): void
+    {
+        $admin = User::where('email', 'admin@example.com')->firstOrFail();
+
+        $sql = $this->captureUserSql($admin, '/users?filter%5Brole%5D=%7E%3Aadm');
+
+        $this->assertContainsSqlFragment($sql, 'ilike');
+
+        $names = $this->fetchUserNames($admin, '/users?filter%5Brole%5D=%7E%3Aadm&per_page=100');
+
+        $this->assertContains('Admin', $names);
+    }
+
     public function test_date_filter_supports_gte_operator(): void
     {
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
