@@ -11,6 +11,8 @@ export interface InvoiceItemsTableRow {
     unit_price: number;
     discount_percent: number;
     vat_rate: number;
+    frequency?: string | null;
+    note?: string | null;
     line_base?: number | null;
     line_vat?: number | null;
     line_total?: number | null;
@@ -33,6 +35,7 @@ const { lines } = useInvoiceTotals(
 );
 
 const hasDiscount = computed(() => props.items.some((item) => item.discount_percent > 0));
+const hasFrequency = computed(() => props.items.some((item) => !!item.frequency));
 
 function lineTotal(index: number, row: InvoiceItemsTableRow): number {
     return row.line_total ?? lines.value[index]?.total ?? 0;
@@ -44,6 +47,7 @@ function lineTotal(index: number, row: InvoiceItemsTableRow): number {
         <thead>
             <tr>
                 <th>{{ t('invoice_pdf_item_description') }}</th>
+                <th v-if="hasFrequency">{{ t('quote_item_frequency') }}</th>
                 <th class="text-right">{{ t('invoice_pdf_item_quantity') }}</th>
                 <th>{{ t('invoice_pdf_item_unit') }}</th>
                 <th class="text-right">{{ t('invoice_pdf_item_unit_price') }}</th>
@@ -54,7 +58,11 @@ function lineTotal(index: number, row: InvoiceItemsTableRow): number {
         </thead>
         <tbody>
             <tr v-for="(item, index) in props.items" :key="index">
-                <td>{{ item.description }}</td>
+                <td>
+                    {{ item.description }}
+                    <p v-if="item.note" class="text-xs text-base-content/60">{{ item.note }}</p>
+                </td>
+                <td v-if="hasFrequency">{{ item.frequency ?? t('empty_dash') }}</td>
                 <td class="text-right">{{ item.quantity }}</td>
                 <td>{{ item.unit ?? t('empty_dash') }}</td>
                 <td class="text-right">{{ money(item.unit_price, props.currency) }}</td>

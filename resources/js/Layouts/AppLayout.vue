@@ -23,6 +23,7 @@ import {
     PhotoIcon,
     EnvelopeIcon,
     DocumentTextIcon,
+    DocumentDuplicateIcon,
     ArrowPathIcon,
     BanknotesIcon,
 } from '@heroicons/vue/24/outline';
@@ -53,6 +54,7 @@ const ICONS: Record<string, object> = {
     UserCircleIcon,
     Cog6ToothIcon,
     DocumentTextIcon,
+    DocumentDuplicateIcon,
     ArrowPathIcon,
     BanknotesIcon,
 };

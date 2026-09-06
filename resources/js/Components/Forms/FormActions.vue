@@ -6,6 +6,7 @@ defineProps<{
     cancelLabel?: string;
     submitLabel?: string;
     processing?: boolean;
+    disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -22,7 +23,7 @@ const { t } = useI18n();
             {{ cancelLabel ?? t('cancel') }}
         </button>
         <slot name="extra" />
-        <button type="submit" class="btn btn-primary" :disabled="processing">
+        <button type="submit" class="btn btn-primary" :disabled="processing || disabled">
             <span v-if="processing" class="loading loading-spinner loading-xs" />
             {{ submitLabel ?? t('save') }}
         </button>

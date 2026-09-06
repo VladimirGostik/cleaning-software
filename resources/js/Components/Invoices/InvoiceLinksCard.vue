@@ -33,6 +33,13 @@ const { t } = useI18n();
                 </a>
             </p>
 
+            <p v-if="props.invoice.quote_id">
+                <span class="text-base-content/60">{{ t('invoice_link_quote') }}:</span>
+                <a :href="`/quotes/${props.invoice.quote_id}`" class="link link-hover ml-1">
+                    {{ props.invoice.quote_number ?? t('quote_no_number') }}
+                </a>
+            </p>
+
             <p v-if="props.invoice.credited_invoice_id">
                 <span class="text-base-content/60">{{ t('invoice_credit_note_for') }}:</span>
                 <a :href="`/invoices/${props.invoice.credited_invoice_id}`" class="link link-hover ml-1">

@@ -50,6 +50,16 @@ export const RECURRING_STATUSES: readonly App.Enums.RecurringInvoiceStatusEnum[]
 
 export const RECURRING_DEFAULT_STATES: readonly App.Enums.RecurringDefaultStateEnum[] = ['draft', 'issued'];
 
+export const QUOTE_STATUSES: readonly App.Enums.QuoteStatusEnum[] = [
+    'draft',
+    'sent',
+    'accepted',
+    'rejected',
+    'expired',
+];
+
+export const QUOTE_KINDS: readonly App.Enums.QuoteKindEnum[] = ['itemized', 'document'];
+
 export function invoiceStatusKey(status: App.Enums.InvoiceStatusEnum): string {
     return `invoice_status_${status}`;
 }
@@ -84,6 +94,14 @@ export function recurringStatusKey(status: App.Enums.RecurringInvoiceStatusEnum)
 
 export function recurringDefaultStateKey(state: App.Enums.RecurringDefaultStateEnum): string {
     return `recurring_default_state_${state}`;
+}
+
+export function quoteStatusKey(status: App.Enums.QuoteStatusEnum): string {
+    return `quote_status_${status}`;
+}
+
+export function quoteKindKey(kind: App.Enums.QuoteKindEnum): string {
+    return `quote_kind_${kind}`;
 }
 
 export function enumOptions<T extends string>(

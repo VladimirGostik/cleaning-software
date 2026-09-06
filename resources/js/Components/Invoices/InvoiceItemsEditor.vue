@@ -28,6 +28,15 @@ const props = defineProps<{
     blankRow: () => ItemRow;
 }>();
 
+defineSlots<{
+    'row-extra'?: (props: {
+        row: ItemRow;
+        index: number;
+        setField: (index: number, key: string, value: unknown) => void;
+        errors: Record<string, string | undefined>;
+    }) => unknown;
+}>();
+
 const { t } = useI18n();
 const { money } = useMoneyFormat();
 const form = useFormContext();
@@ -97,6 +106,10 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
                         :error="errors[`${field}.${index}.description`]"
                         @update:model-value="setField(index, 'description', $event)"
                     />
+                </div>
+
+                <div v-if="$slots['row-extra']" class="w-full md:w-56">
+                    <slot name="row-extra" :row="row" :index="index" :set-field="setField" :errors="errors" />
                 </div>
 
                 <button
