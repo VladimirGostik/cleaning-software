@@ -1058,9 +1058,19 @@ namespace Tenants {
 export type AddTenantData = {
 readonly name: string,
 readonly ico: string,
+readonly dic: string | null,
+readonly vat_number: string | null,
+readonly is_vat_payer: boolean,
+readonly address_line: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly country: string,
+readonly contact_email: string | null,
+readonly contact_phone: string | null,
+readonly iban: string | null,
+readonly swift_bic: string | null,
 readonly color: App.Enums.TenantColorEnum | null,
 readonly copy_settings: boolean,
-readonly leader_email: string | null,
 };
 export type TenantListItemData = {
 readonly id: string,

@@ -15,6 +15,10 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class TenantSupplierProfileData extends Data
 {
+    public const string IBAN_PATTERN = '/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/';
+
+    public const string SWIFT_BIC_PATTERN = '/^[A-Z0-9]{8}([A-Z0-9]{3})?$/';
+
     public function __construct(
         #[Nullable, Max(255)]
         public readonly ?string $address_line = null,
@@ -33,9 +37,9 @@ final class TenantSupplierProfileData extends Data
         public readonly ?string $contact_email = null,
         #[Nullable, Max(30)]
         public readonly ?string $contact_phone = null,
-        #[Nullable, Max(34), Regex('/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/')]
+        #[Nullable, Max(34), Regex(self::IBAN_PATTERN)]
         public readonly ?string $iban = null,
-        #[Nullable, Max(11), Regex('/^[A-Z0-9]{8}([A-Z0-9]{3})?$/')]
+        #[Nullable, Max(11), Regex(self::SWIFT_BIC_PATTERN)]
         public readonly ?string $swift_bic = null,
     ) {}
 

@@ -62,23 +62,45 @@ final readonly class RegistrationService
     public function addTenant(User $user, AddTenantData $data): Tenant
     {
         return $this->db->transaction(function () use ($user, $data): Tenant {
-            $color = $data->color;
+            $source = $data->copy_settings ? $this->activeTenant() : null;
+            $color = $data->color ?? $source?->interface?->color;
 
-            if ($data->copy_settings) {
-                $activeTenantId = session('active_tenant_id');
-                $color = is_string($activeTenantId)
-                    ? Tenant::query()->find($activeTenantId)?->interface?->color
-                    : null;
-            }
+            $tenant = $this->bootstrapTenant($user, $data->name, $data->ico, $color, $data->toSupplierProfile());
 
-            $tenant = $this->bootstrapTenant($user, $data->name, $data->ico, $color);
-
-            if ($data->leader_email !== null) {
-                $this->createInvitation($tenant, $user, $data->leader_email, 'Vedúca');
+            if ($source !== null) {
+                $this->copyInvoiceDefaults($source, $tenant);
             }
 
             return $tenant;
         });
+    }
+
+    private function activeTenant(): ?Tenant
+    {
+        $activeTenantId = session('active_tenant_id');
+
+        return is_string($activeTenantId)
+            ? Tenant::query()->with('interface')->find($activeTenantId)
+            : null;
+    }
+
+    private function copyInvoiceDefaults(Tenant $source, Tenant $target): void
+    {
+        if ($source->interface !== null) {
+            $target->interface?->forceFill([
+                'invoice_template' => $source->interface->invoice_template,
+                'recurring_default_state' => $source->interface->recurring_default_state,
+                'default_constant_symbol' => $source->interface->default_constant_symbol,
+                'default_payment_type' => $source->interface->default_payment_type,
+                'default_currency' => $source->interface->default_currency,
+                'default_rounding_mode' => $source->interface->default_rounding_mode,
+            ])->save();
+        }
+
+        $target->forceFill([
+            'invoice_number_format' => $source->invoice_number_format,
+            'vat_rate' => $source->vat_rate,
+        ])->save();
     }
 
     private function bootstrapTenant(

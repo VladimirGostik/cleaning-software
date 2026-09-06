@@ -979,21 +979,9 @@ parameters:
 			path: tests/Feature/Tenancy/RoleTemplatesSeederTest.php
 
 		-
-			message: '#^Cannot access offset ''mail'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: tests/Feature/Tenancy/TenantControllerTest.php
-
-		-
 			message: '#^Cannot access property \$color on App\\Models\\TenantInterface\|null\.$#'
 			identifier: property.nonObject
 			count: 2
-			path: tests/Feature/Tenancy/TenantControllerTest.php
-
-		-
-			message: '#^Cannot access property \$routes on mixed\.$#'
-			identifier: property.nonObject
-			count: 1
 			path: tests/Feature/Tenancy/TenantControllerTest.php
 
 		-

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Invoices;
 
+use App\Data\Tenants\TenantSupplierProfileData;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\PaymentTypeEnum;
@@ -53,7 +54,7 @@ final class InvoiceSettingsData extends Data
         public readonly string $invoice_number_format,
         #[Nullable]
         #[Max(34)]
-        #[Regex('/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/')]
+        #[Regex(TenantSupplierProfileData::IBAN_PATTERN)]
         public readonly ?string $iban,
         #[Nullable]
         public readonly ?float $vat_rate,
@@ -63,7 +64,7 @@ final class InvoiceSettingsData extends Data
         public readonly RecurringDefaultStateEnum $recurring_default_state,
         #[Nullable]
         #[Max(11)]
-        #[Regex('/^[A-Z0-9]{8}([A-Z0-9]{3})?$/')]
+        #[Regex(TenantSupplierProfileData::SWIFT_BIC_PATTERN)]
         public readonly ?string $swift_bic,
         #[Nullable]
         #[Max(10)]
@@ -111,7 +112,6 @@ final class InvoiceSettingsData extends Data
     {
         return [
             'invoice_number_format' => ['required', 'string', 'max:100', 'regex:/\{X+\}/'],
-            'iban' => ['nullable', 'string', 'max:34', 'regex:/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/'],
             'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'registration_info' => ['nullable', 'string', 'max:255'],
             'recurring_default_state' => ['required', Rule::enum(RecurringDefaultStateEnum::class)],
