@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Tenants\AddTenantData;
+use App\Data\Tenants\TenantSwitchData;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\RegistrationService;
@@ -36,9 +37,13 @@ final class TenantController extends Controller
     }
 
     #[Authorize('switchTo', 'tenant')]
-    public function switch(Tenant $tenant, Request $request): RedirectResponse
+    public function switch(Tenant $tenant, TenantSwitchData $data, Request $request): RedirectResponse
     {
         session(['active_tenant_id' => $tenant->id]);
+
+        if ($data->redirect_to !== null) {
+            return redirect($data->redirect_to)->with('success', __('app.tenant_switched'));
+        }
 
         return to_route('dashboard')->with('success', __('app.tenant_switched'));
     }

@@ -378,6 +378,71 @@ readonly token: string,
 readonly label: string,
 };
 }
+namespace Dashboard {
+export type CompanyOverviewData = {
+readonly tenant_id: string,
+readonly name: string,
+readonly color: App.Enums.TenantColorEnum | null,
+readonly is_current: boolean,
+readonly supplier_complete: boolean,
+readonly invoices: App.Data.Dashboard.InvoiceMetricsData | null,
+readonly schedule: App.Data.Dashboard.ScheduleMetricsData | null,
+readonly contracts: App.Data.Dashboard.ContractsMetricsData | null,
+readonly people: App.Data.Dashboard.PeopleMetricsData | null,
+};
+export type ContractsMetricsData = {
+readonly active: number | null,
+readonly expiring_30d: number | null,
+readonly quotes_awaiting: number | null,
+};
+export type DashboardAlertCountData = {
+readonly type: App.Enums.DashboardAlertTypeEnum,
+readonly count: number,
+};
+export type DashboardAlertData = {
+readonly type: App.Enums.DashboardAlertTypeEnum,
+readonly tenant_id: string,
+readonly tenant_name: string,
+readonly tenant_color: App.Enums.TenantColorEnum | null,
+readonly title: string,
+readonly subtitle: string | null,
+readonly amount: string | null,
+readonly currency: App.Enums.CurrencyEnum | null,
+readonly due_date: string | null,
+readonly days: number | null,
+readonly url: string,
+};
+export type DashboardData = {
+readonly companies: App.Data.Dashboard.CompanyOverviewData[],
+readonly alerts: App.Data.Dashboard.DashboardAlertData[],
+readonly alert_counts: App.Data.Dashboard.DashboardAlertCountData[],
+readonly generated_at: string,
+};
+export type InvoiceCurrencyMetricsData = {
+readonly currency: App.Enums.CurrencyEnum,
+readonly invoiced_month_count: number,
+readonly invoiced_month_sum: string,
+readonly unpaid_count: number,
+readonly unpaid_sum: string,
+readonly overdue_count: number,
+readonly overdue_sum: string,
+};
+export type InvoiceMetricsData = {
+readonly default_currency: App.Enums.CurrencyEnum,
+readonly by_currency: App.Data.Dashboard.InvoiceCurrencyMetricsData[],
+};
+export type PeopleMetricsData = {
+readonly employees: number | null,
+readonly clients: number | null,
+readonly objects: number | null,
+};
+export type ScheduleMetricsData = {
+readonly today: number,
+readonly this_week: number,
+readonly unassigned_next_7_days: number | null,
+readonly own_only: boolean,
+};
+}
 namespace Employees {
 export type EmployeeDetailData = {
 readonly id: string,
@@ -1091,6 +1156,9 @@ readonly contact_phone: string | null,
 readonly iban: string | null,
 readonly swift_bic: string | null,
 };
+export type TenantSwitchData = {
+readonly redirect_to: string | null,
+};
 }
 }
 namespace Enums {
@@ -1100,6 +1168,7 @@ export type ContractStatusEnum = "draft" | "active" | "expired" | "terminated";
 export type ContractTermTypeEnum = "fixed" | "indefinite";
 export type ContractableTypeEnum = "cleaning_object" | "tenant_membership";
 export type CurrencyEnum = "EUR" | "CZK" | "USD";
+export type DashboardAlertTypeEnum = "overdue_invoice" | "supplier_incomplete" | "unassigned_job" | "contract_expiring" | "quote_expiring";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";

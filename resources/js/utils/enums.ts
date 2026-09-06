@@ -213,3 +213,9 @@ export function notificationTypeKey(type: App.Enums.NotificationTypeEnum): strin
 export function notificationPreferenceDescKey(type: App.Enums.NotificationTypeEnum): string {
     return `notification_settings_desc_${type.replace('.', '_')}`;
 }
+
+// BE plan lang keys 'dashboard_alert_<type>' (shared app.json); no runtime value list needed —
+// alert order is driven by BE `alert_counts`, not by this file.
+export function dashboardAlertTypeKey(type: App.Enums.DashboardAlertTypeEnum): string {
+    return `dashboard_alert_${type}`;
+}

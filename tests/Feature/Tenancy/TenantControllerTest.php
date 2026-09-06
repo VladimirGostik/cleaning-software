@@ -279,4 +279,61 @@ final class TenantControllerTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_switch_with_redirect_to_lands_on_target_page(): void
+    {
+        $user = User::factory()->create();
+        $this->withActiveMembership($user);
+        $other = Tenant::factory()->forOwner($user)->create();
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $other->id, 'is_active' => true, 'joined_at' => now()]);
+
+        $response = $this->actingAs($user)->post("/tenants/{$other->id}/switch", [
+            'redirect_to' => '/invoices?filter[status]=overdue',
+        ]);
+
+        $response->assertRedirect('/invoices?filter[status]=overdue');
+        $this->assertSame($other->id, session('active_tenant_id'));
+    }
+
+    public function test_switch_with_absolute_url_redirect_to_returns_422(): void
+    {
+        $user = User::factory()->create();
+        $this->withActiveMembership($user);
+        $other = Tenant::factory()->forOwner($user)->create();
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $other->id, 'is_active' => true, 'joined_at' => now()]);
+
+        $response = $this->actingAs($user)->post("/tenants/{$other->id}/switch", [
+            'redirect_to' => 'https://evil.example',
+        ]);
+
+        $response->assertInvalid(['redirect_to']);
+    }
+
+    public function test_switch_with_protocol_relative_redirect_to_returns_422(): void
+    {
+        $user = User::factory()->create();
+        $this->withActiveMembership($user);
+        $other = Tenant::factory()->forOwner($user)->create();
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $other->id, 'is_active' => true, 'joined_at' => now()]);
+
+        $response = $this->actingAs($user)->post("/tenants/{$other->id}/switch", [
+            'redirect_to' => '//evil.example',
+        ]);
+
+        $response->assertInvalid(['redirect_to']);
+    }
+
+    public function test_switch_with_backslash_protocol_relative_redirect_to_returns_422(): void
+    {
+        $user = User::factory()->create();
+        $this->withActiveMembership($user);
+        $other = Tenant::factory()->forOwner($user)->create();
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $other->id, 'is_active' => true, 'joined_at' => now()]);
+
+        $response = $this->actingAs($user)->post("/tenants/{$other->id}/switch", [
+            'redirect_to' => '/\evil.example',
+        ]);
+
+        $response->assertInvalid(['redirect_to']);
+    }
 }
