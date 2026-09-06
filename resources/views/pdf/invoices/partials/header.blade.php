@@ -1,0 +1,53 @@
+{{-- Invoice header: optional header_text + supplier + customer blocks --}}
+@if($invoice->header_text)
+<div style="margin-bottom:16px; font-size:12px; color:#444;">{{ $invoice->header_text }}</div>
+@endif
+
+<table style="width:100%; margin-bottom:20px;">
+    <tr>
+        <td style="width:50%; vertical-align:top; padding-right:20px;">
+            <strong>{{ __('app.invoice_pdf_supplier') }}</strong><br>
+            <strong style="font-size:14px;">{{ $invoice->supplier_name }}</strong><br>
+            @if($invoice->supplier_address_line)
+                {{ $invoice->supplier_address_line }}<br>
+            @endif
+            @if($invoice->supplier_city || $invoice->supplier_postal_code)
+                {{ implode(' ', array_filter([$invoice->supplier_postal_code, $invoice->supplier_city])) }}<br>
+            @endif
+            @if($invoice->supplier_country)
+                {{ $invoice->supplier_country }}<br>
+            @endif
+            @if($invoice->supplier_ico)
+                {{ __('app.invoice_pdf_ico') }}: {{ $invoice->supplier_ico }}<br>
+            @endif
+            @if($invoice->supplier_dic)
+                {{ __('app.invoice_pdf_dic') }}: {{ $invoice->supplier_dic }}<br>
+            @endif
+            @if($invoice->supplier_vat_number)
+                {{ __('app.invoice_pdf_vat_number') }}: {{ $invoice->supplier_vat_number }}<br>
+            @endif
+        </td>
+        <td style="width:50%; vertical-align:top;">
+            <strong>{{ __('app.invoice_pdf_customer') }}</strong><br>
+            <strong>{{ $invoice->customer_name }}</strong><br>
+            @if($invoice->customer_street)
+                {{ $invoice->customer_street }}<br>
+            @endif
+            @if($invoice->customer_city || $invoice->customer_postal_code)
+                {{ implode(' ', array_filter([$invoice->customer_postal_code, $invoice->customer_city])) }}<br>
+            @endif
+            @if($invoice->customer_country)
+                {{ $invoice->customer_country }}<br>
+            @endif
+            @if($invoice->customer_ico)
+                {{ __('app.invoice_pdf_ico') }}: {{ $invoice->customer_ico }}<br>
+            @endif
+            @if($invoice->customer_dic)
+                {{ __('app.invoice_pdf_dic') }}: {{ $invoice->customer_dic }}<br>
+            @endif
+            @if($invoice->customer_vat_number)
+                {{ __('app.invoice_pdf_vat_number') }}: {{ $invoice->customer_vat_number }}<br>
+            @endif
+        </td>
+    </tr>
+</table>

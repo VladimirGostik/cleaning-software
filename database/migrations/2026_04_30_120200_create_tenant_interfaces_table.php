@@ -16,6 +16,13 @@ return new class extends Migration
 
             $table->string('color', 20)->nullable();
 
+            $table->string('invoice_template')->default('classic');
+            $table->string('recurring_default_state')->default('draft');
+            $table->string('default_constant_symbol', 10)->nullable();
+            $table->string('default_payment_type')->default('transfer');
+            $table->string('default_currency', 3)->default('EUR');
+            $table->string('default_rounding_mode')->default('none');
+
             $table->timestamps();
         });
     }

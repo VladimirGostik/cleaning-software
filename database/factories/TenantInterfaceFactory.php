@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\CurrencyEnum;
+use App\Enums\InvoiceTemplateEnum;
+use App\Enums\PaymentTypeEnum;
+use App\Enums\RecurringDefaultStateEnum;
+use App\Enums\RoundingModeEnum;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,6 +27,12 @@ final class TenantInterfaceFactory extends Factory
         return [
             'tenant_id' => Tenant::factory(),
             'color' => null,
+            'invoice_template' => InvoiceTemplateEnum::Classic,
+            'recurring_default_state' => RecurringDefaultStateEnum::Draft,
+            'default_constant_symbol' => null,
+            'default_payment_type' => PaymentTypeEnum::Transfer,
+            'default_currency' => CurrencyEnum::EUR,
+            'default_rounding_mode' => RoundingModeEnum::None,
         ];
     }
 }

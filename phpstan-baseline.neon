@@ -703,6 +703,12 @@ parameters:
 			path: tests/Feature/Console/CreateOwnerCommandTest.php
 
 		-
+			message: '#^Cannot call method assertExitCode\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Invoices/MarkOverdueInvoicesTest.php
+
+		-
 			message: '#^Method Tests\\Feature\\Language\\TranslationParityTest\:\:load\(\) should return array\<string, mixed\> but returns mixed\.$#'
 			identifier: return.type
 			count: 1
@@ -761,6 +767,12 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: tests/Feature/Profile/ProfileControllerTest.php
+
+		-
+			message: '#^Cannot call method assertSuccessful\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 6
+			path: tests/Feature/RecurringInvoices/GenerateRecurringInvoicesCommandTest.php
 
 		-
 			message: '#^Cannot call method component\(\) on mixed\.$#'

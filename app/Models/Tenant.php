@@ -21,8 +21,20 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $id
  * @property string $name
  * @property string|null $ico
+ * @property string|null $dic
+ * @property string|null $vat_number
  * @property bool $is_vat_payer
  * @property string|null $vat_rate
+ * @property string|null $iban
+ * @property string|null $swift_bic
+ * @property string $invoice_number_format
+ * @property string|null $registration_info
+ * @property string|null $address_line
+ * @property string|null $city
+ * @property string|null $postal_code
+ * @property string|null $country
+ * @property string|null $contact_email
+ * @property string|null $contact_phone
  * @property bool $is_active
  * @property User|null $owner
  * @property TenantInterface|null $interface
@@ -68,6 +80,8 @@ final class Tenant extends Model
             ->logOnly([
                 'owner_id', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
                 'vat_rate', 'iban', 'is_active',
+                'swift_bic', 'invoice_number_format', 'registration_info',
+                'address_line', 'city', 'postal_code', 'country', 'contact_email', 'contact_phone',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

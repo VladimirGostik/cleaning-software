@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\GeneratesPaymentQr;
+use App\Contracts\RendersInvoicePdf;
 use App\Listeners\LogAuthenticationActivity;
+use App\Listeners\StampInvoiceSentAt;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
+use App\Services\Pdf\InvoicePdfService;
+use App\Services\Pdf\PayBySquareService;
 use App\Support\PrecognitiveDataValidatorResolver;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -14,6 +19,7 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,6 +34,9 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(DataValidatorResolver::class, PrecognitiveDataValidatorResolver::class);
+
+        $this->app->bind(RendersInvoicePdf::class, InvoicePdfService::class);
+        $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);
 
         $this->app->beforeResolving(BaseData::class, function (string $class, array $parameters, $app): void {
             /** @var Request $request */
@@ -57,6 +66,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, [LogAuthenticationActivity::class, 'handleLogin']);
         Event::listen(Logout::class, [LogAuthenticationActivity::class, 'handleLogout']);
         Event::listen(Failed::class, [LogAuthenticationActivity::class, 'handleFailed']);
+        Event::listen(NotificationSent::class, StampInvoiceSentAt::class);
 
         Relation::morphMap([
             'tenant_membership' => TenantMembership::class,
