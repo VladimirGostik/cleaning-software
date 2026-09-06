@@ -59,7 +59,7 @@ final class QuoteControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Quotes/Index', shouldExist: false)->has('quotes.data', 3),
+            fn (AssertableInertia $page) => $page->component('Quotes/Index')->has('quotes.data', 3),
         );
     }
 
@@ -73,7 +73,7 @@ final class QuoteControllerTest extends TestCase
         $response = $this->get(route('quotes.index'));
 
         $response->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Quotes/Index', shouldExist: false)->has('quotes.data', 0),
+            fn (AssertableInertia $page) => $page->component('Quotes/Index')->has('quotes.data', 0),
         );
     }
 
@@ -95,7 +95,7 @@ final class QuoteControllerTest extends TestCase
         $response = $this->get(route('quotes.index', ['filter' => ['kind' => 'document']]));
 
         $response->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Quotes/Index', shouldExist: false)->has('quotes.data', 1),
+            fn (AssertableInertia $page) => $page->component('Quotes/Index')->has('quotes.data', 1),
         );
     }
 
@@ -109,7 +109,7 @@ final class QuoteControllerTest extends TestCase
         $response = $this->get(route('quotes.index', ['filter' => ['status' => 'sent']]));
 
         $response->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Quotes/Index', shouldExist: false)->has('quotes.data', 1),
+            fn (AssertableInertia $page) => $page->component('Quotes/Index')->has('quotes.data', 1),
         );
     }
 
@@ -124,7 +124,7 @@ final class QuoteControllerTest extends TestCase
         $response = $this->get(route('quotes.index', ['filter' => ['client_id' => $client->id]]));
 
         $response->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Quotes/Index', shouldExist: false)->has('quotes.data', 1),
+            fn (AssertableInertia $page) => $page->component('Quotes/Index')->has('quotes.data', 1),
         );
     }
 
@@ -139,7 +139,7 @@ final class QuoteControllerTest extends TestCase
         $response = $this->get(route('quotes.index', ['filter' => ['search' => 'Findable']]));
 
         $response->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Quotes/Index', shouldExist: false)->has('quotes.data', 1),
+            fn (AssertableInertia $page) => $page->component('Quotes/Index')->has('quotes.data', 1),
         );
     }
 
@@ -155,7 +155,7 @@ final class QuoteControllerTest extends TestCase
         $response = $this->get(route('quotes.create'));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Quotes/Create', shouldExist: false)->has('context'));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Quotes/Create')->has('context'));
     }
 
     public function test_store_redirects_to_show(): void
@@ -258,7 +258,7 @@ final class QuoteControllerTest extends TestCase
         $response = $this->get(route('quotes.show', $quote));
 
         $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Quotes/Show', shouldExist: false)->where('quote.id', $quote->id));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Quotes/Show')->where('quote.id', $quote->id));
     }
 
     public function test_show_offers_attach_options_only_when_clientless(): void
@@ -270,7 +270,7 @@ final class QuoteControllerTest extends TestCase
 
         $response = $this->get(route('quotes.show', $quote));
 
-        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Quotes/Show', shouldExist: false)->where('clients', null)->where('objects', null));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Quotes/Show')->where('clients', null)->where('objects', null));
     }
 
     public function test_show_404_for_other_tenant_quote(): void
