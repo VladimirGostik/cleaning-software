@@ -78,15 +78,33 @@ Login (canonical skeleton admin, never change): `admin@example.com` / `password`
 Vite is started directly from `node_modules/.bin/vite` in `compose.yml` (pnpm 11 deps check bypass); lefthook build recorded in `pnpm-workspace.yaml`.
 Phase 4 Chromium: Alpine apk `/usr/bin/chromium-browser` (no Playwright Node download); rebuild image after pull if CHROMIUM_PATH env changes.
 
-## Bootstrap (Phase 2)
+## Bootstrap (Phase 2 + Phase 4 supplier data)
 
 No public registration. First account via Artisan; subsequent tenants + team members via web UI (invitations).
 
 ```bash
-./vendor/bin/sail artisan app:create-owner  # interactive prompts
+./vendor/bin/sail artisan app:create-owner                                                    # interactive prompts
+# or with flags (password in flags visible in ps/history; use prompts when possible):
+./vendor/bin/sail artisan app:create-owner \
+  --name="Ján Novák" \
+  --email="owner@example.com" \
+  --password=SecurePassword123 \
+  --company="Demo Cleaning s.r.o." \
+  --ico="12345678" \
+  --address-line="Hlavná 1" \
+  --city="Bratislava" \
+  --postal-code="811 01" \
+  --country="SK" \
+  --dic="2012345678" \
+  --vat-number="SK2012345678" \
+  --vat-payer \
+  --contact-email="fakturacia@demo.sk" \
+  --contact-phone="+421900000000" \
+  --iban="SK8975000000000123456789" \
+  --swift="TATRSKBX"
 ```
 
-Creates User (owner) → Tenant (firma, company) → TenantMembership + RoleTemplatesSeeder 6 role bundles (Admin assigned).
+Creates User (owner) → Tenant (firma, company, optionally seeded with supplier data) → TenantMembership + RoleTemplatesSeeder 6 role bundles (Admin assigned). Supplier fields optional at bootstrap; if omitted, owner is redirected to Settings→Invoicing to complete profile before any invoice can be issued (drafts allowed on incomplete profile).
 
 **Workflows:**
 - **Add another company** — "Pridať novú firmu" modal: name, IČO, optional colour, optional leader email → new Tenant + session switch + dashboard.
@@ -106,11 +124,11 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - clients (BE) — Client/ClientContact models (UUIDv7, SoftDeletes, LogsActivity), ClientService (paginate/create/update with syncContacts, delete with soft-delete cascade of all objects + contacts), ClientPolicy (RBAC full), ClientController with #[NavItem], ClientTypeEnum (#[TypeScript]). Routes: GET|POST|PUT|DELETE /clients{,/{client}}.
 - objects (FE) — Pages/Objects/{Index,Show}.vue, Components/Objects/{ObjectTypeBadge,ObjectStatusBadge,ObjectForm,ObjectFormDrawer,ObjectDetailCard,ObjectAccessCard}.vue, drawer-based CRUD with deactivation (is_active toggle), dedicated reactivate endpoint, ObjectAccessCard (sensitive data warning).
 - objects (BE) — CleaningObject model (UUIDv7, hybrid is_active+SoftDeletes per D1 override, LogsActivity, withTrashed client relation), ObjectService (paginate with visibleTo actor scoping D2 fail-closed, deactivate action, reactivate action), ObjectPolicy with isVisibleTo guards (D2), ObjectController with #[NavItem], ObjectTypeEnum (#[TypeScript]). Routes: GET|POST|PUT /objects{,/{object}}, POST /objects/{object}/deactivate, POST /objects/{object}/reactivate. Permissions: ViewObjects/CreateObjects/EditObjects/DeleteObjects + ViewAllObjects breadth modifier.
-- invoices (FE) — Pages/Invoices/{Index,Create,Edit,Show}.vue, Components/Invoices/{InvoiceStatusBadge,InvoiceTypeBadge,InvoiceItemsEditor,InvoiceSubjectPicker,InvoiceTotalsPanel,InvoiceStatsCards,InvoiceForm,InvoiceFormSummary,InvoiceIssueModal,InvoicePartiesBlock,InvoiceMetaGrid,InvoicePaymentInfo,InvoiceActionsCard,InvoiceLinksCard,InvoiceVatRecap,InvoiceItemsTable}.vue, composable useInvoiceTotals, utils money.ts.
-- invoices (BE) — Invoice/InvoiceItem/InvoiceNumberSequence models (UUIDv7, SoftDeletes, LogsActivity), InvoiceService (paginate/stats/create/update/issue/markPaid/cancel/duplicate/delete/send), InvoiceNumberService (lockForUpdate numbering), InvoiceSettingsService, contracts RendersInvoicePdf/GeneratesPaymentQr, InvoicePdfService (chrome driver 3 templates), PayBySquareService (QR generation), InvoiceIssued notification (queued, retries), StampInvoiceSentAt listener, InvoiceMarkedOverdue event, MarkOverdueInvoices command. Enums: InvoiceStatusEnum, InvoiceTypeEnum, InvoiceTemplateEnum, PaymentTypeEnum, CurrencyEnum, RoundingModeEnum. Routes: GET|POST /invoices, GET|PUT|DELETE /invoices/{invoice}, POST /invoices/{invoice}/issue/pay/cancel/duplicate/send, GET /invoices/{invoice}/pdf. Policies: InvoicePolicy (per PermissionEnum cases). Permissions: ViewInvoices/CreateInvoices/EditInvoices/CancelInvoices.
+- invoices (FE) — Pages/Invoices/{Index,Create,Edit,Show}.vue, Components/Invoices/{InvoiceStatusBadge,InvoiceTypeBadge,InvoiceItemsEditor,InvoiceSubjectPicker,InvoiceTotalsPanel,InvoiceStatsCards,InvoiceForm,InvoiceFormSummary,InvoiceIssueModal,InvoicePartiesBlock,InvoiceMetaGrid,InvoicePaymentInfo,InvoiceActionsCard,InvoiceLinksCard,InvoiceVatRecap,InvoiceItemsTable,SupplierIncompleteAlert,InvoiceSettingsForm,InvoiceSettingsDrawer}.vue, Composables/useInvoiceSettingsDrawer, composable useInvoiceTotals, utils money.ts. SupplierIncompleteAlert banner on Create/Edit/Show + RecurringInvoices Create/Edit (from supplier_missing_fields). InvoiceSettingsDrawer accessible from Invoices Index header + banner CTA, allows quick supplier profile completion without full page navigation.
+- invoices (BE) — Invoice/InvoiceItem/InvoiceNumberSequence models (UUIDv7, SoftDeletes, LogsActivity), InvoiceService (paginate/stats/create/update/issue with supplier guard/markPaid/cancel/duplicate/delete/send), InvoiceNumberService (lockForUpdate numbering), InvoiceSettingsService, contracts RendersInvoicePdf/GeneratesPaymentQr, InvoicePdfService (chrome driver 3 templates), PayBySquareService (QR generation), InvoiceIssued notification (queued, retries), StampInvoiceSentAt listener, InvoiceMarkedOverdue event, MarkOverdueInvoices command. Enums: InvoiceStatusEnum, InvoiceTypeEnum, InvoiceTemplateEnum, PaymentTypeEnum, CurrencyEnum, RoundingModeEnum. DTOs gain supplier_missing_fields. Routes: GET|POST /invoices, GET|PUT|DELETE /invoices/{invoice}, POST /invoices/{invoice}/issue/pay/cancel/duplicate/send, GET /invoices/{invoice}/pdf. Policies: InvoicePolicy (per PermissionEnum cases). Permissions: ViewInvoices/CreateInvoices/EditInvoices/CancelInvoices.
 - recurring-invoices (FE) — Pages/RecurringInvoices/{Index,Create,Edit,Show}.vue, Components/RecurringInvoices/{RecurringStatusBadge,RecurringFrequencyBadge,RecurringInvoiceForm,RecurringCustomerCard,RecurringScheduleCard,RecurringGeneratedInvoicesCard,RecurringActionsCard}.vue.
-- recurring-invoices (BE) — RecurringInvoice/RecurringInvoiceItem models (UUIDv7, SoftDeletes, LogsActivity), RecurringInvoiceService (paginate/create/update/delete/pause/resume/cancel, generateInvoiceFromTemplate), GenerateRecurringInvoiceJob (queued, ShouldBeUnique), GenerateRecurringInvoices command. Enums: RecurringFrequencyEnum (monthsInterval, nextRunDate), RecurringInvoiceStatusEnum, RecurringDefaultStateEnum. Routes: GET|POST /recurring-invoices, GET|PUT|DELETE /recurring-invoices/{recurringInvoice}, POST /recurring-invoices/{recurringInvoice}/pause|resume|cancel. Policies: RecurringInvoicePolicy. Permissions: ViewRecurringInvoices/CreateRecurringInvoices/EditRecurringInvoices/DeleteRecurringInvoices.
-- settings-invoicing (FE) — Pages/Settings/Invoicing.vue, Components/Invoices/{InvoiceSettingsSupplierCard,InvoiceSettingsBankCard,InvoiceNumberFormatField,InvoiceTemplatePicker,InvoiceTemplateThumbnail,InvoiceSettingsDefaultsCard}.vue.
+- recurring-invoices (BE) — RecurringInvoice/RecurringInvoiceItem models (UUIDv7, SoftDeletes, LogsActivity), RecurringInvoiceService (paginate/create/update/delete/pause/resume/cancel, generateInvoiceFromTemplate), GenerateRecurringInvoiceJob (queued, ShouldBeUnique, D2b: skip auto-issue + warn if supplier incomplete, advance schedule anyway), GenerateRecurringInvoices command. Enums: RecurringFrequencyEnum (monthsInterval, nextRunDate), RecurringInvoiceStatusEnum, RecurringDefaultStateEnum. Routes: GET|POST /recurring-invoices, GET|PUT|DELETE /recurring-invoices/{recurringInvoice}, POST /recurring-invoices/{recurringInvoice}/pause|resume|cancel. Policies: RecurringInvoicePolicy. Permissions: ViewRecurringInvoices/CreateRecurringInvoices/EditRecurringInvoices/DeleteRecurringInvoices.
+- settings-invoicing (FE) — Pages/Settings/Invoicing.vue, Components/Invoices/{InvoiceSettingsSupplierCard,InvoiceSettingsBankCard,InvoiceNumberFormatField,InvoiceTemplatePicker,InvoiceTemplateThumbnail,InvoiceSettingsDefaultsCard,InvoiceSettingsForm,InvoiceSettingsDrawer}.vue. InvoiceSettingsForm extracted for reuse (page + drawer). Drawer accessible from Invoices Index header button + banner CTA, allows quick profile completion without navigating away from invoice creation flow.
 - settings-invoicing (BE) — InvoiceSettingsService, TenantInterface extended (invoice_template, recurring_default_state, default_constant_symbol/payment_type/currency/rounding_mode), Tenant extended (supplier columns: dic, vat_number, address_line, city, postal_code, country, contact_email, contact_phone, swift_bic). Routes: GET|PUT /settings/invoicing, GET /settings/invoicing/preview/{template}. Permission: ManageBillingSettings (owner only).
 - dashboard (FE) — Pages/Dashboard.vue welcome card.
 - dashboard (BE) — placeholder GET / route, no props.
