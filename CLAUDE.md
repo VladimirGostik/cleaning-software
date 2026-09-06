@@ -68,7 +68,7 @@ Vite is started directly from `node_modules/.bin/vite` in `compose.yml` (pnpm 11
 
 ## Modules
 
-- auth (FE) — Pages/Auth/{Login,ForgotPassword,ResetPassword}.vue, standalone cards, FormProvider + Precognition, string URLs.
+- auth (FE) — Pages/Auth/{Login,ForgotPassword,ResetPassword}.vue + Components/Auth/{AuthShell, AuthHero, AuthTextField, AuthPasswordField, AuthCheckboxField, AuthSubmitButton, AuthLanguageSwitcher}, brown/amber hero + white form panel, FormProvider + Precognition, string URLs.
 - auth (BE) — session login/logout, forgot/reset password, Sanctum Bearer POST /api/auth/login|logout; login/logout/failed logged to Activitylog.
 - dashboard (FE) — Pages/Dashboard.vue welcome card.
 - dashboard (BE) — placeholder GET / route, no props.
@@ -85,7 +85,7 @@ Vite is started directly from `node_modules/.bin/vite` in `compose.yml` (pnpm 11
 - localisation (FE) — AppLayout language dropdown → <a href="/language/{locale}"> (full reload) → SupportedLanguage {sk,en}.
 - localisation (BE) — SupportedLanguage {sk,en}, LocaleMiddleware, GET /language/{locale}, JSON translations resources/lang/*/app.json.
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
-- shell (FE) — Layouts/AppLayout.vue (BE navigation, ICONS map, toasts, language switcher), Layouts/Header.vue, Components/DataTable/*, Components/Forms/*, ConfirmDeleteModal + useDeleteConfirm, types/*, utils/{date,bytes}.ts, vue-i18n from resources/lang/*/app.json, DaisyUI app-theme OKLCH tokens.
+- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark logo, amber gradient, BE navigation via ICONS map, toasts, language switcher), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*}, ConfirmDeleteModal + useDeleteConfirm, types/*, utils/{date,bytes}.ts, vue-i18n from resources/lang/*/app.json, DaisyUI app-theme cleanmaster OKLCH tokens + Plus Jakarta Sans / JetBrains Mono fonts.
 
 **Note:** On port from `main` (Phase 2+): modules for Clients, Objects, Quotes, Invoices, RecurringInvoices, Contracts, ContractTemplates, Employees, Schedule/Jobs, Notifications will be added per `.claude/plans/port-from-cleaning-software.md` phase order.
 

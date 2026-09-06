@@ -4,11 +4,11 @@ Source of truth: `docs/cleanmaster-technicka-specifikacia-v1.md.docx` (Slovak, 2
 
 ## Implementation status
 
-**Current state (branch `rebuild`):** Skeleton infrastructure only. The Laravel 13 + Inertia 3 application foundation is in place (auth, users, roles, permissions, audit logs, media, localisation, Scribe docs). **No CleanMaster business modules yet implemented.** The skeleton roles are admin / user (seeded in PermissionSeeder + UserSeeder), login canonical: `admin@example.com` / `password`.
+**Current state (branch `rebuild`):** Skeleton infrastructure + Phase 1 visual complete. The Laravel 13 + Inertia 3 application foundation is in place (auth, users, roles, permissions, audit logs, media, localisation, Scribe docs). **Phase 1 complete as of 2026-09-06** — CleanMaster visual identity (brown/amber theme, Plus Jakarta Sans fonts, dark sidebar with gradient logo) + reskinned login/forgot/reset pages (AuthShell + hero + auth field components + language switcher). The skeleton roles are admin / user (seeded in PermissionSeeder + UserSeeder), login canonical: `admin@example.com` / `password`.
 
 **Target domain content below** is the complete CleanMaster specification ported phase by phase from branch `main` per `.claude/plans/port-from-cleaning-software.md`. Phases are:
 
-1. **Phase 1 visual + login** — skeleton complete; admin / user roles + login/logout/forgot-password/password-reset flow.
+1. ~~**Phase 1 visual + login**~~ — COMPLETE 2026-09-06. Admin / user roles + login/logout/forgot-password/password-reset flow with CleanMaster branding.
 2. **Phase 2 tenancy** — Tenant model, TenantMembership pivot, multi-tenant row-level scoping (tenant_id FK + BelongsToTenant trait + TenantScope global scope on all domain models). Spatie Permission teams=true (tenant_id), role-per-tenant seeding, active_tenant_id session binding. Invitation flow for team members. Profile + settings pages.
 3. **Phase 3 operational core** — Clients CRUD, Objects CRUD, Quotes full lifecycle (draft/send/accept/convert), Contracts (service agreements + employment), ContractTemplates, basic schedule/jobs.
 4. **Phase 4 invoicing** — Invoices (draft/issue/pay/overdue/cancel), recurring invoice templates auto-generation, invoice settings (template, numbering, SK fields).

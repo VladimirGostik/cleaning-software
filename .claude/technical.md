@@ -70,10 +70,11 @@ laravel-be + inertia-fe
 - is_active NOT enforced at login (AuthController.php:27, Api/AuthController.php:31) — TODO on port guard.
 
 **Satellites (FE):**
-- Pages/Auth/Login.vue — props {canResetPassword}; useForm('post','/login',{email,password,remember}), onFinish reset('password') · TextInput, PasswordInput, CheckboxInput, FormProvider.
-- Pages/Auth/ForgotPassword.vue — {status?}; POST /forgot-password · TextInput, FormProvider.
-- Pages/Auth/ResetPassword.vue — {token,email}; POST /reset-password · PasswordInput, ConfirmPasswordInput, FormProvider.
-- No layout (standalone bg-base-200 card).
+- Pages/Auth/Login.vue — props {canResetPassword}; useForm('post','/login',{email,password,remember}), onFinish reset('password') · FormProvider + new Components/Auth/{AuthShell, AuthHero, AuthTextField, AuthPasswordField, AuthCheckboxField, AuthSubmitButton, AuthLanguageSwitcher}.
+- Pages/Auth/ForgotPassword.vue — {status?}; POST /forgot-password · same Auth components + FormProvider.
+- Pages/Auth/ResetPassword.vue — {token,email}; POST /reset-password · same Auth components + FormProvider.
+- Layout: AuthShell wraps all three pages (brown/amber hero left 60 % desktop, white form panel, language switcher below divider).
+- Components/BrandMark.vue — sparkle-broom SVG used in AuthShell top-left + AppLayout sidebar/mobile navbar, size via class fallthrough.
 - AppLayout.logout() → router.post('/logout') (AppLayout.vue:284).
 
 **DTOs:**
@@ -176,13 +177,13 @@ DTOs injected as controller params, #[TypeScript] on all → resources/js/types/
 App\Navigation\NavItem attribute (repeatable, method-level: label, route, icon, permission, policyModel, group, order) discovered by NavigationRegistry via router reflection; visibility Gate::forUser()->allows(permission, policyModel) or $user->can (:79-89); groups NavigationRegistry::GROUPS (settings). Shared as navigation: NavigationItemData[], rendered Layouts/AppLayout.vue:215. FE: hardcoded ICONS map (HomeIcon, UsersIcon, ShieldCheckIcon, ClipboardDocumentListIcon, PhotoIcon, EnvelopeIcon, UserCircleIcon, Cog6ToothIcon; unknown → HomeIcon) — every new NavItem icon must be added. translateLabel strips app. prefix then t(). Active = page.url.startsWith(href). Nav links plain <a> (full page load). On port: add NavItems for clients, objects, quotes, contracts, invoices, recurring invoices, schedule, employees, notifications + extend ICONS map.
 
 ### Localisation (BE + FE sync)
-App\Enums\SupportedLanguage {sk, en} (#[TypeScript]). LocaleMiddleware (web) resolves user.locale → session → cookie → Accept-Language → sk. GET /language/{locale} (unauthenticated, no DTO). Translations = JSON resources/lang/{sk,en}/app.json (+ sk/validation.json) loaded by AppServiceProvider::loadJsonTranslations as app.<key> (145 sk keys). FE: vue-i18n ^11 (legacy:false), messages bundled at build from resources/lang/{locale}/app.json, locale from Inertia `locale` prop + switched on router.on('navigate'). No lang/ dir, no PHP lang files. FE router locale change calls GET /language/{locale} (full reload). On port: add uk to SupportedLanguage + resources/lang/uk/app.json + FE app.ts messages import.
+App\Enums\SupportedLanguage {sk, en} (#[TypeScript]). LocaleMiddleware (web) resolves user.locale → session → cookie → Accept-Language → sk. GET /language/{locale} (unauthenticated, no DTO). Translations = JSON resources/lang/{sk,en}/app.json (+ sk/validation.json) loaded by AppServiceProvider::loadJsonTranslations as app.<key> (156 sk keys; +11 phase-1 keys: app_name, auth_hero_title_1/2, auth_hero_subtitle, auth_hero_feature_clients/invoices/schedule, auth_welcome_back, footer_copy, auth_show_password, auth_hide_password). FE: vue-i18n ^11 (legacy:false), messages bundled at build from resources/lang/{locale}/app.json, locale from Inertia `locale` prop + switched on router.on('navigate'). No lang/ dir, no PHP lang files. FE router locale change calls GET /language/{locale} (full reload). On port: add uk to SupportedLanguage + resources/lang/uk/app.json + FE app.ts messages import.
 
 ### Scribe API docs
 add_routes=false; routes in routes/web.php:37-49 under auth + permission:view api docs. Strategies App\Scribe\Strategies\BodyParameters\GetBodyParamsFromSpatieData, Responses\GetResponseFromSpatieData (#[ResponseFromSpatieData(dataClass, model, states, with, paginated)]), wired config/scribe.php:223+. Only api/* documented. On port: extend docs for business API endpoints (clients, objects, quotes, invoices, contracts).
 
 ### App shell (FE)
-Layouts/AppLayout.vue — DaisyUI drawer lg:drawer-open, data-theme="app-theme" on root · nav source = BE page.props.navigation (NavigationItemData[] {key,label,href,icon,order,children[]}) · resolves icon via ICONS map · user card + logout · language dropdown · flash → toast (watch page.props.flash, 4 s) + window app-toast CustomEvent. Layouts/Header.vue — props {title; breadcrumbs?} + #actions slot. ConfirmDeleteModal + useDeleteConfirm composable. Components: FormProvider, TextInput, PasswordInput, SelectInput, CheckboxInput, CheckboxGroup, RadioGroup, ToggleInput, DateInput, NumberInput, TextareaInput, AutocompleteInput, FileUploadInput, RichTextEditorInput, PermissionManager. DaisyUI themes:false + [data-theme='app-theme'] OKLCH token block + data-theme="app-theme" hardcoded in app.blade.php. On port: add tenant switcher dropdown + "Add new company" + notification bell + extend language list to include uk.
+Layouts/AppLayout.vue — DaisyUI drawer lg:drawer-open, data-theme="app-theme" on root · dark sidebar (--color-neutral background) with amber-gradient BrandMark logo, white text nav, user card (amber-gradient initial avatar) · nav source = BE page.props.navigation (NavigationItemData[] {key,label,href,icon,order,children[]}) · resolves icon via ICONS map · flash → toast (watch page.props.flash, 4 s) + window app-toast CustomEvent. Layouts/Header.vue — props {title; breadcrumbs?} + #actions slot. ConfirmDeleteModal + useDeleteConfirm composable. Components: FormProvider, TextInput, PasswordInput, SelectInput, CheckboxInput, CheckboxGroup, RadioGroup, ToggleInput, DateInput, NumberInput, TextareaInput, AutocompleteInput, FileUploadInput, RichTextEditorInput, PermissionManager. Components/BrandMark.vue — sparkle-broom SVG icon (size via class). DaisyUI themes:false + [data-theme='app-theme'] OKLCH cleanmaster token block (Plus Jakarta Sans / JetBrains Mono via Google Fonts in app.blade.php) + data-theme="app-theme" hardcoded in app.blade.php + :root {--auth-*} login palette + app.ts Inertia progress colour amber. On port: add tenant switcher dropdown + "Add new company" + notification bell + extend language list to include uk.
 
 ## Layer contracts
 
@@ -260,7 +261,7 @@ can.<camelVerbResource> booleans (manually enumerated in HandleInertiaRequests.p
 
 4. Navigation is BE-driven. main's AppLayout hardcoded navItems[] with can keys + tenant switcher dropdown. Here: add #[NavItem(label:'app.clients', route:'clients.index', icon:'BuildingOffice2Icon', permission:'view clients', order:…)] per controller + extend ICONS map. Tenant switcher / "Pridať novú firmu" and notification bell have no slot in skeleton AppLayout — explicit layout edits (sidebar user card / mobile navbar).
 
-5. Theme declaration differs. main: @plugin 'daisyui' + @plugin 'daisyui/theme' {name:'cleanmaster'; default:true; …} + Plus Jakarta Sans/JetBrains Mono via Google Fonts + --width-8xl + :root {--auth-*} login palette + @layer base letter-spacing. Skeleton: @plugin 'daisyui' {themes:false} + raw [data-theme='app-theme'] block, Instrument Sans via bunny.net, data-theme="app-theme" hardcoded in app.blade.php AND AppLayout root. Port options: overwrite app-theme variable values in place (least churn) or rename to cleanmaster in all three places. --auth-* properties absent; main's Pages/Auth/* depend on them — prefer keeping skeleton auth pages (FormProvider + Precognition) and re-skinning. Tenant colour (TenantColorEnum) has no hook in app.css; plan CSS-variable override on <html> or AppLayout root.
+5. ~~Theme declaration differs~~ RESOLVED 2026-09-06: kept `app-theme` selector in place, overwrote OKLCH token values + added color-scheme:light in resources/css/app.css; Plus Jakarta Sans/JetBrains Mono via Google Fonts <link> in app.blade.php; :root {--auth-*} login palette + .auth-* utilities ported to app.css; Inertia progress colour set to amber in app.ts. Auth pages reskinned with new Auth* components (AuthShell + hero + fields + language switcher). Phase-2 tenant colour override will target --color-primary inline on <html> or AppLayout root.
 
 6. Pagination. main's Components/Pagination.vue expects {meta, links} (Spatie PaginatedDataCollection shape) + useXFilters composables + router.get. Skeleton DataTable expects raw LengthAwarePaginator shape from ->paginate()->through(). Port lists onto DataTable (FilterConfig[] + slots), drop Pagination.vue + per-domain use*Filters; drawer-based Clients/Objects lists may keep custom layouts but feed TablePagination the paginator shape.
 
@@ -270,13 +271,13 @@ can.<camelVerbResource> booleans (manually enumerated in HandleInertiaRequests.p
 
 9. Precognition is the default. Every main form: useForm({...}) + router.post → useForm(method,url,data) + form.submit(); every store/update route carries HandlePrecognitiveRequests. DTOs with cross-field rules (prohibits, quote clientless, contract term/end_date) run under Validate-Only subset — verify each behaves with partial payloads.
 
-10. Minor defects: Profile/Show.vue FormErrorsAlert missing; FormActions literal fallbacks; PermissionManager untranslated (bring main's permission.*/permission_group.* keys); duplicated shared-props declarations; Users/Index prop query vs BE filters.
+10. Minor defects: ~~Profile/Show.vue FormErrorsAlert missing~~ FIXED 2026-09-06 (removed dead reference); ~~FormActions literal fallbacks~~ FIXED 2026-09-06 (now t('cancel')/t('save') defaults via useI18n). Open: PermissionManager untranslated (bring main's permission.*/permission_group.* keys); duplicated shared-props declarations in types/index.d.ts + types/inertia.d.ts; Users/Index query vs BE filters prop mismatch.
 
 ## Verification status
 
 **Last full scan:** 2026-09-06 (degraded — Laravel Boost MCP unavailable; used docker compose exec + direct psql / grep instead).
 
-**Last delta:** 2026-09-06 (skeleton hardening: tests on Postgres, Sanctum uuidMorphs, media 404 constraint, autocomplete min-length, AllowedFilter fixes, PHPStan baseline 136 entries, compose env isolation).
+**Last delta:** 2026-09-06 (phase 1 visual + login: Auth pages reskinned, new Auth* components, BrandMark SVG, AppLayout branding, theme tokens ported, i18n +11 keys, FE gotchas 5+10 resolved/updated).
 
 **Certainty audit:**
 - All relationships verified by: live route:list output, migration file + docker exec postgres psql information_schema queries, grep of every cited callsite + direct reads.
