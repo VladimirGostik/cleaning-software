@@ -1,12 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-defineProps<{
-    isOpen: boolean;
-    title: string;
-    description: string;
-    confirmLabel?: string;
-}>();
+const props = withDefaults(
+    defineProps<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        confirmLabel?: string;
+        confirmVariant?: 'error' | 'warning' | 'success' | 'primary';
+    }>(),
+    { confirmVariant: 'error' },
+);
 
 const emit = defineEmits<{
     cancel: [];
@@ -14,6 +19,15 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+const CONFIRM_VARIANT_CLASS: Record<'error' | 'warning' | 'success' | 'primary', string> = {
+    error: 'btn-error',
+    warning: 'btn-warning',
+    success: 'btn-success',
+    primary: 'btn-primary',
+};
+
+const confirmButtonClass = computed(() => CONFIRM_VARIANT_CLASS[props.confirmVariant]);
 </script>
 
 <template>
@@ -25,7 +39,7 @@ const { t } = useI18n();
                 <button type="button" class="btn btn-ghost" @click="emit('cancel')">
                     {{ t('cancel') }}
                 </button>
-                <button type="button" class="btn btn-error" @click="emit('confirm')">
+                <button type="button" class="btn" :class="confirmButtonClass" @click="emit('confirm')">
                     {{ confirmLabel ?? t('delete') }}
                 </button>
             </div>

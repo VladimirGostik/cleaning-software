@@ -22,6 +22,9 @@ import {
     GlobeAltIcon,
     PhotoIcon,
     EnvelopeIcon,
+    DocumentTextIcon,
+    ArrowPathIcon,
+    BanknotesIcon,
 } from '@heroicons/vue/24/outline';
 import type { ToastPayload } from '@/Composables/useToast';
 
@@ -49,6 +52,9 @@ const ICONS: Record<string, object> = {
     EnvelopeIcon,
     UserCircleIcon,
     Cog6ToothIcon,
+    DocumentTextIcon,
+    ArrowPathIcon,
+    BanknotesIcon,
 };
 
 function resolveIcon(name: string): object {
