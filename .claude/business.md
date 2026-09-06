@@ -4,12 +4,12 @@ Source of truth: `docs/cleanmaster-technicka-specifikacia-v1.md.docx` (Slovak, 2
 
 ## Implementation status
 
-**Current state (branch `rebuild`):** Skeleton infrastructure + Phase 1 visual complete. The Laravel 13 + Inertia 3 application foundation is in place (auth, users, roles, permissions, audit logs, media, localisation, Scribe docs). **Phase 1 complete as of 2026-09-06** — CleanMaster visual identity (brown/amber theme, Plus Jakarta Sans fonts, dark sidebar with gradient logo) + reskinned login/forgot/reset pages (AuthShell + hero + auth field components + language switcher). The skeleton roles are admin / user (seeded in PermissionSeeder + UserSeeder), login canonical: `admin@example.com` / `password`.
+**Current state (branch `rebuild`):** Phase 1 + Phase 2 complete (2026-09-06). The Laravel 13 + Inertia 3 application foundation is in place + multi-tenant row-level scoping. **Phase 2 tenancy complete** — Tenant/TenantMembership/TenantInterface/TenantInvitation models (UUIDv7 PKs). Spatie Permission teams=true (tenant_id), role-per-tenant seeding (6 templates: Admin/Vedúca/Sekretárka/Účtovníčka/Interná upratovačka/Zákazník). Invitation flow (7d token, throttled 5/min, new/existing user paths). AddTenantModal + TenantSwitcher UI + colour override (--color-primary). 275 tests. PermissionEnum (53 cases, #[TypeScript]). usePageProps/useAuthorization/Can FE composition. Localisation: uk added (sk/en/uk). Media + Activity tenant_id scoping. Login guards: is_active + hasActiveMembership. RequireActiveTenant middleware (mid-session loss protection).
 
 **Target domain content below** is the complete CleanMaster specification ported phase by phase from branch `main` per `.claude/plans/port-from-cleaning-software.md`. Phases are:
 
-1. ~~**Phase 1 visual + login**~~ — COMPLETE 2026-09-06. Admin / user roles + login/logout/forgot-password/password-reset flow with CleanMaster branding.
-2. **Phase 2 tenancy** — Tenant model, TenantMembership pivot, multi-tenant row-level scoping (tenant_id FK + BelongsToTenant trait + TenantScope global scope on all domain models). Spatie Permission teams=true (tenant_id), role-per-tenant seeding, active_tenant_id session binding. Invitation flow for team members. Profile + settings pages.
+1. ~~**Phase 1 visual + login**~~ — **COMPLETE 2026-09-06.** Admin / user roles + login/logout/forgot-password/password-reset flow with CleanMaster branding.
+2. ~~**Phase 2 tenancy**~~ — **COMPLETE 2026-09-06.** Tenant model, TenantMembership pivot, multi-tenant row-level scoping (tenant_id FK + BelongsToTenant trait + TenantScope global scope). Spatie Permission teams=true (tenant_id), role-per-tenant seeding, active_tenant_id session binding. Invitation flow for team members.
 3. **Phase 3 operational core** — Clients CRUD, Objects CRUD, Quotes full lifecycle (draft/send/accept/convert), Contracts (service agreements + employment), ContractTemplates, basic schedule/jobs.
 4. **Phase 4 invoicing** — Invoices (draft/issue/pay/overdue/cancel), recurring invoice templates auto-generation, invoice settings (template, numbering, SK fields).
 5. **Phase 5 notifications** — In-app notification centre, email preferences, bell icon 60s polling.
@@ -39,11 +39,18 @@ Later: Mobile portal (MAPP cleaner + VAPP supervisor), customer portal, complain
 
 ---
 
-## Use-cases (CleanMaster target — to port Phase 2+)
+## Use-cases (Phase 2 — Tenancy, IMPLEMENTED)
 
-- **Bootstrap first account (app:create-owner)** — internal/DevOps invokes `php artisan app:create-owner` (interactive or flag-based) to create the first user account, tenant, and owner role assignment. User-supplied: email, name, password, company name, IČO. Creates User → Tenant → TenantInterface → TenantMembership → assigns Vlastník role. User can then log in and add more tenants/team members.
-- **Add another company** — authenticated Vlastník clicks "Pridať novú firmu", enters name + IČO + optional leader email, creates new Tenant. Can copy color settings from previous company. Switches active tenant (session-bound `active_tenant_id`).
-- **Accept invitation** — **primary onboarding path** for all users after bootstrap. Invitee opens `/invitations/{token}`. Existing account → confirms password (or auto-accepted if already logged in with the invited email); new person → sets name + password (account created, auto-verified). Membership created (or reactivated), invited role assigned within that tenant, invitation marked Accepted, user logged in with the inviting tenant active. Expired/used invitations show an expired state; a logged-in user with a different email is told the invite belongs to someone else.
+- **Bootstrap first account (app:create-owner)** — DevOps invokes `php artisan app:create-owner` (interactive or flags: name, email, password, company_name, ico) → creates User (owner) → Tenant (firma) → TenantInterface (colour nullable) → TenantMembership (owner active) → RoleTemplatesSeeder::seedForTenant seeded 6 role bundles → Admin role assigned. User can log in and add more tenants/members.
+- **Add another company** — Owner web UI "Pridať novú firmu" modal: name + ico (required), colour optional (8 DaisyUI presets), copy_settings toggle (copy colour from current tenant), leader_email optional → RegistrationService::addTenant → new Tenant (owned by actor) → TenantInterface (colour or null) → actor gets Admin in new tenant → session-bound active_tenant_id switched → optional InvitationCreated mail to leader_email (7d token) → redirect dashboard with flash.
+- **Accept invitation** — Primary onboarding path post-bootstrap. Invitee: GET /invitations/{token} (guest-accessible, regex constraint, 404 if unknown) → InvitationAcceptPageData (4 states: expired/wrong_user/existing_user/new_user). Form states (existing/new): POST /invitations/{token} (throttle 5/min, Precognition) with AcceptInvitationData {password, name optional}. Existing user: Hash::check password (failure → 422 on password field). New user: require name, create User + auto-verify. InvitationAcceptService::accept(invitation, data, skipPasswordCheck?) → transaction: abort unless acceptable (410), lookup/create user, setPermissionsTeamId(invitation.tenant_id), create/reactivate TenantMembership, assign role from invitation.role_name (inTenant), markAccepted → Auth::login(user) → session-bind active_tenant_id = invitation.tenant_id → redirect dashboard. Edge cases: same-email logged-in user auto-accepts (skipPasswordCheck=true); other-email logged-in user → wrong_user state + logout button; expired/used/revoked → 410 copy.
+- **Switch company** — Logged-in user sidebar TenantSwitcher dropdown → lists tenant.available (all active memberships with is_active=true, sorted by name) + "Pridať novú firmu" button → click item → spinner + POST /tenants/{tenant}/switch → TenantPolicy::switchTo gates (membership exists + active + tenant is_active) → session-bind active_tenant_id → Inertia redirect dashboard with flash → shared props refresh (tenant, can, navigation, tenantColors). Foreign tenant attempt → 403 `tenant_forbidden`. Inactive tenant attempt → 403 (gate check).
+
+---
+
+## Use-cases (Phase 3+ — CleanMaster operational domain, to port)
+
+- **Manage cleaning objects** — Sekretárka (full CRUD) and Vedúca (view) manage physical locations (office/apartment/house/common areas) assigned to each client. Each object holds access info (codes, key box, key count), special instructions, area/floor metadata, and active flag. Deletion is replaced by **deactivation** (is_active=false), preventing future job generation while preserving historical records. Objects are the **central entity** in the quotes → contracts → invoicing chain.
 - **Manage cleaning objects** — Sekretárka (full CRUD) and Vedúca (view) manage physical locations (office/apartment/house/common areas) assigned to each client. Each object holds access info (codes, key box, key count), special instructions, area/floor metadata, and active flag. Deletion is replaced by **deactivation** (is_active=false), preventing future job generation while preserving historical records. Objects are the **central entity** in the quotes → contracts → invoicing chain.
 - **Create and manage itemized quotes (cenové ponuky)** — Sekretárka or Vedúca creates price quotes from line-item basis. Two subject modes: linked to a client, or linked to a client + object (work at a specific location). Line items with per-item VAT rate + discount percentage (no snapshot of customer data — this is deliberately left to invoices/contracts, which freeze data at issue time). **No mandatory number** (optional manual field, max 50 chars); auto-numbering removed (quotes are informal proposals, not tax documents). Issue date + validity period (valid_until) set at creation. Status lifecycle: Draft (editable) → Sent (stamp sent_at, manual action) → Accepted / Rejected / Expired (daily cron checks valid_until past → auto-expire). Lifecycle actions: send (marks Sent + stamps sent_at + dispatches `QuoteSent` notification to team members with `view quotes`; no customer-facing email yet), accept (opens conversion), reject (terminal), duplicate (copy as Draft without number), convertToInvoice (delegate to InvoiceService, links via quote_id), convertToContract (delegate to ContractService, links via quote_id). Only Accepted quotes can convert; re-conversion allowed. PDF generation (chrome driver, Blade-based). Permission-gated: `view quotes`, `create quotes`, `edit quotes`, `send quotes`, `approve quotes` (accept/reject authority), `delete quotes`, `duplicate quotes`, `convert to invoice/contract` (scoped to respective InvoicePolicy/ContractPolicy create permissions).
 - **Create rough quotes without a client (nástrelná ponuka)** — Sekretárka sends a preliminary price quote before client details are finalized. Quote created with `client_id` = null + snapshot fields (customer_name, customer_email, customer_street, customer_city, customer_postal_code) instead. Works at any status (Draft/Sent/Accepted). Action `POST /quotes/{id}/attach-client` later attaches the client (+ optional object), clears snapshot fields, marking the rough quote as finalized. Only available while client_id IS NULL. Uses same `edit quotes` permission. Rough quotes can be sent and accepted while clientless; conversion (to invoice/contract) blocks until client is attached (downstream services need client context).
@@ -56,30 +63,38 @@ Later: Mobile portal (MAPP cleaner + VAPP supervisor), customer portal, complain
 - **View and manage notifications** — All roles with `view notifications` (Vlastník/Vedúca/Sekretárka/Účtovníčka) access the notification centre at `/notifications`. Paginated list with filters (unread only, by type). Mark individual or all notifications as read. Per-user mail preferences configurable at `/settings/notifications` (opt-in/out per type, for user-configurable types only). Bell icon in AppLayout header polls `/api/notifications/bell` every 60s showing unread count + 5 recent. Internal notifications (InvoiceOverdue, ContractExpiring/Expired, QuoteSent/Expiring/Expired) delivered in-app + optional mail per prefs. External notifications (InvitationCreated mail to invitee, InvoiceIssued mail to customer) always mail-only regardless of prefs.
 - **Manage schedule and assign cleaners** — Vedúca (full CRUD: view/create/edit/cancel jobs, assign cleaners) + Vlastník (all) manage cleaning jobs (Zákazky) per object. Jobs are generated on a rolling schedule (configurable horizon, default 30 days) from active work breakdowns (Rozpis prác) that are seeded when a ServiceAgreement contract is signed with a quote attached. Rozpis prác = decomposition of quote line items into named tasks with frequency (one-time/weekly/seasonal). FE: calendar ⇄ list toggle (FullCalendar month/week view read-only + paginated list) + filters (object, status, type, date range, assigned member). Create/Edit = object + type (regular/one-off/special) + date + time + optional note + optional contract link. Assign = pick TenantMembership (active members in that object's context only); single assignment per job (nullable FK). Status lifecycle: Draft → Planned (on assign) or Unassigned (manual), Planned → InProgress/Cancelled, InProgress → Completed/Unapproved (mobile Phase 2 stubs). Editable only in Unassigned/Planned. Show = detail + WorkBreakdownView (read-only Rozpis prác section) + assign panel + cancel action. Deactivating an employee auto-unassigns all their future jobs. Daily cron `app:generate-scheduled-jobs` finds active breakdowns + dispatches unique queue jobs to materialize scheduled jobs per task recurrence + 30d horizon.
 
-## Roles (defaults — owner can customize per tenant)
+## Roles (Phase 2 — seeded per tenant, customizable by owner)
 
-**Current (Phase 1, v0.1):**
+**Seeded templates (per `RoleTemplatesSeeder::seedForTenant(Tenant)`):**
 
-| Role | Default permissions | Visibility model |
+| Role | Default permissions | Phase 2 UI |
 |---|---|---|
-| Admin (was Vlastník) | All. Only role that manages permissions. | Sees all records, all tenants. |
-| Vedúca (Supervisor) | Schedule (view/create/edit/assign all), Employees (view, assign), Complaints (full), Photos (full), Objects (view all), Clients (view only). | **Full visibility:** objects/schedule not scoped to own assignments. |
-| Interná upratovačka (was Upratovačka, Internal cleaner) | Objects (view only), Schedule (view only). No "all" permissions. | **Own-only visibility:** objects + schedule scoped to own active job assignments. |
-| Sekretárka (Secretary) | Clients (full CRUD), Objects (view all + create/edit/delete), Quotes (full), Contracts (view+create), Templates (full), Notifications (view). No finance, no employees. | **Full objects/clients visibility** (backend for operations). |
-| Účtovníčka (Accountant) | Invoices (full), Contracts (view), Clients (view only), Notifications (view). No employees. | **Full visibility** for documents they create. |
-| Zákazník (Customer, Phase 2) | Objects (view only), Schedule (view only), Invoices (view only), Complaints/Photos (full). Does NOT have "all" permissions → sees zero rows on lists (no assigned jobs). | **Rejected interim:** no portal yet; customer sees 200 OK with zero rows. |
+| Admin (`ADMIN_ROLE = 'Admin'`) | All platform (53 cases). Manages permissions + role assignments. | Users/Roles (full CRUD) · Audit logs viewer · Media library · API docs · login guards: is_active + hasActiveMembership. |
+| Vedúca (Supervisor) | View schedule, Employees (view + assign only). View objects, clients. Notifications (view). | Users/Index (view-only filters) · Audit logs · API docs. Phase 3+: schedule/objects/employees full CRUD. |
+| Sekretárka (Secretary) | Clients (full CRUD), Objects (full CRUD), Quotes (full), Contracts (view+create), Templates (full), Notifications (view). No invoices, no employees. | Users/Index (view-only) · Audit logs · API docs. Phase 3+: clients/objects/quotes/contracts full UI. |
+| Účtovníčka (Accountant) | Invoices (full), Contracts (view), Clients (view only), Notifications (view). No employees. | Users/Index (view-only) · Audit logs · API docs. Phase 4+: invoices full UI. |
+| Interná upratovačka (Internal cleaner) | Objects (view only), Schedule (view only). **No "all" permissions** (own-only scoping via permission absence). Notifications (view). | Users/Index (view-only) · Audit logs (read-only). Phase 3+ (partial): schedule/objects (own-only, no all-visibility). |
+| Zákazník (Customer) | Objects (view only), Schedule (view only), Invoices (view only). Does NOT have "all" permissions. | Future Phase 2 portal (not admin portal). |
 
-**Seeding:** `RoleTemplatesSeeder::seedForTenant(Tenant)` creates 6 role bundles per new tenant. Admin role uses constant `RoleTemplatesSeeder::ADMIN_ROLE = 'Admin'`. Role names are renameable per-tenant; the two security-critical ones are seeded as `Admin` + `Interná upratovačka` (with explicit no-"all" perms).
+**Seeding logic:** `RoleTemplatesSeeder::seedForTenant(Tenant)` creates 6 role definitions per new tenant (per-tenant roles, not global). `RegistrationService::bootstrapTenant` calls it after tenant creation. Roles are renameable; permission bundles are fixed per template. `setPermissionsTeamId(tenant_id)` called before all role/permission operations. Admin role constant: `RoleTemplatesSeeder::ADMIN_ROLE = 'Admin'` + `Role::isSystem()` method identifies it.
 
-Permissions, not roles, drive UI: a cleaner with no permission for "Reklamácie" simply doesn't see the section. Roles are bundles only. **Critical:** `Interná upratovačka` (own-only) blocks via `ViewAllObjects` + `ViewAllSchedule` permission absence — role names can change, but permission set is the gate.
+**Authorization rules:**
+- Permissions, not roles, drive UI authorization. Cleaner with no "view all objects" permission sees zero rows (even if named "Vedúca").
+- `Interná upratovačka` own-only scoping = absence of `ViewAllObjects` / `ViewAllSchedule` permissions (permissions are the gate).
+- Role names customizable per tenant; permission bundles remain template defaults (owner can override per role post-seeding, Phase 3+ governance).
 
-**Product roadmap:** target 5-role model: Admin, Prémiový zákazník (premium customer, Phase 2 portal), Zákazník (basic customer, Phase 2 portal), Interná upratovačka (internal cleaner, v0.1 active), Externá upratovačka (external subcontractor, Phase 2 — auto-scoped own-only via permission omission). Vedúca/Sekretárka/Účtovníčka from v0 spec remain seeded but UA/workflows likely consolidate post-launch.
+## Permissions (Phase 2 — PermissionEnum with 53 cases)
 
-## Permissions
+Flat Spatie permission strings, **global catalogue, scoped per tenant via roles** (Spatie teams = `tenant_id`). Format: `<verb> <resource>`. Backed enum: `App\Enums\PermissionEnum` (53 cases, #[TypeScript], methods: label, group, groupLabel, sharedKey, values). Roles bundle permissions via `RoleTemplatesSeeder::templates()` (static, called per-tenant at bootstrap + add-tenant). Verbs: `view`, `create`, `edit`, `delete`, `assign`, `configure`, `manage`, `terminate` (context-dependent). **Key:** Permissions are global (not per-tenant); roles are per-tenant. Spatie PermissionRegistrar `setPermissionsTeamId(tenant_id)` binds team scope for all `can()` checks.
 
-Flat Spatie permission strings, **scoped per tenant** (teams = `tenant_id`). Format: `<verb> <resource>`. Roles bundle them via `RoleTemplatesSeeder` (static `seedForTenant()` method, called at company creation + bootstrap). The owner can re-bundle per tenant. Verbs in use: `view`, `create`, `edit`, `delete`.
+**Phase 2 implemented (53 cases):**
 
-**Implemented:**
+**Platform (8):** `view employees`, `create employees`, `edit employees`, `assign employees`, `delete employees`, `view roles`, `create roles`, `edit roles`, `delete roles`, `view audit logs`, `view api docs`, `view media`, `upload files`.
+Note: skeleton had `view|create|edit|delete users` + `manage roles` + `edit global settings`; phase 2 renames users → employees (phase 7 semantics ahead of time), drops `edit global settings`, regroups as `assign employees` (role assignment authority).
+
+**Domain (45):** Reserved for Phases 3+ domains: clients (4), objects (5), quotes (6), contracts (5), contract_templates (4), invoices (4), recurring_invoices (4), notifications (2), schedule (4), employees (context overlap with platform). `view all objects`, `view all schedule` (breadth modifiers). Seeded in role templates as placeholders (no consumers yet).
+
+**Implemented:
 
 - `view clients` / `create clients` / `edit clients` / `delete clients` — Vlastník (all), Sekretárka (all), Účtovníčka (view only). Enforced by `ClientPolicy` + `#[Authorize]` on `ClientController`.
 - `view objects` / `create objects` / `edit objects` / `delete objects` — Admin (all), Sekretárka (full CRUD), Vedúca (view only), Interná upratovačka (view only). **New:** `view all objects` (breadth modifier; requires `view objects` to be useful; Admin + Vedúca + Sekretárka + Účtovníčka have it, Interná upratovačka omitted → own-only scoping via job assignment). Enforced by `ObjectPolicy` + `#[Authorize]` on `ObjectController` + model `scopeVisibleTo()` + `isVisibleTo()` checks.
@@ -108,16 +123,40 @@ Access = `user/permission axis` only. No plan/feature gating.
 - **User/permission axis** — per-tenant Spatie RBAC. Roles bundle permissions; owner customizes per tenant. Example: a Sekretárka with no "edit clients" permission simply cannot. Enforced: BE Policy + `#[Authorize]` + FE `Can` component.
 - **Render by capability, not by role.** UI conditionals never check `.roles()` or `.hasRole()`. Always use `Can` component or `useAuthorization().allows(permission)` check. Roles are custom per tenant; capabilities are the contract.
 
-## Phases
+## Domain rules (Phase 2 — Multi-tenancy foundation)
 
-- **Fáza 1 (in scope)** — Admin Portal (AP). Web-only, desktop+tablet responsive.
-- **Fáza 2 (later)** — MAPP cleaner mobile app (Capacitor), VAPP supervisor mobile app, ZP customer portal.
+1. **Row-level isolation.** Every domain model MUST have `tenant_id` UUID FK + `BelongsToTenant` trait + `TenantScope` global scope (exceptions: User, Tenant, TenantMembership, TenantInterface, Role, Permission, Activity/Media/TemporaryUpload custom scopes). Phase 3+ models follow same pattern.
+2. **Team scope discipline.** Spatie Permission teams=true, team_foreign_key=tenant_id. Every role/permission check calls `setPermissionsTeamId(current_tenant_id)` first (middleware, service, test helpers, jobs, console commands). TenantContextMiddleware binds current_tenant_id container, PermissionRegistrar::setPermissionsTeamId(tenant_id).
+3. **No cascades (D8).** FKs use `restrictOnDelete()` (prevents accidental cascades) except `invited_by_user_id → nullOnDelete` (inviter may be removed, invitation stays valid). Tenant/User deletion logic: soft-delete Tenant (cascades never fire), deactivate User (is_active=false, never hard-delete globally).
+4. **Active membership = authenticated.** Login guards: `is_active=true` AND `hasActiveMembership()`. RequireActiveTenant middleware on all authenticated routes (web logout + redirect / API 403 on zero memberships). Mid-session membership deactivation → next request logs out.
+5. **Invitation token (D10).** 64-char random, unique index, 7d expiry, single-use (`accepted_at` nulls out status). Throttle 5/min on POST accept. Plaintext (not hashed; deferred hardening, low-risk internal tool).
+6. **No PermissionEnum duplication.** PermissionEnum is global catalogue (53 cases); roles bundle them per-tenant. FE auto-derives can keys from enum (sharedKey = Str::camel, no hand list). useAuthorization().allows(enum) reads page.props.can dynamically (ComputedRef).
 
-## Critical domain entities (Phase 1)
+## Phases (original spec roadmap)
 
-- `User` — global identity. UUID. `locale` (sk/en/uk), `is_active`. Owns 1+ tenants.
-- `Tenant` — firma/cleaning company. UUIDv7. VAT-payer flag globally toggles VAT fields across all documents. Has `owner_id` FK to User (the paying account). ON DELETE CASCADE when owner is deleted.
-- `TenantMembership` — pivot User × Tenant. Permission scope. **Deactivating** a membership only revokes access for that tenant; user still exists in others.
+- **Fáza 1 (in scope, Phase 1)** — Admin Portal (AP). Web-only, desktop+tablet responsive. → COMPLETE 2026-09-06.
+- **Fáza 2 (in scope, Phase 2 tenancy)** — Multi-tenant foundation, invitations, team management. → COMPLETE 2026-09-06.
+- **Fáza 3 (later)** — Operational core: Clients, Objects, Quotes, Contracts.
+- **Fáza 4 (later)** — Invoicing + recurring invoice templates.
+- **Fáza 5 (later)** — Notifications (in-app + mail).
+- **Fáza 6 (later)** — Employees management, permission overrides, employment contracts.
+- **Fáza 7 (later)** — Schedule + calendar, job assignment, work breakdown.
+- **Fáza 8+ (post-launch)** — MAPP cleaner mobile (Capacitor), VAPP supervisor mobile, customer portal, analytics, integrations.
+
+## Critical domain entities (Phase 2)
+
+**Phase 2 foundation (tenancy):**
+- `Tenant` — firma/cleaning company. UUIDv7 PK. Columns: owner_id FK → User (restrictOnDelete, D8), name, ico (nullable), country, is_active, soft_deletes. Relations: interface (HasOne TenantInterface), memberships (HasMany TenantMembership), members (BelongsToMany User via TenantMembership). Settings: VAT-payer flag (toggles VAT fields globally), default invoice template + billing fields (Phase 4).
+- `TenantMembership` — pivot User × Tenant. UUIDv7 PK. Columns: user_id FK (restrictOnDelete), tenant_id FK (restrictOnDelete), is_active (revocation flag, reactivatable), joined_at, first_name/last_name/phone/position (Phase 7 Employees). Unique (user_id, tenant_id). Permission scope for Spatie roles. Relations: user (BelongsTo), tenant (BelongsTo).
+- `TenantInterface` — settings per tenant (1:1). UUIDv7 PK. Columns: tenant_id FK unique (restrictOnDelete), color (TenantColorEnum nullable), timestamps. Will add Phase 4: invoice defaults, number format, VAT rate, IBAN, SWIFT.
+- `TenantInvitation` — 7d token, single-use, per-tenant. UUIDv7 PK. Columns: tenant_id FK (restrictOnDelete), invited_by_user_id FK (nullOnDelete), email, role_name, token (64 unique), status (InvitationStatusEnum), expires_at, accepted_at, soft_deletes. Partial unique (tenant_id, email) WHERE deleted_at IS NULL AND status='pending'. Relations: tenant (BelongsTo with TenantScope), invitedBy (BelongsTo User).
+- `User` — global identity, never soft-deleted (reuse across tenants). UUIDv7 PK. Columns: name, email (unique), password, locale (SupportedLanguage: sk/en/uk), is_active (login guard), email_verified_at, timestamps. Relations: memberships (HasMany TenantMembership), tenants (BelongsToMany via memberships), ownedTenants (HasMany Tenant).
+- `Activity` — audit log, custom subclass. UUIDv7 PK. Columns: subject morph (uuid), causer morph (uuid), **tenant_id uuid nullable** (created hook, for login events before tenant bound), created_at. Relations: visibleInTenant scope (tenant_id = ? OR tenant_id IS NULL AND causer is member of ?).
+- `Media` — MediaLibrary file storage, custom subclass. Bigint PK (vendor). Columns: model morph (uuid), **tenant_id uuid NOT NULL** (created hook, throws if unbound), disk, size. Relations: inTenant scope.
+- `TemporaryUpload` — staging for moveToModel. UUIDv7 PK. Columns: session_id, user_id FK (nullOnDelete), **tenant_id FK (restrictOnDelete)**, collection, timestamps. TenantScope applied. Relations: user (BelongsTo).
+- `Role` — Spatie custom subclass. UUIDv7 PK. Columns: name, guard_name, **tenant_id uuid** (per-tenant roles). Methods: inTenant(tenant_id) scope, isSystem() (= ADMIN_ROLE). Unique (name, guard_name, tenant_id).
+
+**Phase 3+ operational (reserved, not yet ported):**
 - `Client` — typ: `Corporate` (firemný — IČO/DIČ/IČ DPH required) or `Private` (private person, IČO optional). Has multiple contacts with primary flag. Soft-delete. Partial unique index on (tenant_id, ico) per tenant for active clients.
 - `Object` — physical cleaning location (kancelária/byt/dom/spoločné priestory). The **central entity**: client → object → (quote → contract → invoices). Holds access info (codes, keys), special instructions.
 - `Quote` (cenová ponuka) — items with name/description/frequency/unit/quantity/price. Status: Draft → Odoslaná → Schválená → Zamietnutá → Expirovaná. Auto-generates work breakdown.

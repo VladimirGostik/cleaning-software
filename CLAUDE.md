@@ -18,7 +18,7 @@ Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonic
 - **Target Laravel version:** 13
 - **Greenfield (no production):** yes
 - **Legacy patterns allowed (Repository / FormRequest / JsonResource):** no
-- **Last verified:** 2026-09-06
+- **Last verified:** 2026-09-06 (Phase 2 tenancy complete)
 
 Rules:
 - `Target: 13` + `Legacy: no` -> always `laravel-13-conventions` skill, no FormRequest / JsonResource / Repository.
@@ -66,36 +66,57 @@ docker compose exec app pnpm lint:js && docker compose exec app pnpm lint:pretti
 Login (canonical skeleton admin, never change): `admin@example.com` / `password`.
 Vite is started directly from `node_modules/.bin/vite` in `compose.yml` (pnpm 11 deps check bypass); lefthook build recorded in `pnpm-workspace.yaml`.
 
+## Bootstrap (Phase 2)
+
+No public registration. First account via Artisan; subsequent tenants + team members via web UI (invitations).
+
+```bash
+./vendor/bin/sail artisan app:create-owner  # interactive prompts
+```
+
+Creates User (owner) → Tenant (firma, company) → TenantMembership + RoleTemplatesSeeder 6 role bundles (Admin assigned).
+
+**Workflows:**
+- **Add another company** — "Pridať novú firmu" modal: name, IČO, optional colour, optional leader email → new Tenant + session switch + dashboard.
+- **Invite team member** — email on add-tenant or Users/Create → InvitationCreated mail (7d token) → GET /invitations/{token} → form (password if new account; password if existing account) → POST accepts → logged in, active tenant = inviting tenant.
+- **Switch company** — sidebar TenantSwitcher dropdown → POST /tenants/{id}/switch → dashboard (shared props refresh).
+- **Remove from tenant** — DELETE membership (removes TenantMembership, revokes roles, User row kept globally).
+
+Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=true + hasActiveMembership. Mid-session loss → next request logs out web user (RequireActiveTenant middleware).
+
 ## Modules
 
 - auth (FE) — Pages/Auth/{Login,ForgotPassword,ResetPassword}.vue + Components/Auth/{AuthShell, AuthHero, AuthTextField, AuthPasswordField, AuthCheckboxField, AuthSubmitButton, AuthLanguageSwitcher}, brown/amber hero + white form panel, FormProvider + Precognition, string URLs.
-- auth (BE) — session login/logout, forgot/reset password, Sanctum Bearer POST /api/auth/login|logout; login/logout/failed logged to Activitylog.
+- auth (BE) — session login/logout, forgot/reset password, Sanctum Bearer POST /api/auth/login|logout; is_active + hasActiveMembership guards; login/logout/failed logged to Activitylog.
+- tenancy (FE) — Components/Tenants/{TenantSwitcher,AddTenantModal,TenantColorDot}, Forms/ColorSwatchPicker, Composables/{usePageProps,useAuthorization,useTenantTheme}, Can component, Pages/Invitations/Accept + Components/Invitations/{InvitationAcceptForm,InvitationBlockedNotice}.
+- tenancy (BE) — Tenant/TenantMembership/TenantInterface/TenantInvitation models (UUIDv7 PKs, BelongsToTenant scope). TenantContextMiddleware (D5 resolution: X-Tenant-Id header → session → first active membership). RequireActiveTenant middleware (D4 guards). RegistrationService (createOwner, addTenant, bootstrapTenant), InvitationAcceptService (resolve, accept). RoleTemplatesSeeder per-tenant role bundles (6 roles). Routes: POST /tenants (auth-only), POST /tenants/{id}/switch (TenantPolicy), GET|POST /invitations/{token} (guest, throttle 5/min).
 - dashboard (FE) — Pages/Dashboard.vue welcome card.
 - dashboard (BE) — placeholder GET / route, no props.
-- profile (FE) — Pages/Profile/Show.vue, two useForm('put') forms, locale select from shared languages.
-- profile (BE) — self-service name/email/locale + password change (web + API), ProfileService.
-- users (FE) — Pages/Users/{Index,Form}.vue, DataTable filters, CheckboxGroup roles, can.*Users gating.
-- users (BE) — CRUD + autocomplete (web + Sanctum API mirror), QueryBuilder filters via App\Utils\AllowedFilter, UserPolicy on flat strings, is_active flag (not enforced at login).
-- roles (FE) — Pages/Roles/{Index,Form}.vue, PermissionManager, system-role guard.
-- roles (BE) — CRUD over App\Models\Role (UUID, LogsActivity), permission grouping by resource word, SYSTEM_ROLES=['admin'] guard, RolePolicy.
+- profile (FE) — Pages/Profile/Show.vue, two useForm('put') forms, locale select from shared languages (now sk/en/uk).
+- profile (BE) — self-service name/email/locale + password change (web + API), ProfileService, LocaleMiddleware binding.
+- users (FE) — Pages/Users/{Index,Form}.vue, DataTable filters (tenant-scoped members), CheckboxGroup roles, allows(...) gating.
+- users (BE) — CRUD + autocomplete (tenant members only), QueryBuilder filters, UserPolicy, create-or-link by email, RoleAssignmentGuard escalation checks, TenantMembership pivot scope.
+- roles (FE) — Pages/Roles/{Index,Form}.vue, PermissionManager (now PermissionGroupData typed), system-role guard.
+- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy.
 - audit-logs (FE) — Pages/AuditLogs/{Index,Show}.vue, read-only DataTable + JSON diff.
-- audit-logs (BE) — read-only viewer over Spatie Activity (ActivityPolicy, view audit logs), causer/subject/date filters.
+- audit-logs (BE) — read-only viewer over App\Models\Activity (Activity::visibleInTenant scope, tenant_id nullable for login events), filters + policy.
 - media (FE) — Pages/Media/{Index,Show}.vue; FileUploadInput/RichTextEditorInput → POST|DELETE /uploads.
-- media (BE) — read-only MediaLibrary viewer (MediaPolicy, view media) + TemporaryUpload staging (POST|DELETE /uploads, upload files, moveToModel, OwnedTemporaryMedia rule, daily purge).
-- localisation (FE) — AppLayout language dropdown → <a href="/language/{locale}"> (full reload) → SupportedLanguage {sk,en}.
-- localisation (BE) — SupportedLanguage {sk,en}, LocaleMiddleware, GET /language/{locale}, JSON translations resources/lang/*/app.json.
+- media (BE) — read-only MediaLibrary viewer (App\Models\Media tenant_id NOT NULL), TemporaryUpload staging (tenant_id FK), OwnedTemporaryMedia rule, moveToModel contract, daily purge.
+- localisation (FE) — AppLayout language dropdown (sk/en/uk data-driven from shared languages), GET /language/{locale} full reload.
+- localisation (BE) — SupportedLanguage enum (sk/en/uk, #[TypeScript]), LocaleMiddleware (user.locale → session → cookie → default sk), JSON translations resources/lang/{sk,en,uk}/{app,validation}.json.
+- api-me (BE) — GET /api/me (Sanctum + tenant.required) returns MeData (userId, activeTenantId, permissions per team scope), reserved for mobile app phase 2.
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
-- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark logo, amber gradient, BE navigation via ICONS map, toasts, language switcher), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*}, ConfirmDeleteModal + useDeleteConfirm, types/*, utils/{date,bytes}.ts, vue-i18n from resources/lang/*/app.json, DaisyUI app-theme cleanmaster OKLCH tokens + Plus Jakarta Sans / JetBrains Mono fonts.
+- shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation), Layouts/Header.vue, Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager}, ConfirmDeleteModal + useDeleteConfirm, types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens.
 
-**Note:** On port from `main` (Phase 2+): modules for Clients, Objects, Quotes, Invoices, RecurringInvoices, Contracts, ContractTemplates, Employees, Schedule/Jobs, Notifications will be added per `.claude/plans/port-from-cleaning-software.md` phase order.
+**Note:** Phase 3+ modules (Clients, Objects, Quotes, Invoices, RecurringInvoices, Contracts, ContractTemplates, Employees, Schedule/Jobs, Notifications) ported per `.claude/plans/port-from-cleaning-software.md` phase order. Each domain: tenant-scoped (BelongsToTenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate.
 
 ## Lint
 lint.tools: [pint, phpstan, vue-tsc, eslint, prettier]
 lint.runner: docker
 lint.asked: true
 lint.notes: |
-  - PHPStan at level max with phpstan-baseline.neon (136 entries). Run with `--memory-limit=1G` to avoid OOM.
-  Baseline burn-down pending: test closures, AllowedFilter generics, QueryBuilder mixed chains, ActivityLog DTOs, Scribe strategies.
+  - PHPStan at level max with phpstan-baseline.neon (188 entries, regenerated 2026-09-06 after tenancy changes). Run with `--memory-limit=1G` to avoid OOM.
+  Baseline burn-down deferred Phase 3+ (targets: test closures ~60, AllowedFilter generics, QueryBuilder chains, Scribe strategies).
 
 ## Deployment Status
 - **Deployed to production:** no
