@@ -83,6 +83,7 @@ final readonly class JobService
             ->when($filter->cleaning_object_id !== null, fn (Builder $q) => $q->where('cleaning_object_id', $filter->cleaning_object_id))
             ->when($filter->assigned_membership_id !== null, fn (Builder $q) => $q->where('assigned_membership_id', $filter->assigned_membership_id))
             ->when($filter->status !== null, fn (Builder $q) => $q->where('status', $filter->status))
+            ->when($filter->type !== null, fn (Builder $q) => $q->where('type', $filter->type))
             ->with(['cleaningObject:id,name', 'assignedMembership.user:id,name,email'])
             ->orderBy('scheduled_date')
             ->orderBy('start_time')

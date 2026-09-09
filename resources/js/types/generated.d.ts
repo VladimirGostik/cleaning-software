@@ -1022,6 +1022,7 @@ readonly to: string,
 readonly cleaning_object_id: string | null,
 readonly assigned_membership_id: string | null,
 readonly status: App.Enums.JobStatusEnum | null,
+readonly type: App.Enums.JobTypeEnum | null,
 };
 export type JobCalendarItemData = {
 readonly id: string,

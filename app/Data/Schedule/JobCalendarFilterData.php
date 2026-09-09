@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Data\Schedule;
 
 use App\Enums\JobStatusEnum;
+use App\Enums\JobTypeEnum;
 use Closure;
 use Illuminate\Support\Carbon;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
@@ -31,6 +32,7 @@ final class JobCalendarFilterData extends Data
         #[Nullable, Uuid]
         public readonly ?string $assigned_membership_id = null,
         public readonly ?JobStatusEnum $status = null,
+        public readonly ?JobTypeEnum $type = null,
     ) {}
 
     /** @return array<string, mixed> */

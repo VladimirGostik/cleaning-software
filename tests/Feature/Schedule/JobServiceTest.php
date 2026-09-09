@@ -349,4 +349,32 @@ final class JobServiceTest extends TestCase
         $this->assertCount(1, $items);
         $this->assertSame($inRangeOwn->id, $items->sole()->id);
     }
+
+    public function test_calendar_filters_by_job_type(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+
+        $special = ScheduledJob::factory()->forObject($object)->create([
+            'tenant_id' => $tenant->id,
+            'scheduled_date' => now()->addDay()->toDateString(),
+            'type' => JobTypeEnum::Special,
+        ]);
+        ScheduledJob::factory()->forObject($object)->create([
+            'tenant_id' => $tenant->id,
+            'scheduled_date' => now()->addDay()->toDateString(),
+            'type' => JobTypeEnum::Regular,
+        ]);
+
+        $items = app(JobService::class)->calendar(new JobCalendarFilterData(
+            from: now()->toDateString(),
+            to: now()->addDays(7)->toDateString(),
+            type: JobTypeEnum::Special,
+        ), $actor);
+
+        $this->assertCount(1, $items);
+        $this->assertSame($special->id, $items->sole()->id);
+    }
 }

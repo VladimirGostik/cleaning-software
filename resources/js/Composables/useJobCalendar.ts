@@ -10,7 +10,7 @@ export interface CalendarRange {
 
 // Calendar-relevant filters — a value that carries an operator prefix other than exact-match
 // ("!=", "<", "~", "between:" ...) is skipped: JobCalendarFilterData takes exact values only.
-const PASS_THROUGH_FILTERS = ['status', 'cleaning_object_id', 'assigned_membership_id'] as const;
+const PASS_THROUGH_FILTERS = ['status', 'type', 'cleaning_object_id', 'assigned_membership_id'] as const;
 
 interface CalendarState {
     events: App.Data.Schedule.JobCalendarItemData[];
