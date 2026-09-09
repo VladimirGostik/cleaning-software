@@ -6,6 +6,7 @@ namespace App\Utils;
 
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -19,13 +20,17 @@ use Spatie\QueryBuilder\QueryBuilder;
  * @method static static beginsWithStrict(string $name, ?string $internalName = null, bool $addRelationConstraint = true, ?string $arrayValueDelimiter = null): static
  * @method static static endsWithStrict(string $name, ?string $internalName = null, bool $addRelationConstraint = true, ?string $arrayValueDelimiter = null): static
  * @method static static scope(string $name, $internalName = null, ?string $arrayValueDelimiter = null): static
- * @method static static custom(string $name, Filter $filterClass, $internalName = null, ?string $arrayValueDelimiter = null): static
+ * @method static static custom(string $name, Filter<Model> $filterClass, $internalName = null, ?string $arrayValueDelimiter = null): static
  * @method static static callback(string $name, $callback, $internalName = null, ?string $arrayValueDelimiter = null): static
  */
 final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
 {
+    /** @var array<int, string>|null */
     protected ?array $validationRules = null;
 
+    /**
+     * @param  array<int, string>  $columns
+     */
     public static function search(
         array $columns,
         string $name = 'search',
@@ -46,11 +51,14 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                     private readonly string $likeOperator,
                 ) {}
 
+                /**
+                 * @param  Builder<Model>  $query
+                 */
                 public function __invoke(Builder $query, mixed $value, string $property): void
                 {
                     $value = SymbolOperators::cleanValue($value);
 
-                    if (blank($value)) {
+                    if (blank($value) || ! is_scalar($value)) {
                         return;
                     }
 
@@ -88,11 +96,14 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                     private readonly string $likeOperator,
                 ) {}
 
+                /**
+                 * @param  Builder<Model>  $query
+                 */
                 public function __invoke(Builder $query, mixed $value, string $property): void
                 {
                     $value = SymbolOperators::cleanValue($value);
 
-                    if (blank($value)) {
+                    if (blank($value) || ! is_scalar($value)) {
                         return;
                     }
 
@@ -140,6 +151,9 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                     private readonly string $likeOperator,
                 ) {}
 
+                /**
+                 * @param  Builder<Model>  $query
+                 */
                 public function __invoke(Builder $query, mixed $value, string $property): void
                 {
                     [$operator, $value] = SymbolOperators::parse($value);
@@ -149,6 +163,10 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                     }
 
                     if ($operator === '~') {
+                        if (! is_scalar($value)) {
+                            return;
+                        }
+
                         $query->whereHas($this->relation, function (Builder $query) use ($value): void {
                             $query->where(
                                 $this->column,
@@ -179,7 +197,7 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
     public static function callbackClean(
         string $name,
         Closure $callback,
-        $internalName = null,
+        ?string $internalName = null,
         ?string $arrayValueDelimiter = null,
     ): static {
         return new static(
@@ -190,6 +208,9 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                     private readonly Closure $callback,
                 ) {}
 
+                /**
+                 * @param  Builder<Model>  $query
+                 */
                 public function __invoke(Builder $query, mixed $value, string $property): void
                 {
                     $value = SymbolOperators::cleanValue($value);
@@ -214,7 +235,10 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
         return parent::splitFilterValue($value);
     }
 
-    public function filter(QueryBuilder $query, $value): void
+    /**
+     * @param  QueryBuilder<Model>  $query
+     */
+    public function filter(QueryBuilder $query, mixed $value): void
     {
         if (isset($this->validationRules)) {
             foreach (Arr::wrap($value) as $item) {

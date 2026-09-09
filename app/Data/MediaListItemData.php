@@ -43,7 +43,7 @@ final class MediaListItemData extends Data
             collection_name: $media->collection_name,
             disk: $media->disk,
             model_type_label: $resolved['label'],
-            model_id: $media->model_id !== null ? (string) $media->model_id : null,
+            model_id: (string) $media->model_id,
             model_url: $resolved['url'],
             url: $media->getFullUrl(),
             created_at: $media->created_at?->toIso8601String() ?? '',

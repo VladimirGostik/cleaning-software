@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Utils;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\Filters\Filter;
 
+/**
+ * @implements Filter<Model>
+ */
 final class SymbolOperatorFilter implements Filter
 {
     public function __construct(
@@ -14,6 +18,9 @@ final class SymbolOperatorFilter implements Filter
         private readonly string $likeOperator = 'like',
     ) {}
 
+    /**
+     * @param  Builder<Model>  $query
+     */
     public function __invoke(Builder $query, mixed $value, string $property): void
     {
         if (is_array($value)) {
@@ -33,11 +40,7 @@ final class SymbolOperatorFilter implements Filter
         }
 
         match ($operator) {
-            '~' => $query->where(
-                $this->column,
-                $this->likeOperator,
-                '%'.Filters::escapeLikeValue((string) $normalizedValue).'%',
-            ),
+            '~' => $this->whereLike($query, $normalizedValue),
 
             'between' => $this->whereBetween($query, $normalizedValue),
 
@@ -45,6 +48,25 @@ final class SymbolOperatorFilter implements Filter
         };
     }
 
+    /**
+     * @param  Builder<Model>  $query
+     */
+    private function whereLike(Builder $query, mixed $value): void
+    {
+        if (! is_scalar($value)) {
+            return;
+        }
+
+        $query->where(
+            $this->column,
+            $this->likeOperator,
+            '%'.Filters::escapeLikeValue((string) $value).'%',
+        );
+    }
+
+    /**
+     * @param  Builder<Model>  $query
+     */
     private function whereBetween(Builder $query, mixed $value): void
     {
         if (! is_string($value)) {
