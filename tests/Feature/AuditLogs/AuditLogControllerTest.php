@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\AuditLogs;
 
+use App\Models\Activity;
+use App\Models\Client;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesUsers;
@@ -110,5 +112,34 @@ final class AuditLogControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/audit-logs/{$activity->id}");
 
         $response->assertForbidden();
+    }
+
+    public function test_show_exposes_attribute_changes_and_causer(): void
+    {
+        $user = $this->userWithPermission('view audit logs');
+        $this->actingAs($user);
+
+        $client = Client::factory()->create([
+            'tenant_id' => current_tenant_id(),
+            'name' => 'Pôvodný názov',
+        ]);
+        $client->update(['name' => 'Nový názov']);
+
+        $activity = Activity::query()
+            ->where('subject_type', $client->getMorphClass())
+            ->where('event', 'updated')
+            ->latest('id')
+            ->firstOrFail();
+
+        $response = $this->withoutVite()->get("/audit-logs/{$activity->id}");
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('AuditLogs/Show')
+            ->where('activity.attribute_changes.attributes.name', 'Nový názov')
+            ->where('activity.attribute_changes.old.name', 'Pôvodný názov')
+            ->where('activity.causer_name', $user->name)
+            ->where('activity.causer_email', $user->email),
+        );
     }
 }

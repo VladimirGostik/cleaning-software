@@ -29,7 +29,7 @@ final class ActivityLogDetailData extends Data
 
     public static function fromModel(Activity $activity): self
     {
-        $causer = $activity->causer;
+        $causer = $activity->causerUser();
 
         return new self(
             id: $activity->id,
@@ -38,10 +38,10 @@ final class ActivityLogDetailData extends Data
             subject_type: $activity->subject_type ? class_basename($activity->subject_type) : null,
             subject_id: $activity->subject_id ? (string) $activity->subject_id : null,
             event: $activity->event,
-            causer_name: $causer?->name ?? null,
-            causer_email: $causer?->email ?? null,
-            properties: $activity->properties?->toArray(),
-            attribute_changes: $activity->changes?->toArray(),
+            causer_name: $causer?->name,
+            causer_email: $causer?->email,
+            properties: $activity->propertiesArray(),
+            attribute_changes: $activity->attributeChangesArray(),
             created_at: $activity->created_at?->toIso8601String() ?? '',
         );
     }

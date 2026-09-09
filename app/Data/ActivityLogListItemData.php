@@ -25,7 +25,7 @@ final class ActivityLogListItemData extends Data
 
     public static function fromModel(Activity $activity): self
     {
-        $causer = $activity->causer;
+        $causer = $activity->causerUser();
 
         return new self(
             id: $activity->id,
@@ -34,8 +34,8 @@ final class ActivityLogListItemData extends Data
             subject_type: $activity->subject_type ? class_basename($activity->subject_type) : null,
             subject_id: $activity->subject_id ? (string) $activity->subject_id : null,
             event: $activity->event,
-            causer_name: $causer?->name ?? null,
-            causer_email: $causer?->email ?? null,
+            causer_name: $causer?->name,
+            causer_email: $causer?->email,
             created_at: $activity->created_at?->toIso8601String() ?? '',
         );
     }

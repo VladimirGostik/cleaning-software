@@ -38,6 +38,28 @@ final class Activity extends SpatieActivity
         });
     }
 
+    /** The causer as a User, or null when the activity has no user causer. */
+    public function causerUser(): ?User
+    {
+        $causer = $this->causer;
+
+        return $causer instanceof User ? $causer : null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function propertiesArray(): ?array
+    {
+        /** @var array<string, mixed>|null */
+        return $this->properties?->toArray();
+    }
+
+    /** @return array<string, mixed>|null */
+    public function attributeChangesArray(): ?array
+    {
+        /** @var array<string, mixed>|null */
+        return $this->attribute_changes?->toArray();
+    }
+
     public function isVisibleInTenant(string $tenantId): bool
     {
         if ($this->tenant_id === $tenantId) {
@@ -48,8 +70,8 @@ final class Activity extends SpatieActivity
             return false;
         }
 
-        $causer = $this->causer;
+        $causer = $this->causerUser();
 
-        return $causer instanceof User && $causer->isMemberOf($tenantId);
+        return $causer !== null && $causer->isMemberOf($tenantId);
     }
 }

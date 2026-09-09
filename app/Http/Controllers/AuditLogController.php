@@ -10,6 +10,8 @@ use App\Enums\PermissionEnum;
 use App\Models\Activity;
 use App\Navigation\NavItem;
 use App\Utils\AllowedFilter;
+use App\Utils\Filters;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
@@ -28,16 +30,18 @@ final class AuditLogController extends Controller
 
         $items = QueryBuilder::for(Activity::visibleInTenant($tenantId))
             ->allowedFilters(
-                AllowedFilter::callbackClean('search', function ($query, $value) use ($op): void {
-                    if (blank($value)) {
+                AllowedFilter::callbackClean('search', function (Builder $query, mixed $value) use ($op): void {
+                    if (blank($value) || ! is_scalar($value)) {
                         return;
                     }
 
-                    $query->where(function ($q) use ($value, $op): void {
-                        $q->where('description', $op, "%{$value}%")
-                            ->orWhere('log_name', $op, "%{$value}%")
-                            ->orWhereHas('causer', fn ($q2) => $q2->where('name', $op, "%{$value}%")
-                                ->orWhere('email', $op, "%{$value}%"));
+                    $like = '%'.Filters::escapeLikeValue((string) $value).'%';
+
+                    $query->where(function (Builder $q) use ($like, $op): void {
+                        $q->where('description', $op, $like)
+                            ->orWhere('log_name', $op, $like)
+                            ->orWhereHas('causer', fn (Builder $q2) => $q2->where('name', $op, $like)
+                                ->orWhere('email', $op, $like));
                     });
                 }),
                 AllowedFilter::dynamic('subject_type'),
@@ -46,7 +50,7 @@ final class AuditLogController extends Controller
             ->allowedSorts(
                 'created_at',
                 'description',
-                AllowedSort::callback('causer_name', fn ($query, bool $descending) => $query->leftJoin('users as causer_user', 'causer_id', '=', 'causer_user.id')
+                AllowedSort::callback('causer_name', fn (Builder $query, bool $descending) => $query->leftJoin('users as causer_user', 'causer_id', '=', 'causer_user.id')
                     ->orderBy('causer_user.name', $descending ? 'desc' : 'asc')),
             )
             ->defaultSort('-created_at')
