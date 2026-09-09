@@ -21,7 +21,7 @@ final class UserFilterTest extends TestCase
     {
         parent::setUp();
 
-        $this->artisan('app:demo')->assertSuccessful();
+        $this->artisanCommand('app:demo')->assertSuccessful();
     }
 
     private function tenantOf(User $admin): Tenant

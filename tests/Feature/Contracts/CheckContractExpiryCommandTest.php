@@ -26,7 +26,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:check-contract-expiry')->assertExitCode(0);
+        $this->artisanCommand('app:check-contract-expiry')->assertExitCode(0);
 
         $contract->refresh();
         $this->assertSame(ContractStatusEnum::Expired, $contract->status);
@@ -40,7 +40,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         $contract->refresh();
         $this->assertSame(ContractStatusEnum::Expired, $contract->status);
@@ -53,7 +53,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->indefinite()->create(['tenant_id' => $tenant->id]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         $contract->refresh();
         $this->assertSame(ContractStatusEnum::Active, $contract->status);
@@ -66,7 +66,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->toDateString()]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         $contract->refresh();
         $this->assertSame(ContractStatusEnum::Active, $contract->status);
@@ -80,7 +80,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         Contract::factory()->expired()->create(['tenant_id' => $tenant->id]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         Event::assertNotDispatched(ContractExpired::class);
     }
@@ -92,7 +92,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->draft()->create(['tenant_id' => $tenant->id, 'end_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         $contract->refresh();
         $this->assertSame(ContractStatusEnum::Draft, $contract->status);
@@ -109,7 +109,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenantB);
         $contractB = Contract::factory()->active()->create(['tenant_id' => $tenantB->id, 'end_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         $contractA->refresh();
         $contractB->refresh();
@@ -125,7 +125,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->addDays(30)->toDateString()]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         Event::assertDispatched(ContractExpiring::class, fn (ContractExpiring $e) => $e->contractId === $contract->id && $e->daysLeft === 30);
     }
@@ -137,7 +137,7 @@ final class CheckContractExpiryCommandTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'end_date' => now()->toDateString()]);
 
-        $this->artisan('app:check-contract-expiry');
+        $this->artisanCommand('app:check-contract-expiry');
 
         $contract->refresh();
         $this->assertSame(ContractStatusEnum::Active, $contract->status);

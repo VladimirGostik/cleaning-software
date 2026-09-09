@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia;
 use Tests\Support\CreatesUsers;
 use Tests\TestCase;
 
@@ -51,7 +52,7 @@ final class MediaControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/media');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Media/Index')
             ->has('media')
             ->has('filters'),
@@ -87,7 +88,7 @@ final class MediaControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/media');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Media/Index')
             ->has('media.data'),
         );
@@ -102,7 +103,7 @@ final class MediaControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/media?filter[collection_name]=avatars');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Media/Index')
             ->has('media.data', 1),
         );
@@ -119,7 +120,7 @@ final class MediaControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/media');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->where('media.data', fn ($data) => collect($data)->pluck('file_name')->doesntContain('foreign.jpg')),
         );
     }
@@ -136,7 +137,7 @@ final class MediaControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get("/media/{$media->id}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Media/Show')
             ->has('media'),
         );
@@ -181,7 +182,7 @@ final class MediaControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get("/media/{$media->id}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Media/Show')
             ->where('media.model_url', route('users.edit', $owner)),
         );
@@ -198,7 +199,7 @@ final class MediaControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get("/media/{$media->id}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Media/Show')
             ->where('media.model_url', null),
         );

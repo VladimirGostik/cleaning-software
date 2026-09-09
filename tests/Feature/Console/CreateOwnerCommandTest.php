@@ -18,7 +18,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_creates_owner_user_tenant_and_admin_role(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'owner@example.com',
@@ -45,7 +45,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_fails_with_invalid_email(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'not-an-email',
@@ -61,7 +61,7 @@ final class CreateOwnerCommandTest extends TestCase
     {
         User::factory()->create(['email' => 'taken@example.com']);
 
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'taken@example.com',
@@ -73,7 +73,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_fails_with_short_password(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'owner2@example.com',
@@ -87,7 +87,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_fails_with_missing_company(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'owner3@example.com',
@@ -105,7 +105,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_all_supplier_flags_persist_every_tenant_column(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'owner4@example.com',
@@ -143,7 +143,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_legacy_five_flags_only_leaves_optional_columns_null(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'owner5@example.com',
@@ -163,7 +163,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_fails_with_invalid_iban(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'owner6@example.com',
@@ -178,7 +178,7 @@ final class CreateOwnerCommandTest extends TestCase
 
     public function test_fails_with_invalid_contact_email(): void
     {
-        $this->artisan('app:create-owner', [
+        $this->artisanCommand('app:create-owner', [
             '--no-interaction' => true,
             '--name' => 'Ján Novák',
             '--email' => 'owner7@example.com',

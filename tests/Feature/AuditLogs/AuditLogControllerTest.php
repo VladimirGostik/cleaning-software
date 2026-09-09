@@ -8,6 +8,7 @@ use App\Models\Activity;
 use App\Models\Client;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\Support\CreatesUsers;
 use Tests\TestCase;
 
@@ -23,7 +24,7 @@ final class AuditLogControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/audit-logs');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('AuditLogs/Index')
             ->has('activities')
             ->has('filters'),
@@ -55,7 +56,7 @@ final class AuditLogControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/audit-logs');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('AuditLogs/Index')
             ->has('activities.data'),
         );
@@ -72,7 +73,7 @@ final class AuditLogControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/audit-logs');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->where('activities.data', fn ($data) => collect($data)->pluck('description')->doesntContain('foreign tenant action')),
         );
     }
@@ -85,7 +86,7 @@ final class AuditLogControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get("/audit-logs/{$activity->id}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('AuditLogs/Show')
             ->has('activity'),
         );
@@ -134,7 +135,7 @@ final class AuditLogControllerTest extends TestCase
         $response = $this->withoutVite()->get("/audit-logs/{$activity->id}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('AuditLogs/Show')
             ->where('activity.attribute_changes.attributes.name', 'Nový názov')
             ->where('activity.attribute_changes.old.name', 'Pôvodný názov')

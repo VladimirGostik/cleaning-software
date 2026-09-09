@@ -6,6 +6,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 final class PasswordResetLinkControllerTest extends TestCase
@@ -17,7 +18,7 @@ final class PasswordResetLinkControllerTest extends TestCase
         $response = $this->withoutVite()->get('/forgot-password');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page->component('Auth/ForgotPassword'));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Auth/ForgotPassword'));
     }
 
     public function test_authenticated_user_is_redirected_from_forgot_password(): void

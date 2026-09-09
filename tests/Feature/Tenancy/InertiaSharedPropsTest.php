@@ -10,6 +10,7 @@ use App\Models\TenantInterface;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -53,13 +54,13 @@ final class InertiaSharedPropsTest extends TestCase
 
         $response = $this->withoutVite()->actingAs($user)->get('/profile');
 
-        $response->assertInertia(fn ($page) => $page->where('languages', fn ($languages) => collect($languages)->pluck('value')->contains('uk')));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->where('languages', fn ($languages) => collect($languages)->pluck('value')->contains('uk')));
     }
 
     public function test_tenant_shape_for_guest_is_empty(): void
     {
         $response = $this->withoutVite()->get('/login');
 
-        $response->assertInertia(fn ($page) => $page->where('auth.user', null));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user', null));
     }
 }

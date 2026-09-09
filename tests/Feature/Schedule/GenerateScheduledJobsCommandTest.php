@@ -30,7 +30,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
         $contract = Contract::factory()->forObject($object)->active()->create(['tenant_id' => $tenant->id]);
         $breakdown = WorkBreakdown::factory()->forContract($contract)->create(['tenant_id' => $tenant->id]);
 
-        $this->artisan('app:generate-scheduled-jobs')->assertExitCode(0);
+        $this->artisanCommand('app:generate-scheduled-jobs')->assertExitCode(0);
 
         Bus::assertDispatched(GenerateScheduledJobsJob::class, fn (GenerateScheduledJobsJob $job) => $job->workBreakdownId === $breakdown->id);
     }
@@ -46,7 +46,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
         $contract = Contract::factory()->forObject($object)->active()->create(['tenant_id' => $tenant->id]);
         WorkBreakdown::factory()->inactive()->forContract($contract)->create(['tenant_id' => $tenant->id]);
 
-        $this->artisan('app:generate-scheduled-jobs');
+        $this->artisanCommand('app:generate-scheduled-jobs');
 
         Bus::assertNotDispatched(GenerateScheduledJobsJob::class);
     }
@@ -62,7 +62,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
         $contract = Contract::factory()->forObject($object)->draft()->create(['tenant_id' => $tenant->id]);
         WorkBreakdown::factory()->forContract($contract)->create(['tenant_id' => $tenant->id]);
 
-        $this->artisan('app:generate-scheduled-jobs');
+        $this->artisanCommand('app:generate-scheduled-jobs');
 
         Bus::assertNotDispatched(GenerateScheduledJobsJob::class);
     }
@@ -86,7 +86,7 @@ final class GenerateScheduledJobsCommandTest extends TestCase
         $contractB = Contract::factory()->forObject($objectB)->active()->create(['tenant_id' => $tenantB->id]);
         $breakdownB = WorkBreakdown::factory()->forContract($contractB)->create(['tenant_id' => $tenantB->id]);
 
-        $this->artisan('app:generate-scheduled-jobs');
+        $this->artisanCommand('app:generate-scheduled-jobs');
 
         Bus::assertDispatched(GenerateScheduledJobsJob::class, fn (GenerateScheduledJobsJob $job) => $job->workBreakdownId === $breakdownA->id);
         Bus::assertDispatched(GenerateScheduledJobsJob::class, fn (GenerateScheduledJobsJob $job) => $job->workBreakdownId === $breakdownB->id);

@@ -81,7 +81,7 @@ final class RoleTemplatesSeederTest extends TestCase
 
     public function test_migrate_fresh_seed_gives_admin_the_admin_role_in_its_tenant(): void
     {
-        $this->artisan('app:demo')->assertSuccessful();
+        $this->artisanCommand('app:demo')->assertSuccessful();
 
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
         $tenant = Tenant::where('owner_id', $admin->id)->firstOrFail();

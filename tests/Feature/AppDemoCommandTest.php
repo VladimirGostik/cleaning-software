@@ -17,7 +17,7 @@ final class AppDemoCommandTest extends TestCase
 
     public function test_app_demo_seeds_admin_user(): void
     {
-        $this->artisan('app:demo')
+        $this->artisanCommand('app:demo')
             ->assertSuccessful();
 
         $admin = User::where('email', 'admin@example.com')->first();
@@ -33,7 +33,7 @@ final class AppDemoCommandTest extends TestCase
 
     public function test_admin_credentials_work_after_demo(): void
     {
-        $this->artisan('app:demo')->assertSuccessful();
+        $this->artisanCommand('app:demo')->assertSuccessful();
 
         $response = $this->post('/login', [
             'email' => 'admin@example.com',

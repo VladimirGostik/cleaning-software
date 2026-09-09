@@ -9,6 +9,7 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 final class AuthControllerTest extends TestCase
@@ -28,7 +29,7 @@ final class AuthControllerTest extends TestCase
         $response = $this->withoutVite()->get('/login');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Auth/Login')
             ->has('canResetPassword'),
         );

@@ -11,6 +11,7 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\CreatesUsers;
 use Tests\TestCase;
@@ -47,7 +48,7 @@ final class RoleControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/roles');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Roles/Index')
             ->has('roles')
             ->has('filters'),
@@ -72,7 +73,7 @@ final class RoleControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/roles');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->where('roles.data', fn ($data) => collect($data)->pluck('name')->doesntContain('foreign-role')),
         );
     }
@@ -84,7 +85,7 @@ final class RoleControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/roles/create');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Roles/Form')
             ->has('permissions'),
         );
@@ -172,7 +173,7 @@ final class RoleControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get("/roles/{$role->id}/edit");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Roles/Form')
             ->has('role')
             ->has('permissions'),

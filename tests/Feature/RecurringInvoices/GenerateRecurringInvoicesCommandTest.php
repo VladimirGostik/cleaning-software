@@ -50,7 +50,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
             'next_run_at' => now()->toDateString(),
         ]);
 
-        $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+        $this->artisanCommand('app:generate-recurring-invoices')->assertSuccessful();
 
         Queue::assertPushed(GenerateRecurringInvoiceJob::class, fn (GenerateRecurringInvoiceJob $job) => $job->recurringInvoiceId === $due->id);
     }
@@ -66,7 +66,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
 
         $this->makeTemplate($tenant, ['status' => RecurringInvoiceStatusEnum::Paused, 'next_run_at' => now()->toDateString()]);
 
-        $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+        $this->artisanCommand('app:generate-recurring-invoices')->assertSuccessful();
         Queue::assertNothingPushed();
     }
 
@@ -77,7 +77,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
 
         $this->makeTemplate($tenant, ['status' => RecurringInvoiceStatusEnum::Active, 'next_run_at' => now()->addDays(5)->toDateString()]);
 
-        $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+        $this->artisanCommand('app:generate-recurring-invoices')->assertSuccessful();
         Queue::assertNothingPushed();
     }
 
@@ -88,7 +88,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
 
         $this->makeTemplate($tenant, ['status' => RecurringInvoiceStatusEnum::Active, 'next_run_at' => null]);
 
-        $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+        $this->artisanCommand('app:generate-recurring-invoices')->assertSuccessful();
         Queue::assertNothingPushed();
     }
 
@@ -99,7 +99,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
 
         $this->makeTemplate($tenant, ['status' => RecurringInvoiceStatusEnum::Completed, 'next_run_at' => now()->toDateString()]);
 
-        $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+        $this->artisanCommand('app:generate-recurring-invoices')->assertSuccessful();
         Queue::assertNothingPushed();
     }
 
@@ -110,7 +110,7 @@ final class GenerateRecurringInvoicesCommandTest extends TestCase
 
         $this->makeTemplate($tenant, ['status' => RecurringInvoiceStatusEnum::Cancelled, 'next_run_at' => now()->toDateString()]);
 
-        $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+        $this->artisanCommand('app:generate-recurring-invoices')->assertSuccessful();
         Queue::assertNothingPushed();
     }
 }

@@ -12,6 +12,7 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Testing\PendingCommand;
 use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
@@ -49,6 +50,21 @@ abstract class TestCase extends BaseTestCase
         $this->bindTenant($tenant);
 
         return $user;
+    }
+
+    /**
+     * `artisan()` is typed `PendingCommand|int` — it returns the int exit code once the
+     * command has already run. Use this when chaining assertions onto the pending command.
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    protected function artisanCommand(string $command, array $parameters = []): PendingCommand
+    {
+        $pending = $this->artisan($command, $parameters);
+
+        $this->assertInstanceOf(PendingCommand::class, $pending);
+
+        return $pending;
     }
 
     /** Binds a tenant into the container + registrar only — no auth. For service/unit tests. */

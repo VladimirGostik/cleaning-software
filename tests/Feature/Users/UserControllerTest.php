@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\Support\CreatesUsers;
 use Tests\TestCase;
 
@@ -42,7 +43,7 @@ final class UserControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/users');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Users/Index')
             ->has('users')
             ->has('filters')
@@ -80,7 +81,7 @@ final class UserControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/users?filter[search]=Searchable');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Users/Index')
             ->where('users.data.0.name', 'Searchable Person'),
         );
@@ -94,7 +95,7 @@ final class UserControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/users');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Users/Index')
             ->where('users.data', fn ($data) => collect($data)->pluck('id')->doesntContain($outsider->id)),
         );
@@ -107,7 +108,7 @@ final class UserControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/users/create');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Users/Form')
             ->has('roles'),
         );
@@ -236,7 +237,7 @@ final class UserControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get("/users/{$target->id}/edit");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Users/Form')
             ->has('user')
             ->has('roles'),

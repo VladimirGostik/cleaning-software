@@ -9,6 +9,7 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 final class ProfileControllerTest extends TestCase
@@ -30,7 +31,7 @@ final class ProfileControllerTest extends TestCase
         $response = $this->withoutVite()->actingAs($user)->get('/profile');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page->component('Profile/Show'));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Profile/Show'));
     }
 
     public function test_guest_is_redirected_to_login(): void

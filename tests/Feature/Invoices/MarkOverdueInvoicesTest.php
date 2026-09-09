@@ -26,7 +26,7 @@ final class MarkOverdueInvoicesTest extends TestCase
             'due_date' => now()->subDay()->toDateString(),
         ]);
 
-        $this->artisan('app:mark-overdue-invoices')->assertExitCode(0);
+        $this->artisanCommand('app:mark-overdue-invoices')->assertExitCode(0);
 
         $invoice->refresh();
         $this->assertSame('overdue', $invoice->status->value);
@@ -39,7 +39,7 @@ final class MarkOverdueInvoicesTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:mark-overdue-invoices');
+        $this->artisanCommand('app:mark-overdue-invoices');
 
         $invoice->refresh();
         $this->assertSame('draft', $invoice->status->value);
@@ -51,7 +51,7 @@ final class MarkOverdueInvoicesTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->paid()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:mark-overdue-invoices');
+        $this->artisanCommand('app:mark-overdue-invoices');
 
         $invoice->refresh();
         $this->assertSame('paid', $invoice->status->value);
@@ -63,7 +63,7 @@ final class MarkOverdueInvoicesTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->cancelled()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:mark-overdue-invoices');
+        $this->artisanCommand('app:mark-overdue-invoices');
 
         $invoice->refresh();
         $this->assertSame('cancelled', $invoice->status->value);
@@ -75,7 +75,7 @@ final class MarkOverdueInvoicesTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'due_date' => now()->addDay()->toDateString()]);
 
-        $this->artisan('app:mark-overdue-invoices');
+        $this->artisanCommand('app:mark-overdue-invoices');
 
         $invoice->refresh();
         $this->assertSame('issued', $invoice->status->value);
@@ -92,7 +92,7 @@ final class MarkOverdueInvoicesTest extends TestCase
             'due_date' => now()->subDay()->toDateString(),
         ]);
 
-        $this->artisan('app:mark-overdue-invoices');
+        $this->artisanCommand('app:mark-overdue-invoices');
 
         $creditNote->refresh();
         $this->assertSame('issued', $creditNote->status->value);
@@ -105,8 +105,8 @@ final class MarkOverdueInvoicesTest extends TestCase
         RoleTemplatesSeeder::seedForTenant($tenant);
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'due_date' => now()->subDay()->toDateString()]);
 
-        $this->artisan('app:mark-overdue-invoices');
-        $this->artisan('app:mark-overdue-invoices');
+        $this->artisanCommand('app:mark-overdue-invoices');
+        $this->artisanCommand('app:mark-overdue-invoices');
 
         $invoice->refresh();
         $this->assertSame('overdue', $invoice->status->value);

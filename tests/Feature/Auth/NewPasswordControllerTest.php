@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 final class NewPasswordControllerTest extends TestCase
@@ -21,7 +22,7 @@ final class NewPasswordControllerTest extends TestCase
         $response = $this->withoutVite()->get("/reset-password/{$token}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Auth/ResetPassword')
             ->where('token', $token),
         );

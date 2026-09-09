@@ -14,6 +14,7 @@ use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -55,7 +56,7 @@ final class InvitationAcceptTest extends TestCase
         $response = $this->withoutVite()->get("/invitations/{$invitation->token}");
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::Expired->value),
         );
@@ -70,7 +71,7 @@ final class InvitationAcceptTest extends TestCase
         $response = $this->withoutVite()->actingAs($otherUser)->get("/invitations/{$invitation->token}");
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::WrongUser->value)
             ->where('invitation.invited_email', 'invited@example.com'),
@@ -86,7 +87,7 @@ final class InvitationAcceptTest extends TestCase
         $response = $this->withoutVite()->get("/invitations/{$invitation->token}");
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::ExistingUser->value),
         );
@@ -100,7 +101,7 @@ final class InvitationAcceptTest extends TestCase
         $response = $this->withoutVite()->get("/invitations/{$invitation->token}");
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::NewUser->value)
             ->where('invitation.tenant_name', $tenant->name)
@@ -117,7 +118,7 @@ final class InvitationAcceptTest extends TestCase
         $response = $this->withoutVite()->get("/invitations/{$invitation->token}");
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Invitations/Accept')
             ->where('invitation.state', InvitationAcceptStateEnum::NewUser->value),
         );
