@@ -16,6 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class RequireActiveTenant
 {
+    /**
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user() === null || app()->bound('current_tenant_id')) {

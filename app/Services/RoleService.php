@@ -31,7 +31,7 @@ final readonly class RoleService
         $role = Role::create(['name' => $name, 'guard_name' => 'web']);
         $role->syncPermissions($permissions);
 
-        return $role->fresh(['permissions']);
+        return $role->load('permissions');
     }
 
     /**
@@ -56,7 +56,7 @@ final readonly class RoleService
 
         $role->syncPermissions($permissions);
 
-        return $role->fresh(['permissions']);
+        return $role->load('permissions');
     }
 
     public function delete(Role $role): void

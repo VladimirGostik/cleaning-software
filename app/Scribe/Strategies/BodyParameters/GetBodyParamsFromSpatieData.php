@@ -17,6 +17,10 @@ final class GetBodyParamsFromSpatieData extends Strategy
 {
     use ParsesValidationRules;
 
+    /**
+     * @param  array<string, mixed>  $settings
+     * @return array<string, mixed>|null
+     */
     public function __invoke(ExtractedEndpointData $endpointData, array $settings = []): ?array
     {
         $dataClass = $this->findDataClass($endpointData);
@@ -31,13 +35,24 @@ final class GetBodyParamsFromSpatieData extends Strategy
             return null;
         }
 
-        return $this->normaliseArrayAndObjectParameters(
-            $this->getParametersFromValidationRules($rules, []),
-        );
+        /** @var array<string, array<string, mixed>> $parameters */
+        $parameters = $this->getParametersFromValidationRules($rules, []);
+
+        /** @var array<string, mixed> $normalised */
+        $normalised = $this->normaliseArrayAndObjectParameters($parameters);
+
+        return $normalised;
     }
 
+    /**
+     * @return class-string<Data>|null
+     */
     private function findDataClass(ExtractedEndpointData $endpointData): ?string
     {
+        if ($endpointData->method === null) {
+            return null;
+        }
+
         foreach ($endpointData->method->getParameters() as $param) {
             $type = $param->getType();
 
@@ -55,6 +70,10 @@ final class GetBodyParamsFromSpatieData extends Strategy
         return null;
     }
 
+    /**
+     * @param  class-string<Data>  $dataClass
+     * @return array<string, array<int, string>>
+     */
     private function rulesFromConstructor(string $dataClass): array
     {
         $constructor = (new ReflectionClass($dataClass))->getConstructor();
@@ -76,7 +95,7 @@ final class GetBodyParamsFromSpatieData extends Strategy
         return $rules;
     }
 
-    /** @return string[] */
+    /** @return array<int, string> */
     private function rulesForParam(ReflectionParameter $param): array
     {
         $rules = [];

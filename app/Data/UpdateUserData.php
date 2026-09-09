@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Models\User;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\Validation\Email;
 use Spatie\LaravelData\Attributes\Validation\Max;
@@ -27,7 +28,8 @@ final class UpdateUserData extends Data
     /** @return array<string, mixed> */
     public static function rules(): array
     {
-        $userId = request()->route('user')?->id;
+        $routeUser = request()->route('user');
+        $userId = $routeUser instanceof User ? $routeUser->id : null;
 
         return [
             'email' => [Rule::unique('users', 'email')->ignore($userId)],

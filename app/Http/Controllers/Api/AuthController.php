@@ -18,6 +18,7 @@ use Knuckles\Scribe\Attributes\Endpoint;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Response;
 use Knuckles\Scribe\Attributes\Unauthenticated;
+use Laravel\Sanctum\PersonalAccessToken;
 
 #[Group('Auth', 'Authentication')]
 final class AuthController extends Controller
@@ -55,7 +56,11 @@ final class AuthController extends Controller
     #[Response(null, 204, 'Logged out')]
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $token = $request->user()?->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
 
         return response()->json(null, 204);
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\NewPasswordData;
+use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,9 +27,10 @@ final class NewPasswordController extends Controller
 
     public function store(NewPasswordData $data): RedirectResponse
     {
+        /** @var string $status */
         $status = Password::reset(
             ['email' => $data->email, 'password' => $data->password, 'password_confirmation' => $data->password_confirmation, 'token' => $data->token],
-            function ($user) use ($data): void {
+            function (User $user) use ($data): void {
                 $user->forceFill([
                     'password' => Hash::make($data->password),
                     'remember_token' => Str::random(60),

@@ -32,11 +32,10 @@ final class RoleController extends Controller
     #[NavItem(label: 'app.roles', route: 'roles.index', icon: 'ShieldCheckIcon', permission: PermissionEnum::ViewRoles->value, group: 'settings', order: 40)]
     public function index(Request $request): Response
     {
-        $roles = QueryBuilder::for(Role::inTenant(current_tenant_id()))
+        $roles = QueryBuilder::for(Role::inTenant(current_tenant_id())->withCount(['permissions', 'users']))
             ->allowedFilters(
                 AllowedFilter::search(['name']),
             )
-            ->withCount(['permissions', 'users'])
             ->defaultSort('name')
             ->paginate($request->integer('per_page', 25))
             ->withQueryString()

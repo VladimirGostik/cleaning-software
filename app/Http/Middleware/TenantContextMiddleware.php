@@ -22,6 +22,9 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class TenantContextMiddleware
 {
+    /**
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         /** @var User|null $user */

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Scribe\Strategies\Responses;
 
 use App\Scribe\Attributes\ResponseFromSpatieData as ResponseFromSpatieDataAttr;
+use Illuminate\Database\Eloquent\Model;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\DatabaseTransactionHelpers;
 use Knuckles\Scribe\Extracting\InstantiatesExampleModels;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
+use Spatie\LaravelData\Data;
 use Throwable;
 
 final class GetResponseFromSpatieData extends Strategy
@@ -16,8 +18,16 @@ final class GetResponseFromSpatieData extends Strategy
     use DatabaseTransactionHelpers;
     use InstantiatesExampleModels;
 
+    /**
+     * @param  array<string, mixed>  $settings
+     * @return array<int, array<string, mixed>>|null
+     */
     public function __invoke(ExtractedEndpointData $endpointData, array $settings = []): ?array
     {
+        if ($endpointData->method === null) {
+            return null;
+        }
+
         $reflAttributes = $endpointData->method->getAttributes(ResponseFromSpatieDataAttr::class);
 
         if (empty($reflAttributes)) {
@@ -35,10 +45,15 @@ final class GetResponseFromSpatieData extends Strategy
             try {
                 // Pass empty relations to avoid factory trying to create role/permission models
                 $model = $this->instantiateExampleModel($attr->model, $attr->states, []);
-                if (! empty($attr->with) && $model !== null) {
+
+                if ($model instanceof Model && ! empty($attr->with)) {
                     $model->load($attr->with);
                 }
+
+                /** @var Data $data */
                 $data = ($attr->dataClass)::fromModel($model);
+
+                /** @var array<string, mixed> $dataArray */
                 $dataArray = $data->toArray();
 
                 $content = $attr->paginated
@@ -60,6 +75,9 @@ final class GetResponseFromSpatieData extends Strategy
         return empty($responses) ? null : $responses;
     }
 
+    /**
+     * @param  array<string, mixed>  $item
+     */
     private function wrapInPaginator(array $item): string
     {
         return json_encode([

@@ -20,6 +20,6 @@ final readonly class ProfileService
         session()->put('locale', $data->locale);
         app()->setLocale($data->locale);
 
-        return $user->fresh();
+        return $user->refresh();
     }
 }

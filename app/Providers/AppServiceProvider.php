@@ -16,14 +16,15 @@ use App\Services\Pdf\PayBySquareService;
 use App\Services\Pdf\QuotePdfService;
 use App\Support\PrecognitiveDataValidatorResolver;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Validation\Validator;
 use ReflectionClass;
 use Spatie\LaravelData\Contracts\BaseData;
+use Spatie\LaravelData\Contracts\ValidateableData;
 use Spatie\LaravelData\Resolvers\DataValidatorResolver;
 
 final class AppServiceProvider extends ServiceProvider
@@ -37,23 +38,28 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(RendersQuotePdf::class, QuotePdfService::class);
         $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
 
-        $this->app->beforeResolving(BaseData::class, function (string $class, array $parameters, $app): void {
-            /** @var Request $request */
-            $request = $app['request'];
+        $this->app->beforeResolving(BaseData::class, function (string $class, array $parameters, Container $app): void {
+            $request = $app->make(Request::class);
 
             if (! $request->isAttemptingPrecognition()) {
                 return;
             }
 
-            $app->bind($class, function () use ($class, $request, $app) {
+            $app->bind($class, function () use ($class, $request, $app): object {
                 $payload = $request->all();
+
+                /** @var DataValidatorResolver $resolver */
                 $resolver = $app->make(DataValidatorResolver::class);
 
-                /** @var Validator $validator */
-                $validator = $resolver->execute($class, $payload);
-                $validator->validate();
+                /** @var class-string<ValidateableData&BaseData<mixed, mixed, array-key>> $dataClass */
+                $dataClass = $class;
 
-                return (new ReflectionClass($class))->newInstanceWithoutConstructor();
+                $resolver->execute($dataClass, $payload)->validate();
+
+                /** @var ReflectionClass<object> $reflection */
+                $reflection = new ReflectionClass($dataClass);
+
+                return $reflection->newInstanceWithoutConstructor();
             });
         });
     }
@@ -72,15 +78,25 @@ final class AppServiceProvider extends ServiceProvider
 
     private function loadJsonTranslations(): void
     {
-        foreach (glob(resource_path('lang/*/') ?: []) as $langDir) {
+        foreach (glob(resource_path('lang/*/')) ?: [] as $langDir) {
             $locale = basename($langDir);
+
             foreach (glob($langDir.'*.json') ?: [] as $file) {
                 $group = basename($file, '.json');
-                $translations = json_decode((string) file_get_contents($file), true) ?? [];
+
+                $translations = json_decode((string) file_get_contents($file), true);
+
+                if (! is_array($translations)) {
+                    continue;
+                }
+
+                /** @var array<string, string> $translations */
                 $lines = [];
+
                 foreach ($translations as $key => $value) {
                     $lines["{$group}.{$key}"] = $value;
                 }
+
                 Lang::addLines($lines, $locale);
             }
         }

@@ -22,10 +22,13 @@ final class RoleDetailData extends Data
 
     public static function fromModel(Role $role): self
     {
+        /** @var array<int, string> $permissions */
+        $permissions = $role->permissions->pluck('name')->sort()->values()->toArray();
+
         return new self(
-            id: $role->id,
+            id: (string) $role->id,
             name: $role->name,
-            permissions: $role->permissions->pluck('name')->sort()->values()->toArray(),
+            permissions: $permissions,
             users_count: $role->users()->count(),
             is_system: $role->isSystem(),
         );

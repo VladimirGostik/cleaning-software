@@ -28,13 +28,16 @@ final class UserListItemData extends Data
      */
     public static function fromModel(User $user): self
     {
+        /** @var array<int, string> $roles */
+        $roles = $user->roles->pluck('name')->sort()->values()->toArray();
+
         return new self(
             id: $user->id,
             name: $user->name,
             email: $user->email,
             is_active: (bool) $user->memberships->first()?->is_active,
             locale: $user->locale,
-            roles: $user->roles->pluck('name')->sort()->values()->toArray(),
+            roles: $roles,
             created_at: $user->created_at?->toIso8601String() ?? '',
         );
     }

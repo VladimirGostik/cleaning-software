@@ -71,7 +71,7 @@ final readonly class UserService
 
             $user->syncRoles($roles);
 
-            return $user->fresh(['roles']);
+            return $user->load('roles');
         });
     }
 
@@ -102,7 +102,7 @@ final readonly class UserService
 
             $user->syncRoles($roles);
 
-            return $user->fresh(['roles']);
+            return $user->load('roles');
         });
     }
 

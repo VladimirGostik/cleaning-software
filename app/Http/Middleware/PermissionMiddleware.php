@@ -10,6 +10,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class PermissionMiddleware
 {
+    /**
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next, string ...$permissions): Response
     {
         if (! $request->user()) {

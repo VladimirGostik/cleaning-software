@@ -11,6 +11,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class LocaleMiddleware
 {
+    /**
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $locale = $this->resolveLocale($request);

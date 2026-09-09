@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Media;
 use App\Models\TemporaryUpload;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\HasMedia;
@@ -48,9 +49,11 @@ final readonly class TemporaryUploadService
     public function moveToModel(HasMedia $model, string $collection, string $uuid, ?User $user, string $sessionId): Media
     {
         return DB::transaction(function () use ($model, $collection, $uuid, $user, $sessionId): Media {
+            $userId = $user?->id;
+
             $ownedIds = TemporaryUpload::query()
                 ->where('session_id', $sessionId)
-                ->when($user !== null, fn ($q) => $q->orWhere('user_id', $user->id))
+                ->when($userId !== null, fn (Builder $q) => $q->orWhere('user_id', $userId))
                 ->pluck('id');
 
             /** @var Media $media */
@@ -76,9 +79,11 @@ final readonly class TemporaryUploadService
     public function delete(string $uuid, ?User $user, string $sessionId): void
     {
         DB::transaction(function () use ($uuid, $user, $sessionId): void {
+            $userId = $user?->id;
+
             $ownedIds = TemporaryUpload::query()
                 ->where('session_id', $sessionId)
-                ->when($user !== null, fn ($q) => $q->orWhere('user_id', $user->id))
+                ->when($userId !== null, fn (Builder $q) => $q->orWhere('user_id', $userId))
                 ->pluck('id');
 
             Media::inTenant(current_tenant_id())
