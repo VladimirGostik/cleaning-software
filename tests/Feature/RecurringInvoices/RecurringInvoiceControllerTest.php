@@ -58,8 +58,6 @@ final class RecurringInvoiceControllerTest extends TestCase
             'start_date' => now()->subMonth()->toDateString(),
             'due_days' => 14,
             'customer_name' => 'Acme s.r.o.',
-            'period_from' => now()->startOfMonth()->toDateString(),
-            'period_to' => now()->endOfMonth()->toDateString(),
             'items' => [
                 ['description' => 'Cleaning', 'quantity' => 1, 'unit_price' => 100],
             ],

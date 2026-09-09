@@ -44,8 +44,6 @@ final class RecurringInvoiceServiceTest extends TestCase
             'end_date' => null,
             'occurrences_limit' => null,
             'due_days' => 14,
-            'period_from' => now()->startOfMonth()->toDateString(),
-            'period_to' => now()->endOfMonth()->toDateString(),
             'customer_name' => 'Acme s.r.o.',
             'customer_representative' => null,
             'customer_ico' => null,
@@ -253,8 +251,6 @@ final class RecurringInvoiceServiceTest extends TestCase
             'auto_issue' => false,
             'start_date' => now()->subMonth()->toDateString(),
             'due_days' => 14,
-            'period_from' => now()->startOfMonth()->toDateString(),
-            'period_to' => now()->endOfMonth()->toDateString(),
             'items' => [['description' => 'Test', 'quantity' => 1, 'unit_price' => 100]],
         ]);
 
@@ -277,8 +273,6 @@ final class RecurringInvoiceServiceTest extends TestCase
             'occurrences_limit' => 12,
             'due_days' => 14,
             'customer_name' => 'Acme',
-            'period_from' => now()->startOfMonth()->toDateString(),
-            'period_to' => now()->endOfMonth()->toDateString(),
             'items' => [['description' => 'Test', 'quantity' => 1, 'unit_price' => 100]],
         ]);
 

@@ -236,4 +236,30 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
         $this->assertSame(InvoiceStatusEnum::Draft, $invoice->status);
         $this->assertNotNull($ri->next_run_at);
     }
+
+    // -------------------------------------------------------------------------
+    // regression: static template period no longer copied onto generated invoice
+    // -------------------------------------------------------------------------
+
+    public function test_generated_invoice_has_null_period_fields(): void
+    {
+        $ri = $this->createDueTemplate();
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $invoice = Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail();
+        $this->assertNull($invoice->period_from);
+        $this->assertNull($invoice->period_to);
+
+        $ri->refresh();
+        $ri->update(['next_run_at' => now()->toDateString()]);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $secondInvoice = Invoice::where('recurring_invoice_id', $ri->id)
+            ->where('id', '!=', $invoice->id)
+            ->firstOrFail();
+        $this->assertNull($secondInvoice->period_from);
+        $this->assertNull($secondInvoice->period_to);
+    }
 }

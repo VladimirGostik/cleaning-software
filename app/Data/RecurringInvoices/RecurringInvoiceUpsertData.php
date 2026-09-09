@@ -52,10 +52,6 @@ final class RecurringInvoiceUpsertData extends Data
         #[Required]
         public readonly int $due_days,
         #[Nullable]
-        public readonly ?string $period_from,
-        #[Nullable]
-        public readonly ?string $period_to,
-        #[Nullable]
         public readonly ?string $customer_name,
         #[Nullable]
         public readonly ?string $customer_representative,
@@ -129,8 +125,6 @@ final class RecurringInvoiceUpsertData extends Data
             'occurrences_limit' => ['nullable', 'integer', 'min:1'],
             'due_days' => ['required', 'integer', 'min:0', 'max:365'],
             'customer_name' => ['required_without:client_id', 'nullable', 'string', 'max:255'],
-            'period_from' => ['required_if:type,monthly,special', 'nullable', 'date'],
-            'period_to' => ['required_if:type,monthly,special', 'nullable', 'date', 'after_or_equal:period_from'],
             'items' => ['required', 'array', 'min:1'],
             'deposit' => ['numeric', 'min:0'],
             'constant_symbol' => ['nullable', 'string', 'max:10', 'regex:/^\d*$/'],

@@ -47,8 +47,6 @@ final class RecurringInvoiceFactory extends Factory
             'customer_postal_code' => null,
             'customer_country' => 'SK',
             'customer_email' => null,
-            'period_from' => null,
-            'period_to' => null,
             'due_days' => 14,
             'deposit' => '0.00',
             'note' => null,

@@ -54,8 +54,6 @@ interface RecurringInvoiceFormData {
     end_date: string | null;
     occurrences_limit: number | null;
     due_days: number;
-    period_from: string | null;
-    period_to: string | null;
     customer_name: string | null;
     customer_representative: string | null;
     customer_ico: string | null;
@@ -127,8 +125,6 @@ function initialData(): RecurringInvoiceFormData {
             end_date: ri.end_date,
             occurrences_limit: ri.occurrences_limit,
             due_days: ri.due_days,
-            period_from: ri.period_from,
-            period_to: ri.period_to,
             customer_name: ri.customer_name,
             customer_representative: ri.customer_representative,
             customer_ico: ri.customer_ico,
@@ -164,8 +160,6 @@ function initialData(): RecurringInvoiceFormData {
         end_date: null,
         occurrences_limit: null,
         due_days: 14,
-        period_from: null,
-        period_to: null,
         customer_name: null,
         customer_representative: null,
         customer_ico: null,
@@ -255,9 +249,9 @@ function updateStartDate(value: string | null): void {
     callValidate(form, 'start_date');
 }
 
-function updateNullableDate(field: 'end_date' | 'period_from' | 'period_to', value: string | null): void {
-    form[field] = value;
-    callValidate(form, field);
+function updateEndDate(value: string | null): void {
+    form.end_date = value;
+    callValidate(form, 'end_date');
 }
 
 function submit(): void {
@@ -322,22 +316,6 @@ function submit(): void {
                                 @update:model-value="updateStartDate($event)"
                             />
 
-                            <template v-if="form.type !== 'one_off'">
-                                <DateInput
-                                    :model-value="form.period_from"
-                                    :label="t('invoice_period_from')"
-                                    :error="form.errors.period_from"
-                                    @update:model-value="updateNullableDate('period_from', $event)"
-                                />
-
-                                <DateInput
-                                    :model-value="form.period_to"
-                                    :label="t('invoice_period_to')"
-                                    :error="form.errors.period_to"
-                                    @update:model-value="updateNullableDate('period_to', $event)"
-                                />
-                            </template>
-
                             <NumberInput
                                 :model-value="form.due_days"
                                 :label="t('recurring_invoice_due_days')"
@@ -362,7 +340,7 @@ function submit(): void {
                             :model-value="form.end_date"
                             :label="t('recurring_invoice_end_date')"
                             :error="form.errors.end_date"
-                            @update:model-value="updateNullableDate('end_date', $event)"
+                            @update:model-value="updateEndDate($event)"
                         />
 
                         <NumberInput

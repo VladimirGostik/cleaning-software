@@ -42,8 +42,6 @@ return new class extends Migration
             $table->string('customer_country', 2)->nullable();
             $table->string('customer_email')->nullable();
 
-            $table->date('period_from')->nullable();
-            $table->date('period_to')->nullable();
             $table->unsignedSmallInteger('due_days')->default(14);
             $table->decimal('deposit', 12, 2)->default(0);
             $table->text('note')->nullable();

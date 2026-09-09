@@ -58,13 +58,6 @@ const { t } = useI18n();
                     <p class="text-xs text-base-content/50">{{ t('recurring_invoice_last_generated_at') }}</p>
                     <p>{{ formatDatetime(props.recurringInvoice.last_generated_at) }}</p>
                 </div>
-                <div v-if="props.recurringInvoice.period_from" class="col-span-2 sm:col-span-3">
-                    <p class="text-xs text-base-content/50">{{ t('invoice_pdf_period') }}</p>
-                    <p>
-                        {{ formatDate(props.recurringInvoice.period_from) }} –
-                        {{ formatDate(props.recurringInvoice.period_to) }}
-                    </p>
-                </div>
             </div>
         </div>
     </div>

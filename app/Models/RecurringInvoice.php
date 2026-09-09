@@ -43,8 +43,6 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon|null $end_date
  * @property Carbon|null $next_run_at
  * @property Carbon|null $last_generated_at
- * @property Carbon|null $period_from
- * @property Carbon|null $period_to
  * @property int|null $occurrences_limit
  * @property int $occurrences_generated
  * @property int $due_days
@@ -80,8 +78,6 @@ use Spatie\Activitylog\Support\LogOptions;
     'customer_postal_code',
     'customer_country',
     'customer_email',
-    'period_from',
-    'period_to',
     'due_days',
     'deposit',
     'note',
@@ -115,8 +111,6 @@ final class RecurringInvoice extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'next_run_at' => 'date',
-            'period_from' => 'date',
-            'period_to' => 'date',
             'last_generated_at' => 'datetime',
             'occurrences_limit' => 'integer',
             'occurrences_generated' => 'integer',
