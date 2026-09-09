@@ -22,6 +22,7 @@ import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
 import { CURRENCIES, currencyKey, enumOptions, TASK_FREQUENCIES, taskFrequencyKey } from '@/utils/enums';
+import { useDependentValidation } from '@/Composables/useDependentValidation';
 
 type QuoteItemRow = ItemRow & {
     id: string | null;
@@ -136,6 +137,13 @@ const form = useForm<QuoteFormData>(
     isEditing.value ? `/quotes/${props.quote!.id}` : '/quotes',
     initialData(),
 );
+
+useDependentValidation(form, {
+    // valid_until => after_or_equal:issue_date
+    issue_date: ['valid_until'],
+    // customer_name => required_without:client_id; cleaning_object_id => ObjectBelongsToClient
+    client_id: ['customer_name', 'cleaning_object_id'],
+});
 
 form.transform((data: QuoteFormData) => {
     const { items, document_uuid, ...rest } = data;

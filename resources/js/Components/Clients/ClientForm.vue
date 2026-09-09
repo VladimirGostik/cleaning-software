@@ -13,6 +13,7 @@ import ContactsListField from './ContactsListField.vue';
 
 import { CLIENT_TYPES, clientTypeKey } from '@/utils/enums';
 import type { RadioOption } from '@/Components/Forms/RadioGroup.vue';
+import { useDependentValidation } from '@/Composables/useDependentValidation';
 
 interface ClientFormData {
     type: App.Enums.ClientTypeEnum;
@@ -60,6 +61,11 @@ const form = useForm<ClientFormData>(
         contacts: (props.client?.contacts ?? []).map((c) => ({ ...c })),
     },
 );
+
+useDependentValidation(form, {
+    // ico => required_if:type,corporate
+    type: ['ico'],
+});
 
 const typeOptions = computed<RadioOption[]>(() => CLIENT_TYPES.map((v) => ({ value: v, label: t(clientTypeKey(v)) })));
 

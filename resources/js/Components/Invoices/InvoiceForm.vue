@@ -21,6 +21,7 @@ import InvoiceFormSummary from './InvoiceFormSummary.vue';
 import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
+import { useDependentValidation } from '@/Composables/useDependentValidation';
 import {
     CURRENCIES,
     currencyKey,
@@ -189,6 +190,17 @@ form.transform((data: InvoiceFormData) => ({
     footer_text: data.footer_text || null,
     note: data.note || null,
 }));
+
+useDependentValidation(form, {
+    // due_date => after_or_equal:issue_date
+    issue_date: ['due_date'],
+    // period_to => after_or_equal:period_from
+    period_from: ['period_to'],
+    // period_from/period_to => required_if:type,monthly,special
+    type: ['period_from', 'period_to'],
+    // customer_name => required_without:client_id; cleaning_object_id => ObjectBelongsToClient
+    client_id: ['customer_name', 'cleaning_object_id'],
+});
 
 const ui = reactive({
     subjectMode: initialMode(props.invoice),

@@ -22,6 +22,7 @@ import InvoiceFormSummary from '@/Components/Invoices/InvoiceFormSummary.vue';
 import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
+import { useDependentValidation } from '@/Composables/useDependentValidation';
 import {
     CURRENCIES,
     currencyKey,
@@ -195,6 +196,15 @@ form.transform((data: RecurringInvoiceFormData) => ({
     footer_text: data.footer_text || null,
     note: data.note || null,
 }));
+
+useDependentValidation(form, {
+    // end_date => after:start_date
+    start_date: ['end_date'],
+    // end_date and occurrences_limit are mutually exclusive
+    occurrences_limit: ['end_date'],
+    // customer_name => required_without:client_id; cleaning_object_id => ObjectBelongsToClient
+    client_id: ['customer_name', 'cleaning_object_id'],
+});
 
 const ui = reactive({
     subjectMode: initialMode(props.recurringInvoice),

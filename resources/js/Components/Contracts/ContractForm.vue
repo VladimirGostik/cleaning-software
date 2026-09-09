@@ -18,6 +18,7 @@ import EmploymentContractFields, { type EmploymentFormData } from './EmploymentC
 import { toNumber } from '@/utils/money';
 import { toDateInputValue } from '@/utils/date';
 import { CONTRACT_CATEGORY_CONTRACTABLE, CONTRACT_TERM_TYPES, contractTermTypeKey, enumOptions } from '@/utils/enums';
+import { useDependentValidation } from '@/Composables/useDependentValidation';
 
 interface ContractFormData {
     title: string;
@@ -116,6 +117,15 @@ form.transform((data: ContractFormData) => ({
     end_date: data.term_type === 'fixed' ? data.end_date : null,
     employment: data.category === 'employment' ? data.employment : null,
 }));
+
+useDependentValidation(form, {
+    // end_date => after_or_equal:valid_from
+    valid_from: ['end_date'],
+    // end_date => required_if:term_type,fixed
+    term_type: ['end_date'],
+    // employment => required_if:category,employment
+    category: ['employment'],
+});
 
 const ui = reactive({
     lastAppliedBody: '',
