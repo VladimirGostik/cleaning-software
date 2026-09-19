@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Data\Objects;
 
 use App\Enums\ObjectTypeEnum;
+use App\Rules\AtMostOnePrimaryContact;
 use Illuminate\Validation\Rule;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\DataCollection;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]
@@ -43,7 +46,10 @@ final class ObjectUpsertData extends Data
         public readonly ?float $area_sqm,
         #[Nullable]
         public readonly ?int $floor,
-        public readonly bool $is_active = true,
+        public readonly bool $is_active,
+        /** @var DataCollection<int, ObjectContactData> */
+        #[DataCollectionOf(ObjectContactData::class)]
+        public readonly DataCollection $contacts,
     ) {}
 
     /** @return array<string, mixed> */
@@ -55,6 +61,7 @@ final class ObjectUpsertData extends Data
                 'uuid',
                 Rule::exists('clients', 'id')->where('tenant_id', current_tenant_id())->whereNull('deleted_at'),
             ],
+            'contacts' => [new AtMostOnePrimaryContact('app.object_contacts_multiple_primary')],
         ];
     }
 }

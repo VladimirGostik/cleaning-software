@@ -9,6 +9,7 @@ import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
 import ObjectDetailCard from '@/Components/Objects/ObjectDetailCard.vue';
 import ObjectAccessCard from '@/Components/Objects/ObjectAccessCard.vue';
 import ObjectWorkBreakdownsCard from '@/Components/Objects/ObjectWorkBreakdownsCard.vue';
+import ContactsList from '@/Components/Contacts/ContactsList.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
@@ -109,8 +110,15 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />
         </div>
 
-        <div>
+        <div class="space-y-6">
             <ObjectDetailCard :object="object" />
+
+            <ContactsList
+                v-if="object.contacts !== null"
+                :contacts="object.contacts"
+                :title="t('object_contacts')"
+                :empty-label="t('object_no_contacts')"
+            />
         </div>
     </div>
 

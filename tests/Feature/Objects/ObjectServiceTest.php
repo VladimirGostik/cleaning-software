@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Objects;
 
+use App\Data\Objects\ObjectContactData;
 use App\Data\Objects\ObjectUpsertData;
 use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
@@ -12,6 +13,7 @@ use App\Models\Tenant;
 use App\Services\ObjectService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Spatie\LaravelData\DataCollection;
 use Tests\TestCase;
 
 final class ObjectServiceTest extends TestCase
@@ -73,7 +75,7 @@ final class ObjectServiceTest extends TestCase
     public function test_create_fills_tenant_id_from_bound_tenant(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         $data = new ObjectUpsertData(
@@ -91,9 +93,10 @@ final class ObjectServiceTest extends TestCase
             area_sqm: null,
             floor: null,
             is_active: true,
+            contacts: new DataCollection(ObjectContactData::class, []),
         );
 
-        $object = app(ObjectService::class)->create($data);
+        $object = app(ObjectService::class)->create($data, $actor);
 
         $this->assertSame($tenant->id, $object->tenant_id);
     }

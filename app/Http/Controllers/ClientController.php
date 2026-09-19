@@ -10,6 +10,7 @@ use App\Data\Objects\ObjectListItemData;
 use App\Enums\PermissionEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
+use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\ClientService;
 use Illuminate\Http\RedirectResponse;
@@ -33,15 +34,26 @@ final class ClientController extends Controller
     }
 
     #[Authorize('view', 'client')]
-    public function show(Client $client): Response
+    public function show(Client $client, Request $request): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $includeContacts = $actor->can('viewContacts', CleaningObject::class);
+
         $client->load('contacts');
 
-        $objects = $client->objects()->with('client:id,name')->orderBy('name')->get();
+        $objectsQuery = $client->objects()->with('client:id,name')->orderBy('name');
+
+        if ($includeContacts) {
+            $objectsQuery->withCount('contacts')->with('primaryContact');
+        }
+
+        $objects = $objectsQuery->get();
 
         return Inertia::render('Clients/Show', [
             'client' => ClientDetailData::fromModel($client),
-            'objects' => $objects->map(fn (CleaningObject $object) => ObjectListItemData::fromModel($object))->all(),
+            'objects' => $objects->map(fn (CleaningObject $object) => ObjectListItemData::fromModel($object, $includeContacts))->all(),
         ]);
     }
 

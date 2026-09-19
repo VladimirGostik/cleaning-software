@@ -6,7 +6,9 @@ namespace App\Data\Objects;
 
 use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\DataCollection;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]
@@ -30,9 +32,17 @@ final class ObjectDetailData extends Data
         public readonly ?int $floor,
         public readonly bool $is_active,
         public readonly string $created_at,
+        /**
+         * Q1 gate: `null` = actor may not see object contacts at all; `[]` = permitted actor,
+         * this object simply has none. Never conflate the two — see `ObjectPolicy::viewContacts()`.
+         *
+         * @var DataCollection<int, ObjectContactData>|null
+         */
+        #[DataCollectionOf(ObjectContactData::class)]
+        public readonly ?DataCollection $contacts,
     ) {}
 
-    public static function fromModel(CleaningObject $object): self
+    public static function fromModel(CleaningObject $object, bool $includeContacts): self
     {
         return new self(
             id: $object->id,
@@ -52,6 +62,7 @@ final class ObjectDetailData extends Data
             floor: $object->floor,
             is_active: (bool) $object->is_active,
             created_at: $object->created_at->toIso8601String(),
+            contacts: $includeContacts ? ObjectContactData::collect($object->contacts, DataCollection::class) : null,
         );
     }
 }

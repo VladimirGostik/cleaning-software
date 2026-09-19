@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -47,6 +48,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Client|null $client
  * @property Collection<int, WorkBreakdown> $workBreakdowns
  * @property Collection<int, ScheduledJob> $jobs
+ * @property Collection<int, ObjectContact> $contacts
+ * @property ObjectContact|null $primaryContact
  *
  * D1 override (phase 3 plan): two lifecycle switches on this model — `is_active` for direct
  * user deactivation, `deleted_at` for the soft-delete cascade fired by `ClientService::delete()`
@@ -115,6 +118,20 @@ final class CleaningObject extends Model
     public function jobs(): HasMany
     {
         return $this->hasMany(ScheduledJob::class, 'cleaning_object_id');
+    }
+
+    /** @return HasMany<ObjectContact, $this> */
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(ObjectContact::class, 'cleaning_object_id')
+            ->orderByDesc('is_primary')
+            ->orderBy('name');
+    }
+
+    /** @return HasOne<ObjectContact, $this> */
+    public function primaryContact(): HasOne
+    {
+        return $this->hasOne(ObjectContact::class, 'cleaning_object_id')->where('is_primary', true);
     }
 
     /**

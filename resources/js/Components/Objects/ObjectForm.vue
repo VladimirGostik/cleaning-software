@@ -10,10 +10,12 @@ import NumberInput from '@/Components/Forms/NumberInput.vue';
 import TextareaInput from '@/Components/Forms/TextareaInput.vue';
 import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
+import ContactsListField from '@/Components/Contacts/ContactsListField.vue';
 
 import { OBJECT_TYPES, objectTypeKey } from '@/utils/enums';
 import { objectToUpsertPayload, type ObjectFormData } from './objectPayload';
 import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
+import { useAuthorization } from '@/Composables/useAuthorization';
 
 const props = defineProps<{
     object?: App.Data.Objects.ObjectDetailData | null;
@@ -26,8 +28,10 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { allows } = useAuthorization();
 
 const isEdit = computed(() => !!props.object);
+const canSeeContacts = computed(() => allows('view all objects'));
 
 const form = useForm<ObjectFormData>(
     isEdit.value ? 'put' : 'post',
@@ -49,6 +53,7 @@ const form = useForm<ObjectFormData>(
               area_sqm: null,
               floor: null,
               is_active: true,
+              contacts: [],
           },
 );
 
@@ -124,6 +129,11 @@ function submit(): void {
                         :min="0"
                         :error="form.errors.key_count"
                     />
+                </div>
+
+                <div v-if="canSeeContacts" class="space-y-4">
+                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('object_contacts') }}</h2>
+                    <ContactsListField field="contacts" />
                 </div>
 
                 <TextareaInput

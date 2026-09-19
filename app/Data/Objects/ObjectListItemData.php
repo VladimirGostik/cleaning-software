@@ -22,9 +22,13 @@ final class ObjectListItemData extends Data
         public readonly ?string $client_name,
         public readonly ?string $area_sqm,
         public readonly string $created_at,
+        /** Q1 gate: `null` = actor may not see contacts. See `ObjectPolicy::viewContacts()`. */
+        public readonly ?int $contacts_count,
+        public readonly ?string $primary_contact_email,
+        public readonly ?string $primary_contact_phone,
     ) {}
 
-    public static function fromModel(CleaningObject $object): self
+    public static function fromModel(CleaningObject $object, bool $includeContacts): self
     {
         return new self(
             id: $object->id,
@@ -36,6 +40,9 @@ final class ObjectListItemData extends Data
             client_name: $object->client?->name,
             area_sqm: $object->area_sqm,
             created_at: $object->created_at->toIso8601String(),
+            contacts_count: $includeContacts ? (int) ($object->contacts_count ?? 0) : null,
+            primary_contact_email: $includeContacts ? $object->primaryContact?->email : null,
+            primary_contact_phone: $includeContacts ? $object->primaryContact?->phone : null,
         );
     }
 }

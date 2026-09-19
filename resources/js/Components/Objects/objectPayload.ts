@@ -1,3 +1,5 @@
+import type { ContactRow } from '@/Components/Contacts/contact';
+
 export interface ObjectFormData {
     client_id: string;
     type: App.Enums.ObjectTypeEnum;
@@ -13,6 +15,7 @@ export interface ObjectFormData {
     area_sqm: number | null;
     floor: number | null;
     is_active: boolean;
+    contacts: ContactRow[];
 }
 
 export function objectToUpsertPayload(object: App.Data.Objects.ObjectDetailData): ObjectFormData {
@@ -31,5 +34,6 @@ export function objectToUpsertPayload(object: App.Data.Objects.ObjectDetailData)
         area_sqm: object.area_sqm === null ? null : Number(object.area_sqm),
         floor: object.floor,
         is_active: object.is_active,
+        contacts: (object.contacts ?? []).map((c) => ({ ...c })),
     };
 }

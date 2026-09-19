@@ -3,9 +3,12 @@ import { useI18n } from 'vue-i18n';
 import { UsersIcon } from '@heroicons/vue/24/outline';
 
 import EmptyState from '@/Components/EmptyState.vue';
+import type { ContactRow } from './contact';
 
-defineProps<{
-    contacts: App.Data.Clients.ClientContactData[];
+const props = defineProps<{
+    contacts: ContactRow[];
+    title: string;
+    emptyLabel: string;
 }>();
 
 const { t } = useI18n();
@@ -14,16 +17,16 @@ const { t } = useI18n();
 <template>
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <h2 class="card-title text-base">{{ t('client_contacts') }}</h2>
+            <h2 class="card-title text-base">{{ props.title }}</h2>
 
-            <EmptyState v-if="contacts.length === 0" :title="t('client_no_contacts')" :icon="UsersIcon" />
+            <EmptyState v-if="contacts.length === 0" :title="props.emptyLabel" :icon="UsersIcon" />
 
             <ul v-else class="space-y-3">
                 <li v-for="contact in contacts" :key="contact.id ?? contact.name" class="text-sm">
                     <div class="flex items-center gap-2">
                         <span class="font-medium">{{ contact.name }}</span>
                         <span v-if="contact.is_primary" class="badge badge-primary badge-xs">
-                            {{ t('client_contact_is_primary') }}
+                            {{ t('contact_is_primary') }}
                         </span>
                     </div>
                     <p v-if="contact.position" class="text-xs text-base-content/60">{{ contact.position }}</p>

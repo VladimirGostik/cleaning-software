@@ -34,4 +34,15 @@ final class ObjectPolicy
     {
         return $user->can(PermissionEnum::DeleteObjects->value) && $object->isVisibleTo($user);
     }
+
+    /**
+     * Field-level gate (Q1) for object contact persons — reaching any call site already
+     * required `viewAny` / `view`, which own visibility; this owns "may this actor see contacts
+     * at all", keyed on the `ViewAllObjects` breadth modifier. No model argument — an own-only
+     * actor never sees contacts on ANY object, so no per-row query is needed.
+     */
+    public function viewContacts(User $user): bool
+    {
+        return $user->can(PermissionEnum::ViewAllObjects->value);
+    }
 }

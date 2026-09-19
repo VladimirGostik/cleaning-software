@@ -6,7 +6,7 @@ namespace App\Data\Clients;
 
 use App\Enums\ClientTypeEnum;
 use App\Models\Client;
-use Closure;
+use App\Rules\AtMostOnePrimaryContact;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
@@ -70,21 +70,7 @@ final class ClientUpsertData extends Data
                     ->whereNull('deleted_at')
                     ->ignore($clientId),
             ],
-            'contacts' => [
-                function (string $attribute, mixed $value, Closure $fail): void {
-                    if (! is_array($value)) {
-                        return;
-                    }
-
-                    $primaryCount = collect($value)
-                        ->filter(fn (mixed $contact): bool => is_array($contact) && (bool) ($contact['is_primary'] ?? false))
-                        ->count();
-
-                    if ($primaryCount > 1) {
-                        $fail(__('app.client_contacts_multiple_primary'));
-                    }
-                },
-            ],
+            'contacts' => [new AtMostOnePrimaryContact('app.client_contacts_multiple_primary')],
         ];
     }
 }

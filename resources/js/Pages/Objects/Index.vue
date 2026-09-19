@@ -40,14 +40,29 @@ const showEmptyState = computed(
     () => props.objects.total === 0 && !hasActiveFilters.value && allows('view all objects'),
 );
 
-const columns: TableColumn<App.Data.Objects.ObjectListItemData>[] = [
-    { key: 'name', label: t('name'), sortable: true },
-    { key: 'type', label: t('type'), sortable: true },
-    { key: 'client_name', label: t('client'), sortable: false },
-    { key: 'city', label: t('city'), sortable: true },
-    { key: 'area_sqm', label: t('object_area_sqm'), sortable: false },
-    { key: 'is_active', label: t('status'), sortable: true },
-];
+const showContactsColumn = computed(
+    () => props.objects.data.length === 0 || props.objects.data.every((row) => row.contacts_count !== null),
+);
+
+const columns = computed<TableColumn<App.Data.Objects.ObjectListItemData>[]>(() => {
+    const definitions: TableColumn<App.Data.Objects.ObjectListItemData>[] = [
+        { key: 'name', label: t('name'), sortable: true },
+        { key: 'type', label: t('type'), sortable: true },
+        { key: 'client_name', label: t('client'), sortable: false },
+        { key: 'city', label: t('city'), sortable: true },
+    ];
+
+    if (showContactsColumn.value) {
+        definitions.push({ key: 'primary_contact_email', label: t('contact_is_primary'), sortable: false });
+    }
+
+    definitions.push(
+        { key: 'area_sqm', label: t('object_area_sqm'), sortable: false },
+        { key: 'is_active', label: t('status'), sortable: true },
+    );
+
+    return definitions;
+});
 
 const filterDefinitions = computed<FilterConfig[]>(() => {
     const definitions: FilterConfig[] = [
@@ -150,6 +165,26 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <Link :href="`/clients/${row.client_id}`" class="link link-hover">
                         {{ row.client_name ?? t('empty_dash') }}
                     </Link>
+                </template>
+
+                <template #cell-primary_contact_email="{ row }">
+                    <div v-if="row.primary_contact_email || row.primary_contact_phone" class="flex flex-col gap-0.5">
+                        <a
+                            v-if="row.primary_contact_email"
+                            :href="`mailto:${row.primary_contact_email}`"
+                            class="link link-hover"
+                        >
+                            {{ row.primary_contact_email }}
+                        </a>
+                        <a
+                            v-if="row.primary_contact_phone"
+                            :href="`tel:${row.primary_contact_phone}`"
+                            class="link link-hover"
+                        >
+                            {{ row.primary_contact_phone }}
+                        </a>
+                    </div>
+                    <span v-else>{{ t('empty_dash') }}</span>
                 </template>
 
                 <template #cell-area_sqm="{ row }">

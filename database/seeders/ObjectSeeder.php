@@ -27,10 +27,13 @@ final class ObjectSeeder extends Seeder
         foreach ($clients as $client) {
             CleaningObject::factory()
                 ->count(random_int(1, 3))
+                ->withContacts(random_int(1, 2))
                 ->create(['client_id' => $client->id]);
 
             if ($client->id === $lastClientId) {
-                CleaningObject::factory()->inactive()->create(['client_id' => $client->id]);
+                // Deactivated object keeps a contact — demo proof that `is_active` and
+                // `deleted_at` (or contact ownership) are orthogonal.
+                CleaningObject::factory()->inactive()->withContacts()->create(['client_id' => $client->id]);
             }
         }
     }

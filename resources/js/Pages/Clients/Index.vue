@@ -39,7 +39,7 @@ const columns: TableColumn<App.Data.Clients.ClientListItemData>[] = [
     { key: 'type', label: t('type'), sortable: true },
     { key: 'ico', label: t('client_ico'), sortable: true },
     { key: 'city', label: t('city'), sortable: true },
-    { key: 'primary_contact_email', label: t('client_contact_is_primary'), sortable: false },
+    { key: 'primary_contact_email', label: t('contact_is_primary'), sortable: false },
     { key: 'objects_count', label: t('objects'), sortable: false },
 ];
 

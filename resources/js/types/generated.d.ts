@@ -748,6 +748,14 @@ readonly preferences: App.Data.Notifications.NotificationPreferenceUpdateItemDat
 };
 }
 namespace Objects {
+export type ObjectContactData = {
+readonly id: string | null,
+readonly name: string,
+readonly position: string | null,
+readonly email: string | null,
+readonly phone: string | null,
+readonly is_primary: boolean,
+};
 export type ObjectDetailData = {
 readonly id: string,
 readonly client_id: string,
@@ -766,6 +774,7 @@ readonly area_sqm: string | null,
 readonly floor: number | null,
 readonly is_active: boolean,
 readonly created_at: string,
+readonly contacts: App.Data.Objects.ObjectContactData[] | null,
 };
 export type ObjectListItemData = {
 readonly id: string,
@@ -777,6 +786,9 @@ readonly client_id: string,
 readonly client_name: string | null,
 readonly area_sqm: string | null,
 readonly created_at: string,
+readonly contacts_count: number | null,
+readonly primary_contact_email: string | null,
+readonly primary_contact_phone: string | null,
 };
 export type ObjectOptionData = {
 readonly id: string,
@@ -800,6 +812,7 @@ readonly special_instructions: string | null,
 readonly area_sqm: number | null,
 readonly floor: number | null,
 readonly is_active: boolean,
+readonly contacts: App.Data.Objects.ObjectContactData[],
 };
 }
 namespace Quotes {

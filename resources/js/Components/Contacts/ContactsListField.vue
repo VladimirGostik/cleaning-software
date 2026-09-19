@@ -6,10 +6,7 @@ import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import TextInput from '@/Components/Forms/TextInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
 import { callValidate } from '@/Components/Forms/useFieldError';
-
-type ClientContactData = App.Data.Clients.ClientContactData;
-// Mutable view over the (readonly) DTO shape — the form array is mutated in place.
-type MutableContact = { -readonly [K in keyof ClientContactData]: ClientContactData[K] };
+import type { ContactRow } from './contact';
 
 const props = defineProps<{
     field: string;
@@ -25,9 +22,9 @@ if (import.meta.env.DEV && !form) {
     );
 }
 
-const rows = computed<MutableContact[]>(() => {
+const rows = computed<ContactRow[]>(() => {
     if (!form) return [];
-    return (form as Record<string, unknown>)[props.field] as MutableContact[];
+    return (form as Record<string, unknown>)[props.field] as ContactRow[];
 });
 
 const errors = computed(() => (form ? (form.errors as Record<string, string | undefined>) : {}));
@@ -36,7 +33,7 @@ const errors = computed(() => (form ? (form.errors as Record<string, string | un
 const rowIds = new WeakMap<object, number>();
 let rowIdCounter = 0;
 
-function rowKey(row: MutableContact): number {
+function rowKey(row: ContactRow): number {
     let id = rowIds.get(row);
     if (id === undefined) {
         id = ++rowIdCounter;
@@ -97,13 +94,13 @@ function setField(index: number, key: 'name' | 'position' | 'email' | 'phone', v
                         :checked="row.is_primary"
                         @change="setPrimary(index)"
                     />
-                    <span class="text-sm">{{ t('client_contact_is_primary') }}</span>
+                    <span class="text-sm">{{ t('contact_is_primary') }}</span>
                 </label>
 
                 <button
                     type="button"
                     class="btn btn-ghost btn-xs"
-                    :aria-label="t('client_contact_remove')"
+                    :aria-label="t('contact_remove')"
                     @click="remove(index)"
                 >
                     <TrashIcon class="size-4" />
@@ -152,7 +149,7 @@ function setField(index: number, key: 'name' | 'position' | 'email' | 'phone', v
 
         <button type="button" class="btn btn-ghost btn-sm" @click="add">
             <PlusIcon class="size-4" />
-            {{ t('client_contact_add') }}
+            {{ t('contact_add') }}
         </button>
     </div>
 </template>

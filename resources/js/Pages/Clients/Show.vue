@@ -6,7 +6,7 @@ import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ClientFormDrawer from '@/Components/Clients/ClientFormDrawer.vue';
 import ClientDetailCard from '@/Components/Clients/ClientDetailCard.vue';
-import ClientContactsList from '@/Components/Clients/ClientContactsList.vue';
+import ContactsList from '@/Components/Contacts/ContactsList.vue';
 import ClientObjectsTable from '@/Components/Clients/ClientObjectsTable.vue';
 import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
 
@@ -91,7 +91,11 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
         <div class="space-y-6">
             <ClientDetailCard :client="client" />
-            <ClientContactsList :contacts="client.contacts" />
+            <ContactsList
+                :contacts="client.contacts"
+                :title="t('client_contacts')"
+                :empty-label="t('client_no_contacts')"
+            />
         </div>
     </div>
 

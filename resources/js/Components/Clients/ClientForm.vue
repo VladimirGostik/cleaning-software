@@ -9,11 +9,12 @@ import TextareaInput from '@/Components/Forms/TextareaInput.vue';
 import RadioGroup from '@/Components/Forms/RadioGroup.vue';
 import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
-import ContactsListField from './ContactsListField.vue';
+import ContactsListField from '@/Components/Contacts/ContactsListField.vue';
 
 import { CLIENT_TYPES, clientTypeKey } from '@/utils/enums';
 import type { RadioOption } from '@/Components/Forms/RadioGroup.vue';
 import { useDependentValidation } from '@/Composables/useDependentValidation';
+import type { ContactRow } from '@/Components/Contacts/contact';
 
 interface ClientFormData {
     type: App.Enums.ClientTypeEnum;
@@ -27,7 +28,7 @@ interface ClientFormData {
     postal_code: string;
     country: string;
     note: string;
-    contacts: App.Data.Clients.ClientContactData[];
+    contacts: ContactRow[];
 }
 
 const props = defineProps<{

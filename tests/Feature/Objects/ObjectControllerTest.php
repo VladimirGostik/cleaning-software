@@ -51,6 +51,7 @@ final class ObjectControllerTest extends TestCase
             'area_sqm' => 120.50,
             'floor' => 2,
             'is_active' => true,
+            'contacts' => [],
         ], $overrides);
     }
 

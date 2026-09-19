@@ -47,10 +47,17 @@ final class ObjectController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
-        $object->load(['client', 'workBreakdowns.tasks', 'workBreakdowns.contract:id,title,status']);
+        $includeContacts = $actor->can('viewContacts', CleaningObject::class);
+
+        $object->load(array_filter([
+            'client',
+            $includeContacts ? 'contacts' : null,
+            'workBreakdowns.tasks',
+            'workBreakdowns.contract:id,title,status',
+        ]));
 
         return Inertia::render('Objects/Show', [
-            'object' => ObjectDetailData::fromModel($object),
+            'object' => ObjectDetailData::fromModel($object, $includeContacts),
             'clients' => $actor->can('update', $object) ? $this->clientOptions($actor) : [],
             'workBreakdowns' => $object->workBreakdowns
                 ->map(fn (WorkBreakdown $breakdown) => WorkBreakdownDetailData::fromModel($breakdown))
@@ -59,17 +66,23 @@ final class ObjectController extends Controller
     }
 
     #[Authorize('create', CleaningObject::class)]
-    public function store(ObjectUpsertData $data): RedirectResponse
+    public function store(ObjectUpsertData $data, Request $request): RedirectResponse
     {
-        $object = $this->objects->create($data);
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $object = $this->objects->create($data, $actor);
 
         return to_route('objects.show', $object)->with('success', __('app.object_created'));
     }
 
     #[Authorize('update', 'object')]
-    public function update(ObjectUpsertData $data, CleaningObject $object): RedirectResponse
+    public function update(ObjectUpsertData $data, CleaningObject $object, Request $request): RedirectResponse
     {
-        $this->objects->update($object, $data);
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $this->objects->update($object, $data, $actor);
 
         return to_route('objects.show', $object)->with('success', __('app.object_updated'));
     }
