@@ -8,12 +8,14 @@ use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Contracts\RendersQuotePdf;
+use App\Contracts\ResolvesSupplierSignature;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
 use App\Services\Pdf\QuotePdfService;
+use App\Services\Pdf\SupplierSignatureResolver;
 use App\Support\PrecognitiveDataValidatorResolver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Container\Container;
@@ -37,6 +39,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);
         $this->app->bind(RendersQuotePdf::class, QuotePdfService::class);
         $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
+        $this->app->bind(ResolvesSupplierSignature::class, SupplierSignatureResolver::class);
 
         $this->app->beforeResolving(BaseData::class, function (string $class, array $parameters, Container $app): void {
             $request = $app->make(Request::class);

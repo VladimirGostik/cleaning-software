@@ -41,6 +41,7 @@ final class InvoiceSettingsTest extends TestCase
             'recurring_default_state' => 'issued',
             'swift_bic' => 'TATRSKBX',
             'default_constant_symbol' => '0308',
+            'signature_uuid' => null,
             'default_payment_type' => 'transfer',
             'default_currency' => 'EUR',
             'default_rounding_mode' => 'none',

@@ -207,6 +207,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
 
     Route::get('/settings/invoicing', [InvoiceSettingsController::class, 'show'])->name('settings.invoicing');
     Route::get('/settings/invoicing/preview/{template}', [InvoiceSettingsController::class, 'preview'])->name('settings.invoicing.preview');
+    Route::get('/settings/invoicing/signature', [InvoiceSettingsController::class, 'signature'])->name('settings.invoicing.signature');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::put('/settings/invoicing', [InvoiceSettingsController::class, 'update'])->name('settings.invoicing.update');
     });

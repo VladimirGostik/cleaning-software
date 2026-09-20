@@ -31,3 +31,17 @@ if (! function_exists('current_tenant_id')) {
         return $tenantId;
     }
 }
+
+if (! function_exists('format_quantity')) {
+    /**
+     * Trims trailing zeros off a 2-dp quantity: `111.00` -> `111`, `1.50` -> `1,5`,
+     * `0.25` -> `0,25`. Kept as a helper (not inline `@php`) so it stays unit-testable
+     * and reusable once modern/minimal adopt the same trimming.
+     */
+    function format_quantity(float $quantity): string
+    {
+        $formatted = number_format($quantity, 2, ',', "\u{00A0}");
+
+        return rtrim(rtrim($formatted, '0'), ',');
+    }
+}

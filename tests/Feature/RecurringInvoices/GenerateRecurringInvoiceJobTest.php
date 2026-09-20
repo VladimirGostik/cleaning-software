@@ -17,7 +17,9 @@ use App\Models\Tenant;
 use App\Models\TenantInterface;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -111,6 +113,22 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
         $invoice = Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail();
         $this->assertSame(InvoiceStatusEnum::Issued, $invoice->status);
         $this->assertNotNull($invoice->number);
+    }
+
+    public function test_unattended_auto_issue_stamps_system_marker_and_tenant_signature(): void
+    {
+        Storage::fake('local');
+        $ri = $this->createDueTemplate(['auto_issue' => true]);
+        $tenant = Tenant::withoutGlobalScopes()->findOrFail($ri->tenant_id);
+        $this->bindTenant($tenant);
+        $media = $tenant->addMedia(UploadedFile::fake()->image('sig.png', 80, 40))->toMediaCollection('signature');
+        $tenant->update(['signature_media_id' => $media->id]);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $invoice = Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail();
+        $this->assertSame(__('app.invoice_issued_by_system'), $invoice->issued_by_name);
+        $this->assertSame($media->id, $invoice->supplier_signature_media_id);
     }
 
     public function test_tenant_default_state_issued_auto_issues_invoice(): void
@@ -234,6 +252,8 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
         $ri->refresh();
         $invoice = Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail();
         $this->assertSame(InvoiceStatusEnum::Draft, $invoice->status);
+        $this->assertNull($invoice->issued_by_name);
+        $this->assertNull($invoice->supplier_signature_media_id);
         $this->assertNotNull($ri->next_run_at);
     }
 

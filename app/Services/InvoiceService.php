@@ -18,6 +18,8 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
+use App\Models\User;
 use App\Notifications\InvoiceIssued;
 use App\Scopes\TenantScope;
 use App\Utils\AllowedFilter;
@@ -136,7 +138,7 @@ final readonly class InvoiceService
         });
     }
 
-    public function issue(Invoice $invoice, InvoiceIssueData $data): Invoice
+    public function issue(Invoice $invoice, InvoiceIssueData $data, ?User $actor): Invoice
     {
         if ($invoice->status !== InvoiceStatusEnum::Draft) {
             throw ValidationException::withMessages(['status' => [__('app.invoice_not_draft')]]);
@@ -148,7 +150,7 @@ final readonly class InvoiceService
             throw ValidationException::withMessages(['supplier' => [__('app.invoice_supplier_incomplete')]]);
         }
 
-        return $this->db->transaction(function () use ($invoice, $data, $tenant): Invoice {
+        return $this->db->transaction(function () use ($invoice, $data, $tenant, $actor): Invoice {
             if ($data->number !== null) {
                 $taken = Invoice::withoutGlobalScope(TenantScope::class)
                     ->where('tenant_id', $invoice->tenant_id)
@@ -171,6 +173,8 @@ final readonly class InvoiceService
                 'variable_symbol' => $this->numberService->variableSymbol($number),
                 'status' => InvoiceStatusEnum::Issued,
                 'issued_at' => now(),
+                'issued_by_name' => $this->resolveIssuerName($invoice->tenant_id, $actor),
+                'supplier_signature_media_id' => $tenant->signature_media_id,
             ]);
 
             return $invoice;
@@ -188,13 +192,13 @@ final readonly class InvoiceService
         return $invoice;
     }
 
-    public function cancel(Invoice $invoice): Invoice
+    public function cancel(Invoice $invoice, ?User $actor): Invoice
     {
         if (! $invoice->canBeCancelled()) {
             throw ValidationException::withMessages(['status' => [__('app.invoice_cannot_cancel')]]);
         }
 
-        return $this->db->transaction(function () use ($invoice): Invoice {
+        return $this->db->transaction(function () use ($invoice, $actor): Invoice {
             $invoice->update(['status' => InvoiceStatusEnum::Cancelled, 'cancelled_at' => now()]);
 
             $tenant = Tenant::withoutGlobalScopes()->findOrFail($invoice->tenant_id);
@@ -226,6 +230,8 @@ final readonly class InvoiceService
                 'delivery_date' => now()->toDateString(),
                 'due_date' => now()->toDateString(),
                 'issued_at' => now(),
+                'issued_by_name' => $this->resolveIssuerName($invoice->tenant_id, $actor),
+                'supplier_signature_media_id' => $tenant->signature_media_id,
                 'is_vat_payer' => $invoice->is_vat_payer,
                 'vat_rate' => $invoice->vat_rate,
                 'subtotal' => -1 * (float) $invoice->subtotal,
@@ -403,6 +409,25 @@ final readonly class InvoiceService
         }
 
         Notification::route('mail', $invoice->customer_email)->notify(new InvoiceIssued($invoice->id));
+    }
+
+    /**
+     * Actor's `TenantMembership::display_name` for the given tenant, else the actor's global
+     * name, else the translated "Automaticky" marker for the unattended (queue) issuer path.
+     * Never sourced from request input — see gate 1b.
+     */
+    private function resolveIssuerName(string $tenantId, ?User $actor): string
+    {
+        if ($actor === null) {
+            return __('app.invoice_issued_by_system');
+        }
+
+        $membership = TenantMembership::query()
+            ->where('tenant_id', $tenantId)
+            ->where('user_id', $actor->id)
+            ->first();
+
+        return $membership !== null ? $membership->display_name : $actor->name;
     }
 
     /**

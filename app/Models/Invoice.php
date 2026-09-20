@@ -47,6 +47,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon $delivery_date
  * @property Carbon $due_date
  * @property Carbon|null $issued_at
+ * @property string|null $issued_by_name
  * @property Carbon|null $sent_at
  * @property Carbon|null $paid_at
  * @property Carbon|null $cancelled_at
@@ -63,6 +64,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $customer_name
  * @property string|null $customer_email
  * @property Collection<int, InvoiceItem> $items
+ * @property int|null $supplier_signature_media_id
  * @property Client|null $client
  * @property CleaningObject|null $cleaningObject
  */
@@ -84,6 +86,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'delivery_date',
     'due_date',
     'issued_at',
+    'issued_by_name',
     'sent_at',
     'paid_at',
     'cancelled_at',
@@ -129,6 +132,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'supplier_contact_email',
     'supplier_contact_phone',
     'supplier_registration_info',
+    'supplier_signature_media_id',
     'note',
 ])]
 final class Invoice extends Model
@@ -238,6 +242,14 @@ final class Invoice extends Model
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);
+    }
+
+    /**
+     * @return BelongsTo<Media, $this>
+     */
+    public function supplierSignatureMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'supplier_signature_media_id');
     }
 
     public function isEditable(): bool

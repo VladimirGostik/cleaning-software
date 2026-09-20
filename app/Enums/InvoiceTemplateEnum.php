@@ -22,4 +22,13 @@ enum InvoiceTemplateEnum: string
     {
         return __('app.invoice_template_'.$this->value);
     }
+
+    /** Pinned Chrome page footer view, when this template has one. */
+    public function footerView(): ?string
+    {
+        return match ($this) {
+            self::Classic => 'pdf.invoices.classic-footer',
+            default => null,
+        };
+    }
 }

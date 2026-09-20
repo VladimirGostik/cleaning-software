@@ -75,7 +75,7 @@ final class GenerateRecurringInvoiceJob implements ShouldBeUnique, ShouldQueue
             $missingSupplierFields = $tenant->missingSupplierFields();
 
             if ($shouldAutoIssue && $missingSupplierFields === []) {
-                $invoiceService->issue($invoice, new InvoiceIssueData(number: null));
+                $invoiceService->issue($invoice, new InvoiceIssueData(number: null), null);
             } elseif ($shouldAutoIssue) {
                 Log::warning('recurring_invoice.auto_issue.skipped_supplier_incomplete', [
                     'recurring_invoice_id' => $ri->id,

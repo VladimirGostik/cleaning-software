@@ -107,9 +107,9 @@ final class InvoiceController extends Controller
     }
 
     #[Authorize('issue', 'invoice')]
-    public function issue(InvoiceIssueData $data, Invoice $invoice): RedirectResponse
+    public function issue(InvoiceIssueData $data, Invoice $invoice, Request $request): RedirectResponse
     {
-        $this->invoices->issue($invoice, $data);
+        $this->invoices->issue($invoice, $data, $request->user());
 
         return to_route('invoices.show', $invoice)->with('success', __('app.invoice_issued'));
     }
@@ -123,9 +123,9 @@ final class InvoiceController extends Controller
     }
 
     #[Authorize('cancel', 'invoice')]
-    public function cancel(Invoice $invoice): RedirectResponse
+    public function cancel(Invoice $invoice, Request $request): RedirectResponse
     {
-        $this->invoices->cancel($invoice);
+        $this->invoices->cancel($invoice, $request->user());
 
         return to_route('invoices.show', $invoice)->with('success', __('app.invoice_cancelled'));
     }

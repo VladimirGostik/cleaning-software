@@ -79,7 +79,7 @@ final class InvoiceSkFieldsTest extends TestCase
         $this->bindTenant($tenant);
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
-        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null), null);
 
         $this->assertNotNull($issued->variable_symbol);
         $this->assertMatchesRegularExpression('/^\d+$/', $issued->variable_symbol);

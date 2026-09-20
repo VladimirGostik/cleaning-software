@@ -648,9 +648,15 @@ readonly registration_info: string | null,
 readonly recurring_default_state: App.Enums.RecurringDefaultStateEnum,
 readonly swift_bic: string | null,
 readonly default_constant_symbol: string | null,
+readonly signature_uuid: string | null,
 readonly default_payment_type: App.Enums.PaymentTypeEnum,
 readonly default_currency: App.Enums.CurrencyEnum,
 readonly default_rounding_mode: App.Enums.RoundingModeEnum,
+readonly remove_signature: boolean,
+};
+export type InvoiceSignatureConstraintsData = {
+readonly allowed_mimes: string[],
+readonly max_size_kb: number,
 };
 export type InvoiceStatCardData = {
 readonly amount: string,
@@ -1152,6 +1158,13 @@ readonly id: string,
 readonly name: string,
 readonly is_active: boolean,
 readonly color: App.Enums.TenantColorEnum | null,
+};
+export type TenantSignatureData = {
+readonly url: string,
+readonly file_name: string,
+readonly mime_type: string,
+readonly size: number,
+readonly uploaded_at: string,
 };
 export type TenantSupplierProfileData = {
 readonly address_line: string | null,

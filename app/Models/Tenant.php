@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property string $id
@@ -29,6 +31,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $swift_bic
  * @property string $invoice_number_format
  * @property string|null $registration_info
+ * @property int|null $signature_media_id
  * @property string|null $address_line
  * @property string|null $city
  * @property string|null $postal_code
@@ -38,6 +41,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property bool $is_active
  * @property User|null $owner
  * @property TenantInterface|null $interface
+ * @property Media|null $signatureMedia
  */
 #[Fillable([
     'owner_id',
@@ -51,6 +55,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'swift_bic',
     'invoice_number_format',
     'registration_info',
+    'signature_media_id',
     'address_line',
     'city',
     'postal_code',
@@ -59,10 +64,10 @@ use Spatie\Activitylog\Support\LogOptions;
     'contact_phone',
     'is_active',
 ])]
-final class Tenant extends Model
+final class Tenant extends Model implements HasMedia
 {
     /** @use HasFactory<TenantFactory> */
-    use HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use HasFactory, HasUuids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -74,13 +79,21 @@ final class Tenant extends Model
         ];
     }
 
+    public function registerMediaCollections(): void
+    {
+        $disk = config('invoicing.signature.disk', 'local');
+
+        $this->addMediaCollection('signature')
+            ->useDisk(is_string($disk) ? $disk : 'local');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logOnly([
                 'owner_id', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
                 'vat_rate', 'iban', 'is_active',
-                'swift_bic', 'invoice_number_format', 'registration_info',
+                'swift_bic', 'invoice_number_format', 'registration_info', 'signature_media_id',
                 'address_line', 'city', 'postal_code', 'country', 'contact_email', 'contact_phone',
             ])
             ->logOnlyDirty()
@@ -148,5 +161,11 @@ final class Tenant extends Model
         return $this->belongsToMany(User::class, 'tenant_memberships')
             ->withPivot(['is_active', 'joined_at'])
             ->withTimestamps();
+    }
+
+    /** @return BelongsTo<Media, $this> */
+    public function signatureMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'signature_media_id');
     }
 }

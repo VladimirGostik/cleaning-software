@@ -7,11 +7,15 @@ interface InvoiceSettingsDrawerState {
     isOpen: boolean;
     status: InvoiceSettingsDrawerStatus;
     settings: App.Data.Invoices.InvoiceSettingsData | null;
+    signature: App.Data.Tenants.TenantSignatureData | null;
+    constraints: App.Data.Invoices.InvoiceSignatureConstraintsData | null;
 }
 
 interface InertiaPartialPayload {
     props: {
         settings: App.Data.Invoices.InvoiceSettingsData;
+        signature: App.Data.Tenants.TenantSignatureData | null;
+        signature_constraints: App.Data.Invoices.InvoiceSignatureConstraintsData;
     };
 }
 
@@ -20,7 +24,13 @@ function isInertiaPartialPayload(value: unknown): value is InertiaPartialPayload
 
     const props = (value as { props: unknown }).props;
 
-    return typeof props === 'object' && props !== null && 'settings' in props;
+    return (
+        typeof props === 'object' &&
+        props !== null &&
+        'settings' in props &&
+        'signature' in props &&
+        'signature_constraints' in props
+    );
 }
 
 /**
@@ -32,6 +42,8 @@ export function useInvoiceSettingsDrawer() {
         isOpen: false,
         status: 'idle',
         settings: null,
+        signature: null,
+        constraints: null,
     });
 
     async function open(): Promise<void> {
@@ -71,6 +83,8 @@ export function useInvoiceSettingsDrawer() {
             }
 
             state.settings = payload.props.settings;
+            state.signature = payload.props.signature;
+            state.constraints = payload.props.signature_constraints;
             state.status = 'ready';
         } catch {
             state.status = 'error';

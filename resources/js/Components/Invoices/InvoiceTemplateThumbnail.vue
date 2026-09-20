@@ -5,7 +5,7 @@ defineProps<{
 </script>
 
 <template>
-    <!-- Classic: centered title bar, two address blocks, table rows -->
+    <!-- Classic: supplier/customer header grid with dotted rules, items table, QR + signature row, payment strip -->
     <svg
         v-if="template === 'classic'"
         viewBox="0 0 80 100"
@@ -13,18 +13,40 @@ defineProps<{
         class="h-full w-full"
         aria-hidden="true"
     >
-        <rect x="15" y="5" width="50" height="7" rx="1" class="fill-base-300" />
-        <rect x="5" y="17" width="30" height="4" rx="1" class="fill-base-300/70" />
-        <rect x="5" y="23" width="22" height="3" rx="1" class="fill-base-300/50" />
-        <rect x="45" y="17" width="30" height="4" rx="1" class="fill-base-300/70" />
-        <rect x="45" y="23" width="22" height="3" rx="1" class="fill-base-300/50" />
-        <line x1="5" y1="31" x2="75" y2="31" class="stroke-base-300" stroke-width="0.8" />
-        <rect x="5" y="34" width="70" height="4" rx="0.5" class="fill-base-300/60" />
-        <rect x="5" y="41" width="70" height="3" rx="0.5" class="fill-base-300/30" />
-        <rect x="5" y="47" width="70" height="3" rx="0.5" class="fill-base-300/20" />
-        <rect x="5" y="53" width="70" height="3" rx="0.5" class="fill-base-300/30" />
-        <line x1="5" y1="60" x2="75" y2="60" class="stroke-base-300" stroke-width="0.8" />
-        <rect x="45" y="63" width="30" height="4" rx="0.5" class="fill-base-300/60" />
+        <rect x="5" y="5" width="16" height="2.5" class="fill-base-300" />
+        <rect x="5" y="10" width="26" height="3" class="fill-base-300/70" />
+        <rect x="5" y="15" width="21" height="2.5" class="fill-base-300/50" />
+        <rect x="5" y="19.5" width="17" height="2.5" class="fill-base-300/50" />
+        <rect x="38" y="5" width="37" height="8" rx="1" class="fill-base-300/60" />
+        <line x1="5" y1="26" x2="75" y2="26" class="stroke-base-300" stroke-width="0.7" stroke-dasharray="1.5 1.5" />
+        <rect x="45" y="29" width="14" height="2.5" class="fill-base-300" />
+        <rect x="45" y="34" width="30" height="3" class="fill-base-300/70" />
+        <rect x="45" y="39" width="24" height="2.5" class="fill-base-300/50" />
+        <line x1="5" y1="45" x2="75" y2="45" class="stroke-base-300" stroke-width="0.7" stroke-dasharray="1.5 1.5" />
+        <rect x="5" y="48" width="28" height="2.5" class="fill-base-300/50" />
+        <rect x="5" y="52.5" width="22" height="2.5" class="fill-base-300/40" />
+        <rect x="49" y="48" width="26" height="2.5" class="fill-base-300/50" />
+        <rect x="55" y="52.5" width="20" height="2.5" class="fill-base-300/40" />
+        <line x1="5" y1="59" x2="75" y2="59" class="stroke-base-content/40" stroke-width="0.8" />
+        <rect x="5" y="60.5" width="70" height="3" class="fill-base-300/60" />
+        <line x1="5" y1="64.5" x2="75" y2="64.5" class="stroke-base-300" stroke-width="0.4" />
+        <rect x="5" y="65.5" width="70" height="2.5" class="fill-base-300/30" />
+        <rect x="5" y="69" width="70" height="2.5" class="fill-base-300/20" />
+        <line x1="5" y1="72.5" x2="75" y2="72.5" class="stroke-base-300" stroke-width="0.4" />
+        <rect x="5" y="75" width="26" height="2.5" class="fill-base-300/35" />
+        <rect x="50" y="74.5" width="25" height="4.5" rx="0.5" class="fill-base-300/70" />
+        <rect x="5" y="81" width="9" height="9" rx="0.5" fill="none" class="stroke-base-300" stroke-width="0.7" />
+        <path
+            d="M52 88 q4 -5 7 -1 t6 -2 t7 1"
+            fill="none"
+            class="stroke-base-content/35"
+            stroke-width="0.8"
+            stroke-linecap="round"
+        />
+        <rect x="5" y="92.5" width="70" height="5.5" rx="0.5" class="fill-info/20" />
+        <line x1="22.5" y1="92.5" x2="22.5" y2="98" class="stroke-base-100" stroke-width="0.8" />
+        <line x1="40" y1="92.5" x2="40" y2="98" class="stroke-base-100" stroke-width="0.8" />
+        <line x1="57.5" y1="92.5" x2="57.5" y2="98" class="stroke-base-100" stroke-width="0.8" />
     </svg>
 
     <!-- Modern: full-width colored header band, left-aligned title, accent sidebar stripe -->

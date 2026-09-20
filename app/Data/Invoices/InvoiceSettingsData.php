@@ -11,6 +11,8 @@ use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RoundingModeEnum;
 use App\Models\Tenant;
+use App\Rules\OwnedTemporaryMedia;
+use App\Rules\TemporaryMediaConstraints;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Attributes\Validation\Email;
@@ -70,9 +72,12 @@ final class InvoiceSettingsData extends Data
         #[Max(10)]
         #[Regex('/^\d*$/')]
         public readonly ?string $default_constant_symbol,
+        #[Nullable]
+        public readonly ?string $signature_uuid,
         public readonly PaymentTypeEnum $default_payment_type = PaymentTypeEnum::Transfer,
         public readonly CurrencyEnum $default_currency = CurrencyEnum::EUR,
         public readonly RoundingModeEnum $default_rounding_mode = RoundingModeEnum::None,
+        public readonly bool $remove_signature = false,
     ) {}
 
     public static function fromTenant(Tenant $tenant): self
@@ -99,9 +104,11 @@ final class InvoiceSettingsData extends Data
             recurring_default_state: $interface->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
             swift_bic: $tenant->swift_bic,
             default_constant_symbol: $interface?->default_constant_symbol,
+            signature_uuid: null,
             default_payment_type: $interface->default_payment_type ?? PaymentTypeEnum::Transfer,
             default_currency: $interface->default_currency ?? CurrencyEnum::EUR,
             default_rounding_mode: $interface->default_rounding_mode ?? RoundingModeEnum::None,
+            remove_signature: false,
         );
     }
 
@@ -110,11 +117,30 @@ final class InvoiceSettingsData extends Data
      */
     public static function rules(): array
     {
+        $maxSizeKb = config('invoicing.signature.max_size_kb', 1024);
+
+        /** @var list<string> $allowedMimes */
+        $allowedMimes = array_values(array_filter(
+            (array) config('invoicing.signature.allowed_mimes', []),
+            static fn (mixed $mime): bool => is_string($mime),
+        ));
+
         return [
             'invoice_number_format' => ['required', 'string', 'max:100', 'regex:/\{X+\}/'],
             'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'registration_info' => ['nullable', 'string', 'max:255'],
             'recurring_default_state' => ['required', Rule::enum(RecurringDefaultStateEnum::class)],
+            'signature_uuid' => [
+                'nullable', 'string', 'prohibited_if:remove_signature,1,true',
+                new OwnedTemporaryMedia,
+                new TemporaryMediaConstraints(
+                    $allowedMimes,
+                    is_numeric($maxSizeKb) ? (int) $maxSizeKb : 1024,
+                    'app.invoice_signature_invalid_type',
+                    'app.invoice_signature_too_large',
+                ),
+            ],
+            'remove_signature' => ['boolean'],
         ];
     }
 }

@@ -38,6 +38,8 @@
         </p>
         @endif
 
+        @include('pdf.invoices.partials.signature')
+
         @include('pdf.invoices.partials.footer')
     </div>
 </body>

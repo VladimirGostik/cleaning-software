@@ -7,15 +7,19 @@ namespace App\Services;
 use App\Data\Invoices\InvoiceSettingsData;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
+use App\Models\User;
 use Illuminate\Database\DatabaseManager;
 
 final readonly class InvoiceSettingsService
 {
-    public function __construct(private DatabaseManager $db) {}
+    public function __construct(
+        private DatabaseManager $db,
+        private TemporaryUploadService $uploads,
+    ) {}
 
-    public function update(Tenant $tenant, InvoiceSettingsData $data): void
+    public function update(Tenant $tenant, InvoiceSettingsData $data, ?User $actor, string $sessionId): void
     {
-        $this->db->transaction(function () use ($tenant, $data): void {
+        $this->db->transaction(function () use ($tenant, $data, $actor, $sessionId): void {
             $attributes = [
                 'name' => $data->name,
                 'ico' => $data->ico,
@@ -40,6 +44,13 @@ final readonly class InvoiceSettingsService
             }
 
             $tenant->update($attributes);
+
+            if ($data->signature_uuid !== null) {
+                $media = $this->uploads->moveToModel($tenant, 'signature', $data->signature_uuid, $actor, $sessionId);
+                $tenant->update(['signature_media_id' => $media->id]);
+            } elseif ($data->remove_signature) {
+                $tenant->update(['signature_media_id' => null]);
+            }
 
             $interfaceFields = [
                 'invoice_template' => $data->invoice_template,

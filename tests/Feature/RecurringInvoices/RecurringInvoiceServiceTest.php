@@ -283,6 +283,84 @@ final class RecurringInvoiceServiceTest extends TestCase
     // edge
     // -------------------------------------------------------------------------
 
+    public function test_upsert_data_rejects_three_decimal_places_but_accepts_two(): void
+    {
+        app()->setLocale('sk');
+
+        $payload = fn (array $itemOverrides): array => [
+            'client_id' => null,
+            'cleaning_object_id' => null,
+            'name' => 'Decimal Precision Recurring',
+            'type' => InvoiceTypeEnum::Monthly->value,
+            'template' => null,
+            'frequency' => RecurringFrequencyEnum::Monthly->value,
+            'day_of_month' => 15,
+            'auto_issue' => false,
+            'start_date' => now()->subMonths(2)->toDateString(),
+            'end_date' => null,
+            'occurrences_limit' => null,
+            'due_days' => 14,
+            'customer_name' => 'Decimal Precision Customer',
+            'customer_representative' => null,
+            'customer_ico' => null,
+            'customer_dic' => null,
+            'customer_vat_number' => null,
+            'customer_street' => null,
+            'customer_city' => null,
+            'customer_postal_code' => null,
+            'customer_country' => null,
+            'customer_email' => null,
+            'note' => null,
+            'items' => [
+                array_merge(
+                    ['description' => 'Item', 'quantity' => 1, 'unit' => null, 'unit_price' => 10, 'discount_percent' => 0, 'vat_rate' => 0],
+                    $itemOverrides,
+                ),
+            ],
+            'constant_symbol' => null,
+            'header_text' => null,
+            'footer_text' => null,
+            'deposit' => 0,
+            'payment_type' => 'transfer',
+            'currency' => 'EUR',
+            'rounding_mode' => 'none',
+        ];
+
+        foreach (['unit_price', 'quantity', 'discount_percent'] as $field) {
+            $errorKey = "items.0.{$field}";
+
+            foreach (['18.125', 18.125] as $rejectedValue) {
+                try {
+                    RecurringInvoiceUpsertData::validateAndCreate($payload([$field => $rejectedValue]));
+                    $this->fail("Expected a ValidationException for {$field}=".var_export($rejectedValue, true));
+                } catch (ValidationException $e) {
+                    $this->assertDecimalPrecisionMessage($e, $errorKey);
+                }
+            }
+
+            $acceptedTwoDecimals = RecurringInvoiceUpsertData::validateAndCreate($payload([$field => 18.13]));
+            $this->assertSame(18.13, $acceptedTwoDecimals->items[0]->{$field});
+
+            $acceptedWhole = RecurringInvoiceUpsertData::validateAndCreate($payload([$field => 18]));
+            $this->assertSame(18.0, $acceptedWhole->items[0]->{$field});
+        }
+    }
+
+    private function assertDecimalPrecisionMessage(ValidationException $e, string $key): void
+    {
+        $errors = $e->errors();
+        $this->assertArrayHasKey($key, $errors);
+
+        $messages = $errors[$key];
+        $this->assertIsArray($messages);
+        $this->assertArrayHasKey(0, $messages);
+
+        $message = $messages[0];
+        $this->assertIsString($message);
+        $this->assertStringContainsString('desatinných', $message);
+        $this->assertStringNotContainsString('decimal:0,2', $message);
+    }
+
     public function test_resume_when_limit_already_reached_marks_completed(): void
     {
         $tenant = Tenant::factory()->create();

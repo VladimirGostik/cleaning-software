@@ -27,7 +27,7 @@ final class InvoiceIssueTest extends TestCase
         $this->bindTenant($tenant);
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => now()->toDateString()]);
 
-        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null), null);
 
         $this->assertSame('FA-'.now()->format('Y').'-0001', $issued->number);
         $this->assertSame(InvoiceStatusEnum::Issued, $issued->status);
@@ -40,8 +40,8 @@ final class InvoiceIssueTest extends TestCase
         $this->bindTenant($tenant);
         $service = app(InvoiceService::class);
 
-        $first = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null));
-        $second = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null));
+        $first = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null), null);
+        $second = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null), null);
 
         $this->assertSame('FA-'.now()->format('Y').'-0001', $first->number);
         $this->assertSame('FA-'.now()->format('Y').'-0002', $second->number);
@@ -54,10 +54,10 @@ final class InvoiceIssueTest extends TestCase
         $service = app(InvoiceService::class);
 
         $this->bindTenant($tenantA);
-        $invoiceA = $service->issue(Invoice::factory()->create(['tenant_id' => $tenantA->id]), new InvoiceIssueData(number: null));
+        $invoiceA = $service->issue(Invoice::factory()->create(['tenant_id' => $tenantA->id]), new InvoiceIssueData(number: null), null);
 
         $this->bindTenant($tenantB);
-        $invoiceB = $service->issue(Invoice::factory()->create(['tenant_id' => $tenantB->id]), new InvoiceIssueData(number: null));
+        $invoiceB = $service->issue(Invoice::factory()->create(['tenant_id' => $tenantB->id]), new InvoiceIssueData(number: null), null);
 
         $this->assertSame('FA-'.now()->format('Y').'-0001', $invoiceA->number);
         $this->assertSame('FA-'.now()->format('Y').'-0001', $invoiceB->number);
@@ -69,8 +69,8 @@ final class InvoiceIssueTest extends TestCase
         $this->bindTenant($tenant);
         $service = app(InvoiceService::class);
 
-        $manual = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'CUSTOM-001'));
-        $auto = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null));
+        $manual = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'CUSTOM-001'), null);
+        $auto = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null), null);
 
         $this->assertSame('CUSTOM-001', $manual->number);
         $this->assertSame('FA-'.now()->format('Y').'-0001', $auto->number);
@@ -82,8 +82,8 @@ final class InvoiceIssueTest extends TestCase
         $this->bindTenant($tenant);
         $service = app(InvoiceService::class);
 
-        $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'FA-'.now()->format('Y').'-0001'));
-        $next = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null));
+        $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'FA-'.now()->format('Y').'-0001'), null);
+        $next = $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: null), null);
 
         $this->assertSame('FA-'.now()->format('Y').'-0002', $next->number);
     }
@@ -94,7 +94,7 @@ final class InvoiceIssueTest extends TestCase
         $this->bindTenant($tenant);
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => now()->toDateString()]);
 
-        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null), null);
 
         $expected = now()->format('y').now()->format('m').'001';
         $this->assertSame($expected, $issued->number);
@@ -112,7 +112,7 @@ final class InvoiceIssueTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+        app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null), null);
     }
 
     public function test_issue_duplicate_manual_number_in_same_tenant_throws(): void
@@ -120,11 +120,11 @@ final class InvoiceIssueTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
         $service = app(InvoiceService::class);
-        $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'DUP-001'));
+        $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'DUP-001'), null);
 
         $this->expectException(ValidationException::class);
 
-        $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'DUP-001'));
+        $service->issue(Invoice::factory()->create(['tenant_id' => $tenant->id]), new InvoiceIssueData(number: 'DUP-001'), null);
     }
 
     public function test_issue_same_manual_number_in_different_tenant_is_allowed(): void
@@ -134,10 +134,10 @@ final class InvoiceIssueTest extends TestCase
         $service = app(InvoiceService::class);
 
         $this->bindTenant($tenantA);
-        $service->issue(Invoice::factory()->create(['tenant_id' => $tenantA->id]), new InvoiceIssueData(number: 'SAME-001'));
+        $service->issue(Invoice::factory()->create(['tenant_id' => $tenantA->id]), new InvoiceIssueData(number: 'SAME-001'), null);
 
         $this->bindTenant($tenantB);
-        $issuedB = $service->issue(Invoice::factory()->create(['tenant_id' => $tenantB->id]), new InvoiceIssueData(number: 'SAME-001'));
+        $issuedB = $service->issue(Invoice::factory()->create(['tenant_id' => $tenantB->id]), new InvoiceIssueData(number: 'SAME-001'), null);
 
         $this->assertSame('SAME-001', $issuedB->number);
     }
@@ -153,7 +153,7 @@ final class InvoiceIssueTest extends TestCase
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
         try {
-            app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+            app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null), null);
             $this->fail('Expected ValidationException was not thrown.');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('supplier', $e->errors());
@@ -172,7 +172,7 @@ final class InvoiceIssueTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+        app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null), null);
     }
 
     public function test_issue_allowed_for_non_vat_payer_without_dic_or_vat_number(): void
@@ -181,7 +181,7 @@ final class InvoiceIssueTest extends TestCase
         $this->bindTenant($tenant);
         $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
 
-        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null));
+        $issued = app(InvoiceService::class)->issue($invoice, new InvoiceIssueData(number: null), null);
 
         $this->assertSame(InvoiceStatusEnum::Issued, $issued->status);
     }

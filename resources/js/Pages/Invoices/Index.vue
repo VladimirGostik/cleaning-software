@@ -260,6 +260,8 @@ function onSettingsSaved(): void {
         :open="settingsDrawer.state.isOpen"
         :status="settingsDrawer.state.status"
         :settings="settingsDrawer.state.settings"
+        :signature="settingsDrawer.state.signature"
+        :constraints="settingsDrawer.state.constraints"
         @close="settingsDrawer.close"
         @retry="settingsDrawer.open"
         @saved="onSettingsSaved"

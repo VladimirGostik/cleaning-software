@@ -15,7 +15,7 @@ final readonly class MediaUrlResolver
 
         $label = class_basename($modelType);
 
-        /** @var array<class-string, array{name: string, param: string}> $map */
+        /** @var array<class-string, array{name: string, param?: string}> $map */
         $map = config('media-urls.models', []);
 
         if (! isset($map[$modelType])) {
@@ -23,10 +23,11 @@ final readonly class MediaUrlResolver
         }
 
         $entry = $map[$modelType];
+        $parameters = isset($entry['param']) ? [$entry['param'] => $modelId] : [];
 
         return [
             'label' => $label,
-            'url' => route($entry['name'], [$entry['param'] => $modelId]),
+            'url' => route($entry['name'], $parameters),
         ];
     }
 }

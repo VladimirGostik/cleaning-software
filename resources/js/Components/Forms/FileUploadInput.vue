@@ -88,7 +88,7 @@ function emitValue(): void {
 
 function validateFile(file: File): string | null {
     if (file.size > props.maxSizeKb * 1024) {
-        return t('app.file_too_large', { max: formatBytes(props.maxSizeKb * 1024) });
+        return t('file_too_large', { max: formatBytes(props.maxSizeKb * 1024) });
     }
     if (props.accept !== '*/*') {
         const accepted = props.accept.split(',').map((a) => a.trim());
@@ -99,7 +99,7 @@ function validateFile(file: File): string | null {
             return file.type === pattern || file.name.endsWith(pattern.replace('*', ''));
         });
         if (!isAccepted) {
-            return t('app.file_type_not_allowed');
+            return t('file_type_not_allowed');
         }
     }
     return null;
@@ -129,12 +129,12 @@ function uploadItem(item: UploadItem, file: File): void {
             emitValue();
         } else {
             item.status = 'error';
-            item.error = t('app.upload_failed');
+            item.error = t('upload_failed');
         }
     });
     xhr.addEventListener('error', () => {
         item.status = 'error';
-        item.error = t('app.upload_failed');
+        item.error = t('upload_failed');
     });
     xhr.open('POST', props.endpoint);
     xhr.setRequestHeader('X-CSRF-TOKEN', getCsrfToken());
@@ -251,17 +251,22 @@ watch(
     <div class="space-y-3">
         <!-- Drop zone -->
         <div
+            role="button"
+            tabindex="0"
             class="border-2 border-dashed rounded-box p-6 text-center transition-colors cursor-pointer"
             :class="[
                 isDragging.value ? 'border-primary bg-primary/5' : 'border-base-300 hover:border-primary/50',
                 disabled ? 'opacity-50 cursor-not-allowed' : '',
                 error ? 'border-error' : '',
             ]"
+            :aria-disabled="disabled"
             @dragenter="onDragEnter"
             @dragover="onDragOver"
             @dragleave="onDragLeave"
             @drop="onDrop"
             @click="openFilePicker"
+            @keydown.enter.prevent="openFilePicker"
+            @keydown.space.prevent="openFilePicker"
         >
             <input
                 :id="`file-input-${endpoint.replace(/\//g, '-')}`"
@@ -287,10 +292,10 @@ watch(
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                 </svg>
-                <p class="text-sm font-medium text-base-content">{{ t('app.drop_files_here') }}</p>
-                <p class="text-xs text-base-content/50">{{ t('app.or_click_to_upload') }}</p>
+                <p class="text-sm font-medium text-base-content">{{ t('drop_files_here') }}</p>
+                <p class="text-xs text-base-content/50">{{ t('or_click_to_upload') }}</p>
                 <p v-if="maxSizeKb" class="text-xs text-base-content/40">
-                    {{ t('app.max_file_size') }}: {{ formatBytes(maxSizeKb * 1024) }}
+                    {{ t('max_file_size') }}: {{ formatBytes(maxSizeKb * 1024) }}
                 </p>
             </div>
         </div>
@@ -378,7 +383,7 @@ watch(
                     type="button"
                     class="btn btn-ghost btn-xs btn-circle"
                     :disabled="disabled"
-                    :title="t('app.remove_file')"
+                    :title="t('remove_file')"
                     @click.stop="removeItem(item.id)"
                 >
                     <svg

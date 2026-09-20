@@ -241,6 +241,69 @@ final class QuoteServiceTest extends TestCase
     // update
     // -------------------------------------------------------------------------
 
+    public function test_upsert_data_rejects_three_decimal_places_but_accepts_two(): void
+    {
+        app()->setLocale('sk');
+
+        $payload = fn (array $itemOverrides): array => [
+            'client_id' => null,
+            'cleaning_object_id' => null,
+            'subject' => 'Decimal precision quote',
+            'issue_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(30)->toDateString(),
+            'note' => null,
+            'items' => [
+                array_merge(
+                    ['id' => null, 'description' => 'Item', 'frequency' => null, 'quantity' => 1, 'unit' => null, 'unit_price' => 10, 'discount_percent' => 0, 'vat_rate' => 23],
+                    $itemOverrides,
+                ),
+            ],
+            'customer_name' => 'Decimal Precision Customer',
+            'customer_email' => null,
+            'customer_street' => null,
+            'customer_city' => null,
+            'customer_postal_code' => null,
+            'number' => null,
+            'document_uuid' => null,
+            'kind' => QuoteKindEnum::Itemized->value,
+            'currency' => 'EUR',
+        ];
+
+        foreach (['unit_price', 'quantity', 'discount_percent'] as $field) {
+            $errorKey = "items.0.{$field}";
+
+            foreach (['18.125', 18.125] as $rejectedValue) {
+                try {
+                    QuoteUpsertData::validateAndCreate($payload([$field => $rejectedValue]));
+                    $this->fail("Expected a ValidationException for {$field}=".var_export($rejectedValue, true));
+                } catch (ValidationException $e) {
+                    $this->assertDecimalPrecisionMessage($e, $errorKey);
+                }
+            }
+
+            $acceptedTwoDecimals = QuoteUpsertData::validateAndCreate($payload([$field => 18.13]));
+            $this->assertSame(18.13, $acceptedTwoDecimals->items[0]->{$field});
+
+            $acceptedWhole = QuoteUpsertData::validateAndCreate($payload([$field => 18]));
+            $this->assertSame(18.0, $acceptedWhole->items[0]->{$field});
+        }
+    }
+
+    private function assertDecimalPrecisionMessage(ValidationException $e, string $key): void
+    {
+        $errors = $e->errors();
+        $this->assertArrayHasKey($key, $errors);
+
+        $messages = $errors[$key];
+        $this->assertIsArray($messages);
+        $this->assertArrayHasKey(0, $messages);
+
+        $message = $messages[0];
+        $this->assertIsString($message);
+        $this->assertStringContainsString('desatinných', $message);
+        $this->assertStringNotContainsString('decimal:0,2', $message);
+    }
+
     public function test_update_recomputes_totals(): void
     {
         $tenant = Tenant::factory()->create();

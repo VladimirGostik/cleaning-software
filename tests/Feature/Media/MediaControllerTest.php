@@ -205,6 +205,25 @@ final class MediaControllerTest extends TestCase
         );
     }
 
+    public function test_show_resolves_tenant_owned_media_to_parameterless_route(): void
+    {
+        $owner = Tenant::factory()->create();
+        $user = $this->userWithPermission('view media');
+        $media = $this->createMedia([
+            'model_type' => Tenant::class,
+            'model_id' => $owner->id,
+        ]);
+
+        $response = $this->withoutVite()->actingAs($user)->get("/media/{$media->id}");
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Media/Show')
+            // settings.invoicing takes no route parameter — must not leak `?tenant=<id>` as a query string.
+            ->where('media.model_url', route('settings.invoicing')),
+        );
+    }
+
     public function test_show_returns_404_for_non_numeric_id(): void
     {
         $user = $this->userWithPermission('view media');

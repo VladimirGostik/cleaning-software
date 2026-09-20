@@ -23,6 +23,8 @@ final class TemporaryMediaConstraints implements ValidationRule
     public function __construct(
         private readonly array $allowedMimes,
         private readonly int $maxSizeKb,
+        private readonly string $typeMessageKey = 'app.quote_document_invalid_type',
+        private readonly string $sizeMessageKey = 'app.quote_document_too_large',
     ) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -42,13 +44,13 @@ final class TemporaryMediaConstraints implements ValidationRule
         }
 
         if (! in_array($media->mime_type, $this->allowedMimes, true)) {
-            $fail(__('app.quote_document_invalid_type'));
+            $fail(__($this->typeMessageKey));
 
             return;
         }
 
         if ($media->size > $this->maxSizeKb * 1024) {
-            $fail(__('app.quote_document_too_large'));
+            $fail(__($this->sizeMessageKey));
         }
     }
 }

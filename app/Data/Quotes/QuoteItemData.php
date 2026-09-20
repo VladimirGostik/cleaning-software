@@ -11,6 +11,7 @@ use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
+use Spatie\LaravelData\Attributes\Validation\Rule;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -23,13 +24,13 @@ final class QuoteItemData extends Data
         public readonly string $description,
         #[Nullable]
         public readonly ?TaskFrequencyEnum $frequency,
-        #[Required, Min(0)]
+        #[Required, Min(0), Rule('decimal:0,2')]
         public readonly float $quantity,
         #[Nullable]
         public readonly ?string $unit,
-        #[Required, Min(0)]
+        #[Required, Min(0), Rule('decimal:0,2')]
         public readonly float $unit_price,
-        #[Min(0), Between(0, 100)]
+        #[Min(0), Between(0, 100), Rule('decimal:0,2')]
         public readonly float $discount_percent = 0,
         #[Min(0)]
         public readonly float $vat_rate = 0,

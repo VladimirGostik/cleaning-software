@@ -9,6 +9,8 @@ defineProps<{
     open: boolean;
     status: InvoiceSettingsDrawerStatus;
     settings: App.Data.Invoices.InvoiceSettingsData | null;
+    signature: App.Data.Tenants.TenantSignatureData | null;
+    constraints: App.Data.Invoices.InvoiceSignatureConstraintsData | null;
 }>();
 
 const emit = defineEmits<{
@@ -37,9 +39,10 @@ const { t } = useI18n();
         </div>
 
         <InvoiceSettingsForm
-            v-else-if="settings"
-            class="p-6"
+            v-else-if="settings && constraints"
             :settings="settings"
+            :signature="signature"
+            :signature-constraints="constraints"
             compact
             @saved="emit('saved')"
             @cancel="emit('close')"
