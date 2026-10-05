@@ -110,4 +110,49 @@ final class ScheduledJobPolicyTest extends TestCase
 
         $this->assertTrue($this->policy->assign($user, $job));
     }
+
+    public function test_start_is_allowed_only_from_planned(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $planned = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+        $unassigned = ScheduledJob::factory()->forObject($object)->create(['tenant_id' => $tenant->id]);
+        $inProgress = ScheduledJob::factory()->inProgress()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->assertTrue($this->policy->start($user, $planned));
+        $this->assertFalse($this->policy->start($user, $unassigned));
+        $this->assertFalse($this->policy->start($user, $inProgress));
+    }
+
+    public function test_complete_and_unapprove_are_allowed_only_from_in_progress(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $inProgress = ScheduledJob::factory()->inProgress()->forObject($object)->create(['tenant_id' => $tenant->id]);
+        $planned = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->assertTrue($this->policy->complete($user, $inProgress));
+        $this->assertTrue($this->policy->unapprove($user, $inProgress));
+        $this->assertFalse($this->policy->complete($user, $planned));
+        $this->assertFalse($this->policy->unapprove($user, $planned));
+    }
+
+    public function test_own_only_actor_cannot_drive_status_transitions(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = $this->actingAsTenantUser('Interná upratovačka', $tenant);
+        $membership = TenantMembership::query()->where('user_id', $user->id)->where('tenant_id', $tenant->id)->firstOrFail();
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $ownPlanned = ScheduledJob::factory()->assignedTo($membership)->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+        $ownInProgress = ScheduledJob::factory()->assignedTo($membership)->inProgress()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->assertFalse($this->policy->start($user, $ownPlanned));
+        $this->assertFalse($this->policy->complete($user, $ownInProgress));
+        $this->assertFalse($this->policy->unapprove($user, $ownInProgress));
+    }
 }

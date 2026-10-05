@@ -25,6 +25,7 @@ const props = withDefaults(
         canEdit?: boolean;
         canDelete?: boolean;
         canDeleteRow?: (row: TRow) => boolean;
+        rowHref?: (row: TRow) => string | null;
     }>(),
     {
         columns: undefined,
@@ -35,6 +36,7 @@ const props = withDefaults(
         editUrl: undefined,
         deleteUrl: undefined,
         canDeleteRow: undefined,
+        rowHref: undefined,
         loading: false,
         enableFilters: true,
         enablePagination: true,
@@ -138,6 +140,42 @@ function canDeleteThisRow(row: TRow): boolean {
     return props.canDelete && !!props.deleteUrl && (props.canDeleteRow ? props.canDeleteRow(row) : true);
 }
 
+function resolveRowHref(row: TRow): string | null {
+    return props.rowHref ? props.rowHref(row) : null;
+}
+
+function isInteractiveTarget(event: Event): boolean {
+    const target = event.target as HTMLElement | null;
+    return !!target?.closest('a, button, input, select, textarea, label, [role="button"]');
+}
+
+function hasTextSelection(): boolean {
+    const selection = window.getSelection();
+    return !!selection && selection.toString().length > 0;
+}
+
+function onRowClick(row: TRow, event: MouseEvent) {
+    const href = resolveRowHref(row);
+    if (!href) return;
+    if (isInteractiveTarget(event) || hasTextSelection()) return;
+
+    if (event.metaKey || event.ctrlKey) {
+        window.open(href, '_blank', 'noopener');
+        return;
+    }
+
+    router.visit(href);
+}
+
+function onRowAuxClick(row: TRow, event: MouseEvent) {
+    if (event.button !== 1) return;
+    const href = resolveRowHref(row);
+    if (!href) return;
+    if (isInteractiveTarget(event) || hasTextSelection()) return;
+
+    window.open(href, '_blank', 'noopener');
+}
+
 function confirmDelete(row: TRow, id: string | number) {
     if (!props.deleteUrl) return;
     closeDeletePopover(id);
@@ -196,7 +234,12 @@ function confirmDelete(row: TRow, id: string | number) {
 
                     <template v-else>
                         <template v-for="(row, index) in rows?.data ?? []" :key="rowIdentifier(row, index)">
-                            <tr class="group">
+                            <tr
+                                class="group"
+                                :class="{ 'cursor-pointer': !!resolveRowHref(row) }"
+                                @click="onRowClick(row, $event)"
+                                @auxclick="onRowAuxClick(row, $event)"
+                            >
                                 <td v-for="column in resolvedColumns" :key="column.key" :class="cellClass(row, column)">
                                     <slot :name="`cell-${column.key}`" :row="row" :value="cellValue(row, column)">
                                         {{ cellValue(row, column) }}
@@ -205,7 +248,7 @@ function confirmDelete(row: TRow, id: string | number) {
 
                                 <td v-if="showActionsColumn">
                                     <div
-                                        class="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                                        class="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                                     >
                                         <slot name="buttons" :row="row" :index="index" />
 
@@ -229,6 +272,7 @@ function confirmDelete(row: TRow, id: string | number) {
                                             <div
                                                 v-if="popoverOpen[rowIdentifier(row, index)]"
                                                 class="absolute right-0 bottom-full z-50 mb-1 flex w-44 flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 shadow-lg"
+                                                @click.stop
                                             >
                                                 <p class="text-center text-sm font-medium">
                                                     {{ $t('confirm_delete') }}

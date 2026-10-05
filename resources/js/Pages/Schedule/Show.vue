@@ -28,12 +28,25 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
     { label: props.job.object_name },
 ]);
 
-const cancelConfirm = useDeleteConfirm<App.Data.Schedule.JobDetailData>({
+// All four status transitions share one confirm modal — the item carried through it is the
+// action itself, not the job, so adding a transition means adding a row to CONFIRM_VARIANT.
+type JobStatusAction = 'start' | 'complete' | 'unapprove' | 'cancel';
+
+const CONFIRM_VARIANT: Record<JobStatusAction, 'primary' | 'success' | 'error' | 'warning'> = {
+    start: 'primary',
+    complete: 'success',
+    unapprove: 'error',
+    cancel: 'warning',
+};
+
+const statusConfirm = useDeleteConfirm<JobStatusAction>({
     method: 'post',
-    resolveUrl: (j) => `/jobs/${j.id}/cancel`,
-    getTitle: () => t('schedule_action_cancel'),
-    getDescription: () => t('schedule_cancel_confirm'),
+    resolveUrl: (action) => `/jobs/${props.job.id}/${action}`,
+    getTitle: (action) => t(`schedule_action_${action}`),
+    getDescription: (action) => t(`schedule_${action}_confirm`),
 });
+
+const confirmVariant = computed(() => (statusConfirm.state.item ? CONFIRM_VARIANT[statusConfirm.state.item] : 'error'));
 </script>
 
 <template>
@@ -57,7 +70,13 @@ const cancelConfirm = useDeleteConfirm<App.Data.Schedule.JobDetailData>({
         </div>
 
         <div class="space-y-6">
-            <JobActionsCard :job="job" @cancel="cancelConfirm.openModal(job)" />
+            <JobActionsCard
+                :job="job"
+                @start="statusConfirm.openModal('start')"
+                @complete="statusConfirm.openModal('complete')"
+                @unapprove="statusConfirm.openModal('unapprove')"
+                @cancel="statusConfirm.openModal('cancel')"
+            />
             <JobAssignPanel
                 v-if="job.can.assign"
                 :job-id="job.id"
@@ -69,12 +88,12 @@ const cancelConfirm = useDeleteConfirm<App.Data.Schedule.JobDetailData>({
     </div>
 
     <ConfirmDeleteModal
-        :is-open="cancelConfirm.state.isOpen"
-        :title="cancelConfirm.getModalTitle()"
-        :description="cancelConfirm.getModalDescription()"
-        confirm-variant="warning"
-        :confirm-label="t('schedule_action_cancel')"
-        @cancel="cancelConfirm.closeModal"
-        @confirm="cancelConfirm.confirmDelete"
+        :is-open="statusConfirm.state.isOpen"
+        :title="statusConfirm.getModalTitle()"
+        :description="statusConfirm.getModalDescription()"
+        :confirm-variant="confirmVariant"
+        :confirm-label="statusConfirm.getModalTitle()"
+        @cancel="statusConfirm.closeModal"
+        @confirm="statusConfirm.confirmDelete"
     />
 </template>

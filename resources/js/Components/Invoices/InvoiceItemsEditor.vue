@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon } from '@heroicons/vue/24/outline';
 
-import TextInput from '@/Components/Forms/TextInput.vue';
-import NumberInput from '@/Components/Forms/NumberInput.vue';
-import SelectInput from '@/Components/Forms/SelectInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
 import { callValidate } from '@/Components/Forms/useFieldError';
 import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
-import { useMoneyFormat } from '@/Composables/useMoneyFormat';
+import InvoiceItemRow from './InvoiceItemRow.vue';
 
 export type ItemRow = {
     description: string;
@@ -38,7 +35,6 @@ defineSlots<{
 }>();
 
 const { t } = useI18n();
-const { money } = useMoneyFormat();
 const form = useFormContext();
 
 if (import.meta.env.DEV && !form) {
@@ -77,6 +73,13 @@ const vatRateSelectOptions = computed(() =>
     props.vatRateOptions.map((rate) => ({ value: String(rate), label: `${rate} %` })),
 );
 
+// 2xl breakpoint (not md) + these exact column widths: tightest budget that still fits full untruncated header labels/unit placeholder in all 3 locales and keeps description >=200px at 1536px (measured against a real render).
+const gridClass = computed<string>(() =>
+    props.isVatPayer
+        ? '2xl:grid-cols-[minmax(10rem,1fr)_5rem_7rem_6rem_5rem_4.5rem_5rem_2.25rem]'
+        : '2xl:grid-cols-[minmax(10rem,1fr)_5rem_7rem_6rem_5rem_5rem_2.25rem]',
+);
+
 function addRow(): void {
     rows.value.push(props.blankRow());
 }
@@ -95,88 +98,41 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
 
 <template>
     <div class="space-y-3">
-        <div v-for="(row, index) in rows" :key="rowKey(row)" class="card bg-base-200 p-3">
-            <div class="mb-2 flex items-start justify-between gap-2">
-                <div class="flex-1">
-                    <TextInput
-                        :model-value="row.description"
-                        :label="t('invoice_pdf_item_description')"
-                        required
-                        :placeholder="t('invoice_item_description_placeholder')"
-                        :error="errors[`${field}.${index}.description`]"
-                        @update:model-value="setField(index, 'description', $event)"
-                    />
-                </div>
+        <div
+            aria-hidden="true"
+            class="hidden items-end gap-x-2 pb-1 text-xs font-medium uppercase tracking-wide text-base-content/60 2xl:grid"
+            :class="gridClass"
+        >
+            <span>{{ t('invoice_pdf_item_description') }}</span>
+            <span>{{ t('invoice_pdf_item_quantity') }}</span>
+            <span>{{ t('invoice_pdf_item_unit') }}</span>
+            <span>{{ t('invoice_pdf_item_unit_price') }}</span>
+            <span>{{ t('invoice_pdf_discount') }}</span>
+            <span v-if="isVatPayer">{{ t('invoice_pdf_vat_rate') }}</span>
+            <span class="text-right">{{ t('invoice_item_line_total') }}</span>
+            <span />
+        </div>
 
-                <div v-if="$slots['row-extra']" class="w-full md:w-56">
-                    <slot name="row-extra" :row="row" :index="index" :set-field="setField" :errors="errors" />
-                </div>
-
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs mt-6"
-                    :aria-label="t('invoice_item_remove', { index: index + 1 })"
-                    :title="t('invoice_item_remove', { index: index + 1 })"
-                    @click="removeRow(index)"
-                >
-                    <TrashIcon class="size-4" />
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 gap-2 md:grid-cols-5">
-                <NumberInput
-                    :model-value="row.quantity"
-                    :label="t('invoice_pdf_item_quantity')"
-                    :min="0"
-                    :step="0.01"
-                    :error="errors[`${field}.${index}.quantity`]"
-                    @update:model-value="setField(index, 'quantity', $event ?? 0)"
-                />
-
-                <TextInput
-                    :model-value="row.unit ?? ''"
-                    :label="t('invoice_pdf_item_unit')"
-                    :placeholder="t('invoice_item_unit_placeholder')"
-                    :error="errors[`${field}.${index}.unit`]"
-                    @update:model-value="setField(index, 'unit', $event || null)"
-                />
-
-                <NumberInput
-                    :model-value="row.unit_price"
-                    :label="t('invoice_pdf_item_unit_price')"
-                    :min="0"
-                    :step="0.01"
-                    :error="errors[`${field}.${index}.unit_price`]"
-                    @update:model-value="setField(index, 'unit_price', $event ?? 0)"
-                />
-
-                <NumberInput
-                    :model-value="row.discount_percent"
-                    :label="t('invoice_pdf_discount')"
-                    :min="0"
-                    :max="100"
-                    :step="0.01"
-                    :error="errors[`${field}.${index}.discount_percent`]"
-                    @update:model-value="setField(index, 'discount_percent', $event ?? 0)"
-                />
-
-                <SelectInput
-                    v-if="props.isVatPayer"
-                    :model-value="String(row.vat_rate)"
-                    :label="t('invoice_pdf_vat_rate')"
-                    :options="vatRateSelectOptions"
-                    :error="errors[`${field}.${index}.vat_rate`]"
-                    @update:model-value="setField(index, 'vat_rate', parseFloat($event))"
-                />
-            </div>
-
-            <div class="mt-2 flex flex-wrap gap-4 font-mono text-sm text-base-content/70">
-                <span>{{ t('invoice_item_line_base') }}: {{ money(lines[index]?.base ?? 0, props.currency) }}</span>
-                <span v-if="props.isVatPayer">
-                    {{ t('invoice_item_line_vat') }}: {{ money(lines[index]?.vat ?? 0, props.currency) }}
-                </span>
-                <span>{{ t('invoice_item_line_total') }}: {{ money(lines[index]?.total ?? 0, props.currency) }}</span>
-            </div>
+        <div class="space-y-3 2xl:space-y-0 2xl:divide-y 2xl:divide-base-200">
+            <InvoiceItemRow
+                v-for="(row, index) in rows"
+                :key="rowKey(row)"
+                :row="row"
+                :index="index"
+                :field="field"
+                :grid-class="gridClass"
+                :is-vat-payer="isVatPayer"
+                :vat-rate-options="vatRateSelectOptions"
+                :currency="currency"
+                :line="lines[index]"
+                :errors="errors"
+                @set-field="setField"
+                @remove="removeRow(index)"
+            >
+                <template v-if="$slots['row-extra']" #row-extra="slotProps">
+                    <slot name="row-extra" v-bind="slotProps" />
+                </template>
+            </InvoiceItemRow>
         </div>
 
         <p v-if="errors[field]" class="text-error text-sm">{{ errors[field] }}</p>

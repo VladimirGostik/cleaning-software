@@ -13,6 +13,7 @@ import InvoiceNumberFormatField from './InvoiceNumberFormatField.vue';
 import InvoiceTemplatePicker from './InvoiceTemplatePicker.vue';
 import InvoiceSettingsSignatureCard from './InvoiceSettingsSignatureCard.vue';
 import InvoiceSettingsDefaultsCard from './InvoiceSettingsDefaultsCard.vue';
+import InvoiceSettingsTextsCard from './InvoiceSettingsTextsCard.vue';
 
 import { enumOptions, RECURRING_DEFAULT_STATES, recurringDefaultStateKey } from '@/utils/enums';
 import { signatureIntentToFields, fieldsToSignatureIntent, type SignatureIntent } from './signatureIntent';
@@ -37,6 +38,8 @@ interface InvoiceSettingsFormData {
     recurring_default_state: App.Enums.RecurringDefaultStateEnum;
     swift_bic: string | null;
     default_constant_symbol: string | null;
+    default_header_text: string | null;
+    default_footer_text: string | null;
     default_payment_type: App.Enums.PaymentTypeEnum;
     default_currency: App.Enums.CurrencyEnum;
     default_rounding_mode: App.Enums.RoundingModeEnum;
@@ -80,6 +83,8 @@ form.transform((data: InvoiceSettingsFormData) => ({
     iban: data.iban || null,
     swift_bic: data.swift_bic || null,
     default_constant_symbol: data.default_constant_symbol || null,
+    default_header_text: data.default_header_text || null,
+    default_footer_text: data.default_footer_text || null,
 }));
 
 const recurringDefaultStateOptions = computed<SelectOption[]>(() =>
@@ -143,6 +148,12 @@ function submit(): void {
                 />
 
                 <InvoiceSettingsDefaultsCard :compact="compact" />
+                <InvoiceSettingsTextsCard
+                    v-model:header-text="form.default_header_text"
+                    v-model:footer-text="form.default_footer_text"
+                    :header-error="form.errors.default_header_text"
+                    :footer-error="form.errors.default_footer_text"
+                />
 
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body space-y-2">

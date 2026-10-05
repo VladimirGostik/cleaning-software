@@ -39,4 +39,19 @@ final class ScheduledJobPolicy
     {
         return $user->can(PermissionEnum::EditSchedule->value) && $job->canBeCancelled() && $job->isVisibleTo($user);
     }
+
+    public function start(User $user, ScheduledJob $job): bool
+    {
+        return $user->can(PermissionEnum::EditSchedule->value) && $job->canBeStarted() && $job->isVisibleTo($user);
+    }
+
+    public function complete(User $user, ScheduledJob $job): bool
+    {
+        return $user->can(PermissionEnum::EditSchedule->value) && $job->canBeCompleted() && $job->isVisibleTo($user);
+    }
+
+    public function unapprove(User $user, ScheduledJob $job): bool
+    {
+        return $user->can(PermissionEnum::EditSchedule->value) && $job->canBeUnapproved() && $job->isVisibleTo($user);
+    }
 }

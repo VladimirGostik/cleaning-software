@@ -18,5 +18,7 @@ final class InvoiceDefaultsData extends Data
         public readonly PaymentTypeEnum $payment_type,
         public readonly CurrencyEnum $currency,
         public readonly RoundingModeEnum $rounding_mode,
+        public readonly ?string $header_text,
+        public readonly ?string $footer_text,
     ) {}
 }

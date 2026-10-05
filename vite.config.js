@@ -25,7 +25,12 @@ export default defineConfig({
     },
     server: {
         host: '0.0.0.0',
-        hmr: { host: 'localhost' },
+        // Must match the published compose port on BOTH sides: the browser loads assets from
+        // the URL laravel-vite-plugin writes into public/hot, so a host-only remap would send it
+        // to another local project's dev server.
+        port: 5175,
+        strictPort: true,
+        hmr: { host: 'localhost', clientPort: 5175 },
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },

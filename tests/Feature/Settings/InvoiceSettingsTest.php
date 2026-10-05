@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Settings;
 
+use App\Models\Activity;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
@@ -41,10 +42,51 @@ final class InvoiceSettingsTest extends TestCase
             'recurring_default_state' => 'issued',
             'swift_bic' => 'TATRSKBX',
             'default_constant_symbol' => '0308',
+            'default_header_text' => null,
+            'default_footer_text' => null,
             'signature_uuid' => null,
             'default_payment_type' => 'transfer',
             'default_currency' => 'EUR',
             'default_rounding_mode' => 'none',
+        ], $overrides);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function invoicePayload(array $overrides = []): array
+    {
+        return array_merge([
+            'client_id' => null,
+            'cleaning_object_id' => null,
+            'type' => 'one_off',
+            'template' => null,
+            'issue_date' => now()->toDateString(),
+            'delivery_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'period_from' => null,
+            'period_to' => null,
+            'customer_name' => 'Template Test',
+            'customer_representative' => null,
+            'customer_ico' => null,
+            'customer_dic' => null,
+            'customer_vat_number' => null,
+            'customer_street' => null,
+            'customer_city' => null,
+            'customer_postal_code' => null,
+            'customer_country' => null,
+            'customer_email' => null,
+            'note' => null,
+            'items' => [['id' => null, 'description' => 'Item', 'quantity' => 1, 'unit' => null, 'unit_price' => 10, 'discount_percent' => 0, 'vat_rate' => 0]],
+            'constant_symbol' => null,
+            'specific_symbol' => null,
+            'header_text' => null,
+            'footer_text' => null,
+            'deposit' => 0,
+            'payment_type' => 'transfer',
+            'currency' => 'EUR',
+            'rounding_mode' => 'none',
         ], $overrides);
     }
 
@@ -121,41 +163,85 @@ final class InvoiceSettingsTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
         $this->put(route('settings.invoicing.update'), $this->payload(['invoice_template' => 'minimal']));
 
-        $response = $this->post(route('invoices.store'), [
-            'client_id' => null,
-            'cleaning_object_id' => null,
-            'type' => 'one_off',
-            'template' => null,
-            'issue_date' => now()->toDateString(),
-            'delivery_date' => now()->toDateString(),
-            'due_date' => now()->addDays(14)->toDateString(),
-            'period_from' => null,
-            'period_to' => null,
-            'customer_name' => 'Template Test',
-            'customer_representative' => null,
-            'customer_ico' => null,
-            'customer_dic' => null,
-            'customer_vat_number' => null,
-            'customer_street' => null,
-            'customer_city' => null,
-            'customer_postal_code' => null,
-            'customer_country' => null,
-            'customer_email' => null,
-            'note' => null,
-            'items' => [['id' => null, 'description' => 'Item', 'quantity' => 1, 'unit' => null, 'unit_price' => 10, 'discount_percent' => 0, 'vat_rate' => 0]],
-            'constant_symbol' => null,
-            'specific_symbol' => null,
-            'header_text' => null,
-            'footer_text' => null,
-            'deposit' => 0,
-            'payment_type' => 'transfer',
-            'currency' => 'EUR',
-            'rounding_mode' => 'none',
-        ]);
+        $response = $this->post(route('invoices.store'), $this->invoicePayload());
 
         $response->assertRedirect();
         $invoice = Invoice::where('customer_name', 'Template Test')->firstOrFail();
         $this->assertSame('minimal', $invoice->template->value);
+    }
+
+    public function test_update_persists_default_header_and_footer_text(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->put(route('settings.invoicing.update'), $this->payload([
+            'default_header_text' => 'Ďakujeme za dôveru',
+            'default_footer_text' => 'Splatnosť 14 dní',
+        ]))->assertRedirect(route('settings.invoicing'));
+
+        $interface = TenantInterface::query()->where('tenant_id', $tenant->id)->firstOrFail();
+        $this->assertSame('Ďakujeme za dôveru', $interface->default_header_text);
+        $this->assertSame('Splatnosť 14 dní', $interface->default_footer_text);
+
+        $activity = Activity::query()
+            ->where('subject_type', (new TenantInterface)->getMorphClass())
+            ->where('subject_id', $interface->id)
+            ->where('event', 'updated')
+            ->latest('id')
+            ->firstOrFail();
+        $changes = $activity->attributeChangesArray();
+        $this->assertIsArray($changes);
+        $attributes = $changes['attributes'] ?? null;
+        $this->assertIsArray($attributes);
+        $this->assertArrayHasKey('default_header_text', $attributes);
+        $this->assertArrayHasKey('default_footer_text', $attributes);
+    }
+
+    public function test_show_exposes_default_header_and_footer_text(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $this->put(route('settings.invoicing.update'), $this->payload([
+            'default_header_text' => 'Ďakujeme za dôveru',
+            'default_footer_text' => 'Splatnosť 14 dní',
+        ]));
+
+        $response = $this->get(route('settings.invoicing'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Settings/Invoicing')
+                ->where('settings.default_header_text', 'Ďakujeme za dôveru')
+                ->where('settings.default_footer_text', 'Splatnosť 14 dní'),
+        );
+    }
+
+    public function test_updated_default_texts_do_not_affect_existing_invoice(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('invoices.store'), $this->invoicePayload(['header_text' => 'A', 'footer_text' => 'A footer']));
+        $invoice = Invoice::where('customer_name', 'Template Test')->firstOrFail();
+
+        $this->put(route('settings.invoicing.update'), $this->payload([
+            'default_header_text' => 'B',
+            'default_footer_text' => 'B footer',
+        ]));
+
+        $response = $this->get(route('invoices.show', $invoice));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->where('invoice.header_text', 'A')
+                ->where('invoice.footer_text', 'A footer'),
+        );
+        $invoice->refresh();
+        $this->assertSame('A', $invoice->header_text);
+        $this->assertSame('A footer', $invoice->footer_text);
     }
 
     // -------------------------------------------------------------------------
@@ -239,5 +325,39 @@ final class InvoiceSettingsTest extends TestCase
 
         $this->put(route('settings.invoicing.update'), $this->payload(['default_payment_type' => 'bitcoin']))
             ->assertSessionHasErrors('default_payment_type');
+    }
+
+    public function test_default_header_text_over_1000_chars_rejected(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->put(route('settings.invoicing.update'), $this->payload(['default_header_text' => str_repeat('a', 1001)]))
+            ->assertSessionHasErrors('default_header_text');
+    }
+
+    public function test_default_footer_text_over_1000_chars_rejected(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->put(route('settings.invoicing.update'), $this->payload(['default_footer_text' => str_repeat('a', 1001)]))
+            ->assertSessionHasErrors('default_footer_text');
+    }
+
+    // -------------------------------------------------------------------------
+    // edge
+    // -------------------------------------------------------------------------
+
+    public function test_empty_string_default_header_text_stored_as_null(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->put(route('settings.invoicing.update'), $this->payload(['default_header_text' => '']))
+            ->assertRedirect(route('settings.invoicing'));
+
+        $interface = TenantInterface::query()->where('tenant_id', $tenant->id)->firstOrFail();
+        $this->assertNull($interface->default_header_text);
     }
 }

@@ -49,6 +49,11 @@ function slice5(value: string | null): string {
                     <p>{{ props.job.task_name }}</p>
                 </div>
 
+                <div v-if="props.job.started_at">
+                    <p class="text-xs text-base-content/50">{{ t('schedule_detail_started_at') }}</p>
+                    <p>{{ formatDatetime(props.job.started_at) }}</p>
+                </div>
+
                 <div v-if="props.job.completed_at">
                     <p class="text-xs text-base-content/50">{{ t('schedule_detail_completed_at') }}</p>
                     <p>{{ formatDatetime(props.job.completed_at) }}</p>

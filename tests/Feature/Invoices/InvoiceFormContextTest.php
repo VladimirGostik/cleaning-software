@@ -8,6 +8,7 @@ use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Tenant;
+use App\Models\TenantInterface;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -151,6 +152,65 @@ final class InvoiceFormContextTest extends TestCase
             fn (AssertableInertia $page) => $page
                 ->component('Invoices/Show')
                 ->where('invoice.supplier_missing_fields', []),
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // default header/footer text inheritance
+    // -------------------------------------------------------------------------
+
+    public function test_create_context_defaults_expose_tenant_header_and_footer_text(): void
+    {
+        $tenant = $this->tenantAdmin();
+        TenantInterface::query()->where('tenant_id', $tenant->id)->update([
+            'default_header_text' => 'Ďakujeme za dôveru',
+            'default_footer_text' => 'Splatnosť 14 dní',
+        ]);
+
+        $response = $this->get(route('invoices.create'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Invoices/Create')
+                ->where('context.defaults.header_text', 'Ďakujeme za dôveru')
+                ->where('context.defaults.footer_text', 'Splatnosť 14 dní'),
+        );
+    }
+
+    public function test_create_context_defaults_are_null_when_no_tenant_defaults_configured(): void
+    {
+        $tenant = $this->tenantAdmin();
+
+        $response = $this->get(route('invoices.create'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('Invoices/Create')
+                ->where('context.defaults.header_text', null)
+                ->where('context.defaults.footer_text', null),
+        );
+
+        unset($tenant);
+    }
+
+    public function test_recurring_invoices_create_context_exposes_same_tenant_header_and_footer_defaults(): void
+    {
+        $tenant = $this->tenantAdmin();
+        TenantInterface::query()->where('tenant_id', $tenant->id)->update([
+            'default_header_text' => 'Recurring header',
+            'default_footer_text' => 'Recurring footer',
+        ]);
+
+        $response = $this->get(route('recurring-invoices.create'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('RecurringInvoices/Create')
+                ->where('context.defaults.header_text', 'Recurring header')
+                ->where('context.defaults.footer_text', 'Recurring footer'),
         );
     }
 }

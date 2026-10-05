@@ -59,6 +59,8 @@ final readonly class InvoiceSettingsService
                 'default_payment_type' => $data->default_payment_type,
                 'default_currency' => $data->default_currency,
                 'default_rounding_mode' => $data->default_rounding_mode,
+                'default_header_text' => $data->default_header_text,
+                'default_footer_text' => $data->default_footer_text,
             ];
 
             if ($tenant->interface !== null) {

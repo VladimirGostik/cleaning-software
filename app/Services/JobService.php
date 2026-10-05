@@ -180,6 +180,19 @@ final readonly class JobService
         });
     }
 
+    public function start(ScheduledJob $job): ScheduledJob
+    {
+        if (! $job->status->canTransitionTo(JobStatusEnum::InProgress)) {
+            throw ValidationException::withMessages(['status' => [__('app.job_invalid_transition')]]);
+        }
+
+        return $this->db->transaction(function () use ($job): ScheduledJob {
+            $job->update(['status' => JobStatusEnum::InProgress, 'started_at' => now()]);
+
+            return $job;
+        });
+    }
+
     public function complete(ScheduledJob $job): ScheduledJob
     {
         if (! $job->status->canTransitionTo(JobStatusEnum::Completed)) {

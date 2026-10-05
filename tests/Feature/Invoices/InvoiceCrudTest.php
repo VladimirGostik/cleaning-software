@@ -12,6 +12,7 @@ use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Tenant;
+use App\Models\TenantInterface;
 use App\Services\InvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -119,6 +120,25 @@ final class InvoiceCrudTest extends TestCase
         $this->assertSame('Main Office', $invoice->object_name);
     }
 
+    public function test_posted_header_and_footer_text_override_tenant_default(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        TenantInterface::factory()->create([
+            'tenant_id' => $tenant->id,
+            'default_header_text' => 'Default header',
+            'default_footer_text' => 'Default footer',
+        ]);
+
+        $invoice = app(InvoiceService::class)->create($this->upsertData([
+            'header_text' => 'Custom header',
+            'footer_text' => 'Custom footer',
+        ]));
+
+        $this->assertSame('Custom header', $invoice->header_text);
+        $this->assertSame('Custom footer', $invoice->footer_text);
+    }
+
     // -------------------------------------------------------------------------
     // create — failure
     // -------------------------------------------------------------------------
@@ -166,6 +186,26 @@ final class InvoiceCrudTest extends TestCase
         $payload = $this->storeHttpPayload(['type' => InvoiceTypeEnum::Monthly->value]);
 
         $this->post(route('invoices.store'), $payload)->assertSessionHasErrors(['period_from', 'period_to']);
+    }
+
+    public function test_store_header_text_over_1000_chars_fails_validation(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $payload = $this->storeHttpPayload(['header_text' => str_repeat('a', 1001)]);
+
+        $this->post(route('invoices.store'), $payload)->assertSessionHasErrors('header_text');
+    }
+
+    public function test_store_footer_text_over_1000_chars_fails_validation(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $payload = $this->storeHttpPayload(['footer_text' => str_repeat('a', 1001)]);
+
+        $this->post(route('invoices.store'), $payload)->assertSessionHasErrors('footer_text');
     }
 
     public function test_update_issued_invoice_throws_validation_exception(): void
@@ -216,6 +256,24 @@ final class InvoiceCrudTest extends TestCase
 
         $this->assertSame('0.00', $invoice->items->sole()->line_base);
         $this->assertSame('0.00', $invoice->subtotal);
+    }
+
+    public function test_tenant_default_header_text_does_not_leak_into_explicit_null_on_store(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        TenantInterface::query()->where('tenant_id', $tenant->id)->update([
+            'default_header_text' => 'Default header',
+            'default_footer_text' => 'Default footer',
+        ]);
+
+        $payload = $this->storeHttpPayload(['header_text' => null, 'footer_text' => null]);
+
+        $this->post(route('invoices.store'), $payload)->assertRedirect();
+
+        $invoice = Invoice::where('customer_name', 'HTTP Customer')->firstOrFail();
+        $this->assertNull($invoice->header_text);
+        $this->assertNull($invoice->footer_text);
     }
 
     public function test_store_discount_over_100_fails_validation(): void

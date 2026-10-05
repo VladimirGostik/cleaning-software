@@ -51,7 +51,7 @@ Script sám: rename placeholders → `.env` → `docker compose up --build` (pos
 
 **Vyžaduje bežiaci Docker daemon.**
 
-Po skončení: app na `http://localhost:8000`, login `admin@example.com` / `password`.
+Po skončení: app na `http://localhost:8002`, login `admin@example.com` / `password`.
 
 ### 3. Spusti Claude Code
 

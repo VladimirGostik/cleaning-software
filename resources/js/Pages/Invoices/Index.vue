@@ -171,7 +171,12 @@ function onSettingsSaved(): void {
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="invoices" :filters="filterDefinitions">
+            <DataTable
+                :columns="columns"
+                :rows="invoices"
+                :filters="filterDefinitions"
+                :row-href="(row) => `/invoices/${row.id}`"
+            >
                 <template #cell-number="{ row }">
                     <Link :href="`/invoices/${row.id}`" class="link link-hover font-mono font-medium">
                         {{ row.number ?? t('invoice_draft_number') }}

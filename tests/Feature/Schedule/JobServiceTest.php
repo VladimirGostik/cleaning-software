@@ -204,6 +204,33 @@ final class JobServiceTest extends TestCase
         app(JobService::class)->cancel($job);
     }
 
+    public function test_start_transitions_planned_to_in_progress_and_sets_timestamp(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $started = app(JobService::class)->start($job);
+
+        $this->assertSame(JobStatusEnum::InProgress, $started->status);
+        $this->assertNotNull($started->started_at);
+    }
+
+    public function test_start_throws_on_invalid_transition(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->completed()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->expectException(ValidationException::class);
+
+        app(JobService::class)->start($job);
+    }
+
     public function test_complete_transitions_in_progress_to_completed(): void
     {
         $tenant = Tenant::factory()->create();

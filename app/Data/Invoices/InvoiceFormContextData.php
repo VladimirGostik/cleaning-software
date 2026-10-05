@@ -60,6 +60,8 @@ final class InvoiceFormContextData extends Data
                 payment_type: $interface->default_payment_type ?? PaymentTypeEnum::Transfer,
                 currency: $interface->default_currency ?? CurrencyEnum::EUR,
                 rounding_mode: $interface->default_rounding_mode ?? RoundingModeEnum::None,
+                header_text: $interface?->default_header_text,
+                footer_text: $interface?->default_footer_text,
             ),
             recurring_default_state: $interface->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
             supplier_missing_fields: $tenant->missingSupplierFields(),

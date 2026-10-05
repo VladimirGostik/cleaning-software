@@ -16,6 +16,7 @@ use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
+use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -79,9 +80,9 @@ final class RecurringInvoiceUpsertData extends Data
         public readonly array $items,
         #[Nullable]
         public readonly ?string $constant_symbol,
-        #[Nullable]
+        #[Nullable, Max(1000)]
         public readonly ?string $header_text,
-        #[Nullable]
+        #[Nullable, Max(1000)]
         public readonly ?string $footer_text,
         #[Min(0)]
         public readonly float $deposit = 0,

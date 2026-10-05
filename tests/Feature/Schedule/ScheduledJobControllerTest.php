@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Schedule;
 
+use App\Enums\JobStatusEnum;
 use App\Enums\JobTypeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -242,6 +243,92 @@ final class ScheduledJobControllerTest extends TestCase
         $job = ScheduledJob::factory()->completed()->forObject($object)->create(['tenant_id' => $tenant->id]);
 
         $this->post(route('jobs.cancel', $job))->assertForbidden();
+    }
+
+    public function test_full_status_flow_planned_to_in_progress_to_completed(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('jobs.start', $job))->assertRedirect();
+        $started = $job->fresh();
+        $this->assertNotNull($started);
+        $this->assertSame(JobStatusEnum::InProgress, $started->status);
+        $this->assertNotNull($started->started_at);
+
+        $this->post(route('jobs.complete', $job))->assertRedirect();
+        $completed = $job->fresh();
+        $this->assertNotNull($completed);
+        $this->assertSame(JobStatusEnum::Completed, $completed->status);
+        $this->assertNotNull($completed->completed_at);
+    }
+
+    public function test_unapprove_moves_in_progress_job_to_unapproved(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->inProgress()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('jobs.unapprove', $job))->assertRedirect();
+
+        $this->assertDatabaseHas('cleaning_jobs', ['id' => $job->id, 'status' => 'unapproved']);
+    }
+
+    public function test_start_on_unassigned_job_returns_403(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('jobs.start', $job))->assertForbidden();
+    }
+
+    public function test_complete_on_planned_job_returns_403(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('jobs.complete', $job))->assertForbidden();
+    }
+
+    public function test_status_transitions_require_edit_schedule_permission(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Interná upratovačka', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('jobs.start', $job))->assertForbidden();
+        $this->post(route('jobs.complete', $job))->assertForbidden();
+        $this->post(route('jobs.unapprove', $job))->assertForbidden();
+    }
+
+    public function test_show_exposes_status_transition_abilities(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->get(route('jobs.show', $job))->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->where('job.can.start', true)
+                ->where('job.can.complete', false)
+                ->where('job.can.unapprove', false)
+                ->where('job.can_be_started', true),
+        );
     }
 
     public function test_calendar_returns_own_only_rows_for_own_only_actor(): void

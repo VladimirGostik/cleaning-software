@@ -101,6 +101,9 @@ final class ScheduledJobController extends Controller
             'update' => $actor->can('update', $job),
             'assign' => $actor->can('assign', $job),
             'cancel' => $actor->can('cancel', $job),
+            'start' => $actor->can('start', $job),
+            'complete' => $actor->can('complete', $job),
+            'unapprove' => $actor->can('unapprove', $job),
         ];
 
         return Inertia::render('Schedule/Show', [
@@ -149,6 +152,30 @@ final class ScheduledJobController extends Controller
         $this->jobs->cancel($job);
 
         return to_route('jobs.show', $job)->with('success', __('app.job_cancelled'));
+    }
+
+    #[Authorize('start', 'job')]
+    public function start(ScheduledJob $job): RedirectResponse
+    {
+        $this->jobs->start($job);
+
+        return to_route('jobs.show', $job)->with('success', __('app.job_started'));
+    }
+
+    #[Authorize('complete', 'job')]
+    public function complete(ScheduledJob $job): RedirectResponse
+    {
+        $this->jobs->complete($job);
+
+        return to_route('jobs.show', $job)->with('success', __('app.job_completed'));
+    }
+
+    #[Authorize('unapprove', 'job')]
+    public function unapprove(ScheduledJob $job): RedirectResponse
+    {
+        $this->jobs->unapprove($job);
+
+        return to_route('jobs.show', $job)->with('success', __('app.job_unapproved'));
     }
 
     private function formContext(User $actor): JobFormContextData

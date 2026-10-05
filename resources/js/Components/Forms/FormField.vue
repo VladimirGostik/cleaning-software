@@ -1,14 +1,18 @@
 <script setup lang="ts">
-defineProps<{
-    label: string;
-    error?: string | null;
-    required?: boolean;
-}>();
+withDefaults(
+    defineProps<{
+        label: string;
+        error?: string | null;
+        required?: boolean;
+        labelClass?: string;
+    }>(),
+    { labelClass: undefined },
+);
 </script>
 
 <template>
     <fieldset class="fieldset">
-        <legend class="fieldset-legend">
+        <legend class="fieldset-legend" :class="labelClass">
             {{ label }}
             <span v-if="required" class="text-error ml-0.5" aria-hidden="true">*</span>
         </legend>

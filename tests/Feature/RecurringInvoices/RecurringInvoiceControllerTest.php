@@ -206,6 +206,26 @@ final class RecurringInvoiceControllerTest extends TestCase
     // failure
     // -------------------------------------------------------------------------
 
+    public function test_store_header_text_over_1000_chars_fails_validation(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $payload = $this->storePayload(['header_text' => str_repeat('a', 1001)]);
+
+        $this->post(route('recurring-invoices.store'), $payload)->assertSessionHasErrors('header_text');
+    }
+
+    public function test_store_footer_text_over_1000_chars_fails_validation(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $payload = $this->storePayload(['footer_text' => str_repeat('a', 1001)]);
+
+        $this->post(route('recurring-invoices.store'), $payload)->assertSessionHasErrors('footer_text');
+    }
+
     public function test_upratovacka_cannot_view_index(): void
     {
         $tenant = Tenant::factory()->create();

@@ -29,6 +29,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property PaymentTypeEnum $default_payment_type
  * @property CurrencyEnum $default_currency
  * @property RoundingModeEnum $default_rounding_mode
+ * @property string|null $default_header_text
+ * @property string|null $default_footer_text
  */
 #[Fillable([
     'tenant_id',
@@ -39,6 +41,8 @@ use Spatie\Activitylog\Support\LogOptions;
     'default_payment_type',
     'default_currency',
     'default_rounding_mode',
+    'default_header_text',
+    'default_footer_text',
 ])]
 final class TenantInterface extends Model
 {
@@ -64,6 +68,7 @@ final class TenantInterface extends Model
             ->logOnly([
                 'color', 'invoice_template', 'recurring_default_state',
                 'default_constant_symbol', 'default_payment_type', 'default_currency', 'default_rounding_mode',
+                'default_header_text', 'default_footer_text',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

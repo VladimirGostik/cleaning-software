@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import FormField from './FormField.vue';
 
-defineProps<{
-    modelValue: number | null;
-    label: string;
-    required?: boolean;
-    error?: string | null;
-    min?: number;
-    max?: number;
-    step?: number | 'any';
-    disabled?: boolean;
-    placeholder?: string;
-}>();
+withDefaults(
+    defineProps<{
+        modelValue: number | null;
+        label: string;
+        required?: boolean;
+        error?: string | null;
+        min?: number;
+        max?: number;
+        step?: number | 'any';
+        disabled?: boolean;
+        placeholder?: string;
+        labelClass?: string;
+    }>(),
+    { labelClass: undefined },
+);
 
 defineEmits<{
     'update:modelValue': [value: number | null];
@@ -24,7 +28,7 @@ function parseValue(event: Event): number | null {
 </script>
 
 <template>
-    <FormField :label="label" :error="error" :required="required">
+    <FormField :label="label" :error="error" :required="required" :label-class="labelClass">
         <input
             :value="modelValue ?? ''"
             type="number"

@@ -35,11 +35,15 @@ final class JobDetailData extends Data
         public readonly ?string $contract_title,
         public readonly ?string $invoice_id,
         public readonly ?string $note,
+        public readonly ?string $started_at,
         public readonly ?string $completed_at,
         public readonly ?string $cancelled_at,
         public readonly bool $is_editable,
         public readonly bool $can_be_assigned,
         public readonly bool $can_be_cancelled,
+        public readonly bool $can_be_started,
+        public readonly bool $can_be_completed,
+        public readonly bool $can_be_unapproved,
         public readonly array $can,
     ) {}
 
@@ -74,11 +78,15 @@ final class JobDetailData extends Data
             contract_title: $job->contract?->title,
             invoice_id: $job->invoice_id,
             note: $job->note,
+            started_at: $job->started_at?->toIso8601String(),
             completed_at: $job->completed_at?->toIso8601String(),
             cancelled_at: $job->cancelled_at?->toIso8601String(),
             is_editable: $job->isEditable(),
             can_be_assigned: $job->canBeAssigned(),
             can_be_cancelled: $job->canBeCancelled(),
+            can_be_started: $job->canBeStarted(),
+            can_be_completed: $job->canBeCompleted(),
+            can_be_unapproved: $job->canBeUnapproved(),
             can: $can,
         );
     }

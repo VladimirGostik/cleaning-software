@@ -94,6 +94,8 @@ final readonly class RegistrationService
                 'default_payment_type' => $source->interface->default_payment_type,
                 'default_currency' => $source->interface->default_currency,
                 'default_rounding_mode' => $source->interface->default_rounding_mode,
+                'default_header_text' => $source->interface->default_header_text,
+                'default_footer_text' => $source->interface->default_footer_text,
             ])->save();
         }
 

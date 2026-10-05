@@ -218,6 +218,9 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/jobs/{job}', [ScheduledJobController::class, 'show'])->name('jobs.show')->whereUuid('job');
     Route::get('/jobs/{job}/edit', [ScheduledJobController::class, 'edit'])->name('jobs.edit')->whereUuid('job');
     Route::post('/jobs/{job}/cancel', [ScheduledJobController::class, 'cancel'])->name('jobs.cancel')->whereUuid('job');
+    Route::post('/jobs/{job}/start', [ScheduledJobController::class, 'start'])->name('jobs.start')->whereUuid('job');
+    Route::post('/jobs/{job}/complete', [ScheduledJobController::class, 'complete'])->name('jobs.complete')->whereUuid('job');
+    Route::post('/jobs/{job}/unapprove', [ScheduledJobController::class, 'unapprove'])->name('jobs.unapprove')->whereUuid('job');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/jobs', [ScheduledJobController::class, 'store'])->name('jobs.store');
         Route::match(['PUT', 'PATCH'], '/jobs/{job}', [ScheduledJobController::class, 'update'])->name('jobs.update')->whereUuid('job');

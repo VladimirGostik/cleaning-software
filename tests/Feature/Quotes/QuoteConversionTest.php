@@ -10,6 +10,7 @@ use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
+use App\Models\TenantInterface;
 use App\Services\QuoteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -94,6 +95,37 @@ final class QuoteConversionTest extends TestCase
         $invoice->loadMissing('items');
 
         $this->assertSame('Deep cleaning', $invoice->items->sole()->description);
+    }
+
+    public function test_converted_invoice_inherits_tenant_default_header_and_footer_text(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        TenantInterface::factory()->create([
+            'tenant_id' => $tenant->id,
+            'default_header_text' => 'Default header',
+            'default_footer_text' => 'Default footer',
+        ]);
+        $quote = Quote::factory()->accepted()->create(['tenant_id' => $tenant->id]);
+        QuoteItem::factory()->create(['tenant_id' => $tenant->id, 'quote_id' => $quote->id]);
+
+        $invoice = app(QuoteService::class)->convertToInvoice($quote);
+
+        $this->assertSame('Default header', $invoice->header_text);
+        $this->assertSame('Default footer', $invoice->footer_text);
+    }
+
+    public function test_converted_invoice_header_and_footer_text_null_without_tenant_interface_defaults(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $quote = Quote::factory()->accepted()->create(['tenant_id' => $tenant->id]);
+        QuoteItem::factory()->create(['tenant_id' => $tenant->id, 'quote_id' => $quote->id]);
+
+        $invoice = app(QuoteService::class)->convertToInvoice($quote);
+
+        $this->assertNull($invoice->header_text);
+        $this->assertNull($invoice->footer_text);
     }
 
     public function test_fails_when_quote_not_accepted(): void

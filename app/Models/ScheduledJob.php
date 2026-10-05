@@ -38,6 +38,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $note
  * @property string|null $gps_lat
  * @property string|null $gps_lng
+ * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
  * @property Carbon|null $cancelled_at
  * @property Carbon $created_at
@@ -55,7 +56,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'tenant_id', 'cleaning_object_id', 'assigned_membership_id', 'work_breakdown_id',
     'work_breakdown_task_id', 'contract_id', 'invoice_id', 'type', 'status',
     'scheduled_date', 'start_time', 'end_time', 'note', 'gps_lat', 'gps_lng',
-    'completed_at', 'cancelled_at',
+    'started_at', 'completed_at', 'cancelled_at',
 ])]
 final class ScheduledJob extends Model
 {
@@ -69,6 +70,7 @@ final class ScheduledJob extends Model
             'type' => JobTypeEnum::class,
             'status' => JobStatusEnum::class,
             'scheduled_date' => 'date',
+            'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
@@ -131,6 +133,21 @@ final class ScheduledJob extends Model
     public function canBeCancelled(): bool
     {
         return in_array($this->status, [JobStatusEnum::Unassigned, JobStatusEnum::Planned], true);
+    }
+
+    public function canBeStarted(): bool
+    {
+        return $this->status->canTransitionTo(JobStatusEnum::InProgress);
+    }
+
+    public function canBeCompleted(): bool
+    {
+        return $this->status->canTransitionTo(JobStatusEnum::Completed);
+    }
+
+    public function canBeUnapproved(): bool
+    {
+        return $this->status->canTransitionTo(JobStatusEnum::Unapproved);
     }
 
     /**

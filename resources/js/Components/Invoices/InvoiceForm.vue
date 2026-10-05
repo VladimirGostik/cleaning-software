@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { addDays } from 'date-fns';
 
 import FormProvider from '@/Components/Forms/FormProvider.vue';
-import TextInput from '@/Components/Forms/TextInput.vue';
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import NumberInput from '@/Components/Forms/NumberInput.vue';
 import DateInput from '@/Components/Forms/DateInput.vue';
@@ -17,22 +16,19 @@ import { callValidate } from '@/Components/Forms/useFieldError';
 import InvoiceSubjectPicker, { type SubjectMode } from './InvoiceSubjectPicker.vue';
 import InvoiceItemsEditor, { type ItemRow } from './InvoiceItemsEditor.vue';
 import InvoiceFormSummary from './InvoiceFormSummary.vue';
+import InvoicePaymentAdvancedFields from './InvoicePaymentAdvancedFields.vue';
 
 import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
 import { useDependentValidation } from '@/Composables/useDependentValidation';
 import {
-    CURRENCIES,
-    currencyKey,
     enumOptions,
     INVOICE_TEMPLATES,
     INVOICE_TYPES,
     invoiceTemplateKey,
     invoiceTypeKey,
-    PAYMENT_TYPES,
     paymentTypeKey,
-    ROUNDING_MODES,
     roundingModeKey,
 } from '@/utils/enums';
 
@@ -168,8 +164,8 @@ function initialData(): InvoiceFormData {
         items: [blankItem()],
         constant_symbol: props.context.defaults.constant_symbol,
         specific_symbol: null,
-        header_text: null,
-        footer_text: null,
+        header_text: props.context.defaults.header_text,
+        footer_text: props.context.defaults.footer_text,
         deposit: 0,
         payment_type: props.context.defaults.payment_type,
         currency: props.context.defaults.currency,
@@ -202,8 +198,43 @@ useDependentValidation(form, {
     client_id: ['customer_name', 'cleaning_object_id'],
 });
 
+const ADVANCED_FIELDS = ['payment_type', 'currency', 'rounding_mode', 'constant_symbol', 'specific_symbol'] as const;
+
+const hasPaymentOverride = computed<boolean>(() => {
+    const d = props.context.defaults;
+    return (
+        form.payment_type !== d.payment_type ||
+        form.currency !== d.currency ||
+        form.rounding_mode !== d.rounding_mode ||
+        (form.constant_symbol ?? '').trim() !== (d.constant_symbol ?? '').trim() ||
+        (form.specific_symbol ?? '').trim() !== ''
+    );
+});
+
+const hasAdvancedError = computed<boolean>(() => ADVANCED_FIELDS.some((f) => !!form.errors[f]));
+
+const advancedSummary = computed<string>(() =>
+    [
+        t(paymentTypeKey(form.payment_type)),
+        form.currency,
+        t(roundingModeKey(form.rounding_mode)),
+        form.constant_symbol ? `${t('invoice_pdf_constant_symbol')} ${form.constant_symbol}` : null,
+    ]
+        .filter((v): v is string => v !== null)
+        .join(' · '),
+);
+
 const ui = reactive({
     subjectMode: initialMode(props.invoice),
+    // Covers both: Edit where the stored value already differs from the tenant default,
+    // and any error already present in `form.errors` at mount (e.g. server-flashed
+    // validation on first render).
+    advancedOpen: hasPaymentOverride.value || hasAdvancedError.value,
+});
+
+// Reopens on later false->true transitions; mount-time case is covered by the initializer above.
+watch(hasAdvancedError, (v) => {
+    if (v) ui.advancedOpen = true;
 });
 
 const totals = useInvoiceTotals(
@@ -218,9 +249,6 @@ const templateOptions = computed<SelectOption[]>(() => [
     { value: '', label: t('invoice_template_default') },
     ...enumOptions(INVOICE_TEMPLATES, invoiceTemplateKey, t),
 ]);
-const paymentTypeOptions = computed<SelectOption[]>(() => enumOptions(PAYMENT_TYPES, paymentTypeKey, t));
-const currencyOptions = computed<SelectOption[]>(() => enumOptions(CURRENCIES, currencyKey, t));
-const roundingModeOptions = computed<SelectOption[]>(() => enumOptions(ROUNDING_MODES, roundingModeKey, t));
 
 function updateRequiredDate(field: 'issue_date' | 'delivery_date' | 'due_date', value: string | null): void {
     form[field] = value ?? '';
@@ -233,7 +261,14 @@ function updatePeriodDate(field: 'period_from' | 'period_to', value: string | nu
 }
 
 function submit(): void {
-    form.submit();
+    // onError, not the watcher: a repeated same-error submit produces no false->true edge.
+    form.submit({
+        onError: () => {
+            if (hasAdvancedError.value) {
+                ui.advancedOpen = true;
+            }
+        },
+    });
 }
 </script>
 
@@ -308,38 +343,39 @@ function submit(): void {
                     <div class="card-body space-y-4">
                         <h2 class="card-title text-base">{{ t('invoice_section_payment') }}</h2>
 
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <SelectInput
-                                field="payment_type"
-                                :label="t('invoice_pdf_payment_type')"
-                                :options="paymentTypeOptions"
-                            />
-                            <SelectInput field="currency" :label="t('invoice_currency')" :options="currencyOptions" />
-                            <SelectInput
-                                field="rounding_mode"
-                                :label="t('invoice_rounding_mode')"
-                                :options="roundingModeOptions"
-                            />
-                            <TextInput field="constant_symbol" :label="t('invoice_pdf_constant_symbol')" />
-                            <TextInput field="specific_symbol" :label="t('invoice_pdf_specific_symbol')" />
-                            <NumberInput
-                                :model-value="form.deposit"
-                                :label="t('invoice_pdf_deposit')"
-                                :min="0"
-                                :step="0.01"
-                                :error="form.errors.deposit"
-                                @update:model-value="
-                                    form.deposit = $event ?? 0;
-                                    callValidate(form, 'deposit');
-                                "
-                            />
-                        </div>
+                        <NumberInput
+                            :model-value="form.deposit"
+                            :label="t('invoice_pdf_deposit')"
+                            :min="0"
+                            :step="0.01"
+                            :error="form.errors.deposit"
+                            @update:model-value="
+                                form.deposit = $event ?? 0;
+                                callValidate(form, 'deposit');
+                            "
+                        />
+
+                        <InvoicePaymentAdvancedFields
+                            v-model:open="ui.advancedOpen"
+                            :has-override="hasPaymentOverride"
+                            :has-error="hasAdvancedError"
+                            :summary="advancedSummary"
+                        />
                     </div>
                 </div>
 
                 <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
+                    <div class="card-body space-y-4">
                         <h2 class="card-title text-base">{{ t('invoice_section_items') }}</h2>
+
+                        <TextareaInput
+                            :model-value="form.header_text ?? ''"
+                            :label="t('invoice_header_text')"
+                            :rows="2"
+                            :error="form.errors.header_text"
+                            @update:model-value="form.header_text = $event"
+                        />
+
                         <InvoiceItemsEditor
                             field="items"
                             :is-vat-payer="context.is_vat_payer"
@@ -347,26 +383,20 @@ function submit(): void {
                             :currency="form.currency"
                             :blank-row="blankItem"
                         />
+
+                        <TextareaInput
+                            :model-value="form.footer_text ?? ''"
+                            :label="t('invoice_footer_text')"
+                            :rows="2"
+                            :error="form.errors.footer_text"
+                            @update:model-value="form.footer_text = $event"
+                        />
                     </div>
                 </div>
 
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('invoice_section_texts') }}</h2>
-
-                        <TextareaInput
-                            :model-value="form.header_text ?? ''"
-                            :label="t('invoice_header_text')"
-                            :error="form.errors.header_text"
-                            @update:model-value="form.header_text = $event"
-                        />
-
-                        <TextareaInput
-                            :model-value="form.footer_text ?? ''"
-                            :label="t('invoice_footer_text')"
-                            :error="form.errors.footer_text"
-                            @update:model-value="form.footer_text = $event"
-                        />
+                        <h2 class="card-title text-base">{{ t('note') }}</h2>
 
                         <TextareaInput
                             :model-value="form.note ?? ''"

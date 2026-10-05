@@ -19,6 +19,7 @@ const browserGlobals = {
     HTMLTextAreaElement: 'readonly',
     HTMLMetaElement: 'readonly',
     KeyboardEvent: 'readonly',
+    MouseEvent: 'readonly',
     DragEvent: 'readonly',
     AbortController: 'readonly',
     DOMException: 'readonly',

@@ -17,8 +17,9 @@ const props = withDefaults(
         autocomplete?: string;
         disabled?: boolean;
         placeholder?: string;
+        labelClass?: string;
     }>(),
-    { type: 'text' },
+    { type: 'text', labelClass: undefined },
 );
 
 const emit = defineEmits<{
@@ -48,7 +49,7 @@ function onNativeChange() {
 </script>
 
 <template>
-    <FormField :label="label" :error="resolvedError" :required="required">
+    <FormField :label="label" :error="resolvedError" :required="required" :label-class="labelClass">
         <input
             v-bind="$attrs"
             :value="resolvedValue"

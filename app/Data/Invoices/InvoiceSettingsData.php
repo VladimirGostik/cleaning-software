@@ -72,6 +72,10 @@ final class InvoiceSettingsData extends Data
         #[Max(10)]
         #[Regex('/^\d*$/')]
         public readonly ?string $default_constant_symbol,
+        #[Nullable, Max(1000)]
+        public readonly ?string $default_header_text,
+        #[Nullable, Max(1000)]
+        public readonly ?string $default_footer_text,
         #[Nullable]
         public readonly ?string $signature_uuid,
         public readonly PaymentTypeEnum $default_payment_type = PaymentTypeEnum::Transfer,
@@ -104,6 +108,8 @@ final class InvoiceSettingsData extends Data
             recurring_default_state: $interface->recurring_default_state ?? RecurringDefaultStateEnum::Draft,
             swift_bic: $tenant->swift_bic,
             default_constant_symbol: $interface?->default_constant_symbol,
+            default_header_text: $interface?->default_header_text,
+            default_footer_text: $interface?->default_footer_text,
             signature_uuid: null,
             default_payment_type: $interface->default_payment_type ?? PaymentTypeEnum::Transfer,
             default_currency: $interface->default_currency ?? CurrencyEnum::EUR,

@@ -164,6 +164,8 @@ final class TenantControllerTest extends TestCase
             'default_payment_type' => PaymentTypeEnum::Cash,
             'default_currency' => CurrencyEnum::EUR,
             'default_rounding_mode' => RoundingModeEnum::Document,
+            'default_header_text' => 'Source header',
+            'default_footer_text' => 'Source footer',
         ]);
 
         $this->actingAs($user)->post('/tenants', $this->fullPayload([
@@ -185,6 +187,8 @@ final class TenantControllerTest extends TestCase
         $this->assertSame(PaymentTypeEnum::Cash, $newInterface->default_payment_type);
         $this->assertSame(CurrencyEnum::EUR, $newInterface->default_currency);
         $this->assertSame(RoundingModeEnum::Document, $newInterface->default_rounding_mode);
+        $this->assertSame('Source header', $newInterface->default_header_text);
+        $this->assertSame('Source footer', $newInterface->default_footer_text);
         // Posted supplier identity is kept — never overwritten by source tenant.
         $this->assertSame('9999999999', $newTenant->dic);
         $this->assertSame('SK1111000000000000000099', $newTenant->iban);

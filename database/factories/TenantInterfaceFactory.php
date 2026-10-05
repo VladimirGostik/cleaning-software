@@ -33,6 +33,8 @@ final class TenantInterfaceFactory extends Factory
             'default_payment_type' => PaymentTypeEnum::Transfer,
             'default_currency' => CurrencyEnum::EUR,
             'default_rounding_mode' => RoundingModeEnum::None,
+            'default_header_text' => null,
+            'default_footer_text' => null,
         ];
     }
 }

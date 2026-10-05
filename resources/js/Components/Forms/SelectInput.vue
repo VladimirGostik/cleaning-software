@@ -11,16 +11,20 @@ export interface SelectOption {
     label: string;
 }
 
-const props = defineProps<{
-    field?: string;
-    modelValue?: string | number | null;
-    label: string;
-    options: SelectOption[];
-    required?: boolean;
-    error?: string | null;
-    disabled?: boolean;
-    placeholder?: string;
-}>();
+const props = withDefaults(
+    defineProps<{
+        field?: string;
+        modelValue?: string | number | null;
+        label: string;
+        options: SelectOption[];
+        required?: boolean;
+        error?: string | null;
+        disabled?: boolean;
+        placeholder?: string;
+        labelClass?: string;
+    }>(),
+    { labelClass: undefined },
+);
 
 const emit = defineEmits<{
     'update:modelValue': [value: string];
@@ -46,7 +50,7 @@ function onNativeChange(event: Event) {
 </script>
 
 <template>
-    <FormField :label="label" :error="resolvedError" :required="required">
+    <FormField :label="label" :error="resolvedError" :required="required" :label-class="labelClass">
         <select
             v-bind="$attrs"
             :value="resolvedValue"

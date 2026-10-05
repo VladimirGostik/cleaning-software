@@ -26,6 +26,7 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
+use App\Models\TenantInterface;
 use App\Models\User;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
@@ -266,6 +267,8 @@ final readonly class QuoteService
             $dueDate = now()->addDays(is_numeric($defaultDueDays) ? (int) $defaultDueDays : 14)->toDateString();
             $isClientless = $quote->client_id === null;
 
+            $defaults = TenantInterface::query()->where('tenant_id', $quote->tenant_id)->first();
+
             $items = [];
             /** @var QuoteItem $item */
             foreach ($quote->items as $item) {
@@ -315,8 +318,8 @@ final readonly class QuoteService
                 'items' => $items,
                 'constant_symbol' => null,
                 'specific_symbol' => null,
-                'header_text' => null,
-                'footer_text' => null,
+                'header_text' => $defaults?->default_header_text,
+                'footer_text' => $defaults?->default_footer_text,
                 'deposit' => 0,
                 'payment_type' => PaymentTypeEnum::Transfer->value,
                 'currency' => $quote->currency->value,
