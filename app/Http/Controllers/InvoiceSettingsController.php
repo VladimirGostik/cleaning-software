@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Navigation\NavItem;
 use App\Services\InvoiceSettingsService;
 use App\Services\Pdf\InvoicePreviewData;
+use App\Services\PlaceholderResolverService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -29,7 +30,7 @@ final class InvoiceSettingsController extends Controller
 
     #[Authorize(PermissionEnum::ManageBillingSettings->value)]
     #[NavItem(label: 'app.invoicing_settings', route: 'settings.invoicing', icon: 'BanknotesIcon', permission: PermissionEnum::ManageBillingSettings->value, group: 'settings', order: 20)]
-    public function show(): InertiaResponse
+    public function show(PlaceholderResolverService $placeholders): InertiaResponse
     {
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
 
@@ -37,6 +38,7 @@ final class InvoiceSettingsController extends Controller
             'settings' => InvoiceSettingsData::fromTenant($tenant),
             'signature' => TenantSignatureData::fromTenant($tenant),
             'signature_constraints' => InvoiceSignatureConstraintsData::fromConfig(),
+            'mailPlaceholders' => $placeholders->invoiceMailCatalog(),
         ]);
     }
 

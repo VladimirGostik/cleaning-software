@@ -14,4 +14,11 @@ return [
         'max_size_kb' => 1024,
         'allowed_mimes' => ['image/png', 'image/jpeg', 'image/webp'],
     ],
+
+    'bulk' => [
+        'max_ids' => 100,
+        'pdf_max_ids' => 10,
+        'merge_timeout_seconds' => 60,
+        'qpdf_binary' => 'qpdf',
+    ],
 ];

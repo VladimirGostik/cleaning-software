@@ -6,15 +6,19 @@ namespace App\Http\Controllers;
 
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersInvoicePdf;
+use App\Data\Invoices\InvoiceBulkLimitsData;
 use App\Data\Invoices\InvoiceDetailData;
 use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceIssueData;
+use App\Data\Invoices\InvoicePaymentData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;
+use App\Models\InvoicePayment;
 use App\Models\Tenant;
 use App\Navigation\NavItem;
+use App\Services\Efa\EInvoiceService;
 use App\Services\InvoiceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,6 +46,7 @@ final class InvoiceController extends Controller
                 'clients' => $this->clientOptions(),
             ],
             'stats' => $this->invoices->stats(),
+            'bulkLimits' => InvoiceBulkLimitsData::fromConfig(),
         ]);
     }
 
@@ -64,12 +69,12 @@ final class InvoiceController extends Controller
     }
 
     #[Authorize('view', 'invoice')]
-    public function show(Invoice $invoice, GeneratesPaymentQr $qr): InertiaResponse
+    public function show(Invoice $invoice, GeneratesPaymentQr $qr, EInvoiceService $efa): InertiaResponse
     {
         $invoice->load(['items', 'client', 'tenant', 'quote:id,number']);
 
         return Inertia::render('Invoices/Show', [
-            'invoice' => InvoiceDetailData::fromModel($invoice, $qr->dataUri($invoice)),
+            'invoice' => InvoiceDetailData::fromModel($invoice, $qr->dataUri($invoice), $efa->status($invoice)),
         ]);
     }
 
@@ -114,12 +119,20 @@ final class InvoiceController extends Controller
         return to_route('invoices.show', $invoice)->with('success', __('app.invoice_issued'));
     }
 
-    #[Authorize('markPaid', 'invoice')]
-    public function pay(Invoice $invoice): RedirectResponse
+    #[Authorize('recordPayment', 'invoice')]
+    public function recordPayment(InvoicePaymentData $data, Invoice $invoice, Request $request): RedirectResponse
     {
-        $this->invoices->markPaid($invoice);
+        $this->invoices->recordPayment($invoice, $data, $request->user());
 
-        return to_route('invoices.show', $invoice)->with('success', __('app.invoice_paid'));
+        return to_route('invoices.show', $invoice)->with('success', __('app.invoice_payment_recorded'));
+    }
+
+    #[Authorize('deletePayment', 'invoice')]
+    public function destroyPayment(Invoice $invoice, InvoicePayment $payment): RedirectResponse
+    {
+        $this->invoices->deletePayment($invoice, $payment);
+
+        return to_route('invoices.show', $invoice)->with('success', __('app.invoice_payment_deleted'));
     }
 
     #[Authorize('cancel', 'invoice')]

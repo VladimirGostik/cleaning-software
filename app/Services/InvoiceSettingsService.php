@@ -36,6 +36,7 @@ final readonly class InvoiceSettingsService
                 'iban' => $data->iban,
                 'swift_bic' => $data->swift_bic,
                 'registration_info' => $data->registration_info,
+                'peppol_participant_id' => $this->blankToNull($data->peppol_participant_id),
             ];
 
             // Only update vat_rate when explicitly provided — column is NOT NULL with DB default 23
@@ -61,6 +62,8 @@ final readonly class InvoiceSettingsService
                 'default_rounding_mode' => $data->default_rounding_mode,
                 'default_header_text' => $data->default_header_text,
                 'default_footer_text' => $data->default_footer_text,
+                'invoice_mail_subject' => $this->blankToNull($data->invoice_mail_subject),
+                'invoice_mail_body' => $this->blankToNull($data->invoice_mail_body),
             ];
 
             if ($tenant->interface !== null) {
@@ -69,5 +72,10 @@ final readonly class InvoiceSettingsService
                 TenantInterface::create(array_merge(['tenant_id' => $tenant->id], $interfaceFields));
             }
         });
+    }
+
+    private function blankToNull(?string $value): ?string
+    {
+        return $value === null || trim($value) === '' ? null : $value;
     }
 }

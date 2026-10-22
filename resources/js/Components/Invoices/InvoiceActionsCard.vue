@@ -56,7 +56,13 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
             <Can v-if="isIssuedOrOverdue" permission="edit invoices">
                 <button type="button" class="btn btn-sm w-full justify-start" @click="emit('pay')">
                     <BanknotesIcon class="size-4" />
-                    {{ t('invoice_action_mark_paid') }}
+                    {{
+                        t(
+                            props.invoice.is_credit_note
+                                ? 'invoice_action_record_refund'
+                                : 'invoice_action_record_payment',
+                        )
+                    }}
                 </button>
             </Can>
 

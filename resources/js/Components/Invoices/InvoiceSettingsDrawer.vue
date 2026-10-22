@@ -11,6 +11,7 @@ defineProps<{
     settings: App.Data.Invoices.InvoiceSettingsData | null;
     signature: App.Data.Tenants.TenantSignatureData | null;
     constraints: App.Data.Invoices.InvoiceSignatureConstraintsData | null;
+    mailPlaceholders: App.Data.Invoices.InvoiceMailPlaceholderCatalogData | null;
 }>();
 
 const emit = defineEmits<{
@@ -39,10 +40,11 @@ const { t } = useI18n();
         </div>
 
         <InvoiceSettingsForm
-            v-else-if="settings && constraints"
+            v-else-if="settings && constraints && mailPlaceholders"
             :settings="settings"
             :signature="signature"
             :signature-constraints="constraints"
+            :mail-placeholders="mailPlaceholders"
             compact
             @saved="emit('saved')"
             @cancel="emit('close')"

@@ -43,6 +43,11 @@ const { t } = useI18n();
                     <p v-else>{{ t('empty_dash') }}</p>
                 </div>
                 <div>
+                    <p class="text-xs text-base-content/50">{{ t('recurring_invoice_auto_send') }}</p>
+                    <CheckIcon v-if="props.recurringInvoice.auto_send" class="size-4 text-success" />
+                    <p v-else>{{ t('empty_dash') }}</p>
+                </div>
+                <div>
                     <p class="text-xs text-base-content/50">{{ t('recurring_invoice_due_days') }}</p>
                     <p>{{ props.recurringInvoice.due_days }}</p>
                 </div>

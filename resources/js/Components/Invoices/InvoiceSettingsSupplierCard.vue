@@ -27,6 +27,10 @@ const { t } = useI18n();
                 <TextInput field="country" :label="t('country')" required />
                 <TextInput field="contact_email" type="email" :label="t('invoice_settings_contact_email')" />
                 <TextInput field="contact_phone" type="tel" :label="t('invoice_settings_contact_phone')" />
+                <div :class="{ 'md:col-span-2': !compact }">
+                    <TextInput field="peppol_participant_id" :label="t('peppol_participant_id')" />
+                    <p class="mt-1 text-xs text-base-content/60">{{ t('peppol_participant_id_hint') }}</p>
+                </div>
             </div>
 
             <div class="alert alert-info text-sm">

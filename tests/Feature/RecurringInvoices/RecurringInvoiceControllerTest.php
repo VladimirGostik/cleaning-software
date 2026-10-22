@@ -257,4 +257,53 @@ final class RecurringInvoiceControllerTest extends TestCase
 
         $this->get(route('recurring-invoices.show', $ri))->assertNotFound();
     }
+
+    public function test_store_rejects_auto_send_without_auto_issue(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('recurring-invoices.store'), $this->storePayload(['auto_issue' => false, 'auto_send' => true]))
+            ->assertSessionHasErrors('auto_send');
+
+        $this->assertDatabaseCount('recurring_invoices', 0);
+    }
+
+    public function test_store_persists_auto_send_with_auto_issue(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('recurring-invoices.store'), $this->storePayload(['auto_issue' => true, 'auto_send' => true]))
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertDatabaseHas('recurring_invoices', ['name' => 'Monthly Test', 'auto_issue' => true, 'auto_send' => true]);
+    }
+
+    public function test_update_rejects_auto_send_without_auto_issue_and_leaves_template_unchanged(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $ri = $this->makeTemplate($tenant, ['auto_issue' => true, 'auto_send' => true]);
+
+        $this->put(route('recurring-invoices.update', $ri), $this->storePayload(['auto_issue' => false, 'auto_send' => true, 'name' => 'Changed']))
+            ->assertSessionHasErrors('auto_send');
+
+        $ri->refresh();
+        $this->assertTrue($ri->auto_issue);
+        $this->assertTrue($ri->auto_send);
+        $this->assertNotSame('Changed', $ri->name);
+    }
+
+    public function test_update_allows_disabling_both_flags(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $ri = $this->makeTemplate($tenant, ['auto_issue' => true, 'auto_send' => true]);
+
+        $this->put(route('recurring-invoices.update', $ri), $this->storePayload(['auto_issue' => false, 'auto_send' => false]))
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertFalse($ri->refresh()->auto_send);
+    }
 }

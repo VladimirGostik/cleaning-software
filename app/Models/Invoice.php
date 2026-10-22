@@ -8,6 +8,7 @@ use App\Concerns\BelongsToTenant;
 use App\Concerns\HasPdfFilename;
 use App\Concerns\HasUuids;
 use App\Enums\CurrencyEnum;
+use App\Enums\EfaStatusEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
@@ -26,6 +27,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property string $id
@@ -58,13 +61,22 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $vat_amount
  * @property string $total
  * @property string $deposit
+ * @property string $paid_amount
+ * @property Collection<int, InvoicePayment> $payments
  * @property string $rounding_amount
  * @property float $balance_due
+ * @property float $amount_payable
  * @property array<int, array<string, float>>|null $vat_breakdown
  * @property string $customer_name
  * @property string|null $customer_email
  * @property Collection<int, InvoiceItem> $items
  * @property int|null $supplier_signature_media_id
+ * @property EfaStatusEnum $efa_status
+ * @property string|null $efa_id
+ * @property Carbon|null $efa_submitted_at
+ * @property string|null $efa_last_error
+ * @property string|null $customer_peppol_participant_id
+ * @property string|null $supplier_peppol_participant_id
  * @property Client|null $client
  * @property CleaningObject|null $cleaningObject
  */
@@ -96,6 +108,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'vat_amount',
     'total',
     'deposit',
+    'paid_amount',
     'vat_breakdown',
     'rounding_amount',
     'constant_symbol',
@@ -133,12 +146,21 @@ use Spatie\Activitylog\Support\LogOptions;
     'supplier_contact_phone',
     'supplier_registration_info',
     'supplier_signature_media_id',
+    'customer_peppol_participant_id',
+    'supplier_peppol_participant_id',
+    'efa_status',
+    'efa_id',
+    'efa_submitted_at',
+    'efa_last_error',
     'note',
 ])]
-final class Invoice extends Model
+final class Invoice extends Model implements HasMedia
 {
     /** @use HasFactory<InvoiceFactory> */
-    use BelongsToTenant, HasFactory, HasPdfFilename, HasUuids, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasPdfFilename, HasUuids, InteractsWithMedia, LogsActivity, SoftDeletes;
+
+    /** @var array<string, mixed> */
+    protected $attributes = ['paid_amount' => '0.00', 'efa_status' => 'none'];
 
     /**
      * @return array<string, string>
@@ -152,6 +174,8 @@ final class Invoice extends Model
             'payment_type' => PaymentTypeEnum::class,
             'currency' => CurrencyEnum::class,
             'rounding_mode' => RoundingModeEnum::class,
+            'efa_status' => EfaStatusEnum::class,
+            'efa_submitted_at' => 'datetime',
             'period_from' => 'date',
             'period_to' => 'date',
             'issue_date' => 'date',
@@ -167,6 +191,7 @@ final class Invoice extends Model
             'vat_amount' => 'decimal:2',
             'total' => 'decimal:2',
             'deposit' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
             'rounding_amount' => 'decimal:2',
             'vat_breakdown' => 'array',
         ];
@@ -175,13 +200,27 @@ final class Invoice extends Model
     /** @return Attribute<float, never> */
     protected function balanceDue(): Attribute
     {
-        return Attribute::get(fn (): float => (float) $this->total - (float) $this->deposit);
+        return Attribute::get(fn (): float => round((float) $this->total - (float) $this->deposit - (float) $this->paid_amount, 2));
+    }
+
+    /** @return Attribute<float, never> */
+    protected function amountPayable(): Attribute
+    {
+        return Attribute::get(fn (): float => round((float) $this->total - (float) $this->deposit, 2));
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $disk = config('invoicing.signature.disk', 'local');
+
+        $this->addMediaCollection('efa_xml')
+            ->useDisk(is_string($disk) ? $disk : 'local');
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'number', 'total', 'client_id', 'issued_at', 'paid_at', 'cancelled_at', 'sent_at'])
+            ->logOnly(['status', 'number', 'total', 'client_id', 'issued_at', 'paid_at', 'cancelled_at', 'sent_at', 'efa_status'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
@@ -210,6 +249,14 @@ final class Invoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class)->orderBy('position');
+    }
+
+    /**
+     * @return HasMany<InvoicePayment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class)->orderBy('paid_on')->orderBy('created_at');
     }
 
     /**
@@ -252,6 +299,11 @@ final class Invoice extends Model
         return $this->belongsTo(Media::class, 'supplier_signature_media_id');
     }
 
+    public function isCreditNote(): bool
+    {
+        return $this->credited_invoice_id !== null;
+    }
+
     public function isEditable(): bool
     {
         return $this->status === InvoiceStatusEnum::Draft;
@@ -260,5 +312,15 @@ final class Invoice extends Model
     public function canBeCancelled(): bool
     {
         return in_array($this->status, [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue], true);
+    }
+
+    public function isPartiallyPaid(): bool
+    {
+        return round((float) $this->paid_amount, 2) !== 0.0 && ! $this->isSettled();
+    }
+
+    public function isSettled(): bool
+    {
+        return abs($this->balance_due) < 0.005;
     }
 }

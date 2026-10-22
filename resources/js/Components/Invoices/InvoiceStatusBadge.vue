@@ -5,6 +5,7 @@ import { invoiceStatusKey } from '@/utils/enums';
 
 const props = defineProps<{
     status: App.Enums.InvoiceStatusEnum;
+    partiallyPaid?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -17,9 +18,13 @@ const BADGE_CLASS: Record<App.Enums.InvoiceStatusEnum, string> = {
     cancelled: 'badge-warning',
 };
 
-const badgeClass = computed(() => BADGE_CLASS[props.status]);
+const showPartial = computed(() => props.partiallyPaid === true && props.status !== 'paid');
+const badgeClass = computed(() => (showPartial.value ? 'badge-info' : BADGE_CLASS[props.status]));
+const label = computed(() =>
+    showPartial.value ? t('invoice_status_partially_paid') : t(invoiceStatusKey(props.status)),
+);
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="badgeClass">{{ t(invoiceStatusKey(status)) }}</span>
+    <span class="badge badge-sm" :class="badgeClass">{{ label }}</span>
 </template>

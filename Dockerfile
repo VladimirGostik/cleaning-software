@@ -32,6 +32,7 @@ FROM php:8.5-fpm-alpine AS production
 
 # System dependencies
 # Chromium + fonts for spatie/laravel-pdf (chrome driver, chrome-php/chrome).
+# qpdf merges invoice PDFs for bulk download.
 RUN apk add --no-cache \
     bash \
     curl \
@@ -44,6 +45,7 @@ RUN apk add --no-cache \
     supervisor \
     nginx \
     chromium \
+    qpdf \
     nss \
     freetype \
     harfbuzz \
@@ -56,6 +58,7 @@ ENV CHROMIUM_PATH=/usr/bin/chromium-browser
 
 # Build-time smoke test: fail the build if headless Chromium cannot launch.
 RUN chromium-browser --headless --no-sandbox --disable-gpu --version
+RUN qpdf --version
 
 # PHP extensions
 RUN docker-php-ext-configure gd \

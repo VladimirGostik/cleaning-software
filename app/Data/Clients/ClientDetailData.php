@@ -31,6 +31,7 @@ final class ClientDetailData extends Data
         #[DataCollectionOf(ClientContactData::class)]
         public readonly DataCollection $contacts,
         public readonly string $created_at,
+        public readonly ?string $peppol_participant_id = null,
     ) {}
 
     public static function fromModel(Client $client): self
@@ -50,6 +51,7 @@ final class ClientDetailData extends Data
             note: $client->note,
             contacts: ClientContactData::collect($client->contacts, DataCollection::class),
             created_at: $client->created_at->toIso8601String(),
+            peppol_participant_id: $client->peppol_participant_id,
         );
     }
 }

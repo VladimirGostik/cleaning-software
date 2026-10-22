@@ -12,6 +12,7 @@ use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RoundingModeEnum;
 use App\Models\Tenant;
 use App\Rules\OwnedTemporaryMedia;
+use App\Rules\PeppolParticipantId;
 use App\Rules\TemporaryMediaConstraints;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
@@ -82,6 +83,12 @@ final class InvoiceSettingsData extends Data
         public readonly CurrencyEnum $default_currency = CurrencyEnum::EUR,
         public readonly RoundingModeEnum $default_rounding_mode = RoundingModeEnum::None,
         public readonly bool $remove_signature = false,
+        #[Nullable, Max(255)]
+        public readonly ?string $invoice_mail_subject = null,
+        #[Nullable, Max(5000)]
+        public readonly ?string $invoice_mail_body = null,
+        #[Nullable, Max(64)]
+        public readonly ?string $peppol_participant_id = null,
     ) {}
 
     public static function fromTenant(Tenant $tenant): self
@@ -115,6 +122,9 @@ final class InvoiceSettingsData extends Data
             default_currency: $interface->default_currency ?? CurrencyEnum::EUR,
             default_rounding_mode: $interface->default_rounding_mode ?? RoundingModeEnum::None,
             remove_signature: false,
+            invoice_mail_subject: $interface?->invoice_mail_subject,
+            invoice_mail_body: $interface?->invoice_mail_body,
+            peppol_participant_id: $tenant->peppol_participant_id,
         );
     }
 
@@ -147,6 +157,7 @@ final class InvoiceSettingsData extends Data
                 ),
             ],
             'remove_signature' => ['boolean'],
+            'peppol_participant_id' => ['nullable', 'string', 'max:64', new PeppolParticipantId],
         ];
     }
 }

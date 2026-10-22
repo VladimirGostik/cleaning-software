@@ -25,6 +25,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property ClientTypeEnum $type
  * @property string $name
  * @property string|null $ico
+ * @property string|null $peppol_participant_id
  * @property string|null $dic
  * @property string|null $vat_number
  * @property bool $is_vat_payer
@@ -41,7 +42,7 @@ use Spatie\Activitylog\Support\LogOptions;
  */
 #[Fillable([
     'type', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
-    'street', 'city', 'postal_code', 'country', 'note',
+    'street', 'city', 'postal_code', 'country', 'note', 'peppol_participant_id',
 ])]
 final class Client extends Model
 {
@@ -64,7 +65,7 @@ final class Client extends Model
         return LogOptions::defaults()
             ->logOnly([
                 'type', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
-                'street', 'city', 'postal_code', 'country',
+                'street', 'city', 'postal_code', 'country', 'peppol_participant_id',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

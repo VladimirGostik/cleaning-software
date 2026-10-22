@@ -15,10 +15,13 @@ use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
+use App\Notifications\InvoiceIssued;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Spatie\Permission\PermissionRegistrar;
@@ -281,5 +284,65 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
             ->firstOrFail();
         $this->assertNull($secondInvoice->period_from);
         $this->assertNull($secondInvoice->period_to);
+    }
+
+    public function test_auto_send_sends_issued_invoice_to_customer_email(): void
+    {
+        Notification::fake();
+        $ri = $this->createDueTemplate(['auto_issue' => true, 'auto_send' => true, 'customer_email' => 'zakaznik@example.com']);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $invoice = Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail();
+        $this->assertSame(InvoiceStatusEnum::Issued, $invoice->status);
+        Notification::assertSentOnDemandTimes(InvoiceIssued::class, 1);
+        Notification::assertSentOnDemand(
+            InvoiceIssued::class,
+            fn (InvoiceIssued $n, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === 'zakaznik@example.com',
+        );
+    }
+
+    public function test_auto_send_without_customer_email_logs_warning_and_advances_schedule(): void
+    {
+        Notification::fake();
+        $ri = $this->createDueTemplate(['auto_issue' => true, 'auto_send' => true, 'customer_email' => null]);
+        $before = $ri->next_run_at?->toDateString();
+
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('recurring_invoice.auto_send.skipped_no_email', Mockery::on(
+                fn (array $context): bool => $context['recurring_invoice_id'] === $ri->id,
+            ));
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        Notification::assertNothingSent();
+        $ri->refresh();
+        $this->assertSame(1, $ri->occurrences_generated);
+        $this->assertNotNull($ri->next_run_at);
+        $this->assertGreaterThan($before, $ri->next_run_at->toDateString());
+        $this->assertSame(InvoiceStatusEnum::Issued, Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail()->status);
+    }
+
+    public function test_auto_send_false_does_not_send(): void
+    {
+        Notification::fake();
+        $ri = $this->createDueTemplate(['auto_issue' => true, 'auto_send' => false, 'customer_email' => 'zakaznik@example.com']);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        Notification::assertNothingSent();
+    }
+
+    public function test_auto_send_with_incomplete_supplier_profile_does_not_send(): void
+    {
+        Notification::fake();
+        $ri = $this->createDueTemplate(['auto_issue' => true, 'auto_send' => true, 'customer_email' => 'zakaznik@example.com']);
+        Tenant::where('id', $ri->tenant_id)->update(['address_line' => null]);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        Notification::assertNothingSent();
+        $this->assertSame(InvoiceStatusEnum::Draft, Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail()->status);
     }
 }

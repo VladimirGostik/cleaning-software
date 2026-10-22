@@ -22,6 +22,7 @@ interface ClientFormData {
     ico: string;
     dic: string;
     vat_number: string;
+    peppol_participant_id: string;
     is_vat_payer: boolean;
     street: string;
     city: string;
@@ -53,6 +54,7 @@ const form = useForm<ClientFormData>(
         ico: props.client?.ico ?? '',
         dic: props.client?.dic ?? '',
         vat_number: props.client?.vat_number ?? '',
+        peppol_participant_id: props.client?.peppol_participant_id ?? '',
         is_vat_payer: props.client?.is_vat_payer ?? false,
         street: props.client?.street ?? '',
         city: props.client?.city ?? '',
@@ -91,6 +93,11 @@ function submit(): void {
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <TextInput field="dic" :label="t('client_dic')" />
                         <TextInput field="vat_number" :label="t('client_vat_number')" />
+                    </div>
+
+                    <div>
+                        <TextInput field="peppol_participant_id" :label="t('peppol_participant_id')" />
+                        <p class="mt-1 text-xs text-base-content/60">{{ t('peppol_participant_id_hint') }}</p>
                     </div>
 
                     <ToggleInput field="is_vat_payer" :label="t('client_is_vat_payer')" />

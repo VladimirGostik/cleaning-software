@@ -54,6 +54,7 @@ export interface SharedFlash {
     error?: string | null;
     info?: string | null;
     status?: string | null;
+    bulk_result?: App.Data.Invoices.BulkActionResultData | null;
 }
 
 export interface SharedUser {

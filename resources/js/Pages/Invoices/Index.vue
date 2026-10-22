@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { computed, reactive } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BanknotesIcon, CheckBadgeIcon, DocumentTextIcon, EyeIcon, XCircleIcon } from '@heroicons/vue/24/outline';
+import {
+    BanknotesIcon,
+    CheckBadgeIcon,
+    DocumentDuplicateIcon,
+    DocumentTextIcon,
+    EyeIcon,
+    XCircleIcon,
+} from '@heroicons/vue/24/outline';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -10,12 +17,17 @@ import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
 import InvoiceTypeBadge from '@/Components/Invoices/InvoiceTypeBadge.vue';
 import InvoiceStatsCards from '@/Components/Invoices/InvoiceStatsCards.vue';
+import InvoicePayModal from '@/Components/Invoices/InvoicePayModal.vue';
+import InvoiceBulkActionsBar from '@/Components/Invoices/InvoiceBulkActionsBar.vue';
+import InvoiceBulkResultModal from '@/Components/Invoices/InvoiceBulkResultModal.vue';
 import InvoiceIssueModal from '@/Components/Invoices/InvoiceIssueModal.vue';
+import InvoicePohodaExportModal from '@/Components/Invoices/InvoicePohodaExportModal.vue';
 import InvoiceSettingsDrawer from '@/Components/Invoices/InvoiceSettingsDrawer.vue';
 import Can from '@/Components/Can.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { useInvoiceSettingsDrawer } from '@/Composables/useInvoiceSettingsDrawer';
+import { usePageProps } from '@/Composables/usePageProps';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 import { readSpatieQuery } from '@/Composables/useSpatieTableQuery';
@@ -35,12 +47,35 @@ const props = defineProps<{
         clients: App.Data.Clients.ClientOptionData[];
     };
     stats: App.Data.Invoices.InvoiceStatsData;
+    bulkLimits: App.Data.Invoices.InvoiceBulkLimitsData;
 }>();
 
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('invoices') }];
 
+const pageProps = usePageProps();
+const selectedIds = ref<string[]>([]);
+const bulkResult = ref<App.Data.Invoices.BulkActionResultData | null>(null);
+
+watch(
+    () => pageProps.value.flash?.bulk_result ?? null,
+    (result) => {
+        if (result) bulkResult.value = result;
+    },
+    { immediate: true },
+);
+
+function payLabel(creditNote: boolean): string {
+    return t(creditNote ? 'invoice_action_record_refund' : 'invoice_action_record_payment');
+}
+
+function duplicate(id: string): void {
+    router.post(`/invoices/${id}/duplicate`);
+}
+
 const ui = reactive({
     issueFor: null as string | null,
+    payFor: null as App.Data.Invoices.InvoiceListItemData | null,
+    pohodaOpen: false,
 });
 
 const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).length > 0);
@@ -119,13 +154,6 @@ const filterDefinitions = computed<FilterConfig[]>(() => {
     return definitions;
 });
 
-const payConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceListItemData>({
-    method: 'post',
-    resolveUrl: (r) => `/invoices/${r.id}/pay`,
-    getTitle: () => t('invoice_action_mark_paid'),
-    getDescription: (r) => t('invoice_pay_confirm', { number: r.number ?? t('invoice_draft_number') }),
-});
-
 const cancelConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceListItemData>({
     method: 'post',
     resolveUrl: (r) => `/invoices/${r.id}/cancel`,
@@ -143,6 +171,14 @@ function onSettingsSaved(): void {
 <template>
     <Header :title="t('invoices')" :breadcrumbs="breadcrumbs">
         <template #actions>
+            <button
+                v-if="allows('view invoices')"
+                type="button"
+                class="btn btn-ghost btn-sm"
+                @click="ui.pohodaOpen = true"
+            >
+                {{ t('pohoda_export_button') }}
+            </button>
             <Can permission="manage billing settings">
                 <button type="button" class="btn btn-ghost btn-sm" @click="settingsDrawer.open">
                     {{ t('invoicing_settings') }}
@@ -171,7 +207,21 @@ function onSettingsSaved(): void {
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
+            <InvoiceBulkActionsBar
+                v-if="selectedIds.length"
+                :ids="selectedIds"
+                :limits="bulkLimits"
+                @clear="selectedIds = []"
+            />
+
             <DataTable
+                v-model:selected="selectedIds"
+                selectable
+                row-key="id"
+                :select-label="
+                    (row) => t('invoice_bulk_select_row', { number: row.number ?? t('invoice_draft_number') })
+                "
+                :select-all-label="t('invoice_bulk_select_all')"
                 :columns="columns"
                 :rows="invoices"
                 :filters="filterDefinitions"
@@ -184,7 +234,7 @@ function onSettingsSaved(): void {
                 </template>
 
                 <template #cell-status="{ row }">
-                    <InvoiceStatusBadge :status="row.status" />
+                    <InvoiceStatusBadge :status="row.status" :partially-paid="row.is_partially_paid" />
                 </template>
 
                 <template #cell-type="{ row }">
@@ -237,11 +287,22 @@ function onSettingsSaved(): void {
                         v-if="allows('edit invoices') && ['issued', 'overdue'].includes(row.status)"
                         type="button"
                         class="btn btn-ghost btn-xs"
-                        :title="t('invoice_action_mark_paid')"
-                        :aria-label="t('invoice_action_mark_paid')"
-                        @click="payConfirm.openModal(row)"
+                        :title="payLabel(row.is_credit_note)"
+                        :aria-label="payLabel(row.is_credit_note)"
+                        @click="ui.payFor = row"
                     >
                         <BanknotesIcon class="size-4" />
+                    </button>
+
+                    <button
+                        v-if="allows('create invoices')"
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        :title="t('invoice_action_duplicate')"
+                        :aria-label="t('invoice_action_duplicate')"
+                        @click="duplicate(row.id)"
+                    >
+                        <DocumentDuplicateIcon class="size-4" />
                     </button>
 
                     <button
@@ -261,25 +322,29 @@ function onSettingsSaved(): void {
 
     <InvoiceIssueModal :open="ui.issueFor !== null" :invoice-id="ui.issueFor" @close="ui.issueFor = null" />
 
+    <InvoicePohodaExportModal :open="ui.pohodaOpen" @close="ui.pohodaOpen = false" />
+
+    <InvoiceBulkResultModal :open="bulkResult !== null" :result="bulkResult" @close="bulkResult = null" />
+
     <InvoiceSettingsDrawer
         :open="settingsDrawer.state.isOpen"
         :status="settingsDrawer.state.status"
         :settings="settingsDrawer.state.settings"
         :signature="settingsDrawer.state.signature"
         :constraints="settingsDrawer.state.constraints"
+        :mail-placeholders="settingsDrawer.state.mailPlaceholders"
         @close="settingsDrawer.close"
         @retry="settingsDrawer.open"
         @saved="onSettingsSaved"
     />
 
-    <ConfirmDeleteModal
-        :is-open="payConfirm.state.isOpen"
-        :title="payConfirm.getModalTitle()"
-        :description="payConfirm.getModalDescription()"
-        :confirm-label="t('invoice_action_mark_paid')"
-        confirm-variant="success"
-        @cancel="payConfirm.closeModal"
-        @confirm="payConfirm.confirmDelete"
+    <InvoicePayModal
+        :open="ui.payFor !== null"
+        :invoice-id="ui.payFor?.id ?? null"
+        :balance-due="ui.payFor?.balance_due ?? null"
+        :credit-note="ui.payFor?.is_credit_note ?? false"
+        :payment-type="ui.payFor?.payment_type ?? 'transfer'"
+        @close="ui.payFor = null"
     />
 
     <ConfirmDeleteModal

@@ -6,7 +6,9 @@ namespace App\Notifications;
 
 use App\Contracts\RendersInvoicePdf;
 use App\Models\Invoice;
+use App\Models\TenantInterface;
 use App\Scopes\TenantScope;
+use App\Services\PlaceholderResolverService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -47,10 +49,27 @@ final class InvoiceIssued extends Notification implements ShouldQueue
 
         $filename = $invoice->pdfFilenameBase().'.pdf';
 
+        $interface = TenantInterface::query()->where('tenant_id', $invoice->tenant_id)->first();
+        $placeholders = app(PlaceholderResolverService::class);
+        $variables = $placeholders->invoiceMailVariables($invoice);
+
+        $subject = $this->filled($interface?->invoice_mail_subject)
+            ? $placeholders->resolve((string) $interface?->invoice_mail_subject, $variables)
+            : __('app.invoice_mail_subject', ['number' => $invoice->number ?? __('app.invoice_pdf_draft')]);
+
+        $bodyText = $this->filled($interface?->invoice_mail_body)
+            ? $placeholders->resolve((string) $interface?->invoice_mail_body, $variables)
+            : null;
+
         return (new MailMessage)
-            ->subject(__('app.invoice_mail_subject', ['number' => $invoice->number ?? __('app.invoice_pdf_draft')]))
-            ->view('mail.invoice', ['invoice' => $invoice])
+            ->subject($subject)
+            ->view('mail.invoice', ['invoice' => $invoice, 'bodyText' => $bodyText, 'mailSubject' => $subject])
             ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
+    }
+
+    private function filled(?string $value): bool
+    {
+        return $value !== null && trim($value) !== '';
     }
 
     public function failed(?Throwable $e): void

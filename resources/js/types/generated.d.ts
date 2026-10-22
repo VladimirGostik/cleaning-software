@@ -221,6 +221,7 @@ readonly country: string,
 readonly note: string | null,
 readonly contacts: App.Data.Clients.ClientContactData[],
 readonly created_at: string,
+readonly peppol_participant_id: string | null,
 };
 export type ClientListItemData = {
 readonly id: string,
@@ -251,6 +252,7 @@ readonly postal_code: string | null,
 readonly country: string,
 readonly note: string | null,
 readonly contacts: App.Data.Clients.ClientContactData[],
+readonly peppol_participant_id: string | null,
 };
 }
 namespace ContractTemplates {
@@ -520,6 +522,39 @@ readonly invited_email: string | null,
 };
 }
 namespace Invoices {
+export type BulkActionResultData = {
+readonly action: App.Enums.BulkActionEnum,
+readonly processed: number,
+readonly skipped: App.Data.Invoices.BulkSkippedItemData[],
+};
+export type BulkSkippedItemData = {
+readonly id: string,
+readonly number: string | null,
+readonly reason: App.Enums.BulkSkipReasonEnum,
+};
+export type EInvoiceStatusData = {
+readonly status: App.Enums.EfaStatusEnum,
+readonly efa_id: string | null,
+readonly submitted_at: string | null,
+readonly last_error: string | null,
+readonly missing_fields: string[],
+readonly xml_available: boolean,
+readonly can_submit: boolean,
+};
+export type InvoiceBulkActionData = {
+readonly ids: string[],
+};
+export type InvoiceBulkLimitsData = {
+readonly max_ids: number,
+readonly pdf_max_ids: number,
+};
+export type InvoiceBulkPayData = {
+readonly ids: string[],
+readonly paid_on: string,
+};
+export type InvoiceBulkPdfData = {
+readonly ids: string[],
+};
 export type InvoiceDefaultsData = {
 readonly constant_symbol: string | null,
 readonly payment_type: App.Enums.PaymentTypeEnum,
@@ -559,6 +594,9 @@ readonly vat_amount: string,
 readonly total: string,
 readonly deposit: string,
 readonly balance_due: string,
+readonly paid_amount: string,
+readonly is_partially_paid: boolean,
+readonly is_credit_note: boolean,
 readonly rounding_amount: string,
 readonly payment_type: App.Enums.PaymentTypeEnum,
 readonly currency: App.Enums.CurrencyEnum,
@@ -585,6 +623,8 @@ readonly note: string | null,
 readonly supplier: App.Data.Invoices.InvoiceSupplierData,
 readonly items: App.Data.Invoices.InvoiceItemData[],
 readonly vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
+readonly payments: App.Data.Invoices.InvoicePaymentListItemData[],
+readonly efa: App.Data.Invoices.EInvoiceStatusData,
 readonly qr_available: boolean,
 readonly qr_data_uri: string | null,
 readonly supplier_missing_fields: string[],
@@ -626,9 +666,31 @@ readonly object_name: string | null,
 readonly currency: App.Enums.CurrencyEnum,
 readonly total: string,
 readonly balance_due: string,
+readonly paid_amount: string,
+readonly is_partially_paid: boolean,
+readonly payment_type: App.Enums.PaymentTypeEnum,
 readonly issue_date: string,
 readonly due_date: string,
 readonly is_credit_note: boolean,
+};
+export type InvoiceMailPlaceholderCatalogData = {
+readonly tokens: App.Data.Contracts.PlaceholderTokenData[],
+};
+export type InvoicePaymentData = {
+readonly paid_on: string,
+readonly amount: number,
+readonly payment_type: App.Enums.PaymentTypeEnum,
+readonly note: string | null,
+};
+export type InvoicePaymentListItemData = {
+readonly id: string,
+readonly paid_on: string,
+readonly amount: string,
+readonly payment_type: App.Enums.PaymentTypeEnum,
+readonly source: App.Enums.PaymentSourceEnum,
+readonly note: string | null,
+readonly recorded_by_name: string | null,
+readonly created_at: string,
 };
 export type InvoiceSettingsData = {
 readonly name: string,
@@ -657,6 +719,9 @@ readonly default_payment_type: App.Enums.PaymentTypeEnum,
 readonly default_currency: App.Enums.CurrencyEnum,
 readonly default_rounding_mode: App.Enums.RoundingModeEnum,
 readonly remove_signature: boolean,
+readonly invoice_mail_subject: string | null,
+readonly invoice_mail_body: string | null,
+readonly peppol_participant_id: string | null,
 };
 export type InvoiceSignatureConstraintsData = {
 readonly allowed_mimes: string[],
@@ -718,6 +783,14 @@ readonly deposit: number,
 readonly payment_type: App.Enums.PaymentTypeEnum,
 readonly currency: App.Enums.CurrencyEnum,
 readonly rounding_mode: App.Enums.RoundingModeEnum,
+};
+export type PohodaExportData = {
+readonly from: string,
+readonly to: string,
+};
+export type PohodaExportPreviewData = {
+readonly count: number,
+readonly skipped_non_eur: number,
 };
 export type VatBreakdownLineData = {
 readonly rate: number,
@@ -950,6 +1023,7 @@ readonly next_run_at: string | null,
 readonly occurrences_generated: number,
 readonly occurrences_limit: number | null,
 readonly auto_issue: boolean,
+readonly auto_send: boolean,
 readonly start_date: string,
 readonly end_date: string | null,
 readonly type: App.Enums.InvoiceTypeEnum,
@@ -1030,6 +1104,7 @@ readonly constant_symbol: string | null,
 readonly header_text: string | null,
 readonly footer_text: string | null,
 readonly deposit: number,
+readonly auto_send: boolean,
 readonly payment_type: App.Enums.PaymentTypeEnum,
 readonly currency: App.Enums.CurrencyEnum,
 readonly rounding_mode: App.Enums.RoundingModeEnum,
@@ -1193,6 +1268,8 @@ readonly redirect_to: string | null,
 }
 }
 namespace Enums {
+export type BulkActionEnum = "pay" | "send" | "issue";
+export type BulkSkipReasonEnum = "not_found" | "not_issued" | "no_email" | "not_draft" | "not_payable" | "supplier_incomplete" | "number_taken";
 export type ClientTypeEnum = "corporate" | "private";
 export type ContractCategoryEnum = "service_agreement" | "employment" | "nda" | "gdpr" | "other";
 export type ContractStatusEnum = "draft" | "active" | "expired" | "terminated";
@@ -1200,6 +1277,7 @@ export type ContractTermTypeEnum = "fixed" | "indefinite";
 export type ContractableTypeEnum = "cleaning_object" | "tenant_membership";
 export type CurrencyEnum = "EUR" | "CZK" | "USD";
 export type DashboardAlertTypeEnum = "overdue_invoice" | "supplier_incomplete" | "unassigned_job" | "contract_expiring" | "quote_expiring";
+export type EfaStatusEnum = "none" | "ready" | "generated" | "submitted" | "accepted" | "rejected" | "failed";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
@@ -1210,6 +1288,7 @@ export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "complete
 export type JobTypeEnum = "regular" | "one_off" | "special";
 export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
+export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications";
 export type QuoteKindEnum = "itemized" | "document";

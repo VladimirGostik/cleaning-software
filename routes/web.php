@@ -9,9 +9,12 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EInvoiceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\InvoiceBulkController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceExportController;
 use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MediaController;
@@ -177,18 +180,29 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     });
 
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/export/pohoda', [InvoiceExportController::class, 'pohoda'])->name('invoices.export.pohoda');
+    Route::get('/invoices/export/pohoda/preview', [InvoiceExportController::class, 'pohodaPreview'])->name('invoices.export.pohoda.preview');
+    Route::get('/invoices/bulk/pdf', [InvoiceBulkController::class, 'pdf'])->name('invoices.bulk.pdf');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/invoices/bulk/pay', [InvoiceBulkController::class, 'pay'])->name('invoices.bulk.pay');
+        Route::post('/invoices/bulk/send', [InvoiceBulkController::class, 'send'])->name('invoices.bulk.send');
+        Route::post('/invoices/bulk/issue', [InvoiceBulkController::class, 'issue'])->name('invoices.bulk.issue');
+    });
     Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->whereUuid('invoice');
     Route::get('/invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit')->whereUuid('invoice');
     Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy')->whereUuid('invoice');
-    Route::post('/invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay')->whereUuid('invoice');
+    Route::delete('/invoices/{invoice}/payments/{payment}', [InvoiceController::class, 'destroyPayment'])->name('invoices.payments.destroy')->whereUuid(['invoice', 'payment'])->scopeBindings();
     Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel')->whereUuid('invoice');
     Route::post('/invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate')->whereUuid('invoice');
     Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send')->whereUuid('invoice');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf')->whereUuid('invoice');
+    Route::get('/invoices/{invoice}/efa-xml', [EInvoiceController::class, 'xml'])->name('invoices.efa.xml')->whereUuid('invoice');
+    Route::post('/invoices/{invoice}/efa-submit', [EInvoiceController::class, 'submit'])->name('invoices.efa.submit')->whereUuid('invoice');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
         Route::match(['PUT', 'PATCH'], '/invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update')->whereUuid('invoice');
+        Route::post('/invoices/{invoice}/pay', [InvoiceController::class, 'recordPayment'])->name('invoices.pay')->whereUuid('invoice');
         Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('invoices.issue')->whereUuid('invoice');
     });
 

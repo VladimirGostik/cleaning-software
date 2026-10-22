@@ -92,9 +92,9 @@ final readonly class DashboardMetricsQuery
                 .'COUNT(*) FILTER (WHERE status IN (?, ?, ?) AND issue_date BETWEEN ? AND ?) AS invoiced_month_count,'
                 .'COALESCE(SUM(total) FILTER (WHERE status IN (?, ?, ?) AND issue_date BETWEEN ? AND ?), 0) AS invoiced_month_sum,'
                 .'COUNT(*) FILTER (WHERE status = ?) AS unpaid_count,'
-                .'COALESCE(SUM(total) FILTER (WHERE status = ?), 0) AS unpaid_sum,'
+                .'COALESCE(SUM(total - deposit - paid_amount) FILTER (WHERE status = ?), 0) AS unpaid_sum,'
                 .'COUNT(*) FILTER (WHERE status = ?) AS overdue_count,'
-                .'COALESCE(SUM(total) FILTER (WHERE status = ?), 0) AS overdue_sum',
+                .'COALESCE(SUM(total - deposit - paid_amount) FILTER (WHERE status = ?), 0) AS overdue_sum',
                 [
                     $issued, $overdue, $paid, $monthStart, $monthEnd,
                     $issued, $overdue, $paid, $monthStart, $monthEnd,

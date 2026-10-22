@@ -38,6 +38,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property CurrencyEnum $currency
  * @property RoundingModeEnum $rounding_mode
  * @property bool $auto_issue
+ * @property bool $auto_send
  * @property int $day_of_month
  * @property Carbon $start_date
  * @property Carbon|null $end_date
@@ -62,6 +63,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'day_of_month',
     'status',
     'auto_issue',
+    'auto_send',
     'start_date',
     'end_date',
     'occurrences_limit',
@@ -107,6 +109,7 @@ final class RecurringInvoice extends Model
             'currency' => CurrencyEnum::class,
             'rounding_mode' => RoundingModeEnum::class,
             'auto_issue' => 'boolean',
+            'auto_send' => 'boolean',
             'day_of_month' => 'integer',
             'start_date' => 'date',
             'end_date' => 'date',
@@ -122,7 +125,7 @@ final class RecurringInvoice extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'frequency', 'next_run_at', 'occurrences_generated'])
+            ->logOnly(['status', 'frequency', 'next_run_at', 'occurrences_generated', 'auto_send'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

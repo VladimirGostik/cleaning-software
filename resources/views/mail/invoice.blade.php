@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ __('app.invoice_mail_subject', ['number' => $invoice->number ?? __('app.invoice_pdf_draft')]) }}</title>
+    <title>{{ $mailSubject }}</title>
     <style>
         body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #333; background: #f9f9f9; margin: 0; padding: 0; }
         .wrapper { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #e5e5e5; }
@@ -22,8 +22,12 @@
         <h1>{{ __('app.invoice_mail_heading') }}</h1>
     </div>
     <div class="body">
+        @if($bodyText !== null)
+        <p>{!! nl2br(e($bodyText)) !!}</p>
+        @else
         <p>{{ __('app.invoice_mail_greeting', ['name' => $invoice->customer_name]) }}</p>
         <p>{{ __('app.invoice_mail_body') }}</p>
+        @endif
 
         <div class="amount">{{ number_format((float) $invoice->total, 2, ',', ' ') }} €</div>
 

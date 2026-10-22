@@ -30,16 +30,16 @@ final readonly class PayBySquareService implements GeneratesPaymentQr
             return null;
         }
 
-        $balanceDue = (float) $invoice->balance_due;
+        $amount = $invoice->amount_payable;
 
-        if ($balanceDue <= 0) {
+        if ($amount <= 0 || $invoice->isSettled()) {
             return null;
         }
 
         try {
             $generator = (new Generator)
                 ->setIban($invoice->supplier_iban)
-                ->setAmount($balanceDue)
+                ->setAmount($amount)
                 ->setCurrency($invoice->currency->value)
                 ->setRecipient($invoice->supplier_name ?? '');
 

@@ -1,7 +1,7 @@
 @php
     $hasDiscount = $invoice->items->contains(fn ($item) => (float) $item->discount_percent > 0);
     $currencyEnum = $invoice->currency ?? \App\Enums\CurrencyEnum::EUR;
-    $amountDue = (float) $invoice->deposit > 0 ? (float) $invoice->balance_due : (float) $invoice->total;
+    $amountDue = $invoice->amount_payable;
     // Owner decision: banner only for Draft/Cancelled. Overdue is payment-timing state, not a
     // print-time state — surfacing it here would make the printout depend on the moment of
     // download rather than the invoice snapshot at issue. Overdue already surfaces via the
@@ -261,7 +261,7 @@
                     </tr>
                     <tr style="font-weight:bold; border-top:1px solid #aaa;">
                         <td colspan="{{ $invoice->is_vat_payer ? 4 : 1 }}" style="padding:6px 8px;">{{ __('app.invoice_pdf_balance_due') }}</td>
-                        <td style="text-align:right; padding:6px 8px;">{{ $currencyEnum->format((float) $invoice->balance_due) }}</td>
+                        <td style="text-align:right; padding:6px 8px;">{{ $currencyEnum->format($invoice->amount_payable) }}</td>
                     </tr>
                     @endif
                 </table>

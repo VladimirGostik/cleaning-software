@@ -35,7 +35,12 @@ final class InvoicePolicy
         return $user->can(PermissionEnum::EditInvoices->value);
     }
 
-    public function markPaid(User $user, Invoice $invoice): bool
+    public function recordPayment(User $user, Invoice $invoice): bool
+    {
+        return $user->can(PermissionEnum::EditInvoices->value);
+    }
+
+    public function deletePayment(User $user, Invoice $invoice): bool
     {
         return $user->can(PermissionEnum::EditInvoices->value);
     }
@@ -61,6 +66,41 @@ final class InvoicePolicy
     }
 
     public function downloadPdf(User $user, Invoice $invoice): bool
+    {
+        return $user->can(PermissionEnum::ViewInvoices->value);
+    }
+
+    public function downloadEfaXml(User $user, Invoice $invoice): bool
+    {
+        return $user->can(PermissionEnum::ViewInvoices->value);
+    }
+
+    public function submitEfa(User $user, Invoice $invoice): bool
+    {
+        return $user->can(PermissionEnum::EditInvoices->value);
+    }
+
+    public function bulkPay(User $user): bool
+    {
+        return $user->can(PermissionEnum::EditInvoices->value);
+    }
+
+    public function bulkSend(User $user): bool
+    {
+        return $user->can(PermissionEnum::EditInvoices->value);
+    }
+
+    public function bulkIssue(User $user): bool
+    {
+        return $user->can(PermissionEnum::EditInvoices->value);
+    }
+
+    public function bulkPdf(User $user): bool
+    {
+        return $user->can(PermissionEnum::ViewInvoices->value);
+    }
+
+    public function export(User $user): bool
     {
         return $user->can(PermissionEnum::ViewInvoices->value);
     }

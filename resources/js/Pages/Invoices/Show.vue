@@ -6,6 +6,8 @@ import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
 import InvoiceTypeBadge from '@/Components/Invoices/InvoiceTypeBadge.vue';
+import InvoicePayModal from '@/Components/Invoices/InvoicePayModal.vue';
+import InvoicePaymentsCard from '@/Components/Invoices/InvoicePaymentsCard.vue';
 import InvoiceIssueModal from '@/Components/Invoices/InvoiceIssueModal.vue';
 import InvoicePartiesBlock from '@/Components/Invoices/InvoicePartiesBlock.vue';
 import InvoiceMetaGrid from '@/Components/Invoices/InvoiceMetaGrid.vue';
@@ -13,6 +15,7 @@ import InvoiceItemsTable from '@/Components/Invoices/InvoiceItemsTable.vue';
 import InvoiceTotalsPanel from '@/Components/Invoices/InvoiceTotalsPanel.vue';
 import InvoicePaymentInfo from '@/Components/Invoices/InvoicePaymentInfo.vue';
 import InvoiceActionsCard from '@/Components/Invoices/InvoiceActionsCard.vue';
+import InvoiceEfaCard from '@/Components/Invoices/InvoiceEfaCard.vue';
 import InvoiceLinksCard from '@/Components/Invoices/InvoiceLinksCard.vue';
 import SupplierIncompleteAlert from '@/Components/Invoices/SupplierIncompleteAlert.vue';
 import InvoiceSettingsDrawer from '@/Components/Invoices/InvoiceSettingsDrawer.vue';
@@ -36,13 +39,7 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 
 const ui = reactive({
     issueOpen: false,
-});
-
-const payConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
-    method: 'post',
-    resolveUrl: (i) => `/invoices/${i.id}/pay`,
-    getTitle: () => t('invoice_action_mark_paid'),
-    getDescription: () => t('invoice_pay_confirm', { number: props.invoice.number ?? t('invoice_draft_number') }),
+    payOpen: false,
 });
 
 const cancelConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
@@ -81,7 +78,7 @@ function onSettingsSaved(): void {
 <template>
     <Header :title="invoice.number ?? t('invoice_draft_number')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <InvoiceStatusBadge :status="invoice.status" />
+            <InvoiceStatusBadge :status="invoice.status" :partially-paid="invoice.is_partially_paid" />
             <InvoiceTypeBadge :type="invoice.type" :credit-note="invoice.credited_invoice_id !== null" />
         </template>
     </Header>
@@ -144,26 +141,27 @@ function onSettingsSaved(): void {
             <InvoiceActionsCard
                 :invoice="invoice"
                 @issue="ui.issueOpen = true"
-                @pay="payConfirm.openModal(invoice)"
+                @pay="ui.payOpen = true"
                 @cancel="cancelConfirm.openModal(invoice)"
                 @send="sendConfirm.openModal(invoice)"
                 @duplicate="duplicate"
                 @delete="deleteConfirm.openModal(invoice)"
             />
+            <InvoiceEfaCard v-if="invoice.status !== 'draft'" :invoice="invoice" />
+            <InvoicePaymentsCard v-if="invoice.status !== 'draft'" :invoice="invoice" />
             <InvoiceLinksCard :invoice="invoice" />
         </div>
     </div>
 
     <InvoiceIssueModal :open="ui.issueOpen" :invoice-id="invoice.id" @close="ui.issueOpen = false" />
 
-    <ConfirmDeleteModal
-        :is-open="payConfirm.state.isOpen"
-        :title="payConfirm.getModalTitle()"
-        :description="payConfirm.getModalDescription()"
-        :confirm-label="t('invoice_action_mark_paid')"
-        confirm-variant="success"
-        @cancel="payConfirm.closeModal"
-        @confirm="payConfirm.confirmDelete"
+    <InvoicePayModal
+        :open="ui.payOpen"
+        :invoice-id="invoice.id"
+        :balance-due="invoice.balance_due"
+        :payment-type="invoice.payment_type"
+        :credit-note="invoice.is_credit_note"
+        @close="ui.payOpen = false"
     />
 
     <ConfirmDeleteModal
@@ -200,6 +198,7 @@ function onSettingsSaved(): void {
         :settings="settingsDrawer.state.settings"
         :signature="settingsDrawer.state.signature"
         :constraints="settingsDrawer.state.constraints"
+        :mail-placeholders="settingsDrawer.state.mailPlaceholders"
         @close="settingsDrawer.close"
         @retry="settingsDrawer.open"
         @saved="onSettingsSaved"

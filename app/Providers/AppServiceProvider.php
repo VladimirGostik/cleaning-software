@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\GeneratesPaymentQr;
+use App\Contracts\MergesPdfDocuments;
 use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Contracts\RendersQuotePdf;
 use App\Contracts\ResolvesSupplierSignature;
+use App\Contracts\SubmitsEInvoices;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
+use App\Services\Efa\NullEInvoiceAccessPoint;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
+use App\Services\Pdf\QpdfMerger;
 use App\Services\Pdf\QuotePdfService;
 use App\Services\Pdf\SupplierSignatureResolver;
 use App\Support\PrecognitiveDataValidatorResolver;
@@ -40,6 +44,10 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(RendersQuotePdf::class, QuotePdfService::class);
         $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
         $this->app->bind(ResolvesSupplierSignature::class, SupplierSignatureResolver::class);
+        $this->app->bind(MergesPdfDocuments::class, QpdfMerger::class);
+        $this->app->bind(SubmitsEInvoices::class, fn (): SubmitsEInvoices => match (config('efa.driver')) {
+            default => new NullEInvoiceAccessPoint,
+        });
 
         $this->app->beforeResolving(BaseData::class, function (string $class, array $parameters, Container $app): void {
             $request = $app->make(Request::class);

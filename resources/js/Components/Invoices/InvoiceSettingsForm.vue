@@ -14,6 +14,7 @@ import InvoiceTemplatePicker from './InvoiceTemplatePicker.vue';
 import InvoiceSettingsSignatureCard from './InvoiceSettingsSignatureCard.vue';
 import InvoiceSettingsDefaultsCard from './InvoiceSettingsDefaultsCard.vue';
 import InvoiceSettingsTextsCard from './InvoiceSettingsTextsCard.vue';
+import InvoiceSettingsMailCard from './InvoiceSettingsMailCard.vue';
 
 import { enumOptions, RECURRING_DEFAULT_STATES, recurringDefaultStateKey } from '@/utils/enums';
 import { signatureIntentToFields, fieldsToSignatureIntent, type SignatureIntent } from './signatureIntent';
@@ -30,6 +31,7 @@ interface InvoiceSettingsFormData {
     country: string;
     contact_email: string | null;
     contact_phone: string | null;
+    peppol_participant_id: string | null;
     invoice_template: App.Enums.InvoiceTemplateEnum;
     invoice_number_format: string;
     iban: string | null;
@@ -40,6 +42,8 @@ interface InvoiceSettingsFormData {
     default_constant_symbol: string | null;
     default_header_text: string | null;
     default_footer_text: string | null;
+    invoice_mail_subject: string | null;
+    invoice_mail_body: string | null;
     default_payment_type: App.Enums.PaymentTypeEnum;
     default_currency: App.Enums.CurrencyEnum;
     default_rounding_mode: App.Enums.RoundingModeEnum;
@@ -52,6 +56,7 @@ const props = withDefaults(
         settings: App.Data.Invoices.InvoiceSettingsData;
         signature: App.Data.Tenants.TenantSignatureData | null;
         signatureConstraints: App.Data.Invoices.InvoiceSignatureConstraintsData;
+        mailPlaceholders: App.Data.Invoices.InvoiceMailPlaceholderCatalogData;
         compact?: boolean;
     }>(),
     { compact: false },
@@ -80,11 +85,14 @@ form.transform((data: InvoiceSettingsFormData) => ({
     postal_code: data.postal_code || null,
     contact_email: data.contact_email || null,
     contact_phone: data.contact_phone || null,
+    peppol_participant_id: data.peppol_participant_id || null,
     iban: data.iban || null,
     swift_bic: data.swift_bic || null,
     default_constant_symbol: data.default_constant_symbol || null,
     default_header_text: data.default_header_text || null,
     default_footer_text: data.default_footer_text || null,
+    invoice_mail_subject: data.invoice_mail_subject || null,
+    invoice_mail_body: data.invoice_mail_body || null,
 }));
 
 const recurringDefaultStateOptions = computed<SelectOption[]>(() =>
@@ -153,6 +161,13 @@ function submit(): void {
                     v-model:footer-text="form.default_footer_text"
                     :header-error="form.errors.default_header_text"
                     :footer-error="form.errors.default_footer_text"
+                />
+                <InvoiceSettingsMailCard
+                    v-model:subject="form.invoice_mail_subject"
+                    v-model:body="form.invoice_mail_body"
+                    :tokens="mailPlaceholders.tokens"
+                    :subject-error="form.errors.invoice_mail_subject"
+                    :body-error="form.errors.invoice_mail_body"
                 />
 
                 <div class="card bg-base-100 shadow-sm">

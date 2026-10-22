@@ -21,6 +21,7 @@ use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Support\Validation\ValidationContext;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]
@@ -86,6 +87,7 @@ final class RecurringInvoiceUpsertData extends Data
         public readonly ?string $footer_text,
         #[Min(0)]
         public readonly float $deposit = 0,
+        public readonly bool $auto_send = false,
         public readonly PaymentTypeEnum $payment_type = PaymentTypeEnum::Transfer,
         public readonly CurrencyEnum $currency = CurrencyEnum::EUR,
         public readonly RoundingModeEnum $rounding_mode = RoundingModeEnum::None,
@@ -94,7 +96,7 @@ final class RecurringInvoiceUpsertData extends Data
     /**
      * @return array<string, mixed>
      */
-    public static function rules(): array
+    public static function rules(ValidationContext $context): array
     {
         /** @var string|null $tenantId */
         $tenantId = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
@@ -110,6 +112,14 @@ final class RecurringInvoiceUpsertData extends Data
                 'string',
                 Rule::exists('objects', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
                 new ObjectBelongsToClient,
+            ],
+            'auto_send' => [
+                'boolean',
+                function (string $attribute, mixed $value, Closure $fail) use ($context): void {
+                    if (filter_var($value, FILTER_VALIDATE_BOOLEAN) && ! filter_var(data_get($context->payload, 'auto_issue', false), FILTER_VALIDATE_BOOLEAN)) {
+                        $fail(__('app.recurring_invoice_auto_send_requires_auto_issue'));
+                    }
+                },
             ],
             'day_of_month' => ['required', 'integer', 'between:1,28'],
             'start_date' => ['required', 'date'],

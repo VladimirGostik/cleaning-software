@@ -53,7 +53,7 @@
                 </tr>
                 <tr style="font-weight:bold; border-top:1px solid #aaa;">
                     <td colspan="{{ $invoice->is_vat_payer ? 4 : 1 }}" style="padding:6px 8px;">{{ __('app.invoice_pdf_balance_due') }}</td>
-                    <td style="text-align:right; padding:6px 8px;">{{ number_format((float) $invoice->balance_due, 2, ',', ' ') }} {{ $currency }}</td>
+                    <td style="text-align:right; padding:6px 8px;">{{ number_format($invoice->amount_payable, 2, ',', ' ') }} {{ $currency }}</td>
                 </tr>
                 @endif
             </table>

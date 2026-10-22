@@ -39,6 +39,11 @@ const { t } = useI18n();
                     <dd>{{ client.vat_number }}</dd>
                 </div>
 
+                <div v-if="client.peppol_participant_id" class="flex justify-between gap-4">
+                    <dt class="text-base-content/60">{{ t('peppol_participant_id') }}</dt>
+                    <dd>{{ client.peppol_participant_id }}</dd>
+                </div>
+
                 <div class="flex justify-between gap-4">
                     <dt class="text-base-content/60">{{ t('address') }}</dt>
                     <dd class="text-right">

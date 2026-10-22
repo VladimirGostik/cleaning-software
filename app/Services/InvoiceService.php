@@ -7,16 +7,19 @@ namespace App\Services;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceListItemData;
+use App\Data\Invoices\InvoicePaymentData;
 use App\Data\Invoices\InvoiceStatsData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PaymentSourceEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoicePayment;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
@@ -26,6 +29,8 @@ use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -81,13 +86,15 @@ final readonly class InvoiceService
             ->where('type', InvoiceTypeEnum::Monthly)
             ->whereIn('status', [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Paid]);
 
+        $openBalance = DB::raw('total - deposit - paid_amount');
+
         $tenant = Tenant::withoutGlobalScopes()->with('interface')->find(current_tenant_id());
         $currency = $tenant?->interface->default_currency ?? CurrencyEnum::EUR;
 
         return InvoiceStatsData::fromAggregates(
             (float) $issuedMonth->sum('total'), $issuedMonth->count(),
-            (float) $overdue->sum('total'), $overdue->count(),
-            (float) $pending->sum('total'), $pending->count(),
+            (float) $overdue->sum($openBalance), $overdue->count(),
+            (float) $pending->sum($openBalance), $pending->count(),
             (float) $recurring->sum('total'), $recurring->count(),
             $currency,
         );
@@ -181,15 +188,78 @@ final readonly class InvoiceService
         });
     }
 
-    public function markPaid(Invoice $invoice): Invoice
+    public function recordPayment(Invoice $invoice, InvoicePaymentData $data, ?User $actor): InvoicePayment
     {
         if (! $invoice->status->canTransitionTo(InvoiceStatusEnum::Paid)) {
             throw ValidationException::withMessages(['status' => [__('app.invoice_cannot_mark_paid')]]);
         }
 
-        $invoice->update(['status' => InvoiceStatusEnum::Paid, 'paid_at' => now()]);
+        return $this->db->transaction(function () use ($invoice, $data, $actor): InvoicePayment {
+            $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
 
-        return $invoice;
+            if (! $locked->status->canTransitionTo(InvoiceStatusEnum::Paid)) {
+                throw ValidationException::withMessages(['status' => [__('app.invoice_cannot_mark_paid')]]);
+            }
+
+            if ($data->amount <= 0) {
+                throw ValidationException::withMessages(['amount' => [__('app.invoice_payment_amount_positive')]]);
+            }
+
+            $balance = $locked->balance_due;
+
+            if (round($data->amount - abs($balance), 2) > 0) {
+                throw ValidationException::withMessages(['amount' => [__('app.invoice_payment_exceeds_balance')]]);
+            }
+
+            $payment = InvoicePayment::create([
+                'tenant_id' => $locked->tenant_id,
+                'invoice_id' => $locked->id,
+                'amount' => $balance < 0 ? -$data->amount : $data->amount,
+                'paid_on' => $data->paid_on,
+                'payment_type' => $data->payment_type,
+                'source' => PaymentSourceEnum::Manual,
+                'note' => $data->note,
+                'recorded_by_user_id' => $actor?->id,
+            ]);
+
+            $this->recomputePaymentState($locked, Carbon::parse($data->paid_on)->startOfDay());
+            $invoice->refresh();
+
+            return $payment;
+        });
+    }
+
+    public function deletePayment(Invoice $invoice, InvoicePayment $payment): void
+    {
+        if ($invoice->status === InvoiceStatusEnum::Cancelled) {
+            throw ValidationException::withMessages(['status' => [__('app.invoice_payment_locked')]]);
+        }
+
+        $this->db->transaction(function () use ($invoice, $payment): void {
+            $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+
+            $payment->delete();
+
+            $this->recomputePaymentState($locked, null);
+            $invoice->refresh();
+        });
+    }
+
+    private function recomputePaymentState(Invoice $invoice, ?Carbon $settledAt): void
+    {
+        $paid = round((float) InvoicePayment::query()->where('invoice_id', $invoice->id)->sum('amount'), 2);
+
+        $invoice->paid_amount = number_format($paid, 2, '.', '');
+
+        if ($invoice->isSettled() && $invoice->status !== InvoiceStatusEnum::Paid && $invoice->status->canTransitionTo(InvoiceStatusEnum::Paid)) {
+            $invoice->status = InvoiceStatusEnum::Paid;
+            $invoice->paid_at = $settledAt ?? now();
+        } elseif (! $invoice->isSettled() && $invoice->status === InvoiceStatusEnum::Paid) {
+            $invoice->status = $invoice->due_date->isBefore(today()) ? InvoiceStatusEnum::Overdue : InvoiceStatusEnum::Issued;
+            $invoice->paid_at = null;
+        }
+
+        $invoice->save();
     }
 
     public function cancel(Invoice $invoice, ?User $actor): Invoice
@@ -250,6 +320,8 @@ final readonly class InvoiceService
                 'customer_name' => $invoice->customer_name,
                 'customer_representative' => $invoice->customer_representative,
                 'customer_ico' => $invoice->customer_ico,
+                'customer_peppol_participant_id' => $invoice->customer_peppol_participant_id,
+                'supplier_peppol_participant_id' => $invoice->supplier_peppol_participant_id,
                 'customer_dic' => $invoice->customer_dic,
                 'customer_vat_number' => $invoice->customer_vat_number,
                 'customer_street' => $invoice->customer_street,
@@ -338,6 +410,8 @@ final readonly class InvoiceService
                 'customer_name' => $invoice->customer_name,
                 'customer_representative' => $invoice->customer_representative,
                 'customer_ico' => $invoice->customer_ico,
+                'customer_peppol_participant_id' => $invoice->customer_peppol_participant_id,
+                'supplier_peppol_participant_id' => $invoice->supplier_peppol_participant_id,
                 'customer_dic' => $invoice->customer_dic,
                 'customer_vat_number' => $invoice->customer_vat_number,
                 'customer_street' => $invoice->customer_street,
@@ -508,6 +582,8 @@ final readonly class InvoiceService
             'customer_name' => $customerName,
             'customer_representative' => $data->customer_representative,
             'customer_ico' => $client->ico ?? $data->customer_ico,
+            'customer_peppol_participant_id' => $client?->peppol_participant_id,
+            'supplier_peppol_participant_id' => $tenant->peppol_participant_id,
             'customer_dic' => $client->dic ?? $data->customer_dic,
             'customer_vat_number' => $client->vat_number ?? $data->customer_vat_number,
             'customer_street' => $client->street ?? $data->customer_street,

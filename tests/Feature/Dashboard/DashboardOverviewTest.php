@@ -290,6 +290,23 @@ final class DashboardOverviewTest extends TestCase
         $this->assertSame('200.00', $byCurrency[1]['unpaid_sum']);
     }
 
+    public function test_unpaid_and_overdue_sums_use_open_balance(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser(RoleTemplatesSeeder::ADMIN_ROLE, $tenant);
+        $today = today()->toDateString();
+
+        Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'issue_date' => $today, 'total' => '100.00', 'deposit' => '10.00', 'paid_amount' => '30.00']);
+        Invoice::factory()->overdue()->create(['tenant_id' => $tenant->id, 'issue_date' => $today, 'total' => '50.00', 'paid_amount' => '20.00']);
+
+        $invoices = $this->getOverview($this->get(route('dashboard')))['companies'][0]['invoices'];
+        $this->assertNotNull($invoices);
+        $byCurrency = $invoices['by_currency'];
+
+        $this->assertSame('60.00', $byCurrency[0]['unpaid_sum']);
+        $this->assertSame('30.00', $byCurrency[0]['overdue_sum']);
+    }
+
     public function test_non_default_currency_row_only_surfaces_when_non_zero(): void
     {
         $tenant = Tenant::factory()->create();

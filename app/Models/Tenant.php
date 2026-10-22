@@ -38,6 +38,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property string|null $country
  * @property string|null $contact_email
  * @property string|null $contact_phone
+ * @property string|null $peppol_participant_id
  * @property bool $is_active
  * @property User|null $owner
  * @property TenantInterface|null $interface
@@ -62,6 +63,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'country',
     'contact_email',
     'contact_phone',
+    'peppol_participant_id',
     'is_active',
 ])]
 final class Tenant extends Model implements HasMedia
@@ -95,6 +97,7 @@ final class Tenant extends Model implements HasMedia
                 'vat_rate', 'iban', 'is_active',
                 'swift_bic', 'invoice_number_format', 'registration_info', 'signature_media_id',
                 'address_line', 'city', 'postal_code', 'country', 'contact_email', 'contact_phone',
+                'peppol_participant_id',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

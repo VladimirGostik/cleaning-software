@@ -26,6 +26,9 @@ const props = withDefaults(
         canDelete?: boolean;
         canDeleteRow?: (row: TRow) => boolean;
         rowHref?: (row: TRow) => string | null;
+        selectable?: boolean;
+        selectLabel?: (row: TRow) => string;
+        selectAllLabel?: string;
     }>(),
     {
         columns: undefined,
@@ -37,6 +40,9 @@ const props = withDefaults(
         deleteUrl: undefined,
         canDeleteRow: undefined,
         rowHref: undefined,
+        selectLabel: undefined,
+        selectAllLabel: undefined,
+        selectable: false,
         loading: false,
         enableFilters: true,
         enablePagination: true,
@@ -48,12 +54,14 @@ const props = withDefaults(
     },
 );
 
+const selected = defineModel<string[]>('selected', { default: () => [] });
 const slots = useSlots();
 const query = ref(readSpatieQuery());
 watch(
     () => props.rows,
     () => {
         query.value = readSpatieQuery();
+        if (props.selectable && selected.value.length) selected.value = [];
     },
 );
 const popoverOpen = ref<Record<string | number, boolean>>({});
@@ -79,6 +87,28 @@ function rowIdentifier(row: TRow, index: number): string | number {
     if (typeof props.rowKey === 'function') return props.rowKey(row, index);
     if (typeof props.rowKey === 'string') return String((row as Record<string, unknown>)[props.rowKey] ?? index);
     return index;
+}
+
+const pageIds = computed(() => (props.rows?.data ?? []).map((row, index) => String(rowIdentifier(row, index))));
+const allSelected = computed(
+    () => pageIds.value.length > 0 && pageIds.value.every((id) => selected.value.includes(id)),
+);
+const someSelected = computed(() => selected.value.length > 0 && !allSelected.value);
+const columnCount = computed(
+    () => resolvedColumns.value.length + (showActionsColumn.value ? 1 : 0) + (props.selectable ? 1 : 0),
+);
+
+if (import.meta.env.DEV && props.selectable && !props.rowKey) {
+    console.warn('DataTable: `selectable` requires `rowKey`.');
+}
+
+function toggleAll(checked: boolean) {
+    selected.value = checked ? [...pageIds.value] : [];
+}
+
+function toggleRow(id: string, checked: boolean) {
+    const rest = selected.value.filter((value) => value !== id);
+    selected.value = checked ? pageIds.value.filter((value) => value === id || rest.includes(value)) : rest;
 }
 
 function cellValue(row: TRow, column: TableColumn<TRow>) {
@@ -200,6 +230,16 @@ function confirmDelete(row: TRow, id: string | number) {
             <table class="table table-zebra w-full">
                 <thead>
                     <tr>
+                        <th v-if="selectable" class="w-0">
+                            <input
+                                type="checkbox"
+                                class="checkbox checkbox-sm"
+                                :checked="allSelected"
+                                :indeterminate="someSelected"
+                                :aria-label="selectAllLabel"
+                                @change="toggleAll(($event.target as HTMLInputElement).checked)"
+                            />
+                        </th>
                         <th
                             v-for="column in resolvedColumns"
                             :key="column.key"
@@ -225,6 +265,7 @@ function confirmDelete(row: TRow, id: string | number) {
                 <tbody>
                     <template v-if="loading">
                         <tr v-for="i in skeletonCount" :key="`skeleton-${i}`">
+                            <td v-if="selectable"><div class="skeleton size-4" /></td>
                             <td v-for="column in resolvedColumns" :key="column.key">
                                 <div class="skeleton h-4 w-full" />
                             </td>
@@ -240,6 +281,20 @@ function confirmDelete(row: TRow, id: string | number) {
                                 @click="onRowClick(row, $event)"
                                 @auxclick="onRowAuxClick(row, $event)"
                             >
+                                <td v-if="selectable" @click.stop>
+                                    <input
+                                        type="checkbox"
+                                        class="checkbox checkbox-sm"
+                                        :checked="selected.includes(String(rowIdentifier(row, index)))"
+                                        :aria-label="selectLabel?.(row)"
+                                        @change="
+                                            toggleRow(
+                                                String(rowIdentifier(row, index)),
+                                                ($event.target as HTMLInputElement).checked,
+                                            )
+                                        "
+                                    />
+                                </td>
                                 <td v-for="column in resolvedColumns" :key="column.key" :class="cellClass(row, column)">
                                     <slot :name="`cell-${column.key}`" :row="row" :value="cellValue(row, column)">
                                         {{ cellValue(row, column) }}
@@ -300,17 +355,14 @@ function confirmDelete(row: TRow, id: string | number) {
                             </tr>
 
                             <tr v-if="$slots['row-details']">
-                                <td :colspan="resolvedColumns.length + (showActionsColumn ? 1 : 0)">
+                                <td :colspan="columnCount">
                                     <slot name="row-details" :row="row" :index="index" />
                                 </td>
                             </tr>
                         </template>
 
                         <tr v-if="!rows?.data?.length">
-                            <td
-                                :colspan="resolvedColumns.length + (showActionsColumn ? 1 : 0)"
-                                class="py-8 text-center text-base-content/50"
-                            >
+                            <td :colspan="columnCount" class="py-8 text-center text-base-content/50">
                                 {{ Object.keys(query.filters).length ? $t('no_records_filters') : $t('no_results') }}
                             </td>
                         </tr>

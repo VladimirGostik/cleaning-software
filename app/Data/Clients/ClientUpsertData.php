@@ -7,6 +7,7 @@ namespace App\Data\Clients;
 use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use App\Rules\AtMostOnePrimaryContact;
+use App\Rules\PeppolParticipantId;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
@@ -47,6 +48,8 @@ final class ClientUpsertData extends Data
         /** @var DataCollection<int, ClientContactData> */
         #[DataCollectionOf(ClientContactData::class)]
         public readonly DataCollection $contacts,
+        #[Nullable, Max(64)]
+        public readonly ?string $peppol_participant_id = null,
     ) {}
 
     /** @return array<string, string> */
@@ -70,6 +73,7 @@ final class ClientUpsertData extends Data
                     ->whereNull('deleted_at')
                     ->ignore($clientId),
             ],
+            'peppol_participant_id' => ['nullable', 'string', 'max:64', new PeppolParticipantId],
             'contacts' => [new AtMostOnePrimaryContact('app.client_contacts_multiple_primary')],
         ];
     }

@@ -32,6 +32,7 @@ final class RecurringInvoiceFactory extends Factory
             'day_of_month' => fake()->numberBetween(1, 28),
             'status' => RecurringInvoiceStatusEnum::Active,
             'auto_issue' => false,
+            'auto_send' => false,
             'start_date' => now()->subMonth()->toDateString(),
             'end_date' => null,
             'occurrences_limit' => null,

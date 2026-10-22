@@ -13,6 +13,7 @@ use App\Enums\RoundingModeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\InvoicePayment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -133,7 +134,18 @@ final class InvoiceFactory extends Factory
             'variable_symbol' => date('Y').fake()->unique()->numerify('####'),
             'issued_at' => now()->subDays(5),
             'paid_at' => now(),
-        ]);
+        ])->afterCreating(function (Invoice $invoice): void {
+            $amount = round((float) $invoice->total - (float) $invoice->deposit, 2);
+            $invoice->forceFill(['paid_amount' => number_format($amount, 2, '.', '')])->saveQuietly();
+
+            InvoicePayment::factory()->create([
+                'tenant_id' => $invoice->tenant_id,
+                'invoice_id' => $invoice->id,
+                'amount' => number_format($amount, 2, '.', ''),
+                'paid_on' => $invoice->paid_at?->toDateString() ?? now()->toDateString(),
+                'payment_type' => $invoice->payment_type,
+            ]);
+        });
     }
 
     public function overdue(): static

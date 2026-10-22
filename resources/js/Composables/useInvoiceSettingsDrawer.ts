@@ -9,6 +9,7 @@ interface InvoiceSettingsDrawerState {
     settings: App.Data.Invoices.InvoiceSettingsData | null;
     signature: App.Data.Tenants.TenantSignatureData | null;
     constraints: App.Data.Invoices.InvoiceSignatureConstraintsData | null;
+    mailPlaceholders: App.Data.Invoices.InvoiceMailPlaceholderCatalogData | null;
 }
 
 interface InertiaPartialPayload {
@@ -16,6 +17,7 @@ interface InertiaPartialPayload {
         settings: App.Data.Invoices.InvoiceSettingsData;
         signature: App.Data.Tenants.TenantSignatureData | null;
         signature_constraints: App.Data.Invoices.InvoiceSignatureConstraintsData;
+        mailPlaceholders: App.Data.Invoices.InvoiceMailPlaceholderCatalogData;
     };
 }
 
@@ -29,7 +31,8 @@ function isInertiaPartialPayload(value: unknown): value is InertiaPartialPayload
         props !== null &&
         'settings' in props &&
         'signature' in props &&
-        'signature_constraints' in props
+        'signature_constraints' in props &&
+        'mailPlaceholders' in props
     );
 }
 
@@ -44,6 +47,7 @@ export function useInvoiceSettingsDrawer() {
         settings: null,
         signature: null,
         constraints: null,
+        mailPlaceholders: null,
     });
 
     async function open(): Promise<void> {
@@ -85,6 +89,7 @@ export function useInvoiceSettingsDrawer() {
             state.settings = payload.props.settings;
             state.signature = payload.props.signature;
             state.constraints = payload.props.signature_constraints;
+            state.mailPlaceholders = payload.props.mailPlaceholders;
             state.status = 'ready';
         } catch {
             state.status = 'error';

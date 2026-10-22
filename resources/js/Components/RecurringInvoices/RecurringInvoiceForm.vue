@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { addDays, parseISO } from 'date-fns';
@@ -51,6 +51,7 @@ interface RecurringInvoiceFormData {
     frequency: App.Enums.RecurringFrequencyEnum;
     day_of_month: number;
     auto_issue: boolean;
+    auto_send: boolean;
     start_date: string;
     end_date: string | null;
     occurrences_limit: number | null;
@@ -122,6 +123,7 @@ function initialData(): RecurringInvoiceFormData {
             frequency: ri.frequency,
             day_of_month: ri.day_of_month,
             auto_issue: ri.auto_issue,
+            auto_send: ri.auto_send,
             start_date: toDateInputValue(ri.start_date),
             end_date: ri.end_date,
             occurrences_limit: ri.occurrences_limit,
@@ -157,6 +159,7 @@ function initialData(): RecurringInvoiceFormData {
         frequency: 'monthly',
         day_of_month: 1,
         auto_issue: false,
+        auto_send: false,
         start_date: toDateInputValue(new Date()),
         end_date: null,
         occurrences_limit: null,
@@ -238,6 +241,13 @@ const autoIssueHint = computed(() =>
     t('recurring_invoice_auto_issue_hint', {
         state: t(recurringDefaultStateKey(props.context.recurring_default_state)),
     }),
+);
+
+watch(
+    () => form.auto_issue,
+    (enabled) => {
+        if (!enabled) form.auto_send = false;
+    },
 );
 
 const previewDueDate = computed(() => toDateInputValue(addDays(parseISO(form.start_date), form.due_days)));
@@ -367,6 +377,12 @@ function submit(): void {
 
                         <ToggleInput field="auto_issue" :label="t('recurring_invoice_auto_issue')" />
                         <p class="text-sm text-base-content/60">{{ autoIssueHint }}</p>
+                        <ToggleInput
+                            field="auto_send"
+                            :label="t('recurring_invoice_auto_send')"
+                            :disabled="!form.auto_issue"
+                        />
+                        <p class="text-sm text-base-content/60">{{ t('recurring_invoice_auto_send_hint') }}</p>
                     </div>
                 </div>
 

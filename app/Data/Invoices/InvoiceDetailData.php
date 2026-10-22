@@ -12,6 +12,7 @@ use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoicePayment;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -50,6 +51,9 @@ final class InvoiceDetailData extends Data
         public readonly string $total,
         public readonly string $deposit,
         public readonly string $balance_due,
+        public readonly string $paid_amount,
+        public readonly bool $is_partially_paid,
+        public readonly bool $is_credit_note,
         public readonly string $rounding_amount,
         public readonly PaymentTypeEnum $payment_type,
         public readonly CurrencyEnum $currency,
@@ -80,15 +84,19 @@ final class InvoiceDetailData extends Data
         /** @var VatBreakdownLineData[] */
         #[DataCollectionOf(VatBreakdownLineData::class)]
         public readonly array $vat_breakdown,
+        /** @var InvoicePaymentListItemData[] */
+        #[DataCollectionOf(InvoicePaymentListItemData::class)]
+        public readonly array $payments,
+        public readonly EInvoiceStatusData $efa,
         public readonly bool $qr_available,
         public readonly ?string $qr_data_uri = null,
         /** @var string[] */
         public readonly array $supplier_missing_fields = [],
     ) {}
 
-    public static function fromModel(Invoice $invoice, ?string $qrDataUri): self
+    public static function fromModel(Invoice $invoice, ?string $qrDataUri, ?EInvoiceStatusData $efa = null): self
     {
-        $invoice->loadMissing(['items', 'creditNote']);
+        $invoice->loadMissing(['items', 'creditNote', 'payments.recordedBy:id,name']);
 
         $supplierMissingFields = $invoice->isEditable()
             ? $invoice->loadMissing('tenant')->tenant?->missingSupplierFields() ?? []
@@ -125,6 +133,9 @@ final class InvoiceDetailData extends Data
             total: $invoice->total,
             deposit: $invoice->deposit,
             balance_due: (string) $invoice->balance_due,
+            paid_amount: $invoice->paid_amount,
+            is_partially_paid: $invoice->isPartiallyPaid(),
+            is_credit_note: $invoice->isCreditNote(),
             rounding_amount: $invoice->rounding_amount,
             payment_type: $invoice->payment_type,
             currency: $invoice->currency,
@@ -151,11 +162,13 @@ final class InvoiceDetailData extends Data
             supplier: InvoiceSupplierData::fromInvoice($invoice),
             items: $invoice->items->map(fn (InvoiceItem $item) => InvoiceItemData::fromModel($item))->all(),
             vat_breakdown: array_map(fn (array $l) => VatBreakdownLineData::from($l), $invoice->vat_breakdown ?? []),
+            payments: $invoice->payments->map(fn (InvoicePayment $payment) => InvoicePaymentListItemData::fromModel($payment))->all(),
             qr_available: $invoice->status !== InvoiceStatusEnum::Draft
                 && $invoice->supplier_iban !== null
                 && $invoice->variable_symbol !== null,
             qr_data_uri: $qrDataUri,
             supplier_missing_fields: $supplierMissingFields,
+            efa: $efa ?? EInvoiceStatusData::fromInvoice($invoice, []),
         );
     }
 }

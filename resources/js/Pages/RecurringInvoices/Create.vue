@@ -45,6 +45,7 @@ function onSettingsSaved(): void {
         :settings="settingsDrawer.state.settings"
         :signature="settingsDrawer.state.signature"
         :constraints="settingsDrawer.state.constraints"
+        :mail-placeholders="settingsDrawer.state.mailPlaceholders"
         @close="settingsDrawer.close"
         @retry="settingsDrawer.open"
         @saved="onSettingsSaved"
