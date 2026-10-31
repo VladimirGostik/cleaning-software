@@ -10,6 +10,7 @@ use App\Http\Middleware\TenantContextMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -26,6 +27,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.required' => RequireActiveTenant::class,
             'ability' => CheckForAnyAbility::class,
         ]);
+
+        $middleware->prependToPriorityList(before: SubstituteBindings::class, prepend: TenantContextMiddleware::class);
 
         $middleware->web(append: [
             LocaleMiddleware::class,
