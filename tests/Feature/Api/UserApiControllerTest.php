@@ -46,7 +46,7 @@ final class UserApiControllerTest extends TestCase
         $this->addMember($tenant, User::factory()->create());
         $this->addMember($tenant, User::factory()->create());
         $this->addMember($tenant, User::factory()->create());
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->getJson('/api/users');
 
@@ -80,7 +80,7 @@ final class UserApiControllerTest extends TestCase
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $this->addMember($tenant, User::factory()->create(['name' => 'Searchable Person', 'email' => 'searchable@example.com']));
         $this->addMember($tenant, User::factory()->create(['name' => 'Other Person', 'email' => 'other@example.com']));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->getJson('/api/users?filter[search]=Searchable');
 
@@ -94,7 +94,7 @@ final class UserApiControllerTest extends TestCase
         $user = $this->userWithPermission('view employees');
         $tenant = Tenant::find((string) app('current_tenant_id'));
         User::factory()->count(5)->create()->each(fn (User $u) => $this->addMember($tenant, $u));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->getJson('/api/users?per_page=2');
 
@@ -109,7 +109,7 @@ final class UserApiControllerTest extends TestCase
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $this->addMember($tenant, User::factory()->create(), active: true);
         $this->addMember($tenant, User::factory()->create(), active: false);
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->getJson('/api/users?filter[is_active]=true');
 
@@ -123,7 +123,7 @@ final class UserApiControllerTest extends TestCase
     {
         $user = $this->userWithPermission('view employees');
         $outsider = User::factory()->create();
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->getJson('/api/users');
 
@@ -139,7 +139,7 @@ final class UserApiControllerTest extends TestCase
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create(['name' => 'Target User']);
         $this->addMember($tenant, $target);
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->getJson("/api/users/{$target->id}");
 
@@ -163,7 +163,7 @@ final class UserApiControllerTest extends TestCase
     {
         $actor = $this->userWithPermission('view employees');
         $target = User::factory()->create();
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->getJson("/api/users/{$target->id}");
 
@@ -173,7 +173,7 @@ final class UserApiControllerTest extends TestCase
     public function test_show_returns_404_for_nonexistent_user(): void
     {
         $actor = $this->userWithPermission('view employees');
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->getJson('/api/users/00000000-0000-0000-0000-000000000000');
 
@@ -198,7 +198,7 @@ final class UserApiControllerTest extends TestCase
         $target = User::factory()->create(['name' => 'Old Name']);
         $this->addMember($tenant, $target);
         $role = Role::create(['name' => 'member', 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->putJson("/api/users/{$target->id}", [
             'name' => 'Updated Name',
@@ -233,7 +233,7 @@ final class UserApiControllerTest extends TestCase
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create();
         $this->addMember($tenant, $target);
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->putJson("/api/users/{$target->id}", [
             'name' => '',
@@ -253,7 +253,7 @@ final class UserApiControllerTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
         $target = User::factory()->create();
         $this->addMember($tenant, $target);
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->putJson("/api/users/{$target->id}", [
             'name' => $target->name,
@@ -288,7 +288,7 @@ final class UserApiControllerTest extends TestCase
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create();
         $this->addMember($tenant, $target);
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->deleteJson("/api/users/{$target->id}");
 
@@ -311,7 +311,7 @@ final class UserApiControllerTest extends TestCase
     public function test_destroy_is_forbidden_when_deleting_self(): void
     {
         $actor = $this->userWithPermission('delete employees');
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->deleteJson("/api/users/{$actor->id}");
 
@@ -322,7 +322,7 @@ final class UserApiControllerTest extends TestCase
     public function test_destroy_returns_404_for_nonexistent_user(): void
     {
         $actor = $this->userWithPermission('delete employees');
-        Sanctum::actingAs($actor);
+        $this->actingAsMobile($actor);
 
         $response = $this->deleteJson('/api/users/00000000-0000-0000-0000-000000000000');
 

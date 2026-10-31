@@ -9,6 +9,7 @@ use App\Data\LoginData;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Scribe\Attributes\ResponseFromSpatieData;
+use App\Services\Tenancy\TenantPermissionSnapshot;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ final class AuthController extends Controller
     #[Endpoint('Login', 'Authenticate and receive a Sanctum Bearer token.')]
     #[ResponseFromSpatieData(AuthTokenData::class, User::class, with: ['roles'])]
     #[Response(['message' => 'The provided credentials are incorrect.'], 422, 'Invalid credentials')]
-    public function login(LoginData $data): JsonResponse
+    public function login(LoginData $data, TenantPermissionSnapshot $snapshot): JsonResponse
     {
         if (! Auth::attempt(['email' => $data->email, 'password' => $data->password, 'is_active' => true])) {
             throw ValidationException::withMessages([
@@ -46,9 +47,17 @@ final class AuthController extends Controller
             ]);
         }
 
+        if (! $snapshot->hasMobileAccess($user)) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => [__('app.mobile_forbidden')],
+            ]);
+        }
+
         $user->load('roles');
 
-        return response()->json(AuthTokenData::make($user, $user->createToken('api')->plainTextToken));
+        return response()->json(AuthTokenData::make($user, $user->createToken('mobile', ['mobile'])->plainTextToken));
     }
 
     #[Authenticated]

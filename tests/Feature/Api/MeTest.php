@@ -11,7 +11,6 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -33,14 +32,17 @@ final class MeTest extends TestCase
         $role->syncPermissions([PermissionEnum::ViewClients->value]);
         $user->assignRole($role);
 
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->withHeaders(['X-Tenant-Id' => $tenantA->id])->getJson('/api/me');
 
         $response->assertOk();
         $response->assertJsonPath('userId', $user->id);
         $response->assertJsonPath('activeTenantId', $tenantA->id);
-        $response->assertJsonPath('permissions', [PermissionEnum::ViewClients->value]);
+        $this->assertEqualsCanonicalizing(
+            [PermissionEnum::ViewClients->value, PermissionEnum::AccessMobileApp->value],
+            $response->json('permissions'),
+        );
     }
 
     public function test_header_switch_changes_the_result(): void
@@ -50,7 +52,7 @@ final class MeTest extends TestCase
         $tenantB = Tenant::factory()->create();
         TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenantA->id, 'is_active' => true, 'joined_at' => now()]);
         TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenantB->id, 'is_active' => true, 'joined_at' => now()]);
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $responseA = $this->withHeaders(['X-Tenant-Id' => $tenantA->id])->getJson('/api/me');
         $responseB = $this->withHeaders(['X-Tenant-Id' => $tenantB->id])->getJson('/api/me');

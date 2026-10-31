@@ -89,6 +89,21 @@ enum PermissionEnum: string
     case ViewNotifications = 'view notifications';
     case ConfigureNotifications = 'configure notifications';
 
+    // Mobile app
+    case AccessMobileApp = 'access mobile app';
+
+    // Tasks
+    case ViewTasks = 'view tasks';
+    case CreateTasks = 'create tasks';
+    case EditTasks = 'edit tasks';
+    case DeleteTasks = 'delete tasks';
+    /** Breadth modifier — requires ViewTasks. Without it the actor sees only tasks created by or assigned to her. */
+    case ViewAllTasks = 'view all tasks';
+
+    // Expenses
+    case ViewExpenses = 'view expenses';
+    case ManageExpenses = 'manage expenses';
+
     public function label(): string
     {
         return __('app.permission_'.self::key($this->value));
@@ -132,6 +147,13 @@ enum PermissionEnum: string
             self::EditRecurringInvoices, self::DeleteRecurringInvoices => 'recurring_invoices',
 
             self::ViewNotifications, self::ConfigureNotifications => 'notifications',
+
+            self::AccessMobileApp => 'mobile',
+
+            self::ViewTasks, self::CreateTasks, self::EditTasks,
+            self::DeleteTasks, self::ViewAllTasks => 'tasks',
+
+            self::ViewExpenses, self::ManageExpenses => 'expenses',
         };
     }
 

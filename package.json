@@ -6,6 +6,7 @@
         "dev": "vite",
         "build": "vite build",
         "typecheck": "vue-tsc --noEmit",
+        "api-types:export": "node scripts/export-api-types.mjs",
         "lint:js": "eslint resources/js/ vite.config.js",
         "lint:prettier": "prettier --check .",
         "fix:js": "eslint --fix resources/js/ vite.config.js",

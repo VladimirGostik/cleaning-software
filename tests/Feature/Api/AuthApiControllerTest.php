@@ -7,6 +7,7 @@ namespace Tests\Feature\Api;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
+use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,6 +19,7 @@ final class AuthApiControllerTest extends TestCase
     {
         $tenant = Tenant::factory()->forOwner($user)->create();
         TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
+        $this->actingAsTenantUser(RoleTemplatesSeeder::ADMIN_ROLE, $tenant, $user);
 
         return $user;
     }

@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services\Dashboard;
 
+use App\Enums\PermissionEnum;
 use App\Models\Tenant;
 
 /**
  * Per-tenant permission snapshot for the acting user, resolved once under that tenant's
- * permission team id (see `DashboardService::visibilityFor`). Plain value object — not a
+ * permission team id (see `TenantPermissionSnapshot::for`). Plain value object — not a
  * Spatie Data DTO, never crosses the Inertia boundary.
  */
 final readonly class TenantVisibility
 {
+    /** @param list<PermissionEnum> $permissions */
     public function __construct(
         public Tenant $tenant,
         public ?string $membershipId,
@@ -26,6 +28,12 @@ final readonly class TenantVisibility
         public bool $objects,
         public bool $billingSettings,
         public bool $createInvoices,
+        public bool $mobileAccess,
+        public bool $tasks,
+        public bool $tasksAll,
+        public bool $expenses,
+        public bool $manageExpenses,
+        public array $permissions,
     ) {}
 
     /**

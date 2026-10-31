@@ -8,7 +8,6 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 final class TenantContextMiddlewareTest extends TestCase
@@ -77,7 +76,7 @@ final class TenantContextMiddlewareTest extends TestCase
         $user = User::factory()->create();
         $tenant = Tenant::factory()->create();
         $this->addMember($user, $tenant);
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->withHeaders(['X-Tenant-Id' => $tenant->id])->getJson('/api/me');
 
@@ -91,7 +90,7 @@ final class TenantContextMiddlewareTest extends TestCase
         $own = Tenant::factory()->create();
         $foreign = Tenant::factory()->create();
         $this->addMember($user, $own);
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->withHeaders(['X-Tenant-Id' => $foreign->id])->getJson('/api/me');
 
@@ -103,7 +102,7 @@ final class TenantContextMiddlewareTest extends TestCase
         $user = User::factory()->create();
         $tenant = Tenant::factory()->create();
         $this->addMember($user, $tenant);
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->withHeaders(['X-Tenant-Id' => 'not-a-uuid'])->getJson('/api/me');
 
@@ -115,7 +114,7 @@ final class TenantContextMiddlewareTest extends TestCase
         $user = User::factory()->create();
         $tenant = Tenant::factory()->create();
         $this->addMember($user, $tenant);
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->getJson('/api/me');
 

@@ -10,6 +10,7 @@ use App\Http\Middleware\TenantContextMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'tenant.context' => TenantContextMiddleware::class,
             'tenant.required' => RequireActiveTenant::class,
+            'ability' => CheckForAnyAbility::class,
         ]);
 
         $middleware->web(append: [

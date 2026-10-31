@@ -193,7 +193,18 @@ readonly created_at: string,
 namespace Auth {
 export type MeData = {
 readonly userId: string,
+readonly name: string,
+readonly email: string,
+readonly locale: App.Enums.SupportedLanguage,
 readonly activeTenantId: string,
+readonly permissions: App.Enums.PermissionEnum[],
+readonly companies: App.Data.Auth.MobileCompanyData[],
+};
+export type MobileCompanyData = {
+readonly tenant_id: string,
+readonly name: string,
+readonly color: App.Enums.TenantColorEnum | null,
+readonly mobile_access: boolean,
 readonly permissions: App.Enums.PermissionEnum[],
 };
 }
@@ -1290,7 +1301,7 @@ export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "in
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
-export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications";
+export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "view expenses" | "manage expenses";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type RecurringDefaultStateEnum = "draft" | "issued";

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Enums\PermissionEnum;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
@@ -13,6 +14,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Testing\PendingCommand;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
@@ -48,6 +50,29 @@ abstract class TestCase extends BaseTestCase
 
         $this->actingAs($user);
         $this->bindTenant($tenant);
+
+        return $user;
+    }
+
+    /** Sanctum `mobile` token for `$user`; grants `access mobile app` directly in every active membership tenant. */
+    protected function actingAsMobile(User $user): User
+    {
+        $this->seedPermissionsOnce();
+        $registrar = app(PermissionRegistrar::class);
+        $previous = $registrar->getPermissionsTeamId();
+
+        /** @var list<string> $tenantIds */
+        $tenantIds = $user->memberships()->where('is_active', true)->pluck('tenant_id')->all();
+
+        foreach ($tenantIds as $tenantId) {
+            $registrar->setPermissionsTeamId($tenantId);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+            $user->givePermissionTo(PermissionEnum::AccessMobileApp->value);
+        }
+
+        $registrar->setPermissionsTeamId($previous);
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+        Sanctum::actingAs($user, ['mobile']);
 
         return $user;
     }

@@ -9,7 +9,6 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 final class ProfileApiControllerTest extends TestCase
@@ -29,7 +28,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_show_returns_authenticated_user_profile(): void
     {
         $user = $this->withActiveMembership(User::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->getJson('/api/profile');
 
@@ -51,7 +50,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_update_changes_profile_data_in_database(): void
     {
         $user = $this->withActiveMembership(User::factory()->create(['name' => 'Old Name', 'email' => 'old@example.com', 'locale' => 'sk']));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->putJson('/api/profile', [
             'name' => 'New Name',
@@ -73,7 +72,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_update_with_missing_name_returns_422(): void
     {
         $user = $this->withActiveMembership(User::factory()->create());
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->putJson('/api/profile', [
             'name' => '',
@@ -88,7 +87,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_update_with_invalid_email_returns_422(): void
     {
         $user = $this->withActiveMembership(User::factory()->create());
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->putJson('/api/profile', [
             'name' => 'Valid Name',
@@ -116,7 +115,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_change_password_with_correct_current_password_succeeds(): void
     {
         $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('current-password')]));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->putJson('/api/profile/password', [
             'current_password' => 'current-password',
@@ -131,7 +130,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_change_password_with_wrong_current_password_returns_422(): void
     {
         $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('correct-password')]));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->putJson('/api/profile/password', [
             'current_password' => 'wrong-password',
@@ -146,7 +145,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_change_password_with_mismatched_confirmation_returns_422(): void
     {
         $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('current-password')]));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->putJson('/api/profile/password', [
             'current_password' => 'current-password',
@@ -161,7 +160,7 @@ final class ProfileApiControllerTest extends TestCase
     public function test_change_password_with_too_short_password_returns_422(): void
     {
         $user = $this->withActiveMembership(User::factory()->create(['password' => Hash::make('current-password')]));
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->putJson('/api/profile/password', [
             'current_password' => 'current-password',

@@ -11,7 +11,6 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -67,7 +66,7 @@ final class NotificationBellTest extends TestCase
 
         Notification::factory()->for($user, 'notifiable')->for($tenant)->create();
 
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->withHeaders(['X-Tenant-Id' => $tenant->id])->getJson('/api/notifications/bell');
 
@@ -87,7 +86,7 @@ final class NotificationBellTest extends TestCase
         $user = User::factory()->create();
         TenantMembership::query()->create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
 
-        Sanctum::actingAs($user);
+        $this->actingAsMobile($user);
 
         $response = $this->withHeaders(['X-Tenant-Id' => $otherTenant->id])->getJson('/api/notifications/bell');
 

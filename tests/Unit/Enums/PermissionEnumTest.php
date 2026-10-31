@@ -51,4 +51,12 @@ final class PermissionEnumTest extends TestCase
             $this->assertDoesNotMatchRegularExpression('/[A-Z]/', $value);
         }
     }
+
+    public function test_mobile_tasks_and_expenses_permissions_are_grouped(): void
+    {
+        $this->assertSame('mobile', PermissionEnum::AccessMobileApp->group());
+        $this->assertSame('tasks', PermissionEnum::ViewAllTasks->group());
+        $this->assertSame('expenses', PermissionEnum::ManageExpenses->group());
+        $this->assertSame('viewAllTasks', PermissionEnum::ViewAllTasks->sharedKey());
+    }
 }

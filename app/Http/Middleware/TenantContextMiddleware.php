@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Enums\PermissionEnum;
 use App\Models\User;
+use App\Services\Dashboard\TenantVisibility;
+use App\Services\Tenancy\TenantPermissionSnapshot;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -41,11 +46,7 @@ final class TenantContextMiddleware
         }
 
         if ($tenantId === null) {
-            /** @var string|null $tenantId */
-            $tenantId = $user->memberships()
-                ->where('is_active', true)
-                ->orderBy('joined_at')
-                ->value('tenant_id');
+            $tenantId = $this->firstMembershipTenant($user, $this->isMobileToken($user));
         }
 
         if ($tenantId !== null) {
@@ -57,7 +58,40 @@ final class TenantContextMiddleware
             }
         }
 
+        if ($tenantId !== null && $this->isMobileToken($user)) {
+            abort_unless($user->can(PermissionEnum::AccessMobileApp->value), 403, __('app.mobile_forbidden'));
+        }
+
         return $next($request);
+    }
+
+    private function firstMembershipTenant(User $user, bool $mobileOnly): ?string
+    {
+        $query = $user->memberships()->where('is_active', true)->orderBy('joined_at');
+
+        if ($mobileOnly) {
+            $allowed = TenantVisibility::idsWhere(
+                app(TenantPermissionSnapshot::class)->for($user),
+                fn (TenantVisibility $visibility): bool => $visibility->mobileAccess,
+            );
+
+            if ($allowed !== []) {
+                $query->whereIn('tenant_id', $allowed);
+            }
+        }
+
+        /** @var string|null $tenantId */
+        $tenantId = $query->value('tenant_id');
+
+        return $tenantId;
+    }
+
+    private function isMobileToken(User $user): bool
+    {
+        /** @var PersonalAccessToken|TransientToken|null $token */
+        $token = $user->currentAccessToken();
+
+        return $token instanceof PersonalAccessToken && $token->can('mobile');
     }
 
     private function resolveFromHeader(Request $request, User $user): ?string

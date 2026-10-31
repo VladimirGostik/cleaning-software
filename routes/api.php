@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\NotificationBellController;
 use App\Http\Controllers\Api\ProfileController;
@@ -18,8 +19,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 });
 
-Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.required'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'ability:mobile', 'tenant.context', 'tenant.required'])->group(function (): void {
     Route::get('/me', MeController::class);
+    Route::get('/dashboard', DashboardController::class)->name('api.dashboard');
     Route::get('/notifications/bell', NotificationBellController::class)->name('api.notifications.bell');
 
     Route::get('/profile', [ProfileController::class, 'show']);
