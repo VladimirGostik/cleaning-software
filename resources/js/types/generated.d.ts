@@ -1229,6 +1229,75 @@ readonly frequency: App.Enums.TaskFrequencyEnum,
 readonly position: number,
 };
 }
+namespace Tasks {
+export type TaskAssignData = {
+readonly assigned_membership_id: string | null,
+};
+export type TaskCanData = {
+readonly update: boolean,
+readonly delete: boolean,
+readonly assign: boolean,
+};
+export type TaskDetailData = {
+readonly id: string,
+readonly tenant_id: string | null,
+readonly tenant_name: string | null,
+readonly title: string,
+readonly status: App.Enums.TaskStatusEnum,
+readonly priority: App.Enums.TaskPriorityEnum,
+readonly due_at: string | null,
+readonly assignee_name: string | null,
+readonly subject: App.Data.Tasks.TaskSubjectData | null,
+readonly is_global: boolean,
+readonly created_at: string,
+readonly description: string | null,
+readonly remind_at: string | null,
+readonly completed_at: string | null,
+readonly source: App.Enums.TaskSourceEnum,
+readonly assigned_membership_id: string | null,
+readonly created_by_name: string,
+readonly can: App.Data.Tasks.TaskCanData,
+};
+export type TaskFormContextData = {
+readonly companies: App.Data.Auth.MobileCompanyData[],
+readonly members: Record<string, App.Data.Tasks.TaskMemberOptionData[]>,
+};
+export type TaskListItemData = {
+readonly id: string,
+readonly tenant_id: string | null,
+readonly tenant_name: string | null,
+readonly title: string,
+readonly status: App.Enums.TaskStatusEnum,
+readonly priority: App.Enums.TaskPriorityEnum,
+readonly due_at: string | null,
+readonly assignee_name: string | null,
+readonly subject: App.Data.Tasks.TaskSubjectData | null,
+readonly is_global: boolean,
+readonly created_at: string,
+};
+export type TaskMemberOptionData = {
+readonly id: string,
+readonly name: string,
+};
+export type TaskSubjectData = {
+readonly type: string,
+readonly id: string,
+readonly label: string,
+readonly url: string | null,
+};
+export type TaskUpsertData = {
+readonly title: string,
+readonly priority: App.Enums.TaskPriorityEnum,
+readonly tenant_id?: string | null,
+readonly description: string | null,
+readonly due_at: string | null,
+readonly remind_at: string | null,
+readonly assigned_membership_id: string | null,
+readonly taskable_type: string | null,
+readonly taskable_id: string | null,
+readonly source: App.Enums.TaskSourceEnum,
+};
+}
 namespace Tenants {
 export type AddTenantData = {
 readonly name: string,
@@ -1297,7 +1366,7 @@ export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
 export type JobTypeEnum = "regular" | "one_off" | "special";
-export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired";
+export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
@@ -1310,6 +1379,9 @@ export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "ca
 export type RoundingModeEnum = "none" | "document" | "cash_005";
 export type SupportedLanguage = "sk" | "en" | "uk";
 export type TaskFrequencyEnum = "one_time" | "weekly_1x" | "weekly_2x" | "weekly_3x" | "biweekly" | "monthly" | "bimonthly" | "seasonal";
+export type TaskPriorityEnum = "low" | "normal" | "high";
+export type TaskSourceEnum = "manual" | "voice" | "assistant" | "mcp";
+export type TaskStatusEnum = "open" | "done" | "cancelled";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";
 }
 }

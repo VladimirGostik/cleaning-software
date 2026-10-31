@@ -35,6 +35,7 @@ final readonly class EmployeeService
         private PermissionRegistrar $registrar,
         private RoleAssignmentGuard $guard,
         private JobService $jobs,
+        private TaskService $tasks,
         private ContractService $contracts,
         private RegistrationService $registration,
     ) {}
@@ -200,6 +201,8 @@ final readonly class EmployeeService
     {
         return $this->db->transaction(function () use ($membership): int {
             $membership->update(['is_active' => false]);
+
+            $this->tasks->unassignForMembership($membership);
 
             return $this->jobs->unassignFutureForMembership($membership);
         });

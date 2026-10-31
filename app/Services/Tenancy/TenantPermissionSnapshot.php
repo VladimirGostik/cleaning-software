@@ -9,6 +9,8 @@ use App\Models\Permission;
 use App\Models\User;
 use App\Services\Dashboard\TenantVisibility;
 use Illuminate\Support\Collection;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 use Spatie\Permission\PermissionRegistrar;
 
 final readonly class TenantPermissionSnapshot
@@ -24,6 +26,24 @@ final readonly class TenantPermissionSnapshot
         }
 
         return false;
+    }
+
+    /**
+     * Reads the token from the instance passed in, so callers acting as a user must pass the token-bearing instance.
+     *
+     * @return list<TenantVisibility>
+     */
+    public function forRequest(User $user): array
+    {
+        $all = $this->for($user);
+        /** @var PersonalAccessToken|TransientToken|null $token */
+        $token = $user->currentAccessToken();
+
+        if (! $token instanceof PersonalAccessToken || ! $token->can('mobile')) {
+            return $all;
+        }
+
+        return array_values(array_filter($all, fn (TenantVisibility $visibility): bool => $visibility->mobileAccess));
     }
 
     /**

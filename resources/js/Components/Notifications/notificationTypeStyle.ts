@@ -11,4 +11,6 @@ export const NOTIFICATION_TYPE_STYLE: Record<App.Enums.NotificationTypeEnum, { b
     'quote.sent': { badge: 'badge-info', dot: 'bg-info' },
     'quote.expiring': { badge: 'badge-warning', dot: 'bg-warning' },
     'quote.expired': { badge: 'badge-error', dot: 'bg-error' },
+    'task.due': { badge: 'badge-warning', dot: 'bg-warning' },
+    'task.assigned': { badge: 'badge-info', dot: 'bg-info' },
 };

@@ -12,10 +12,13 @@ use Spatie\Activitylog\Models\Activity as SpatieActivity;
  */
 final class Activity extends SpatieActivity
 {
+    /** Not persisted: keeps `tenant_id` null (global task rows) even while a tenant is bound. */
+    public bool $keepNullTenant = false;
+
     protected static function booted(): void
     {
         self::creating(function (self $activity): void {
-            if ($activity->tenant_id === null && app()->bound('current_tenant_id')) {
+            if ($activity->tenant_id === null && ! $activity->keepNullTenant && app()->bound('current_tenant_id')) {
                 $activity->tenant_id = current_tenant_id();
             }
         });

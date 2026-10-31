@@ -18,7 +18,7 @@ abstract class BaseTenantNotification extends Notification implements ShouldQueu
 {
     use Queueable;
 
-    public function __construct(public readonly string $tenantId)
+    public function __construct(public readonly ?string $tenantId)
     {
         $this->afterCommit();
     }

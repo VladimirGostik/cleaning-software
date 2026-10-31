@@ -219,3 +219,15 @@ export function notificationPreferenceDescKey(type: App.Enums.NotificationTypeEn
 export function dashboardAlertTypeKey(type: App.Enums.DashboardAlertTypeEnum): string {
     return `dashboard_alert_${type}`;
 }
+
+export const TASK_STATUSES: readonly App.Enums.TaskStatusEnum[] = ['open', 'done', 'cancelled'];
+
+export const TASK_PRIORITIES: readonly App.Enums.TaskPriorityEnum[] = ['low', 'normal', 'high'];
+
+export function taskStatusKey(status: App.Enums.TaskStatusEnum): string {
+    return `task_status_${status}`;
+}
+
+export function taskPriorityKey(priority: App.Enums.TaskPriorityEnum): string {
+    return `task_priority_${priority}`;
+}

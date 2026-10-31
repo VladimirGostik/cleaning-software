@@ -22,6 +22,7 @@ final readonly class UserService
         private PermissionRegistrar $registrar,
         private RoleAssignmentGuard $guard,
         private JobService $jobs,
+        private TaskService $tasks,
     ) {}
 
     public function create(CreateUserData $data, User $actor): User
@@ -97,6 +98,7 @@ final readonly class UserService
             $membership?->update(['is_active' => $data->is_active]);
 
             if ($membership !== null && ! $data->is_active) {
+                $this->tasks->unassignForMembership($membership);
                 $this->jobs->unassignFutureForMembership($membership);
             }
 
@@ -121,6 +123,7 @@ final readonly class UserService
                 ->first();
 
             if ($membership !== null) {
+                $this->tasks->unassignForMembership($membership, onlyOpen: false);
                 $this->jobs->unassignFutureForMembership($membership);
                 $membership->delete();
             }

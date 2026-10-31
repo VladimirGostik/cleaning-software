@@ -35,7 +35,7 @@ final readonly class DashboardService
 
     public function overviewFor(User $user): DashboardData
     {
-        $visibilities = $this->snapshot->for($user);
+        $visibilities = $this->snapshot->forRequest($user);
 
         if ($visibilities === []) {
             return new DashboardData(

@@ -28,6 +28,7 @@ use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ScheduledJobController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TemporaryUploadController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\UserController;
@@ -239,6 +240,17 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::post('/jobs', [ScheduledJobController::class, 'store'])->name('jobs.store');
         Route::match(['PUT', 'PATCH'], '/jobs/{job}', [ScheduledJobController::class, 'update'])->name('jobs.update')->whereUuid('job');
         Route::post('/jobs/{job}/assign', [ScheduledJobController::class, 'assign'])->name('jobs.assign')->whereUuid('job');
+    });
+
+    Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+    Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show')->whereUuid('task');
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->whereUuid('task');
+    Route::post('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->whereUuid('task');
+    Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->whereUuid('task');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
+        Route::match(['PUT', 'PATCH'], '/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update')->whereUuid('task');
+        Route::post('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('tasks.assign')->whereUuid('task');
     });
 
     Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');

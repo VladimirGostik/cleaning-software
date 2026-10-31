@@ -19,6 +19,6 @@ final class NotificationPolicy
     {
         return $user->can(PermissionEnum::ViewNotifications->value)
             && $notification->isOwnedBy($user)
-            && $notification->tenant_id === current_tenant_id();
+            && ($notification->tenant_id === null || $notification->tenant_id === current_tenant_id());
     }
 }

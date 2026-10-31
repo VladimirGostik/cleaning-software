@@ -17,6 +17,8 @@ enum NotificationTypeEnum: string
     case QuoteSent = 'quote.sent';
     case QuoteExpiring = 'quote.expiring';
     case QuoteExpired = 'quote.expired';
+    case TaskDue = 'task.due';
+    case TaskAssigned = 'task.assigned';
 
     public function label(): string
     {

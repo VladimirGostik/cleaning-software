@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string $type NotificationTypeEnum value
  * @property string $notifiable_type
  * @property string $notifiable_id
- * @property string $tenant_id
+ * @property string|null $tenant_id
  * @property array<string, mixed> $data {type,title,body,url,meta}
  * @property Carbon|null $read_at
  * @property Carbon $created_at
@@ -39,7 +39,9 @@ final class Notification extends DatabaseNotification
      */
     public function scopeInTenant(Builder $query, string $tenantId): Builder
     {
-        return $query->where('tenant_id', $tenantId);
+        return $query->where(function (Builder $inner) use ($tenantId): void {
+            $inner->where('tenant_id', $tenantId)->orWhereNull('tenant_id');
+        });
     }
 
     /**
