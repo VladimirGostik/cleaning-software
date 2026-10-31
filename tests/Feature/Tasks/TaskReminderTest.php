@@ -10,6 +10,7 @@ use App\Models\Notification;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Notifications\TaskAssignedNotification;
 use App\Notifications\TaskDueNotification;
 use App\Services\NotificationService;
@@ -215,7 +216,9 @@ final class TaskReminderTest extends TestCase
 
         $job = null;
         Queue::assertPushed(SendQueuedNotifications::class, function (SendQueuedNotifications $pushed) use (&$job): bool {
-            $job = $pushed;
+            if ($pushed->channels === [TenantDatabaseChannel::class]) {
+                $job = $pushed;
+            }
 
             return true;
         });

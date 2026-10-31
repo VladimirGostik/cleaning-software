@@ -17,10 +17,10 @@ final readonly class TenantPermissionSnapshot
 {
     public function __construct(private PermissionRegistrar $registrar) {}
 
-    public function hasMobileAccess(User $user): bool
+    public function hasMobileAccess(User $user, ?string $tenantId = null): bool
     {
         foreach ($this->for($user) as $visibility) {
-            if ($visibility->mobileAccess) {
+            if ($visibility->mobileAccess && ($tenantId === null || $visibility->tenant->id === $tenantId)) {
                 return true;
             }
         }

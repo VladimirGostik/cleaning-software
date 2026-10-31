@@ -77,6 +77,23 @@ final readonly class NotificationService
             ->count();
     }
 
+    /** App-wide unread count over global rows and firms the user still belongs to; +1 when the notification's own row is not committed yet. */
+    public function badgeFor(User $user, string $notificationId): int
+    {
+        $activeTenantIds = $user->tenants()
+            ->wherePivot('is_active', true)
+            ->where('tenants.is_active', true)
+            ->select('tenants.id');
+
+        $unread = Notification::query()
+            ->forRecipient($user)
+            ->whereNull('read_at')
+            ->where(fn (Builder $query) => $query->whereNull('tenant_id')->orWhereIn('tenant_id', $activeTenantIds))
+            ->count();
+
+        return $unread + (Notification::query()->whereKey($notificationId)->exists() ? 0 : 1);
+    }
+
     public function markRead(Notification $notification): void
     {
         $notification->markAsRead();
@@ -96,7 +113,7 @@ final readonly class NotificationService
         $preferences = $user->notification_preferences;
 
         foreach ($data->preferences as $item) {
-            $preferences[$item->type->value] = ['mail' => $item->mail];
+            $preferences[$item->type->value] = ['mail' => $item->mail, 'push' => $item->push];
         }
 
         $user->update(['notification_preferences' => $preferences]);

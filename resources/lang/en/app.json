@@ -1072,7 +1072,7 @@
     "notifications_unread": "Unread",
     "notifications_read": "Read",
     "notifications_unread_count": "Unread: {count}",
-    "notification_settings_subtitle": "Choose which events you want to receive email alerts for.",
+    "notification_settings_subtitle": "Choose which events you want to receive email and push alerts for.",
     "notification_settings_mail_label": "Email",
     "notification_settings_not_configurable": "System alert, cannot be turned off.",
     "notification_settings_desc_invitation_created": "Company invitation (always by email).",
@@ -1334,5 +1334,6 @@
     "task_assign": "Assign",
     "task_details": "Details",
     "notification_settings_desc_task_due": "Reminder when a task is due.",
-    "notification_settings_desc_task_assigned": "Alert when a task is assigned to you."
+    "notification_settings_desc_task_assigned": "Alert when a task is assigned to you.",
+    "notification_settings_push_label": "Push"
 }

@@ -5,11 +5,13 @@ import { notificationPreferenceDescKey } from '@/utils/enums';
 
 defineProps<{
     item: App.Data.Notifications.NotificationPreferenceItemData;
-    modelValue: boolean;
+    mail: boolean;
+    push: boolean;
 }>();
 
 const emit = defineEmits<{
-    'update:modelValue': [value: boolean];
+    'update:mail': [value: boolean];
+    'update:push': [value: boolean];
 }>();
 
 const { t } = useI18n();
@@ -24,11 +26,19 @@ const { t } = useI18n();
                 {{ t('notification_settings_not_configurable') }}
             </p>
         </div>
-        <ToggleInput
-            :model-value="modelValue"
-            :label="t('notification_settings_mail_label')"
-            :disabled="!item.configurable"
-            @update:model-value="emit('update:modelValue', $event)"
-        />
+        <div class="flex items-center gap-4">
+            <ToggleInput
+                :model-value="mail"
+                :label="t('notification_settings_mail_label')"
+                :disabled="!item.configurable"
+                @update:model-value="emit('update:mail', $event)"
+            />
+            <ToggleInput
+                v-if="item.configurable"
+                :model-value="push"
+                :label="t('notification_settings_push_label')"
+                @update:model-value="emit('update:push', $event)"
+            />
+        </div>
     </div>
 </template>

@@ -38,6 +38,7 @@ final readonly class EmployeeService
         private TaskService $tasks,
         private ContractService $contracts,
         private RegistrationService $registration,
+        private DeviceTokenService $devices,
     ) {}
 
     /**
@@ -203,6 +204,11 @@ final readonly class EmployeeService
             $membership->update(['is_active' => false]);
 
             $this->tasks->unassignForMembership($membership);
+            $membership->loadMissing('user');
+
+            if ($membership->user !== null) {
+                $this->devices->removeAllIfNoActiveMembership($membership->user);
+            }
 
             return $this->jobs->unassignFutureForMembership($membership);
         });

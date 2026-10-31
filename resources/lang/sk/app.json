@@ -1072,7 +1072,7 @@
     "notifications_unread": "Neprečítané",
     "notifications_read": "Prečítané",
     "notifications_unread_count": "Neprečítané: {count}",
-    "notification_settings_subtitle": "Nastavte si, o čom chcete dostávať e-mailové upozornenia.",
+    "notification_settings_subtitle": "Vyberte, pri ktorých udalostiach chcete dostávať e-mailové a push upozornenia.",
     "notification_settings_mail_label": "E-mail",
     "notification_settings_not_configurable": "Systémové upozornenie, nedá sa vypnúť.",
     "notification_settings_desc_invitation_created": "Pozvánka do firmy (vždy e-mailom).",
@@ -1334,5 +1334,6 @@
     "task_assign": "Priradiť",
     "task_details": "Detaily",
     "notification_settings_desc_task_due": "Pripomienka, keď nastane termín úlohy.",
-    "notification_settings_desc_task_assigned": "Upozornenie, keď vám je priradená úloha."
+    "notification_settings_desc_task_assigned": "Upozornenie, keď vám je priradená úloha.",
+    "notification_settings_push_label": "Push"
 }

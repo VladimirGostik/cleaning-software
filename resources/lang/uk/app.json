@@ -1072,7 +1072,7 @@
     "notifications_unread": "Непрочитано",
     "notifications_read": "Прочитано",
     "notifications_unread_count": "Непрочитаних: {count}",
-    "notification_settings_subtitle": "Оберіть, про які події ви хочете отримувати сповіщення на електронну пошту.",
+    "notification_settings_subtitle": "Виберіть, про які події ви хочете отримувати e-mail та push-сповіщення.",
     "notification_settings_mail_label": "Пошта",
     "notification_settings_not_configurable": "Системне сповіщення, не можна вимкнути.",
     "notification_settings_desc_invitation_created": "Запрошення до компанії (завжди електронною поштою).",
@@ -1334,5 +1334,6 @@
     "task_assign": "Призначити",
     "task_details": "Деталі",
     "notification_settings_desc_task_due": "Нагадування, коли настає термін завдання.",
-    "notification_settings_desc_task_assigned": "Сповіщення, коли вам призначено завдання."
+    "notification_settings_desc_task_assigned": "Сповіщення, коли вам призначено завдання.",
+    "notification_settings_push_label": "Push"
 }

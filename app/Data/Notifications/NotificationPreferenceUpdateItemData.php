@@ -17,6 +17,7 @@ final class NotificationPreferenceUpdateItemData extends Data
         #[Required]
         public readonly NotificationTypeEnum $type,
         public readonly bool $mail,
+        public readonly bool $push,
     ) {}
 
     /** @return array<string, mixed> */

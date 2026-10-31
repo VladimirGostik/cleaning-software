@@ -10,6 +10,7 @@ use App\Contracts\RendersContractPdf;
 use App\Contracts\RendersInvoicePdf;
 use App\Contracts\RendersQuotePdf;
 use App\Contracts\ResolvesSupplierSignature;
+use App\Contracts\SendsPush;
 use App\Contracts\SubmitsEInvoices;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
@@ -20,6 +21,7 @@ use App\Services\Pdf\PayBySquareService;
 use App\Services\Pdf\QpdfMerger;
 use App\Services\Pdf\QuotePdfService;
 use App\Services\Pdf\SupplierSignatureResolver;
+use App\Services\Push\FirebasePushSender;
 use App\Support\PrecognitiveDataValidatorResolver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Container\Container;
@@ -45,6 +47,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(RendersContractPdf::class, ContractPdfService::class);
         $this->app->bind(ResolvesSupplierSignature::class, SupplierSignatureResolver::class);
         $this->app->bind(MergesPdfDocuments::class, QpdfMerger::class);
+        $this->app->bind(SendsPush::class, FirebasePushSender::class);
         $this->app->bind(SubmitsEInvoices::class, fn (): SubmitsEInvoices => match (config('efa.driver')) {
             default => new NullEInvoiceAccessPoint,
         });
@@ -84,6 +87,7 @@ final class AppServiceProvider extends ServiceProvider
             'cleaning_object' => CleaningObject::class,
         ]);
 
+        RateLimiter::for('devices', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
     }
 

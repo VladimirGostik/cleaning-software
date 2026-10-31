@@ -6,7 +6,9 @@ namespace App\Notifications;
 
 use App\Enums\NotificationTypeEnum;
 use App\Models\User;
+use App\Notifications\Channels\FcmChannel;
 use App\Notifications\Channels\TenantDatabaseChannel;
+use App\Services\DeviceTokenService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -46,7 +48,24 @@ abstract class BaseTenantNotification extends Notification implements ShouldQueu
             $channels[] = 'mail';
         }
 
+        if ($this->pushEnabledFor($notifiable)) {
+            $channels[] = FcmChannel::class;
+        }
+
         return $channels;
+    }
+
+    protected function pushEnabledFor(object $notifiable): bool
+    {
+        if (! $notifiable instanceof User) {
+            return false;
+        }
+
+        $type = $this->notificationType();
+
+        return $type->deliversPush()
+            && (bool) ($notifiable->notification_preferences[$type->value]['push'] ?? true)
+            && app(DeviceTokenService::class)->hasTokens($notifiable);
     }
 
     protected function mailEnabledFor(object $notifiable): bool

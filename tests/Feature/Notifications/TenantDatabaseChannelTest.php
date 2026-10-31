@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Notifications;
 
+use App\Models\DeviceToken;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\Channels\FcmChannel;
 use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Notifications\InvoiceOverdue;
 use App\Notifications\QuoteSent;
@@ -66,6 +68,19 @@ final class TenantDatabaseChannelTest extends TestCase
         $notification = new QuoteSent($tenant->id, 'quote-id', 'CP-2026-0001');
 
         $this->assertSame([TenantDatabaseChannel::class], $notification->via($user));
+    }
+
+    public function test_via_adds_fcm_only_when_the_user_has_a_device_and_push_is_on(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $withDevice = User::factory()->create();
+        $pushOff = User::factory()->create(['notification_preferences' => ['quote.sent' => ['mail' => false, 'push' => false]]]);
+        DeviceToken::factory()->for($withDevice)->create();
+        DeviceToken::factory()->for($pushOff)->create();
+        $notification = new QuoteSent($tenant->id, 'quote-id', 'CP-2026-0001');
+
+        $this->assertSame([TenantDatabaseChannel::class, FcmChannel::class], $notification->via($withDevice));
+        $this->assertSame([TenantDatabaseChannel::class], $notification->via($pushOff));
     }
 
     public function test_notification_title_follows_recipient_locale(): void

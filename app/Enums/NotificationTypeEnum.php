@@ -43,6 +43,12 @@ enum NotificationTypeEnum: string
         return ! in_array($this, [self::InvitationCreated, self::InvoiceIssued], true);
     }
 
+    /** Whether this type may be pushed to registered devices (same set as in-app). */
+    public function deliversPush(): bool
+    {
+        return $this->deliversInApp();
+    }
+
     /**
      * Whether mail is unconditionally sent for this type, bypassing user preferences
      * entirely (invitations, invoice-sent receipts — mail-only, non-configurable).

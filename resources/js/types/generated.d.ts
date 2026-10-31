@@ -456,6 +456,16 @@ readonly unassigned_next_7_days: number | null,
 readonly own_only: boolean,
 };
 }
+namespace Devices {
+export type DeviceRegisterData = {
+readonly token: string,
+readonly platform: App.Enums.DevicePlatformEnum,
+readonly app_version: string | null,
+};
+export type DeviceUnregisterData = {
+readonly token: string,
+};
+}
 namespace Employees {
 export type EmployeeDetailData = {
 readonly id: string,
@@ -828,11 +838,13 @@ export type NotificationPreferenceItemData = {
 readonly type: App.Enums.NotificationTypeEnum,
 readonly label: string,
 readonly mail: boolean,
+readonly push: boolean,
 readonly configurable: boolean,
 };
 export type NotificationPreferenceUpdateItemData = {
 readonly type: App.Enums.NotificationTypeEnum,
 readonly mail: boolean,
+readonly push: boolean,
 };
 export type NotificationPreferencesData = {
 readonly items: App.Data.Notifications.NotificationPreferenceItemData[],
@@ -1357,6 +1369,7 @@ export type ContractTermTypeEnum = "fixed" | "indefinite";
 export type ContractableTypeEnum = "cleaning_object" | "tenant_membership";
 export type CurrencyEnum = "EUR" | "CZK" | "USD";
 export type DashboardAlertTypeEnum = "overdue_invoice" | "supplier_incomplete" | "unassigned_job" | "contract_expiring" | "quote_expiring";
+export type DevicePlatformEnum = "android" | "ios";
 export type EfaStatusEnum = "none" | "ready" | "generated" | "submitted" | "accepted" | "rejected" | "failed";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";

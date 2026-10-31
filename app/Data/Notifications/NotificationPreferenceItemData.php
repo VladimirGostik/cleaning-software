@@ -15,6 +15,7 @@ final class NotificationPreferenceItemData extends Data
         public readonly NotificationTypeEnum $type,
         public readonly string $label,
         public readonly bool $mail,
+        public readonly bool $push,
         public readonly bool $configurable,
     ) {}
 }

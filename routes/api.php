@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\NotificationBellController;
 use App\Http\Controllers\Api\ProfileController;
@@ -24,6 +25,11 @@ Route::middleware(['auth:sanctum', 'ability:mobile', 'tenant.context', 'tenant.r
     Route::get('/me', MeController::class);
     Route::get('/dashboard', DashboardController::class)->name('api.dashboard');
     Route::get('/notifications/bell', NotificationBellController::class)->name('api.notifications.bell');
+
+    Route::middleware('throttle:devices')->group(function (): void {
+        Route::post('/devices', [DeviceController::class, 'store'])->name('api.devices.store');
+        Route::delete('/devices', [DeviceController::class, 'destroy'])->name('api.devices.destroy');
+    });
 
     Route::get('/tasks', [TaskController::class, 'index'])->name('api.tasks.index');
     Route::get('/tasks/form-context', [TaskController::class, 'formContext'])->name('api.tasks.form-context');

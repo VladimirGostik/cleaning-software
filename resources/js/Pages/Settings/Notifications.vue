@@ -12,6 +12,7 @@ type NotificationPreferenceItemData = App.Data.Notifications.NotificationPrefere
 interface NotificationPreferenceFormItem {
     type: App.Enums.NotificationTypeEnum;
     mail: boolean;
+    push: boolean;
 }
 
 interface NotificationPreferencesFormData {
@@ -27,17 +28,23 @@ const { t } = useI18n();
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('notification_settings') }];
 
 const form = useForm<NotificationPreferencesFormData>('put', '/settings/notifications', {
-    preferences: props.preferences.items.filter((item) => item.configurable).map(({ type, mail }) => ({ type, mail })),
+    preferences: props.preferences.items
+        .filter((item) => item.configurable)
+        .map(({ type, mail, push }) => ({ type, mail, push })),
 });
 
 function mailFor(item: NotificationPreferenceItemData): boolean {
     return form.preferences.find((p) => p.type === item.type)?.mail ?? item.mail;
 }
 
-function setMail(item: NotificationPreferenceItemData, value: boolean): void {
+function pushFor(item: NotificationPreferenceItemData): boolean {
+    return form.preferences.find((p) => p.type === item.type)?.push ?? item.push;
+}
+
+function setChannel(item: NotificationPreferenceItemData, channel: 'mail' | 'push', value: boolean): void {
     if (!item.configurable) return;
     const entry = form.preferences.find((p) => p.type === item.type);
-    if (entry) entry.mail = value;
+    if (entry) entry[channel] = value;
 }
 
 function submit(): void {
@@ -59,8 +66,10 @@ function submit(): void {
                             v-for="item in preferences.items"
                             :key="item.type"
                             :item="item"
-                            :model-value="mailFor(item)"
-                            @update:model-value="setMail(item, $event)"
+                            :mail="mailFor(item)"
+                            :push="pushFor(item)"
+                            @update:mail="setChannel(item, 'mail', $event)"
+                            @update:push="setChannel(item, 'push', $event)"
                         />
                     </div>
                     <p v-if="form.errors.preferences" class="text-error text-sm">

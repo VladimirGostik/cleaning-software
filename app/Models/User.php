@@ -22,7 +22,7 @@ use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
- * @property array<string, array{mail: bool}> $notification_preferences
+ * @property array<string, array{mail?: bool, push?: bool}> $notification_preferences
  */
 #[Fillable(['name', 'email', 'password', 'locale', 'is_active', 'notification_preferences'])]
 #[Hidden(['password', 'remember_token'])]

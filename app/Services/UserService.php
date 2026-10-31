@@ -23,6 +23,7 @@ final readonly class UserService
         private RoleAssignmentGuard $guard,
         private JobService $jobs,
         private TaskService $tasks,
+        private DeviceTokenService $devices,
     ) {}
 
     public function create(CreateUserData $data, User $actor): User
@@ -127,6 +128,8 @@ final readonly class UserService
                 $this->jobs->unassignFutureForMembership($membership);
                 $membership->delete();
             }
+
+            $this->devices->removeAllIfNoActiveMembership($user);
         });
     }
 }

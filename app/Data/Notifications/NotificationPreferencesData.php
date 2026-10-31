@@ -28,6 +28,7 @@ final class NotificationPreferencesData extends Data
                 mail: $type->userConfigurable()
                     ? (bool) ($stored[$type->value]['mail'] ?? $type->defaultMailEnabled())
                     : $type->alwaysMail(),
+                push: $type->deliversPush() && (bool) ($stored[$type->value]['push'] ?? true),
                 configurable: $type->userConfigurable(),
             ),
             NotificationTypeEnum::cases(),
