@@ -46,7 +46,7 @@ const columns: TableColumn<App.Data.Employees.EmployeeListItemData>[] = [
         align: 'right',
     },
     { key: 'is_active', label: t('status'), sortable: true },
-    { key: 'joined_at', label: t('employee_joined_at'), sortable: true, hideBelow: 1440 },
+    { key: 'joined_at', label: t('employee_joined_at'), sortable: true, hideBelow: 1440, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

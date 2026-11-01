@@ -28,7 +28,7 @@ const columns: TableColumn[] = [
     { key: 'email', label: t('email'), sortable: true },
     { key: 'roles', label: t('roles'), sortable: false },
     { key: 'is_active', label: t('membership_active'), sortable: true },
-    { key: 'created_at', label: t('created_at'), sortable: true },
+    { key: 'created_at', label: t('created_at'), sortable: true, class: 'whitespace-nowrap' },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

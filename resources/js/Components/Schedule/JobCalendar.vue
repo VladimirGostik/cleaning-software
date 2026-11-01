@@ -72,6 +72,14 @@ const STATIC_OPTIONS: CalendarOptions = {
     slotMaxTime: '22:00:00',
     locales: [skLocale, ukLocale],
     eventDisplay: 'block',
+    views: {
+        timeGridWeek: {
+            titleFormat: { day: 'numeric', month: 'numeric', year: 'numeric' },
+            dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
+        },
+    },
+    eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: false },
+    slotLabelFormat: { hour: 'numeric', minute: '2-digit', hour12: false },
 };
 
 const calendarOptions = computed<CalendarOptions>(() => ({

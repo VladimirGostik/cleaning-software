@@ -131,15 +131,15 @@
                             <table style="table-layout:fixed;">
                                 <tr>
                                     <td style="white-space:nowrap; font-size:9.5px; padding-right:6px;">{{ __('app.invoice_pdf_issue_date') }}:</td>
-                                    <td style="font-size:9.5px;">{{ $invoice->issue_date ? $invoice->issue_date->format('d.m.Y') : '—' }}</td>
+                                    <td style="font-size:9.5px;">{{ format_date($invoice->issue_date) }}</td>
                                 </tr>
                                 <tr>
                                     <td style="white-space:nowrap; font-size:9.5px; padding-right:6px;">{{ __('app.invoice_pdf_delivery_date') }}:</td>
-                                    <td style="font-size:9.5px;">{{ $invoice->delivery_date ? $invoice->delivery_date->format('d.m.Y') : '—' }}</td>
+                                    <td style="font-size:9.5px;">{{ format_date($invoice->delivery_date) }}</td>
                                 </tr>
                                 <tr>
                                     <td style="white-space:nowrap; font-size:9.5px; padding-right:6px;">{{ __('app.invoice_pdf_due_date') }}:</td>
-                                    <td style="font-size:9.5px;">{{ $invoice->due_date ? $invoice->due_date->format('d.m.Y') : '—' }}</td>
+                                    <td style="font-size:9.5px;">{{ format_date($invoice->due_date) }}</td>
                                 </tr>
                                 @if($invoice->payment_type)
                                 <tr>
@@ -151,9 +151,9 @@
                             @if($invoice->period_from || $invoice->period_to)
                             <div style="margin-top:4px; font-size:9.5px;">
                                 <span style="white-space:nowrap;">{{ __('app.invoice_pdf_period') }}:</span>
-                                {{ $invoice->period_from ? $invoice->period_from->format('d.m.Y') : '—' }}
+                                {{ format_date($invoice->period_from) }}
                                 –
-                                {{ $invoice->period_to ? $invoice->period_to->format('d.m.Y') : '—' }}
+                                {{ format_date($invoice->period_to) }}
                             </div>
                             @endif
                         </td>
@@ -304,7 +304,7 @@
                 </td>
                 <td style="padding:10px 14px; width:25%; text-align:center; border-right:1px dashed #b8d4e8;">
                     <div style="font-size:8.5px; color:#4a6f8f; text-transform:uppercase;">{{ __('app.invoice_pdf_due_date') }}</div>
-                    <div style="font-size:12px; font-weight:bold; color:#123b5a;">{{ $invoice->due_date ? $invoice->due_date->format('d.m.Y') : '—' }}</div>
+                    <div style="font-size:12px; font-weight:bold; color:#123b5a;">{{ format_date($invoice->due_date) }}</div>
                 </td>
                 <td style="padding:10px 14px; width:25%; text-align:center;">
                     <div style="font-size:8.5px; color:#4a6f8f; text-transform:uppercase;">{{ __('app.invoice_pdf_amount_due') }}</div>

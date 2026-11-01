@@ -19,7 +19,7 @@ defineProps<{
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('audit_logs') }];
 
 const columns: TableColumn[] = [
-    { key: 'created_at', label: t('created_at'), sortable: true },
+    { key: 'created_at', label: t('created_at'), sortable: true, class: 'whitespace-nowrap' },
     { key: 'description', label: t('description'), sortable: true },
     { key: 'subject_type', label: t('subject_type') },
     { key: 'event', label: t('event') },

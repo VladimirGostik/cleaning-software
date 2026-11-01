@@ -56,8 +56,8 @@ const columns: TableColumn<App.Data.Contracts.ContractListItemData>[] = [
     { key: 'category', label: t('type'), sortable: true, hideBelow: 1440 },
     { key: 'status', label: t('status'), sortable: true },
     { key: 'term_type', label: t('contract_term_type'), sortable: false, hideBelow: 1440 },
-    { key: 'valid_from', label: t('contract_valid_from'), sortable: true, hideBelow: 1440 },
-    { key: 'end_date', label: t('contract_end_date'), sortable: true },
+    { key: 'valid_from', label: t('contract_valid_from'), sortable: true, hideBelow: 1440, nowrap: true },
+    { key: 'end_date', label: t('contract_end_date'), sortable: true, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

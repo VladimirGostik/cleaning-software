@@ -5,28 +5,28 @@
             <strong>{{ __('app.invoice_pdf_issue_date') }}:</strong>
         </td>
         <td style="padding:4px 0;">
-            {{ $invoice->issue_date ? $invoice->issue_date->format('d.m.Y') : '—' }}
+            {{ format_date($invoice->issue_date) }}
         </td>
         <td style="padding:4px 20px;">
             <strong>{{ __('app.invoice_pdf_delivery_date') }}:</strong>
         </td>
         <td style="padding:4px 0;">
-            {{ $invoice->delivery_date ? $invoice->delivery_date->format('d.m.Y') : '—' }}
+            {{ format_date($invoice->delivery_date) }}
         </td>
         <td style="padding:4px 20px;">
             <strong>{{ __('app.invoice_pdf_due_date') }}:</strong>
         </td>
         <td style="padding:4px 0;">
-            {{ $invoice->due_date ? $invoice->due_date->format('d.m.Y') : '—' }}
+            {{ format_date($invoice->due_date) }}
         </td>
     </tr>
     @if($invoice->period_from || $invoice->period_to)
     <tr>
         <td style="padding:4px 8px 4px 0;" colspan="2">
             <strong>{{ __('app.invoice_pdf_period') }}:</strong>
-            {{ $invoice->period_from ? $invoice->period_from->format('d.m.Y') : '—' }}
+            {{ format_date($invoice->period_from) }}
             –
-            {{ $invoice->period_to ? $invoice->period_to->format('d.m.Y') : '—' }}
+            {{ format_date($invoice->period_to) }}
         </td>
     </tr>
     @endif

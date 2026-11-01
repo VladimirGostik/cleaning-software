@@ -297,7 +297,7 @@ final class InvoicePdfTest extends TestCase
 
         $html = View::make('pdf.invoices.classic-footer', ['invoice' => $invoice, 'preview' => false])->render();
 
-        $this->assertStringContainsString('+421900000000', $html);
+        $this->assertStringContainsString('+421 900 000 000', $html);
         $this->assertStringContainsString('fakturacia@democleaning.sk', $html);
     }
 
@@ -324,7 +324,7 @@ final class InvoicePdfTest extends TestCase
 
         $this->assertStringNotContainsString(__('app.invoice_pdf_issued_by'), $html);
         $this->assertStringNotContainsString(__('app.invoice_pdf_issued_by').':', $html);
-        $this->assertStringContainsString('+421900000000', $html);
+        $this->assertStringContainsString('+421 900 000 000', $html);
         $this->assertStringContainsString('fakturacia@democleaning.sk', $html);
     }
 
@@ -424,8 +424,8 @@ final class InvoicePdfTest extends TestCase
         $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString(__('app.invoice_pdf_period'), $html);
-        $this->assertStringContainsString('01.08.2026', $html);
-        $this->assertStringContainsString('31.08.2026', $html);
+        $this->assertStringContainsString('1. 8. 2026', $html);
+        $this->assertStringContainsString('31. 8. 2026', $html);
     }
 
     public function test_classic_template_omits_billing_period_when_null(): void

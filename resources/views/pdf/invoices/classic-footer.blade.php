@@ -8,7 +8,7 @@
         </td>
         <td style="width:33%; text-align:center; font-size:8px;">
             @if($invoice->supplier_contact_phone)
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:3px"><path d="M7 2a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7zm5 18a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>{{ $invoice->supplier_contact_phone }}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:3px"><path d="M7 2a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7zm5 18a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>{{ format_phone($invoice->supplier_contact_phone) }}
             @endif
         </td>
         <td style="width:33%; text-align:right; font-size:8px;">

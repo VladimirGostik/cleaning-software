@@ -43,7 +43,7 @@ const columns: TableColumn<App.Data.DocumentTemplates.DocumentTemplateListItemDa
     { key: 'type', label: t('type'), sortable: true },
     { key: 'scope', label: t('document_template_scope'), hideBelow: 1440 },
     { key: 'is_active', label: t('status') },
-    { key: 'updated_at', label: t('updated_at'), sortable: true },
+    { key: 'updated_at', label: t('updated_at'), sortable: true, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

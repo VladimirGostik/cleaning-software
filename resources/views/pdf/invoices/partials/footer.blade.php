@@ -23,7 +23,7 @@
             {{ __('app.invoice_pdf_email') }}: {{ $invoice->supplier_contact_email }}<br>
             @endif
             @if($invoice->supplier_contact_phone)
-            {{ __('app.invoice_pdf_phone') }}: {{ $invoice->supplier_contact_phone }}<br>
+            {{ __('app.invoice_pdf_phone') }}: {{ format_phone($invoice->supplier_contact_phone) }}<br>
             @endif
             @endif
             @if($invoice->supplier_registration_info)

@@ -65,7 +65,7 @@ final class ContractServiceTest extends TestCase
         $this->assertStringContainsString('CleanCo s.r.o.', $contract->document?->body);
         $this->assertStringContainsString('Acme s.r.o.', $contract->document?->body);
         $this->assertStringContainsString('Hlavná 1, 811 01 Bratislava', $contract->document?->body);
-        $this->assertStringContainsString(now()->format('d.m.Y'), $contract->document?->body);
+        $this->assertStringContainsString(now()->format(\App\Support\Formats::DATE), $contract->document?->body);
         $this->assertSame(ContractStatusEnum::Draft, $contract->status);
     }
 

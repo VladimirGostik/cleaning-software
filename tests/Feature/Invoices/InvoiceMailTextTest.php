@@ -119,7 +119,7 @@ final class InvoiceMailTextTest extends TestCase
             ['invoice_mail_subject' => '[{{invoice.period}}]'],
             ['period_from' => '2026-09-01', 'period_to' => '2026-09-30'],
         );
-        $this->assertSame('[01.09.2026 – 30.09.2026]', $this->mail($with)->subject);
+        $this->assertSame('[1. 9. 2026 – 30. 9. 2026]', $this->mail($with)->subject);
     }
 
     public function test_missing_number_resolves_to_empty_string(): void

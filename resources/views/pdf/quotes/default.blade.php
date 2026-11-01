@@ -71,13 +71,13 @@
                 <strong>{{ __('app.quote_pdf_issue_date') }}:</strong>
             </td>
             <td style="padding:4px 0;">
-                {{ $quote->issue_date ? $quote->issue_date->format('d.m.Y') : '—' }}
+                {{ format_date($quote->issue_date) }}
             </td>
             <td style="padding:4px 20px;">
                 <strong>{{ __('app.quote_pdf_valid_until') }}:</strong>
             </td>
             <td style="padding:4px 0;">
-                {{ $quote->valid_until ? $quote->valid_until->format('d.m.Y') : '—' }}
+                {{ format_date($quote->valid_until) }}
             </td>
         </tr>
     </table>

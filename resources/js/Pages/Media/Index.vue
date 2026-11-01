@@ -27,7 +27,7 @@ const columns: TableColumn<App.Data.MediaListItemData>[] = [
     { key: 'collection_name', label: t('collection_name'), sortable: false },
     { key: 'model_type_label', label: t('owner'), sortable: false },
     { key: 'model_url', label: t('parent_model'), sortable: false },
-    { key: 'created_at', label: t('created_at'), sortable: true },
+    { key: 'created_at', label: t('created_at'), sortable: true, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

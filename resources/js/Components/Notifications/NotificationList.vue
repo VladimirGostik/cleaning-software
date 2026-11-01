@@ -26,7 +26,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const columns: TableColumn[] = [
-    { key: 'created_at', label: t('created_at'), sortable: true },
+    { key: 'created_at', label: t('created_at'), sortable: true, class: 'whitespace-nowrap' },
     { key: 'type', label: t('type') },
     { key: 'title', label: t('notifications_col_message') },
     { key: 'read_at', label: t('status') },

@@ -29,7 +29,7 @@
         <p>{{ __('app.invoice_mail_body') }}</p>
         @endif
 
-        <div class="amount">{{ number_format((float) $invoice->total, 2, ',', ' ') }} €</div>
+        <div class="amount">{{ $invoice->currency->format((float) $invoice->total) }}</div>
 
         <table style="width:100%; margin:16px 0; border-collapse:collapse;">
             @if($invoice->number)
@@ -41,7 +41,7 @@
             @if($invoice->due_date)
             <tr>
                 <td style="color:#888; padding:4px 0;">{{ __('app.invoice_pdf_due_date') }}:</td>
-                <td style="padding:4px 0;">{{ $invoice->due_date->format('d.m.Y') }}</td>
+                <td style="padding:4px 0;">{{ format_date($invoice->due_date) }}</td>
             </tr>
             @endif
             @if($invoice->supplier_iban)
