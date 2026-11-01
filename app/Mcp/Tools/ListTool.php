@@ -39,8 +39,12 @@ abstract class ListTool extends TenantTool
         $filters = [];
 
         foreach ($this->filterKeys() as $key) {
-            if (isset($arguments[$key]) && is_scalar($arguments[$key])) {
-                $filters[$key] = (string) $arguments[$key];
+            $value = $arguments[$key] ?? null;
+
+            if (is_bool($value)) {
+                $filters[$key] = $value ? '1' : '0';
+            } elseif (is_scalar($value)) {
+                $filters[$key] = (string) $value;
             }
         }
 

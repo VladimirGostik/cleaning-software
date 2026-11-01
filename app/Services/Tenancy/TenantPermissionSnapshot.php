@@ -28,6 +28,11 @@ final readonly class TenantPermissionSnapshot
         return false;
     }
 
+    public function allowsCompany(User $user, string $companyId): bool
+    {
+        return array_any($this->forRequest($user), static fn (TenantVisibility $visibility): bool => $visibility->tenant->id === $companyId);
+    }
+
     /**
      * Reads the token from the instance passed in, so callers acting as a user must pass the token-bearing instance.
      *

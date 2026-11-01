@@ -197,6 +197,24 @@ readonly subject_label: string,
 readonly url: string | null,
 readonly message: string,
 };
+export type AssistantActionData = {
+readonly type: App.Enums.AssistantActionTypeEnum,
+readonly label: string,
+readonly url: string | null,
+};
+export type AssistantMessageData = {
+readonly role: App.Enums.AssistantRoleEnum,
+readonly content: string,
+};
+export type AssistantReplyData = {
+readonly reply: string,
+readonly actions: App.Data.Ai.AssistantActionData[],
+readonly pending_action: App.Data.Ai.PendingActionData | null,
+};
+export type AssistantRequestData = {
+readonly company_id: string,
+readonly messages: App.Data.Ai.AssistantMessageData[],
+};
 export type PendingActionData = {
 readonly id: string,
 readonly action: App.Enums.PendingActionEnum,
@@ -1456,6 +1474,15 @@ readonly assigned_membership_id: string | null,
 readonly created_by_name: string,
 readonly can: App.Data.Tasks.TaskCanData,
 };
+export type TaskDraftData = {
+readonly title: string,
+readonly description: string | null,
+readonly due_at: string | null,
+readonly priority: App.Enums.TaskPriorityEnum,
+readonly tenant_id: string | null,
+readonly assigned_membership_id: string | null,
+readonly assignee_hint: string | null,
+};
 export type TaskFormContextData = {
 readonly companies: App.Data.Auth.MobileCompanyData[],
 readonly members: Record<string, App.Data.Tasks.TaskMemberOptionData[]>,
@@ -1476,6 +1503,10 @@ readonly created_at: string,
 export type TaskMemberOptionData = {
 readonly id: string,
 readonly name: string,
+};
+export type TaskParseData = {
+readonly text: string,
+readonly company_id: string | null,
 };
 export type TaskSubjectData = {
 readonly type: string,
@@ -1547,6 +1578,8 @@ readonly redirect_to: string | null,
 }
 namespace Enums {
 export type ActionChannelEnum = "mcp" | "assistant";
+export type AssistantActionTypeEnum = "open" | "created" | "updated";
+export type AssistantRoleEnum = "user" | "assistant";
 export type BulkActionEnum = "pay" | "send" | "issue";
 export type BulkSkipReasonEnum = "not_found" | "not_issued" | "no_email" | "not_draft" | "not_payable" | "supplier_incomplete" | "number_taken";
 export type ClientTypeEnum = "corporate" | "private";

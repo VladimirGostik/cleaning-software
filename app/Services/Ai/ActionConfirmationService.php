@@ -13,19 +13,20 @@ use App\Enums\ConfirmationChannelEnum;
 use App\Enums\PendingActionEnum;
 use App\Enums\PendingActionStatusEnum;
 use App\Enums\PermissionEnum;
+use App\Exceptions\PendingActionSubjectChangedException;
 use App\Models\Contract;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\PendingAction;
 use App\Models\Quote;
 use App\Models\Task;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\ContractService;
 use App\Services\ExpenseService;
 use App\Services\InvoiceService;
 use App\Services\QuoteService;
 use App\Services\TaskService;
-use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Collection;
@@ -79,6 +80,10 @@ final readonly class ActionConfirmationService
         $this->assertPreconditions($action, $subject);
 
         $described = $this->describe($action, $subject, $payload);
+        $companyName = Tenant::withoutGlobalScopes()->whereKey($tenantId)->value('name');
+        $company = $this->untrusted(is_string($companyName) ? $companyName : '');
+        $described['label'] = Str::limit($described['label'].' · '.$company, 250, '');
+        $described['preview'] .= ' '.$this->fill('app.pending_in_company', ['company' => $company]);
         $token = $channel === ActionChannelEnum::Mcp ? Str::random(40) : null;
 
         $pending = PendingAction::create([
@@ -90,7 +95,7 @@ final readonly class ActionConfirmationService
             'payload' => $payload,
             'payload_hash' => $this->hash($payload),
             'token_hash' => $token === null ? null : hash('sha256', $token),
-            'subject_hash' => $this->fingerprint($subject),
+            'subject_hash' => $this->fingerprint($subject->fresh() ?? $subject),
             'preview' => $described['preview'],
             'subject_label' => $described['label'],
             'customer' => $described['customer'],
@@ -122,6 +127,13 @@ final readonly class ActionConfirmationService
                 fn (): ActionResultData => $this->executeLocked($user, $action, $via),
             ));
         } catch (Throwable $exception) {
+            if ($exception instanceof PendingActionSubjectChangedException) {
+                PendingAction::query()
+                    ->whereKey($action->id)
+                    ->where('status', PendingActionStatusEnum::Pending->value)
+                    ->update(['status' => PendingActionStatusEnum::Cancelled->value, 'token_hash' => null]);
+            }
+
             $this->audit->record($user, 'confirm', $action->tenant_id, $action->channel, [], 'error', [
                 'pending_action_id' => $action->id,
                 'action' => $action->action->value,
@@ -186,10 +198,14 @@ final readonly class ActionConfirmationService
 
         $this->assertExecutable($user, $row, $via);
 
-        $subject = $this->resolveSubject($row);
+        try {
+            $subject = $this->resolveSubject($row);
+        } catch (ModelNotFoundException) {
+            throw PendingActionSubjectChangedException::make();
+        }
 
         if (! hash_equals($row->subject_hash, $this->fingerprint($subject))) {
-            throw ValidationException::withMessages(['status' => [__('app.pending_action_subject_changed')]]);
+            throw PendingActionSubjectChangedException::make();
         }
 
         Gate::forUser($user)->authorize($row->action->ability(), $subject);
@@ -297,17 +313,17 @@ final readonly class ActionConfirmationService
     private function describe(PendingActionEnum $action, Model $subject, array $payload): array
     {
         if ($subject instanceof Invoice) {
-            $number = $subject->number ?? __('app.pending_number_draft');
+            $number = $this->userOr($subject->number, __('app.pending_number_draft'));
             $customer = $this->untrusted($subject->customer_name);
             $total = $subject->total.' '.$subject->currency->value;
-            $email = $this->untrusted($subject->customer_email ?? '-');
+            $email = $this->userOr($subject->customer_email, '-');
             $params = [
-                'number' => $this->untrusted(is_string($payload['number'] ?? null) ? $payload['number'] : __('app.pending_number_auto')),
+                'number' => $this->userOr(is_string($payload['number'] ?? null) ? $payload['number'] : null, __('app.pending_number_auto')),
                 'customer' => $customer,
                 'total' => $total,
                 'due' => $subject->due_date->toDateString(),
                 'email' => $email,
-                'current' => $this->untrusted($number),
+                'current' => $number,
             ];
 
             return [
@@ -320,10 +336,10 @@ final readonly class ActionConfirmationService
         }
 
         if ($subject instanceof Quote) {
-            $number = $this->untrusted($subject->number ?? __('app.pending_number_draft'));
-            $customer = $this->untrusted($subject->client->name ?? $subject->customer_name ?? '-');
+            $number = $this->userOr($subject->number, __('app.pending_number_draft'));
+            $customer = $this->userOr($subject->client->name ?? $subject->customer_name, '-');
             $total = $subject->total.' '.$subject->currency->value;
-            $email = $this->untrusted($subject->customer_email ?? '-');
+            $email = $this->userOr($subject->customer_email, '-');
             $params = ['number' => $number, 'customer' => $customer, 'total' => $total, 'email' => $email];
 
             return [
@@ -336,7 +352,7 @@ final readonly class ActionConfirmationService
         }
 
         if ($subject instanceof Contract) {
-            $params = ['title' => $this->untrusted($subject->title), 'number' => $this->untrusted($subject->number ?? '-')];
+            $params = ['title' => $this->untrusted($subject->title), 'number' => $this->userOr($subject->number, '-')];
 
             return [
                 'label' => $this->fill('app.pending_label_contract', $params),
@@ -366,7 +382,7 @@ final readonly class ActionConfirmationService
         if ($subject instanceof Expense) {
             $amount = $subject->amount.' '.$subject->currency->value;
             $params = [
-                'supplier' => $this->untrusted($subject->supplier_name ?? '-'),
+                'supplier' => $this->userOr($subject->supplier_name, '-'),
                 'amount' => $amount,
                 'date' => $subject->date->toDateString(),
             ];
@@ -399,34 +415,22 @@ final readonly class ActionConfirmationService
     }
 
     /**
-     * Covers the fields the preview shows plus the line items, which can change without bumping the parent's `updated_at`.
+     * Hashes every stored attribute (`updated_at` excluded: it has second precision, the content covers any real change)
+     * plus the line items, which live in their own table, and the quote's resolved client name.
      */
     private function fingerprint(Model $subject): string
     {
-        $material = match (true) {
-            $subject instanceof Invoice => [
-                $subject->number, $subject->customer_name, $subject->customer_email, $subject->total, $subject->currency->value,
-                $subject->due_date->toDateString(), $subject->status->value,
-                $this->itemsChecksum($subject->items()),
-            ],
-            $subject instanceof Quote => [
-                $subject->number, $subject->customer_name, $subject->customer_email, $subject->client_id, $subject->client()->value('name'), $subject->total,
-                $subject->currency->value, $subject->status->value,
-                $this->itemsChecksum($subject->items()),
-            ],
-            $subject instanceof Expense => [$subject->amount, $subject->currency->value, $subject->supplier_name, $subject->date->toDateString(), $subject->status->value],
-            $subject instanceof Contract => [$subject->title, $subject->number, $subject->status->value],
-            $subject instanceof Task => [$subject->title, $subject->status->value, $subject->tenant_id],
+        $attributes = $subject->getAttributes();
+        unset($attributes['updated_at']);
+        ksort($attributes);
+
+        $related = match (true) {
+            $subject instanceof Invoice => ['items' => $this->itemsChecksum($subject->items())],
+            $subject instanceof Quote => ['items' => $this->itemsChecksum($subject->items()), 'client' => $subject->client()->value('name')],
             default => [],
         };
 
-        $updatedAt = $subject->getAttribute('updated_at');
-
-        return hash('sha256', json_encode([
-            $subject->getKey(),
-            $updatedAt instanceof DateTimeInterface ? $updatedAt->format('Y-m-d H:i:s.u') : null,
-            $material,
-        ], JSON_THROW_ON_ERROR));
+        return hash('sha256', json_encode([$subject->getKey(), $attributes, $related], JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -444,6 +448,11 @@ final readonly class ActionConfirmationService
         }
 
         return hash('sha256', json_encode($rows, JSON_THROW_ON_ERROR));
+    }
+
+    private function userOr(?string $value, string $fallback): string
+    {
+        return $value === null || $value === '' ? $fallback : $this->untrusted($value);
     }
 
     private function untrusted(string $value): string

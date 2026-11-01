@@ -1501,5 +1501,20 @@
     "pending_action_global_task_use_direct": "Глобальні завдання не підтверджуються у два кроки. Використайте delete_global_task.",
     "pending_action_done_delete_global_task": "Глобальне завдання видалено.",
     "tool_failed": "Інструмент несподівано завершився помилкою. Спробуйте пізніше.",
-    "mcp_token_expires": "Діє до"
+    "mcp_token_expires": "Діє до",
+    "assistant_last_must_be_user": "Останнє повідомлення має бути від користувача.",
+    "assistant_too_long": "Розмова задовга. Почніть нову.",
+    "assistant_noun_task": "Завдання",
+    "assistant_noun_expense": "Витрата",
+    "assistant_noun_quote": "Пропозиція",
+    "assistant_noun_invoice": "Рахунок",
+    "assistant_more_pending": "Інші дії, що очікують підтвердження: :count",
+    "pending_in_company": "Компанія: :company.",
+    "assistant_partial": "Частину вже виконано (див. дії нижче), але асистент не завершив відповідь. Не повторюйте її, перевірте результат у застосунку.",
+    "assistant_unavailable": "Асистент зараз недоступний. Спробуйте за хвилину.",
+    "assistant_time_budget": "Ліміт часу для цього запиту вичерпано; відповідайте тим, що вже маєте, без нових викликів інструментів.",
+    "assistant_output_truncated": "вивід скорочено",
+    "assistant_empty": "Не вдалося скласти відповідь. Спробуйте переформулювати запит.",
+    "assistant_empty_done": "Готово. Див. дії нижче.",
+    "assistant_cut_off": "(Відповідь було обрізано.)"
 }

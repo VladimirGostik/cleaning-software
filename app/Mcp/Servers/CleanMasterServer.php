@@ -7,6 +7,7 @@ namespace App\Mcp\Servers;
 use App\Mcp\Resources\InvoicePdfResource;
 use App\Mcp\Resources\QuotePdfResource;
 use App\Mcp\Tools\AssignTaskTool;
+use App\Mcp\Tools\CleanMasterTool;
 use App\Mcp\Tools\CompanyOverviewTool;
 use App\Mcp\Tools\CompleteTaskTool;
 use App\Mcp\Tools\ConfirmActionTool;
@@ -45,8 +46,8 @@ final class CleanMasterServer extends Server
 {
     public int $defaultPaginationLength = 50;
 
-    /** @var array<int, class-string<Server\Tool>> */
-    protected array $tools = [
+    /** @var list<class-string<CleanMasterTool>> */
+    public const array TOOLS = [
         ListCompaniesTool::class,
         CompanyOverviewTool::class,
         ListInvoicesTool::class,
@@ -75,6 +76,9 @@ final class CleanMasterServer extends Server
         PrepareActionTool::class,
         ConfirmActionTool::class,
     ];
+
+    /** @var array<int, class-string<Server\Tool>> */
+    protected array $tools = self::TOOLS;
 
     /** @var array<int, class-string<Server\Resource>> */
     protected array $resources = [

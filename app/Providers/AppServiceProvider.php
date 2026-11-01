@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Ai\AnalyzesExpenses;
+use App\Contracts\Ai\ChatsWithTools;
+use App\Contracts\Ai\ExtractsTaskDraft;
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\MergesPdfDocuments;
 use App\Contracts\RendersContractPdf;
@@ -16,7 +18,9 @@ use App\Contracts\SubmitsEInvoices;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
 use App\Policies\PersonalAccessTokenPolicy;
+use App\Services\Ai\LaravelAiAssistant;
 use App\Services\Ai\LaravelAiExpenseAnalyzer;
+use App\Services\Ai\LaravelAiTaskExtractor;
 use App\Services\Efa\NullEInvoiceAccessPoint;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
@@ -54,6 +58,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(MergesPdfDocuments::class, QpdfMerger::class);
         $this->app->bind(SendsPush::class, FirebasePushSender::class);
         $this->app->bind(AnalyzesExpenses::class, LaravelAiExpenseAnalyzer::class);
+        $this->app->bind(ChatsWithTools::class, LaravelAiAssistant::class);
+        $this->app->bind(ExtractsTaskDraft::class, LaravelAiTaskExtractor::class);
         $this->app->bind(SubmitsEInvoices::class, fn (): SubmitsEInvoices => match (config('efa.driver')) {
             default => new NullEInvoiceAccessPoint,
         });
@@ -103,6 +109,7 @@ final class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(config()->integer('ai.mcp_throttle', 120))->by($tokenId !== null ? 'mcp-token:'.$tokenId : 'ip:'.get_client_ip());
         });
+        RateLimiter::for('assistant', fn (Request $request) => Limit::perMinute(config()->integer('ai.throttle.assistant', 30))->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
     }
 

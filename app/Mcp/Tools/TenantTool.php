@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Mcp\Tools;
 
 use App\Models\User;
+use Closure;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use LogicException;
+use ReflectionMethod;
 
 abstract class TenantTool extends CleanMasterTool
 {
@@ -25,15 +27,22 @@ abstract class TenantTool extends CleanMasterTool
             /** @var string $companyId */
             $companyId = $arguments['company_id'];
 
+            $this->assertCompanyAllowed($user, $companyId);
+
             $response = $this->context->run(
                 $user,
                 $companyId,
-                fn (): mixed => app()->call(static::class.'@execute', ['request' => $request, 'user' => $user, 'companyId' => $companyId]),
+                fn (): mixed => app()->call($this->executor(), ['request' => $request, 'user' => $user, 'companyId' => $companyId]),
                 $this->requestInput($request->all()),
             );
 
             return $response instanceof Response ? $response : throw new LogicException('Tool execute() must return a Response.');
         });
+    }
+
+    private function executor(): Closure
+    {
+        return (new ReflectionMethod($this, 'execute'))->getClosure($this);
     }
 
     /** @return array<string, mixed> */

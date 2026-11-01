@@ -60,7 +60,7 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
         $this->assertSame('claude-sonnet-5-5', $options->model);
         $this->assertSame('anthropic', $options->provider);
         $this->assertSame(30, $options->timeout);
-        $this->assertSame(60, $options->assistantTimeout);
+        $this->assertSame(30, $options->assistantTimeout);
         $this->assertSame(100, config('ai.csv_preview_max_rows'));
         $this->assertSame(50, config('ai.categorize_batch'));
     }

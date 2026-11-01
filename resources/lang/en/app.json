@@ -1501,5 +1501,20 @@
     "pending_action_global_task_use_direct": "Global tasks cannot be confirmed in two steps. Use delete_global_task.",
     "pending_action_done_delete_global_task": "Global task deleted.",
     "tool_failed": "The tool failed unexpectedly. Try again later.",
-    "mcp_token_expires": "Expires"
+    "mcp_token_expires": "Expires",
+    "assistant_last_must_be_user": "The last message must come from the user.",
+    "assistant_too_long": "The conversation is too long. Start a new one.",
+    "assistant_noun_task": "Task",
+    "assistant_noun_expense": "Expense",
+    "assistant_noun_quote": "Quote",
+    "assistant_noun_invoice": "Invoice",
+    "assistant_more_pending": ":count more action(s) waiting for confirmation",
+    "pending_in_company": "Company: :company.",
+    "assistant_partial": "Part of this was already done (see the actions below), but the assistant could not finish its answer. Do not repeat it; check the result in the app.",
+    "assistant_unavailable": "The assistant is not available right now. Try again in a moment.",
+    "assistant_time_budget": "The time budget for this request is used up; answer with what you already have and do not call more tools.",
+    "assistant_output_truncated": "output truncated",
+    "assistant_empty": "I could not put together an answer. Try rephrasing the question.",
+    "assistant_empty_done": "Done. See the actions below.",
+    "assistant_cut_off": "(The answer was cut off.)"
 }

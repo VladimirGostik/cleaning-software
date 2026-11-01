@@ -598,7 +598,7 @@ final class ActionConfirmationTest extends TestCase
         $this->assertStringContainsString(__('app.pending_action_subject_changed'), $result->text);
         $this->assertSame(InvoiceStatusEnum::Draft, $invoice->refresh()->status);
         $this->assertNull($invoice->number);
-        $this->assertSame(PendingActionStatusEnum::Pending, $pending->refresh()->status);
+        $this->assertSame(PendingActionStatusEnum::Cancelled, $pending->refresh()->status);
         $this->assertContains('tool.confirm.failed', $this->aiActivities()->pluck('description')->all());
     }
 
@@ -630,7 +630,7 @@ final class ActionConfirmationTest extends TestCase
 
         $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $delete['pending']))->assertSessionHasErrors('status');
         $this->assertNotNull(Expense::query()->find($expense->id));
-        $this->assertSame(PendingActionStatusEnum::Pending, $delete['pending']->refresh()->status);
+        $this->assertSame(PendingActionStatusEnum::Cancelled, $delete['pending']->refresh()->status);
     }
 
     public function test_send_quote_end_to_end_through_confirm_action_with_items(): void
@@ -692,5 +692,104 @@ final class ActionConfirmationTest extends TestCase
         $this->webAs($this->admin, $this->alpha)->get(route('pending-actions.index'))
             ->assertInertia(fn (AssertableInertia $page) => $page->component('PendingActions/Index', false)->has('pendingActions', 1)->where('pendingActions.0.tenant_id', $this->alpha->id));
         $this->assertSame(PendingActionStatusEnum::Pending, $pending->refresh()->status);
+    }
+
+    public function test_same_second_edits_of_any_attribute_are_caught_with_a_frozen_clock(): void
+    {
+        $this->freezeTime();
+        $invoice = $this->draftInvoice();
+        ['token' => $token] = $this->prepare(PendingActionEnum::IssueInvoice, $invoice->id);
+
+        foreach (['issue_date' => '2026-01-01', 'delivery_date' => '2026-01-02', 'note' => 'changed', 'customer_street' => 'Elsewhere 1'] as $column => $value) {
+            Invoice::query()->whereKey($invoice->id)->update([$column => $value]);
+
+            $this->assertTrue($this->callTool($this->token, 'confirm_action', ['token' => $token])->isError, $column);
+            $this->assertSame(InvoiceStatusEnum::Draft, $invoice->refresh()->status, $column);
+
+            ['token' => $token] = $this->prepare(PendingActionEnum::IssueInvoice, $invoice->id);
+        }
+
+        $expense = Expense::factory()->forTenant($this->alpha)->createdBy($this->admin)->create(['vat_amount' => '1.00', 'description' => 'a']);
+
+        foreach (['vat_amount' => '9.00', 'category' => 'fuel', 'description' => 'b'] as $column => $value) {
+            $row = $this->prepare(PendingActionEnum::DeleteExpense, $expense->id);
+            Expense::query()->whereKey($expense->id)->update([$column => $value]);
+
+            $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $row['pending']))->assertSessionHasErrors('status');
+            $this->assertNotNull(Expense::query()->find($expense->id), $column);
+        }
+    }
+
+    public function test_a_changed_subject_auto_cancels_the_row_so_no_live_token_or_stale_preview_lingers(): void
+    {
+        $invoice = $this->draftInvoice();
+        ['pending' => $pending, 'token' => $token] = $this->prepare(PendingActionEnum::IssueInvoice, $invoice->id);
+        $invoice->update(['note' => 'tampered']);
+
+        $this->assertTrue($this->callTool($this->token, 'confirm_action', ['token' => $token])->isError);
+
+        $pending->refresh();
+        $this->assertSame(PendingActionStatusEnum::Cancelled, $pending->status);
+        $this->assertNull($pending->token_hash);
+        $this->assertSame(0, app(ActionConfirmationService::class)->pendingFor($this->admin)->count());
+        $this->assertContains('tool.confirm.failed', $this->aiActivities()->pluck('description')->all());
+
+        $this->webAs($this->admin, $this->alpha)->get(route('pending-actions.index'))
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('PendingActions/Index', false)->has('pendingActions', 0));
+    }
+
+    public function test_only_user_data_is_quoted_in_previews_not_translated_words(): void
+    {
+        $invoice = Invoice::factory()->create(['tenant_id' => $this->alpha->id, 'customer_name' => 'Acme', 'customer_email' => null]);
+
+        ['pending' => $pending] = $this->prepare(PendingActionEnum::IssueInvoice, $invoice->id);
+
+        $this->assertStringContainsString('"Acme"', $pending->preview);
+        $this->assertStringNotContainsString('"'.__('app.pending_number_draft').'"', $pending->preview);
+        $this->assertStringNotContainsString('"'.__('app.pending_number_auto').'"', $pending->preview);
+    }
+
+    public function test_the_firm_is_named_in_label_and_preview_without_entering_the_subject_hash(): void
+    {
+        $invoice = $this->draftInvoice();
+        ['pending' => $pending, 'token' => $token] = $this->prepare(PendingActionEnum::IssueInvoice, $invoice->id);
+
+        $this->assertStringContainsString('Alpha', $pending->preview);
+        $this->assertStringContainsString('Alpha', $pending->subject_label);
+
+        $this->alpha->update(['name' => 'Alpha Renamed']);
+
+        $this->assertFalse($this->callTool($this->token, 'confirm_action', ['token' => $token])->isError);
+        $this->assertSame(InvoiceStatusEnum::Issued, $invoice->refresh()->status);
+    }
+
+    public function test_a_deleted_subject_is_the_subject_changed_case_on_mcp_api_and_web(): void
+    {
+        $viaMcp = $this->draftInvoice();
+        $viaApi = $this->draftInvoice();
+        $viaWeb = $this->draftInvoice();
+        ['pending' => $mcpRow, 'token' => $token] = $this->prepare(PendingActionEnum::IssueInvoice, $viaMcp->id);
+        ['pending' => $apiRow] = $this->prepare(PendingActionEnum::IssueInvoice, $viaApi->id);
+        ['pending' => $webRow] = $this->prepare(PendingActionEnum::IssueInvoice, $viaWeb->id);
+
+        $viaMcp->delete();
+        $viaApi->delete();
+        $viaWeb->delete();
+
+        $result = $this->callTool($this->token, 'confirm_action', ['token' => $token]);
+        $this->assertTrue($result->isError);
+        $this->assertStringContainsString(__('app.pending_action_subject_changed'), $result->text);
+
+        $this->apiAs($this->admin, $this->alpha)->postJson(route('api.pending-actions.confirm', $apiRow))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status')
+            ->assertJsonPath('errors.status.0', __('app.pending_action_subject_changed'));
+
+        $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $webRow))->assertSessionHasErrors('status');
+
+        foreach ([$mcpRow, $apiRow, $webRow] as $row) {
+            $this->assertSame(PendingActionStatusEnum::Cancelled, $row->refresh()->status);
+            $this->assertNull($row->token_hash);
+        }
     }
 }

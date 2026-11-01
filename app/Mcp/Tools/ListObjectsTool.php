@@ -7,6 +7,7 @@ namespace App\Mcp\Tools;
 use App\Models\CleaningObject;
 use App\Models\User;
 use App\Services\ObjectService;
+use Closure;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +26,18 @@ final class ListObjectsTool extends ListTool
         return ['search', 'type', 'client_id', 'is_active', 'city'];
     }
 
+    protected function rules(): array
+    {
+        return [
+            ...parent::rules(),
+            'is_active' => ['sometimes', function (string $attribute, mixed $value, Closure $fail): void {
+                if (! in_array($value, [true, false, 0, 1, '0', '1', 'true', 'false'], true)) {
+                    $fail(__('validation.boolean', ['attribute' => $attribute]));
+                }
+            }],
+        ];
+    }
+
     public function execute(User $user, ObjectService $objects): Response
     {
         Gate::forUser($user)->authorize('viewAny', CleaningObject::class);
@@ -40,7 +53,7 @@ final class ListObjectsTool extends ListTool
             'search' => $schema->string()->description('Object name, street or city contains.'),
             'type' => $schema->string()->description('Object type.'),
             'client_id' => $schema->string()->format('uuid')->description('Only objects of this client.'),
-            'is_active' => $schema->string()->enum(['1', '0'])->description('1 for active, 0 for deactivated objects.'),
+            'is_active' => $schema->boolean()->description('true for active, false for deactivated objects.'),
             'city' => $schema->string()->description('City equals.'),
             ...$this->pagingProperties($schema),
         ];

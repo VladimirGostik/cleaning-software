@@ -31,6 +31,10 @@ final class CompanyOverviewTool extends CleanMasterTool
         return $this->guard($request, $companyId, function (User $user) use ($request, $dashboard, $snapshot, $companyId): Response {
             $request->validate(['company_id' => ['sometimes', 'nullable', 'uuid']]);
 
+            if ($companyId !== null) {
+                $this->assertCompanyAllowed($user, $companyId);
+            }
+
             $anchor = $companyId ?? $snapshot->forRequest($user)[0]->tenant->id ?? null;
 
             if ($anchor === null) {

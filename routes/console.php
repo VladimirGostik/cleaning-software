@@ -26,3 +26,4 @@ Schedule::command(CheckContractExpiry::class)->daily();
 Schedule::command(GenerateScheduledJobs::class)->daily();
 Schedule::command(RemindTasks::class)->hourly()->withoutOverlapping();
 Schedule::command(ExpirePendingActions::class)->hourly();
+Schedule::command('sanctum:prune-expired --hours=24')->daily();

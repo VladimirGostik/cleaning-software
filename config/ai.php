@@ -9,7 +9,7 @@ return [
 
     'timeout' => 30,
 
-    'assistant_timeout' => 60,
+    'assistant_timeout' => 30,
 
     'csv_preview_max_rows' => 100,
 
@@ -17,7 +17,21 @@ return [
 
     'throttle' => [
         'analyze' => 20,
+        'assistant' => 30,
     ],
+
+    'timezone' => 'Europe/Bratislava',
+
+    'assistant' => [
+        'max_steps' => 6,
+        'turn_seconds' => 45,
+        'max_tool_output_chars' => 20000,
+        'max_messages' => 20,
+        'max_message_chars' => 4000,
+        'max_total_chars' => 12000,
+    ],
+
+    'task_parse_max_chars' => 2000,
 
     'confirm_channels' => [
         'issue_invoice' => ['chat', 'app'],

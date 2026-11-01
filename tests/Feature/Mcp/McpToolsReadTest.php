@@ -313,4 +313,33 @@ final class McpToolsReadTest extends TestCase
         $this->assertSame([], $result->rows('invoices'));
         $this->assertStringNotContainsString('Needle Hidden', $result->text);
     }
+
+    public function test_list_objects_accepts_real_booleans_and_string_flags_for_is_active(): void
+    {
+        $client = Client::factory()->create(['tenant_id' => $this->alpha->id]);
+        $active = CleaningObject::factory()->create(['tenant_id' => $this->alpha->id, 'client_id' => $client->id]);
+        $inactive = CleaningObject::factory()->inactive()->create(['tenant_id' => $this->alpha->id, 'client_id' => $client->id]);
+
+        foreach ([true, 1, '1', 'true'] as $value) {
+            $this->assertSame([$active->id], $this->callTool($this->token, 'list_objects', ['company_id' => $this->alpha->id, 'is_active' => $value])->ids(), var_export($value, true));
+        }
+
+        foreach ([false, 0, '0', 'false'] as $value) {
+            $this->assertSame([$inactive->id], $this->callTool($this->token, 'list_objects', ['company_id' => $this->alpha->id, 'is_active' => $value])->ids(), var_export($value, true));
+        }
+
+        $this->assertTrue($this->callTool($this->token, 'list_objects', ['company_id' => $this->alpha->id, 'is_active' => 'maybe'])->isError);
+    }
+
+    public function test_locale_runs_before_the_active_check_and_expired_sanctum_tokens_are_pruned_daily(): void
+    {
+        foreach ([['mcp', 'POST'], ['api/me', 'GET']] as [$uri, $method]) {
+            $middleware = collect(app('router')->getRoutes()->getRoutes())->first(fn ($route): bool => $route->uri() === $uri && in_array($method, $route->methods(), true))?->gatherMiddleware() ?? [];
+            $names = array_values(array_filter($middleware, fn ($m): bool => is_string($m) && in_array($m, ['auth:sanctum', 'locale.api', 'user.active'], true)));
+
+            $this->assertSame(['auth:sanctum', 'locale.api', 'user.active'], $names, $uri);
+        }
+
+        $this->artisanCommand('schedule:list')->expectsOutputToContain('sanctum:prune-expired --hours=24')->assertSuccessful();
+    }
 }

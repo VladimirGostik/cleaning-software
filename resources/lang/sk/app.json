@@ -1501,5 +1501,20 @@
     "pending_action_global_task_use_direct": "Globálne úlohy sa nepotvrdzujú dvojkrokovo. Použite delete_global_task.",
     "pending_action_done_delete_global_task": "Globálna úloha bola zmazaná.",
     "tool_failed": "Nástroj zlyhal. Skúste to neskôr.",
-    "mcp_token_expires": "Platnosť do"
+    "mcp_token_expires": "Platnosť do",
+    "assistant_last_must_be_user": "Posledná správa musí byť od používateľa.",
+    "assistant_too_long": "Konverzácia je príliš dlhá. Začnite novú.",
+    "assistant_noun_task": "Úloha",
+    "assistant_noun_expense": "Výdavok",
+    "assistant_noun_quote": "Ponuka",
+    "assistant_noun_invoice": "Faktúra",
+    "assistant_more_pending": "Ďalšie akcie čakajúce na potvrdenie: :count",
+    "pending_in_company": "Firma: :company.",
+    "assistant_partial": "Časť úlohy sa už vykonala (pozrite akcie nižšie), ale asistent nedokončil odpoveď. Neopakujte ju, výsledok skontrolujte v aplikácii.",
+    "assistant_unavailable": "Asistent momentálne nie je dostupný. Skúste to o chvíľu znova.",
+    "assistant_time_budget": "Časový limit tejto požiadavky sa vyčerpal; odpovedzte tým, čo už máte, a nevolajte ďalšie nástroje.",
+    "assistant_output_truncated": "výstup skrátený",
+    "assistant_empty": "Nepodarilo sa mi zostaviť odpoveď. Skúste otázku sformulovať inak.",
+    "assistant_empty_done": "Hotovo. Pozrite akcie nižšie.",
+    "assistant_cut_off": "(Odpoveď bola skrátená.)"
 }

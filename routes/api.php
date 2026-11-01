@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AssistantController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeviceController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\PendingActionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\TaskParseController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
@@ -26,7 +28,7 @@ Route::middleware(['auth:sanctum', 'locale.api'])->group(function (): void {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 });
 
-Route::middleware(['auth:sanctum', 'user.active', 'ability:mobile', 'locale.api', 'tenant.context', 'tenant.required'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile', 'tenant.context', 'tenant.required'])->group(function (): void {
     Route::get('/me', MeController::class);
     Route::get('/dashboard', DashboardController::class)->name('api.dashboard');
     Route::get('/notifications/bell', NotificationBellController::class)->name('api.notifications.bell');
@@ -46,6 +48,9 @@ Route::middleware(['auth:sanctum', 'user.active', 'ability:mobile', 'locale.api'
         Route::post('/devices', [DeviceController::class, 'store'])->name('api.devices.store');
         Route::delete('/devices', [DeviceController::class, 'destroy'])->name('api.devices.destroy');
     });
+
+    Route::post('/assistant/messages', [AssistantController::class, 'store'])->middleware('throttle:assistant')->name('api.assistant.messages');
+    Route::post('/tasks/parse', TaskParseController::class)->middleware('throttle:ai-analyze')->name('api.tasks.parse');
 
     Route::get('/tasks', [TaskController::class, 'index'])->name('api.tasks.index');
     Route::get('/tasks/form-context', [TaskController::class, 'formContext'])->name('api.tasks.form-context');
