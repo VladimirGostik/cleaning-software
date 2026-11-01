@@ -67,7 +67,7 @@ function markAllRead(): void {
             <span v-if="unreadCount > 0" class="kg-chip kg-chip--planned">
                 {{ t('notifications_unread_count', { count: unreadCount }) }}
             </span>
-            <button type="button" class="btn btn-sm btn-ghost" :disabled="unreadCount === 0" @click="markAllRead">
+            <button type="button" class="btn btn-sm btn-neutral" :disabled="unreadCount === 0" @click="markAllRead">
                 {{ t('notifications_mark_all_read') }}
             </button>
         </template>

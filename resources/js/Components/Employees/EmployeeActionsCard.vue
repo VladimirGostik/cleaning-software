@@ -32,7 +32,7 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
             <Link
                 v-if="props.canUpdate"
                 :href="`/employees/${props.employee.id}/edit`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
             >
                 <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
@@ -41,7 +41,7 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
             <button
                 v-if="props.canAssignRole"
                 type="button"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
                 @click="emit('changeRole')"
             >
                 <ArrowsRightLeftIcon class="size-5" />
@@ -51,7 +51,7 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
             <button
                 v-if="props.canReactivate"
                 type="button"
-                class="btn btn-sm btn-success w-full justify-start"
+                class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('reactivate')"
             >
                 <ArrowPathIcon class="size-5" />
@@ -61,7 +61,7 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
             <button
                 v-if="props.canDeactivate"
                 type="button"
-                class="btn btn-sm w-full justify-start text-warning"
+                class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('deactivate')"
             >
                 <NoSymbolIcon class="size-5" />

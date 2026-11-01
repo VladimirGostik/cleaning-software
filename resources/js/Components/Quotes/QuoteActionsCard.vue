@@ -45,7 +45,7 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
             <h2 class="card-title text-base">{{ t('quote_section_actions') }}</h2>
 
             <Can v-if="isDraft" permission="edit quotes">
-                <Link :href="`/quotes/${props.quote.id}/edit`" class="btn btn-sm w-full justify-start">
+                <Link :href="`/quotes/${props.quote.id}/edit`" class="btn btn-sm btn-neutral w-full justify-start">
                     <PencilSquareIcon class="size-5" />
                     {{ t('edit') }}
                 </Link>
@@ -55,7 +55,7 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                 <div>
                     <button
                         type="button"
-                        class="btn btn-sm btn-success w-full justify-start"
+                        class="btn btn-sm btn-secondary w-full justify-start"
                         :disabled="hasMissingTokens"
                         @click="emit('send')"
                     >
@@ -69,14 +69,14 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
             </Can>
 
             <Can v-if="isSent && isItemized" permission="approve quotes">
-                <button type="button" class="btn btn-sm btn-success w-full justify-start" @click="emit('accept')">
+                <button type="button" class="btn btn-sm btn-primary w-full justify-start" @click="emit('accept')">
                     <CheckCircleIcon class="size-5" />
                     {{ t('quote_action_accept') }}
                 </button>
             </Can>
 
             <Can v-if="isSent && isItemized" permission="approve quotes">
-                <button type="button" class="btn btn-sm w-full justify-start text-warning" @click="emit('reject')">
+                <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('reject')">
                     <XCircleIcon class="size-5" />
                     {{ t('quote_action_reject') }}
                 </button>
@@ -124,21 +124,21 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                 :href="`/quotes/${props.quote.id}/pdf`"
                 target="_blank"
                 rel="noopener"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
             >
                 <ArrowDownTrayIcon class="size-5" />
                 {{ t('quote_action_download_pdf') }}
             </a>
 
             <Can permission="create quotes">
-                <button type="button" class="btn btn-sm w-full justify-start" @click="emit('duplicate')">
+                <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('duplicate')">
                     <DocumentDuplicateIcon class="size-5" />
                     {{ t('quote_action_duplicate') }}
                 </button>
             </Can>
 
             <Can v-if="isDraft" permission="delete quotes">
-                <button type="button" class="btn btn-sm w-full justify-start text-error" @click="emit('delete')">
+                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('delete')">
                     <TrashIcon class="size-5" />
                     {{ t('delete') }}
                 </button>

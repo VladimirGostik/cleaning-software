@@ -92,7 +92,7 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
         </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div class="space-y-6">
             <EmployeeProfileCard :employee="employee" />
             <EmployeePersonalCard v-if="personal" :personal="personal" />

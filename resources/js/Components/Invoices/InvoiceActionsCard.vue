@@ -38,21 +38,21 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
             <h2 class="card-title text-base">{{ t('invoice_section_actions') }}</h2>
 
             <Can v-if="isDraft" permission="edit invoices">
-                <Link :href="`/invoices/${props.invoice.id}/edit`" class="btn btn-sm w-full justify-start">
+                <Link :href="`/invoices/${props.invoice.id}/edit`" class="btn btn-sm btn-neutral w-full justify-start">
                     <PencilSquareIcon class="size-5" />
                     {{ t('edit') }}
                 </Link>
             </Can>
 
             <Can v-if="isDraft" permission="edit invoices">
-                <button type="button" class="btn btn-sm btn-success w-full justify-start" @click="emit('issue')">
+                <button type="button" class="btn btn-sm btn-secondary w-full justify-start" @click="emit('issue')">
                     <CheckBadgeIcon class="size-5" />
                     {{ t('invoice_action_issue') }}
                 </button>
             </Can>
 
             <Can v-if="isIssuedOrOverdue" permission="edit invoices">
-                <button type="button" class="btn btn-sm w-full justify-start" @click="emit('pay')">
+                <button type="button" class="btn btn-sm btn-primary w-full justify-start" @click="emit('pay')">
                     <BanknotesIcon class="size-5" />
                     {{
                         t(
@@ -68,7 +68,7 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
                 :href="`/invoices/${props.invoice.id}/pdf`"
                 target="_blank"
                 rel="noopener"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
             >
                 <ArrowDownTrayIcon class="size-5" />
                 {{ t('invoice_action_download_pdf') }}
@@ -78,7 +78,7 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
                 <div>
                     <button
                         type="button"
-                        class="btn btn-sm w-full justify-start"
+                        class="btn btn-sm btn-primary w-full justify-start"
                         :disabled="!props.invoice.customer_email"
                         :title="!props.invoice.customer_email ? t('invoice_send_requires_email') : undefined"
                         @click="emit('send')"
@@ -93,21 +93,21 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
             </Can>
 
             <Can permission="create invoices">
-                <button type="button" class="btn btn-sm w-full justify-start" @click="emit('duplicate')">
+                <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('duplicate')">
                     <DocumentDuplicateIcon class="size-5" />
                     {{ t('invoice_action_duplicate') }}
                 </button>
             </Can>
 
             <Can v-if="isIssuedOrOverdue" permission="cancel invoices">
-                <button type="button" class="btn btn-sm w-full justify-start text-warning" @click="emit('cancel')">
+                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('cancel')">
                     <XCircleIcon class="size-5" />
                     {{ t('invoice_action_cancel') }}
                 </button>
             </Can>
 
             <Can v-if="isDraft" permission="cancel invoices">
-                <button type="button" class="btn btn-sm w-full justify-start text-error" @click="emit('delete')">
+                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('delete')">
                     <TrashIcon class="size-5" />
                     {{ t('delete') }}
                 </button>

@@ -97,7 +97,7 @@ watch(fullscreen, (on) => {
                 </div>
             </div>
 
-            <div class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
+            <div class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
                 <DocumentTokenEditor
                     ref="editor"
                     v-model="body"

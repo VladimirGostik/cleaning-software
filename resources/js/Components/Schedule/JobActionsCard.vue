@@ -39,7 +39,7 @@ const hasActions = computed(
             <Link
                 v-if="props.job.can.update"
                 :href="`/jobs/${props.job.id}/edit`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
             >
                 <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
@@ -48,7 +48,7 @@ const hasActions = computed(
             <button
                 v-if="props.job.can.start"
                 type="button"
-                class="btn btn-sm w-full justify-start text-info"
+                class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('start')"
             >
                 <PlayCircleIcon class="size-5" />
@@ -58,7 +58,7 @@ const hasActions = computed(
             <button
                 v-if="props.job.can.complete"
                 type="button"
-                class="btn btn-sm w-full justify-start text-success"
+                class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('complete')"
             >
                 <CheckCircleIcon class="size-5" />
@@ -68,7 +68,7 @@ const hasActions = computed(
             <button
                 v-if="props.job.can.unapprove"
                 type="button"
-                class="btn btn-sm w-full justify-start text-error"
+                class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('unapprove')"
             >
                 <HandThumbDownIcon class="size-5" />
@@ -78,7 +78,7 @@ const hasActions = computed(
             <button
                 v-if="props.job.can.cancel"
                 type="button"
-                class="btn btn-sm w-full justify-start text-warning"
+                class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('cancel')"
             >
                 <XCircleIcon class="size-5" />

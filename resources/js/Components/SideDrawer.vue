@@ -100,7 +100,7 @@ onUnmounted(() => {
                 aria-modal="true"
                 :aria-labelledby="titleId"
                 tabindex="-1"
-                class="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-base-100 shadow-xl"
+                class="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-base-100 shadow-float"
                 @keydown="onKeydown"
             >
                 <div

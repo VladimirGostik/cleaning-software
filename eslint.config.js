@@ -94,7 +94,7 @@ export default [
             ...tsPlugin.configs.recommended.rules,
             'vue/multi-word-component-names': 'off',
             'vue/no-restricted-class': [
-                'warn',
+                'error',
                 '/^text-secondary$/',
                 '/^bg-gradient-to-/',
                 '/^from-/',
@@ -103,6 +103,7 @@ export default [
                 '/^shadow-(md|lg|xl|2xl)$/',
                 'table-zebra',
                 'btn-outline',
+                'btn-success',
                 'rounded-none',
                 'rounded-sm',
             ],

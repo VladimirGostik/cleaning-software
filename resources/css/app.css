@@ -67,6 +67,8 @@
 
 @theme {
     --font-sans: 'Geist', system-ui, sans-serif;
+    --text-xs: 0.8125rem;
+    --text-xs--line-height: calc(1.125 / 0.8125);
     --color-muted: #5a6661;
     --color-primary-hover: #0a654d;
     --color-primary-soft: #e7f4ef;
@@ -185,6 +187,35 @@
 }
 .card-body .kg-table-bleed :is(th, td):last-child {
     padding-inline-end: var(--card-p, 1.5rem);
+}
+.card-body .table:not(.kg-table-bleed .table) :is(th, td):first-child {
+    padding-inline-start: 0;
+}
+.card-body .table:not(.kg-table-bleed .table) :is(th, td):last-child {
+    padding-inline-end: 0;
+}
+.card-body .table:not(.kg-table-bleed .table) tbody tr:hover > :first-child {
+    box-shadow: -0.75rem 0 0 var(--color-base-200);
+}
+.card-body .table:not(.kg-table-bleed .table) tbody tr:hover > :last-child {
+    box-shadow: 0.75rem 0 0 var(--color-base-200);
+}
+.card-body .table tbody tr.kg-row-highlight,
+.card-body .table tbody tr.kg-row-highlight:hover {
+    background: var(--color-primary-soft);
+}
+.card-body .table tbody tr.kg-row-highlight > :first-child {
+    box-shadow: -0.75rem 0 0 var(--color-primary-soft);
+    font-weight: 500;
+}
+.card-body .table tbody tr.kg-row-highlight > :last-child {
+    box-shadow: 0.75rem 0 0 var(--color-primary-soft);
+}
+.select:not(.select-sm) {
+    padding-inline-end: 2rem;
+    text-overflow: ellipsis;
+    overflow: clip;
+    overflow-clip-margin: content-box;
 }
 .input-sm,
 .select-sm {
@@ -368,8 +399,8 @@
         display: inline-block;
         margin-top: calc(var(--spacing) * 1);
         font-family: var(--default-font-family);
-        font-size: var(--text-xs);
-        line-height: var(--text-xs--line-height);
+        font-size: 0.75rem;
+        line-height: calc(1 / 0.75);
         color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
     }
     a.document-frame-label {
@@ -392,4 +423,47 @@
         padding: calc(var(--spacing) * 4);
         background-color: var(--color-base-200);
     }
+}
+
+.btn-xs,
+.btn-sm {
+    --fontsize: 0.8125rem;
+}
+.input-xs,
+.input-sm,
+.textarea-xs,
+.textarea-sm,
+.select-xs,
+.select-sm {
+    font-size: 0.8125rem;
+}
+.table-xs :not(thead, tfoot) tr,
+.table-sm :not(thead, tfoot) tr,
+.table thead th,
+.table tfoot th {
+    font-size: 0.8125rem;
+}
+.menu-xs :where(li:not(.menu-title) > :not(ul, details, .menu-title)),
+.menu-xs :where(li:not(.menu-title) > details > summary:not(.menu-title)),
+.menu-sm :where(li:not(.menu-title) > :not(ul, details, .menu-title)),
+.menu-sm :where(li:not(.menu-title) > details > summary:not(.menu-title)) {
+    font-size: 0.8125rem;
+}
+.badge-xs,
+.badge-sm,
+.kbd-xs,
+.kbd-sm {
+    font-size: 0.8125rem;
+}
+.fieldset,
+.stat-title {
+    font-size: 0.8125rem;
+}
+.label,
+.fieldset-legend,
+.fieldset-label {
+    font-size: 0.8125rem;
+}
+.fieldset-legend {
+    font-weight: 500;
 }

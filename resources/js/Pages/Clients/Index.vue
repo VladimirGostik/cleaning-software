@@ -82,7 +82,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('create clients')"
                 type="button"
-                class="btn btn-primary btn-sm"
+                class="btn btn-secondary btn-sm"
                 @click="ui.createOpen = true"
             >
                 {{ t('client_add') }}

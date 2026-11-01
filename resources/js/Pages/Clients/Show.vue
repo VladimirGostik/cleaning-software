@@ -52,7 +52,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('edit clients')"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-neutral btn-sm"
                 @click="ui.editOpen = true"
             >
                 <PencilSquareIcon class="size-5" />
@@ -62,7 +62,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('create objects')"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-neutral btn-sm"
                 @click="ui.objectOpen = true"
             >
                 <PlusIcon class="size-5" />
@@ -72,7 +72,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('delete clients')"
                 type="button"
-                class="btn btn-ghost btn-sm text-error"
+                class="btn btn-error btn-sm"
                 @click="openModal(client)"
             >
                 <TrashIcon class="size-5" />

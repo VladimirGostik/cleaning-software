@@ -251,7 +251,7 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" @submit.prevent="submit">
+        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
             <div class="space-y-6">
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">

@@ -85,7 +85,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <div class="flex-1">
                         <TextInput field="name" :label="t('mcp_token_name')" />
                     </div>
-                    <button type="submit" class="btn btn-primary" :disabled="form.processing || form.name === ''">
+                    <button type="submit" class="btn btn-secondary" :disabled="form.processing || form.name === ''">
                         <span v-if="form.processing" class="loading loading-spinner loading-xs" />
                         {{ t('mcp_token_create') }}
                     </button>

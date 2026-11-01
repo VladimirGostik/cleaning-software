@@ -74,14 +74,14 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
             <Link
                 v-if="canCreateGlobal"
                 href="/settings/document-templates/create?global=1"
-                class="btn btn-outline btn-sm"
+                class="btn btn-neutral btn-sm"
             >
                 {{ t('document_template_add_global') }}
             </Link>
             <Link
                 v-if="allows('create document_templates')"
                 href="/settings/document-templates/create"
-                class="btn btn-primary btn-sm"
+                class="btn btn-secondary btn-sm"
             >
                 {{ t('document_template_add') }}
             </Link>

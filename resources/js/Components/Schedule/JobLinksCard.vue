@@ -21,32 +21,35 @@ const { t } = useI18n();
             <Link
                 v-if="props.job.client_id"
                 :href="`/clients/${props.job.client_id}`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <UserGroupIcon class="size-5" />
+                <UserGroupIcon class="size-5 shrink-0" />
                 {{ props.job.client_name }}
             </Link>
 
-            <Link :href="`/objects/${props.job.cleaning_object_id}`" class="btn btn-sm w-full justify-start">
-                <BuildingOffice2Icon class="size-5" />
+            <Link
+                :href="`/objects/${props.job.cleaning_object_id}`"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
+            >
+                <BuildingOffice2Icon class="size-5 shrink-0" />
                 {{ props.job.object_name }}
             </Link>
 
             <Link
                 v-if="props.job.contract_id"
                 :href="`/contracts/${props.job.contract_id}`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <DocumentCheckIcon class="size-5" />
+                <DocumentCheckIcon class="size-5 shrink-0" />
                 {{ props.job.contract_title ?? t('schedule_detail_contract') }}
             </Link>
 
             <Link
                 v-if="props.job.invoice_id"
                 :href="`/invoices/${props.job.invoice_id}`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <DocumentTextIcon class="size-5" />
+                <DocumentTextIcon class="size-5 shrink-0" />
                 {{ t('schedule_detail_invoice') }}
             </Link>
         </div>

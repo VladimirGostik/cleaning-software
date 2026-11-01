@@ -116,7 +116,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('tasks')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button v-if="canCreate" type="button" class="btn btn-primary btn-sm" @click="ui.createOpen = true">
+            <button v-if="canCreate" type="button" class="btn btn-secondary btn-sm" @click="ui.createOpen = true">
                 {{ t('task_add') }}
             </button>
         </template>

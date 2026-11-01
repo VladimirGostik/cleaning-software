@@ -67,7 +67,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 <template>
     <Header :title="object.name" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button v-if="canEdit" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
+            <button v-if="canEdit" type="button" class="btn btn-neutral btn-sm" @click="ui.editOpen = true">
                 <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </button>
@@ -75,7 +75,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('delete objects') && object.is_active"
                 type="button"
-                class="btn btn-ghost btn-sm text-warning"
+                class="btn btn-error btn-sm"
                 @click="openModal(object)"
             >
                 <NoSymbolIcon class="size-5" />

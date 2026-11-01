@@ -127,7 +127,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('create objects') && filterOptions.clients.length > 0"
                 type="button"
-                class="btn btn-primary btn-sm"
+                class="btn btn-secondary btn-sm"
                 @click="ui.createOpen = true"
             >
                 {{ t('object_add') }}

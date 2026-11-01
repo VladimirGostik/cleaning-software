@@ -117,7 +117,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
             <Link
                 v-if="allows('create recurring_invoices')"
                 href="/recurring-invoices/create"
-                class="btn btn-primary btn-sm"
+                class="btn btn-secondary btn-sm"
             >
                 {{ t('recurring_invoice_add') }}
             </Link>

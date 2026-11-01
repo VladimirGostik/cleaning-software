@@ -33,7 +33,7 @@ function refresh(): void {
     <Header :title="t('dashboard')">
         <template #actions>
             <span class="text-xs text-base-content/50">{{ generatedLabel }}</span>
-            <button type="button" class="btn btn-ghost btn-sm" :aria-label="t('dashboard_refresh')" @click="refresh">
+            <button type="button" class="btn btn-neutral btn-sm" :aria-label="t('dashboard_refresh')" @click="refresh">
                 <ArrowPathIcon class="size-5" />
             </button>
         </template>

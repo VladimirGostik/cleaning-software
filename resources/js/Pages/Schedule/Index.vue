@@ -157,7 +157,7 @@ watch(
                 </button>
             </div>
 
-            <Link v-if="allows('create schedule')" href="/jobs/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create schedule')" href="/jobs/create" class="btn btn-secondary btn-sm">
                 {{ t('schedule_add') }}
             </Link>
         </template>

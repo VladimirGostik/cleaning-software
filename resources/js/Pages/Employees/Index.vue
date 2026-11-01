@@ -74,7 +74,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('employees')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create employees')" href="/employees/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create employees')" href="/employees/create" class="btn btn-secondary btn-sm">
                 {{ t('employee_add') }}
             </Link>
         </template>

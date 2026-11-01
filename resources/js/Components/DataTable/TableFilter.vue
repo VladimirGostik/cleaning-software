@@ -148,7 +148,7 @@ function toggleBoolean(): void {
             type="button"
             class="btn btn-sm join-item"
             :class="{
-                'btn-success': value === 'true' || value === '1',
+                'btn-primary': value === 'true' || value === '1',
                 'btn-error': value === 'false' || value === '0',
             }"
             @click="toggleBoolean"

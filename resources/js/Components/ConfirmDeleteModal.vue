@@ -23,7 +23,7 @@ const { t } = useI18n();
 const CONFIRM_VARIANT_CLASS: Record<'error' | 'warning' | 'success' | 'primary', string> = {
     error: 'btn-error',
     warning: 'btn-warning',
-    success: 'btn-success',
+    success: 'btn-primary',
     primary: 'btn-primary',
 };
 

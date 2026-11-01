@@ -106,10 +106,10 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('expenses')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="canCreate && allows('manage expenses')" href="/expenses/import" class="btn btn-ghost btn-sm">
+            <Link v-if="canCreate && allows('manage expenses')" href="/expenses/import" class="btn btn-neutral btn-sm">
                 {{ t('expense_import') }}
             </Link>
-            <button v-if="canCreate" type="button" class="btn btn-primary btn-sm" @click="ui.createOpen = true">
+            <button v-if="canCreate" type="button" class="btn btn-secondary btn-sm" @click="ui.createOpen = true">
                 {{ t('expense_add') }}
             </button>
         </template>

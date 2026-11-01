@@ -52,7 +52,7 @@ const { t } = useI18n();
                     <tr
                         v-for="task in props.breakdown.tasks"
                         :key="task.id"
-                        :class="{ 'bg-primary/10': task.id === props.highlightTaskId }"
+                        :class="{ 'kg-row-highlight': task.id === props.highlightTaskId }"
                         :aria-current="task.id === props.highlightTaskId ? 'true' : undefined"
                     >
                         <td>{{ task.name }}</td>

@@ -36,7 +36,7 @@ const comparing = ref(false);
             <button
                 v-if="canReset"
                 type="button"
-                class="btn btn-sm btn-outline"
+                class="btn btn-sm btn-neutral"
                 :disabled="processing"
                 @click="emit('restore')"
             >

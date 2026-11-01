@@ -44,7 +44,7 @@ function slice5(value: string | null): string {
                     <JobTypeBadge :type="props.job.type" />
                 </div>
 
-                <div v-if="props.job.task_name">
+                <div v-if="props.job.task_name" class="col-span-2 sm:col-span-4">
                     <p class="text-xs text-base-content/50">{{ t('schedule_detail_task') }}</p>
                     <p>{{ props.job.task_name }}</p>
                 </div>

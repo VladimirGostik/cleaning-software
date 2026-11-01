@@ -56,7 +56,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="task.can.update && isOpen"
                 type="button"
-                class="btn btn-primary btn-sm"
+                class="btn btn-secondary btn-sm"
                 :disabled="processing"
                 @click="transition(task.id, 'complete')"
             >
@@ -80,12 +80,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 {{ t('edit') }}
             </button>
 
-            <button
-                v-if="task.can.delete"
-                type="button"
-                class="btn btn-ghost btn-sm text-error"
-                @click="openModal(task)"
-            >
+            <button v-if="task.can.delete" type="button" class="btn btn-error btn-sm" @click="openModal(task)">
                 <TrashIcon class="size-5" />
                 {{ t('delete') }}
             </button>

@@ -110,7 +110,7 @@ const customPropsJson = computed(() => {
                     </div>
                 </dl>
                 <div v-if="media.model_url" class="card-actions mt-2">
-                    <Link :href="media.model_url" class="btn btn-outline btn-sm gap-1">
+                    <Link :href="media.model_url" class="btn btn-neutral btn-sm gap-1">
                         <ArrowTopRightOnSquareIcon class="size-5" />
                         {{ t('open_owner') }}
                     </Link>

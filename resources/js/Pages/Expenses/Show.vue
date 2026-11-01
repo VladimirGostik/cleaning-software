@@ -70,17 +70,12 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 <template>
     <Header :title="expense.supplier_name ?? formatDate(expense.date)" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button v-if="expense.can.update" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
+            <button v-if="expense.can.update" type="button" class="btn btn-neutral btn-sm" @click="ui.editOpen = true">
                 <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </button>
 
-            <button
-                v-if="expense.can.delete"
-                type="button"
-                class="btn btn-ghost btn-sm text-error"
-                @click="openModal(expense)"
-            >
+            <button v-if="expense.can.delete" type="button" class="btn btn-error btn-sm" @click="openModal(expense)">
                 <TrashIcon class="size-5" />
                 {{ t('delete') }}
             </button>

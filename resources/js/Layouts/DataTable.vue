@@ -196,7 +196,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
 
                                         <div
                                             v-if="popoverOpen[index]"
-                                            class="absolute right-0 bottom-full mb-1 z-50 w-44 rounded-box bg-base-100 shadow-lg border border-base-300 p-3 flex flex-col gap-2"
+                                            class="absolute right-0 bottom-full mb-1 z-50 w-44 rounded-box bg-base-100 shadow-float border border-base-300 p-3 flex flex-col gap-2"
                                         >
                                             <p class="text-sm text-center font-medium">{{ $t('confirm_delete') }}</p>
                                             <div class="flex gap-2">

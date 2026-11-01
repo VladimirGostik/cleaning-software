@@ -9,7 +9,7 @@ const locale = computed(() => props.value.locale);
 </script>
 
 <template>
-    <div class="flex items-center justify-center gap-3 text-[12px] text-muted">
+    <div class="flex items-center justify-center gap-3 text-xs text-muted">
         <template v-for="(lang, i) in languages" :key="lang.value">
             <span v-if="i > 0" class="text-base-300" aria-hidden="true">|</span>
             <a

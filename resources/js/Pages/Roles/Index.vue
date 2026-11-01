@@ -27,7 +27,7 @@ const columns: TableColumn[] = [
 <template>
     <Header :title="t('roles')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create roles')" href="/roles/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create roles')" href="/roles/create" class="btn btn-secondary btn-sm">
                 {{ t('create') }}
             </Link>
         </template>

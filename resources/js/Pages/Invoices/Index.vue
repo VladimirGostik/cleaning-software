@@ -172,17 +172,17 @@ function onSettingsSaved(): void {
             <button
                 v-if="allows('view invoices')"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-neutral btn-sm"
                 @click="ui.pohodaOpen = true"
             >
                 {{ t('pohoda_export_button') }}
             </button>
             <Can permission="manage billing settings">
-                <button type="button" class="btn btn-ghost btn-sm" @click="settingsDrawer.open">
+                <button type="button" class="btn btn-neutral btn-sm" @click="settingsDrawer.open">
                     {{ t('invoicing_settings') }}
                 </button>
             </Can>
-            <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-secondary btn-sm">
                 {{ t('invoice_add') }}
             </Link>
         </template>

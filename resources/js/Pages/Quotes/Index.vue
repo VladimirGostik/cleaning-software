@@ -137,7 +137,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
 <template>
     <Header :title="t('quotes')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create quotes')" href="/quotes/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create quotes')" href="/quotes/create" class="btn btn-secondary btn-sm">
                 {{ t('quote_add') }}
             </Link>
         </template>

@@ -79,7 +79,7 @@ function closePreview(): void {
             {{ t('invoice_settings_open_preview') }}
         </a>
 
-        <div v-if="ui.previewOpen" class="overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-md">
+        <div v-if="ui.previewOpen" class="overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-float">
             <div class="flex items-center justify-between border-b border-base-300 px-3 py-2">
                 <span class="text-sm font-medium">{{ t('invoice_settings_template_preview') }}</span>
                 <button

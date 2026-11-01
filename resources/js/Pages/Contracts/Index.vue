@@ -121,7 +121,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
 <template>
     <Header :title="t('contracts')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create contracts')" href="/contracts/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create contracts')" href="/contracts/create" class="btn btn-secondary btn-sm">
                 {{ t('contract_add') }}
             </Link>
         </template>
