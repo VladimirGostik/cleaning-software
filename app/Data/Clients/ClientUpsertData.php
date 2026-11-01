@@ -56,6 +56,7 @@ final class ClientUpsertData extends Data
     public static function attributes(): array
     {
         return [
+            'name' => __('validation.attributes.title'),
             'ico' => __('app.client_ico'),
         ];
     }

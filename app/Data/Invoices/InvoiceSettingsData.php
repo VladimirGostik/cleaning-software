@@ -160,4 +160,12 @@ final class InvoiceSettingsData extends Data
             'peppol_participant_id' => ['nullable', 'string', 'max:64', new PeppolParticipantId],
         ];
     }
+
+    /** @return array<string, string> */
+    public static function attributes(): array
+    {
+        return [
+            'name' => __('validation.attributes.company_name'),
+        ];
+    }
 }

@@ -32,6 +32,14 @@ final class DocumentTemplateUpsertData extends Data
         public readonly ?EmploymentContractTypeEnum $employment_type = null,
     ) {}
 
+    /** @return array<string, string> */
+    public static function attributes(): array
+    {
+        return [
+            'name' => __('validation.attributes.title'),
+        ];
+    }
+
     /** @return array<string, mixed> */
     public static function rules(): array
     {

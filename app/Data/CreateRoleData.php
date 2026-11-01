@@ -21,6 +21,14 @@ final class CreateRoleData extends Data
         public readonly array $permissions = [],
     ) {}
 
+    /** @return array<string, string> */
+    public static function attributes(): array
+    {
+        return [
+            'name' => __('validation.attributes.title'),
+        ];
+    }
+
     /** @return array<string, mixed> */
     public static function rules(): array
     {

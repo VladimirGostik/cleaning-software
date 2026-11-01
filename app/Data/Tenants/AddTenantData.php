@@ -63,4 +63,12 @@ final class AddTenantData extends Data
             swift_bic: $this->swift_bic,
         );
     }
+
+    /** @return array<string, string> */
+    public static function attributes(): array
+    {
+        return [
+            'name' => __('validation.attributes.title'),
+        ];
+    }
 }

@@ -142,4 +142,12 @@ final class RecurringInvoiceUpsertData extends Data
             'rounding_mode' => ['required', Rule::enum(RoundingModeEnum::class)],
         ];
     }
+
+    /** @return array<string, string> */
+    public static function attributes(): array
+    {
+        return [
+            'name' => __('validation.attributes.title'),
+        ];
+    }
 }

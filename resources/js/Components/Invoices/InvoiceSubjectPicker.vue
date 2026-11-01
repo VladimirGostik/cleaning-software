@@ -2,6 +2,7 @@
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import FieldError from '@/Components/Forms/FieldError.vue';
 import RadioGroup, { type RadioOption } from '@/Components/Forms/RadioGroup.vue';
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import TextInput from '@/Components/Forms/TextInput.vue';
@@ -110,6 +111,7 @@ if (form) {
             :placeholder="t('select_client')"
             required
         />
+        <FieldError v-if="props.mode !== 'standalone'" field="customer_name" />
 
         <SelectInput
             v-if="props.mode === 'object'"

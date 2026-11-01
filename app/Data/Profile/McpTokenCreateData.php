@@ -16,4 +16,12 @@ final class McpTokenCreateData extends Data
         #[Required, Max(60)]
         public readonly string $name,
     ) {}
+
+    /** @return array<string, string> */
+    public static function attributes(): array
+    {
+        return [
+            'name' => __('validation.attributes.title'),
+        ];
+    }
 }
