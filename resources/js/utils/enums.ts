@@ -231,3 +231,34 @@ export function taskStatusKey(status: App.Enums.TaskStatusEnum): string {
 export function taskPriorityKey(priority: App.Enums.TaskPriorityEnum): string {
     return `task_priority_${priority}`;
 }
+
+export const EXPENSE_CATEGORIES: readonly App.Enums.ExpenseCategoryEnum[] = [
+    'fuel',
+    'materials',
+    'cleaning_supplies',
+    'equipment',
+    'services',
+    'rent',
+    'utilities',
+    'wages',
+    'insurance',
+    'fees',
+    'bank_charges',
+    'other',
+];
+
+export const EXPENSE_STATUSES: readonly App.Enums.ExpenseStatusEnum[] = ['draft', 'confirmed'];
+
+export const EXPENSE_SOURCES: readonly App.Enums.ExpenseSourceEnum[] = ['manual', 'receipt', 'bank_csv', 'mcp'];
+
+export function expenseCategoryKey(category: App.Enums.ExpenseCategoryEnum): string {
+    return `expense_category_${category}`;
+}
+
+export function expenseStatusKey(status: App.Enums.ExpenseStatusEnum): string {
+    return `expense_status_${status}`;
+}
+
+export function expenseSourceKey(source: App.Enums.ExpenseSourceEnum): string {
+    return `expense_source_${source}`;
+}

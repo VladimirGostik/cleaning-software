@@ -528,6 +528,153 @@ readonly role_name: string,
 readonly permissions: string[] | null,
 };
 }
+namespace Expenses {
+export type BankCsvImportData = {
+readonly mapping: App.Data.Expenses.BankCsvMappingData,
+readonly rows: App.Data.Expenses.ExpenseImportRowData[],
+};
+export type BankCsvMappingData = {
+readonly delimiter: string,
+readonly date_column: string,
+readonly date_format: string,
+readonly amount_column: string | null,
+readonly counterparty_column: string | null,
+readonly note_column: string | null,
+readonly reference_column: string | null,
+readonly decimal_separator: ',' | '.',
+readonly debit_column: string | null,
+readonly credit_column: string | null,
+};
+export type ExpenseAnalysisContextData = {
+readonly companies: App.Data.Expenses.ExpenseCompanyContextData[],
+readonly today: string,
+};
+export type ExpenseAnalyzeData = {
+readonly receipt: File | null,
+readonly text: string | null,
+};
+export type ExpenseCanData = {
+readonly update: boolean,
+readonly delete: boolean,
+readonly confirm: boolean,
+};
+export type ExpenseCategoryProposalData = {
+readonly row: number,
+readonly category: App.Enums.ExpenseCategoryEnum | null,
+readonly confidence: number,
+};
+export type ExpenseCompanyContextData = {
+readonly id: string,
+readonly name: string,
+readonly ico: string | null,
+readonly iban: string | null,
+};
+export type ExpenseConfirmData = {
+readonly category: App.Enums.ExpenseCategoryEnum,
+};
+export type ExpenseDetailData = {
+readonly id: string,
+readonly tenant_id: string,
+readonly tenant_name: string | null,
+readonly status: App.Enums.ExpenseStatusEnum,
+readonly date: string,
+readonly amount: string,
+readonly currency: App.Enums.CurrencyEnum,
+readonly vat_amount: string | null,
+readonly supplier_name: string | null,
+readonly category: App.Enums.ExpenseCategoryEnum | null,
+readonly source: App.Enums.ExpenseSourceEnum,
+readonly has_receipt: boolean,
+readonly proposed_category: App.Enums.ExpenseCategoryEnum | null,
+readonly description: string | null,
+readonly bank_reference: string | null,
+readonly receipt: App.Data.MediaFileData | null,
+readonly ai_proposal: App.Data.Expenses.ExpenseProposalData | null,
+readonly confirmed_at: string | null,
+readonly can: App.Data.Expenses.ExpenseCanData,
+};
+export type ExpenseDraftData = {
+readonly date: string | null,
+readonly amount: string | null,
+readonly currency: App.Enums.CurrencyEnum,
+readonly vat_amount: string | null,
+readonly supplier_name: string | null,
+readonly description: string | null,
+readonly proposal: App.Data.Expenses.ExpenseProposalData,
+};
+export type ExpenseFormContextData = {
+readonly companies: App.Data.Auth.MobileCompanyData[],
+readonly categories: App.Enums.ExpenseCategoryEnum[],
+};
+export type ExpenseImportPreviewData = {
+readonly mapping: App.Data.Expenses.BankCsvMappingData,
+readonly rows: App.Data.Expenses.ExpenseImportRowData[],
+readonly skipped_credit_rows: number,
+};
+export type ExpenseImportResultData = {
+readonly created: number,
+readonly skipped_duplicates: number,
+};
+export type ExpenseImportRowData = {
+readonly row: number,
+readonly date: string,
+readonly amount: string,
+readonly counterparty: string | null,
+readonly note: string | null,
+readonly reference: string | null,
+readonly proposed_category: App.Enums.ExpenseCategoryEnum | null,
+readonly confidence: number,
+readonly duplicate: boolean,
+readonly include: boolean,
+};
+export type ExpenseImportUploadData = {
+readonly file: File,
+};
+export type ExpenseListItemData = {
+readonly id: string,
+readonly tenant_id: string,
+readonly tenant_name: string | null,
+readonly status: App.Enums.ExpenseStatusEnum,
+readonly date: string,
+readonly amount: string,
+readonly currency: App.Enums.CurrencyEnum,
+readonly vat_amount: string | null,
+readonly supplier_name: string | null,
+readonly category: App.Enums.ExpenseCategoryEnum | null,
+readonly source: App.Enums.ExpenseSourceEnum,
+readonly has_receipt: boolean,
+readonly proposed_category: App.Enums.ExpenseCategoryEnum | null,
+};
+export type ExpenseProposalData = {
+readonly category: App.Enums.ExpenseCategoryEnum | null,
+readonly tenant_id: string | null,
+readonly confidence: number,
+readonly reason: string | null,
+};
+export type ExpenseReceiptUploadData = {
+readonly receipt: File,
+};
+export type ExpenseRowData = {
+readonly row: number,
+readonly amount: string,
+readonly counterparty: string | null,
+readonly note: string | null,
+};
+export type ExpenseUpsertData = {
+readonly date: string,
+readonly amount: string,
+readonly tenant_id?: string,
+readonly currency: App.Enums.CurrencyEnum,
+readonly vat_amount: string | null,
+readonly supplier_name: string | null,
+readonly description: string | null,
+readonly category: App.Enums.ExpenseCategoryEnum | null,
+readonly status: App.Enums.ExpenseStatusEnum | null,
+readonly receipt_uuid: string | null,
+readonly source: App.Enums.ExpenseSourceEnum,
+readonly ai_proposal: App.Data.Expenses.ExpenseProposalData | null,
+};
+}
 namespace Invitations {
 export type AcceptInvitationData = {
 readonly password: string,
@@ -1373,6 +1520,9 @@ export type DashboardAlertTypeEnum = "overdue_invoice" | "supplier_incomplete" |
 export type DevicePlatformEnum = "android" | "ios";
 export type EfaStatusEnum = "none" | "ready" | "generated" | "submitted" | "accepted" | "rejected" | "failed";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
+export type ExpenseCategoryEnum = "fuel" | "materials" | "cleaning_supplies" | "equipment" | "services" | "rent" | "utilities" | "wages" | "insurance" | "fees" | "bank_charges" | "other";
+export type ExpenseSourceEnum = "manual" | "receipt" | "bank_csv" | "mcp";
+export type ExpenseStatusEnum = "draft" | "confirmed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";

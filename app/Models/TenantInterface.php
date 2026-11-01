@@ -33,6 +33,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $default_footer_text
  * @property string|null $invoice_mail_subject
  * @property string|null $invoice_mail_body
+ * @property array<string, mixed>|null $bank_csv_mapping
  */
 #[Fillable([
     'tenant_id',
@@ -47,6 +48,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'default_footer_text',
     'invoice_mail_subject',
     'invoice_mail_body',
+    'bank_csv_mapping',
 ])]
 final class TenantInterface extends Model
 {
@@ -63,6 +65,7 @@ final class TenantInterface extends Model
             'default_payment_type' => PaymentTypeEnum::class,
             'default_currency' => CurrencyEnum::class,
             'default_rounding_mode' => RoundingModeEnum::class,
+            'bank_csv_mapping' => 'array',
         ];
     }
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Expense;
 use App\Models\Tenant;
 use App\Models\User;
 
@@ -13,6 +14,7 @@ return [
      */
     'models' => [
         User::class => ['name' => 'users.edit', 'param' => 'user'],
+        Expense::class => ['name' => 'expenses.show', 'param' => 'expense'],
         // settings.invoicing takes no route parameter — omit 'param', resolver links to the plain route.
         Tenant::class => ['name' => 'settings.invoicing'],
     ],

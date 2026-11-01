@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeviceController;
+use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\NotificationBellController;
@@ -54,6 +55,21 @@ Route::middleware(['auth:sanctum', 'ability:mobile', 'tenant.context', 'tenant.r
     Route::post('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('api.tasks.complete')->whereUuid('task');
     Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('api.tasks.reopen')->whereUuid('task');
     Route::post('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('api.tasks.assign')->whereUuid('task');
+
+    Route::get('/expenses', [ExpenseController::class, 'index'])->name('api.expenses.index');
+    Route::get('/expenses/form-context', [ExpenseController::class, 'formContext'])->name('api.expenses.form-context');
+    Route::middleware('throttle:ai-analyze')->group(function (): void {
+        Route::post('/expenses/analyze', [ExpenseController::class, 'analyze'])->name('api.expenses.analyze');
+        Route::post('/expenses/import/preview', [ExpenseController::class, 'importPreview'])->name('api.expenses.import.preview');
+    });
+    Route::post('/expenses/import', [ExpenseController::class, 'import'])->name('api.expenses.import');
+    Route::post('/expenses', [ExpenseController::class, 'store'])->name('api.expenses.store');
+    Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('api.expenses.show')->whereUuid('expense');
+    Route::match(['PUT', 'PATCH'], '/expenses/{expense}', [ExpenseController::class, 'update'])->name('api.expenses.update')->whereUuid('expense');
+    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('api.expenses.destroy')->whereUuid('expense');
+    Route::post('/expenses/{expense}/confirm', [ExpenseController::class, 'confirm'])->name('api.expenses.confirm')->whereUuid('expense');
+    Route::post('/expenses/{expense}/receipt', [ExpenseController::class, 'attachReceipt'])->name('api.expenses.attach-receipt')->whereUuid('expense');
+    Route::get('/expenses/{expense}/receipt', [ExpenseController::class, 'receipt'])->name('api.expenses.receipt')->whereUuid('expense');
 
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {

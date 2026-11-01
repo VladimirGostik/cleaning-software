@@ -1,0 +1,172 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use App\Data\Expenses\BankCsvImportData;
+use App\Data\Expenses\ExpenseAnalyzeData;
+use App\Data\Expenses\ExpenseConfirmData;
+use App\Data\Expenses\ExpenseImportUploadData;
+use App\Data\Expenses\ExpenseReceiptUploadData;
+use App\Data\Expenses\ExpenseUpsertData;
+use App\Enums\PermissionEnum;
+use App\Models\Expense;
+use App\Models\User;
+use App\Navigation\NavItem;
+use App\Services\ExpenseImportService;
+use App\Services\ExpenseService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Inertia\Inertia;
+use Inertia\Response;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+final class ExpenseController extends Controller
+{
+    public function __construct(
+        private readonly ExpenseService $expenses,
+        private readonly ExpenseImportService $imports,
+    ) {}
+
+    #[Authorize('viewAny', Expense::class)]
+    #[NavItem(label: 'app.expenses', route: 'expenses.index', icon: 'BanknotesIcon', permission: PermissionEnum::ViewExpenses->value, order: 36)]
+    public function index(Request $request): Response
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return Inertia::render('Expenses/Index', [
+            'expenses' => $this->expenses->paginate($request),
+            'filters' => $request->query(),
+            'context' => $this->expenses->formContext($actor),
+        ]);
+    }
+
+    #[Authorize('import', Expense::class)]
+    public function importPage(Request $request): Response
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return Inertia::render('Expenses/Import', [
+            'context' => $this->expenses->formContext($actor),
+        ]);
+    }
+
+    #[Authorize('create', Expense::class)]
+    public function analyze(ExpenseAnalyzeData $data, Request $request): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return response()->json($this->expenses->analyze($data, $actor));
+    }
+
+    #[Authorize('import', Expense::class)]
+    public function importPreview(ExpenseImportUploadData $data): JsonResponse
+    {
+        return response()->json($this->imports->preview($data->file));
+    }
+
+    #[Authorize('import', Expense::class)]
+    public function import(BankCsvImportData $data, Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $result = $this->imports->import($data, $actor);
+
+        return to_route('expenses.index', ['filter' => ['status' => 'draft']])
+            ->with('success', __('app.expense_import_done', ['created' => $result->created, 'skipped' => $result->skipped_duplicates]));
+    }
+
+    #[Authorize('create', Expense::class)]
+    public function store(ExpenseUpsertData $data, Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $this->expenses->assertMayCreate($data, $actor);
+
+        $expense = $this->expenses->create($data, $actor, $request->session()->getId());
+
+        $visibleHere = $expense->tenant_id === current_tenant_id();
+
+        return to_route($visibleHere ? 'expenses.show' : 'expenses.index', $visibleHere ? $expense : [])
+            ->with('success', __('app.expense_created'));
+    }
+
+    #[Authorize('view', 'expense')]
+    public function show(Expense $expense, Request $request): Response
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return Inertia::render('Expenses/Show', [
+            'expense' => $this->expenses->detail($expense, $actor),
+            'context' => $this->expenses->formContext($actor),
+        ]);
+    }
+
+    #[Authorize('update', 'expense')]
+    public function update(ExpenseUpsertData $data, Expense $expense, Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $this->expenses->update($expense, $data, $actor, $request->session()->getId());
+
+        return to_route('expenses.show', $expense)->with('success', __('app.expense_updated'));
+    }
+
+    #[Authorize('delete', 'expense')]
+    public function destroy(Expense $expense): RedirectResponse
+    {
+        $this->expenses->delete($expense);
+
+        return to_route('expenses.index')->with('success', __('app.expense_deleted'));
+    }
+
+    #[Authorize('confirm', 'expense')]
+    public function confirm(ExpenseConfirmData $data, Expense $expense): RedirectResponse
+    {
+        $this->expenses->confirm($expense, $data);
+
+        return back()->with('success', __('app.expense_confirmed'));
+    }
+
+    #[Authorize('update', 'expense')]
+    public function attachReceipt(ExpenseReceiptUploadData $data, Expense $expense): RedirectResponse
+    {
+        $this->expenses->attachReceipt($expense, $data->receipt);
+
+        return back()->with('success', __('app.expense_receipt_attached'));
+    }
+
+    #[Authorize('view', 'expense')]
+    public function receipt(Expense $expense): StreamedResponse
+    {
+        $media = $expense->getFirstMedia(Expense::RECEIPT_COLLECTION);
+
+        abort_if($media === null, 404);
+
+        return response()->stream(
+            static function () use ($media): void {
+                /** @var resource $stream */
+                $stream = $media->stream();
+                fpassthru($stream);
+            },
+            200,
+            [
+                'Content-Type' => (string) $media->mime_type,
+                'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_INLINE, $media->file_name, 'receipt'),
+                'Cache-Control' => 'private, no-store',
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+        );
+    }
+}

@@ -11,6 +11,7 @@ use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EInvoiceController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceBulkController;
 use App\Http\Controllers\InvoiceController;
@@ -251,6 +252,23 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::match(['PUT', 'PATCH'], '/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update')->whereUuid('task');
         Route::post('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('tasks.assign')->whereUuid('task');
+    });
+
+    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::get('/expenses/import', [ExpenseController::class, 'importPage'])->name('expenses.import');
+    Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show')->whereUuid('expense');
+    Route::get('/expenses/{expense}/receipt', [ExpenseController::class, 'receipt'])->name('expenses.receipt')->whereUuid('expense');
+    Route::post('/expenses/{expense}/receipt', [ExpenseController::class, 'attachReceipt'])->name('expenses.receipt.store')->whereUuid('expense');
+    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy')->whereUuid('expense');
+    Route::middleware('throttle:ai-analyze')->group(function (): void {
+        Route::post('/expenses/analyze', [ExpenseController::class, 'analyze'])->name('expenses.analyze');
+        Route::post('/expenses/import/preview', [ExpenseController::class, 'importPreview'])->name('expenses.import.preview');
+    });
+    Route::post('/expenses/import', [ExpenseController::class, 'import'])->name('expenses.import.store');
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::match(['PUT', 'PATCH'], '/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update')->whereUuid('expense');
+        Route::post('/expenses/{expense}/confirm', [ExpenseController::class, 'confirm'])->name('expenses.confirm')->whereUuid('expense');
     });
 
     Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
