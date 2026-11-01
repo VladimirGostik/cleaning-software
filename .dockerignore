@@ -16,6 +16,7 @@ vendor/
 .github/
 .docker/
 docker/
+!docker/php/uploads.ini
 compose.yml
 compose.override.yml
 

@@ -82,6 +82,7 @@ RUN pecl install redis && docker-php-ext-enable redis
 
 # PHP-FPM + OPcache tuning
 COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/zz-app.conf
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/zz-uploads.ini
 RUN { \
         echo "opcache.enable=1"; \
         echo "opcache.memory_consumption=256"; \

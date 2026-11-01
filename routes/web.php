@@ -32,6 +32,7 @@ use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ScheduledJobController;
+use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TemporaryUploadController;
 use App\Http\Controllers\TenantController;
@@ -272,6 +273,9 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->whereUuid('task');
     Route::post('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->whereUuid('task');
     Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->whereUuid('task');
+    Route::get('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'show'])->name('tasks.attachments.show')->whereUuid(['task', 'attachment']);
+    Route::delete('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('tasks.attachments.destroy')->whereUuid(['task', 'attachment']);
+    Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:task-attachments')->name('tasks.attachments.store')->whereUuid('task');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::match(['PUT', 'PATCH'], '/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update')->whereUuid('task');

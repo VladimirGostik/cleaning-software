@@ -9,6 +9,7 @@ use App\Enums\PermissionEnum;
 use App\Enums\TaskPriorityEnum;
 use App\Enums\TaskSourceEnum;
 use App\Enums\TaskStatusEnum;
+use App\Rules\TaskAttachmentFile;
 use App\Scopes\TaskScope;
 use App\Scopes\TenantScope;
 use Database\Factories\TaskFactory;
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property string $id
@@ -53,10 +56,12 @@ use Spatie\Activitylog\Support\LogOptions;
     'priority', 'due_at', 'remind_at', 'reminded_at', 'completed_at', 'source', 'taskable_type', 'taskable_id',
 ])]
 #[ScopedBy(TaskScope::class)]
-final class Task extends Model
+final class Task extends Model implements HasMedia
 {
     /** @use HasFactory<TaskFactory> */
-    use HasFactory, HasUuids, LogsActivity, SoftDeletes;
+    use HasFactory, HasUuids, InteractsWithMedia, LogsActivity, SoftDeletes;
+
+    public const string ATTACHMENTS_COLLECTION = 'attachments';
 
     /**
      * Alias => class stored in `taskable_type` (global morph aliases would change media/audit rows); only Task -> subject is supported.
@@ -84,6 +89,15 @@ final class Task extends Model
             'reminded_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $disk = config('tasks.attachments.disk', 'local');
+
+        $this->addMediaCollection(self::ATTACHMENTS_COLLECTION)
+            ->acceptsMimeTypes(TaskAttachmentFile::detectedMimes())
+            ->useDisk(is_string($disk) ? $disk : 'local');
     }
 
     public function getActivitylogOptions(): LogOptions

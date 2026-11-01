@@ -9,7 +9,7 @@ use RuntimeException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 /**
- * @property string $tenant_id
+ * @property string|null $tenant_id
  */
 final class Media extends SpatieMedia
 {
@@ -17,6 +17,18 @@ final class Media extends SpatieMedia
     {
         self::creating(function (self $media): void {
             if ($media->getAttribute('tenant_id') !== null) {
+                return;
+            }
+
+            if ($media->getAttribute('model_type') === (new Task)->getMorphClass()) {
+                $owner = Task::query()->find($media->getAttribute('model_id'));
+
+                if (! $owner instanceof Task) {
+                    throw new RuntimeException('media.owner_missing');
+                }
+
+                $media->setAttribute('tenant_id', $owner->tenant_id);
+
                 return;
             }
 

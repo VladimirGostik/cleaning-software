@@ -10,6 +10,7 @@ use App\Enums\PermissionEnum;
 use App\Models\Task;
 use App\Models\User;
 use App\Navigation\NavItem;
+use App\Services\TaskAttachmentService;
 use App\Services\TaskService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ use Inertia\Response;
 
 final class TaskController extends Controller
 {
-    public function __construct(private readonly TaskService $tasks) {}
+    public function __construct(private readonly TaskService $tasks, private readonly TaskAttachmentService $attachments) {}
 
     #[Authorize('viewAny', Task::class)]
     #[NavItem(label: 'app.tasks', route: 'tasks.index', icon: 'CheckCircleIcon', permission: PermissionEnum::ViewTasks->value, order: 12)]
@@ -58,6 +59,7 @@ final class TaskController extends Controller
 
         return Inertia::render('Tasks/Show', [
             'task' => $this->tasks->detail($task, $actor),
+            'attachments' => $this->attachments->list($task, $actor, 'tasks.attachments.show'),
             'context' => $this->tasks->formContext($actor),
         ]);
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Media;
 
 use App\Models\Media;
+use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -123,6 +124,19 @@ final class MediaControllerTest extends TestCase
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->where('media.data', fn ($data) => collect($data)->pluck('file_name')->doesntContain('foreign.jpg')),
         );
+    }
+
+    public function test_task_owned_media_is_absent_from_index_and_forbidden_on_show(): void
+    {
+        $user = $this->userWithPermission('view media');
+        $task = Task::factory()->global()->createdBy($user)->create();
+        $taskMedia = $this->createMedia(['model_type' => $task->getMorphClass(), 'model_id' => $task->id, 'file_name' => 'task-file.jpg', 'tenant_id' => current_tenant_id()]);
+        $this->createMedia(['file_name' => 'plain.jpg']);
+
+        $this->withoutVite()->actingAs($user)->get('/media')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('media.data', fn ($data) => is_iterable($data) && array_column(iterator_to_array($data), 'file_name') === ['plain.jpg']));
+
+        $this->actingAs($user)->get("/media/{$taskMedia->id}")->assertForbidden();
     }
 
     // -------------------------------------------------------------------------

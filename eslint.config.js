@@ -19,6 +19,8 @@ const browserGlobals = {
     HTMLTextAreaElement: 'readonly',
     HTMLMetaElement: 'readonly',
     HTMLDetailsElement: 'readonly',
+    HTMLDialogElement: 'readonly',
+    BeforeUnloadEvent: 'readonly',
     Node: 'readonly',
     Element: 'readonly',
     Response: 'readonly',

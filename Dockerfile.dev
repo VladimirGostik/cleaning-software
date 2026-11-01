@@ -36,6 +36,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Dev-only: default 128M CLI memory_limit is too low for some test suites
 # (e.g. MediaLibrary mime-guess). Raise for CLI/test runs only.
 RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/zz-memory-limit.ini
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/zz-uploads.ini
 
 WORKDIR /app
 
