@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "cleanmaster/cleanmaster-admin",
     "type": "project",
-    "description": "CleanMaster application.",
+    "description": "Kegos Clean application.",
     "keywords": [
         "laravel",
         "framework"

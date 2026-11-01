@@ -522,7 +522,7 @@ final class InvoicePdfTest extends TestCase
     {
         $html = View::make('pdf.invoices.kegos', ['invoice' => $this->boundInvoice(), 'qrDataUri' => null])->render();
 
-        $this->assertStringContainsString('aria-label="KEGOS"', $html);
+        $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
         $this->assertStringContainsString('class="kg-rule"', $html);
         $this->assertStringContainsString("'Geist'", $html);
         $this->assertStringNotContainsString('#1e40af', $html);

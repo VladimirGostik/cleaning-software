@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'KEGOS') }}</title>
+        <title inertia>{{ config('app.name', 'Kegos Clean') }}</title>
 
         <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ Vite::asset('resources/fonts/geist/Geist[wght].woff2') }}">
         <link rel="icon" href="/favicon.ico" sizes="48x48">

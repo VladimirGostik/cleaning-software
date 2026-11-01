@@ -135,7 +135,7 @@ final class QuotePdfTest extends TestCase
         $html = View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])->render();
         $footer = View::make('pdf.quotes.footer', ['tenant' => $tenant, 'preview' => false])->render();
 
-        $this->assertStringContainsString('aria-label="KEGOS"', $html);
+        $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
         $this->assertStringContainsString('class="kg-rule"', $html);
         $this->assertStringContainsString("1\u{00A0}250,00\u{00A0}€", $html);
         $this->assertStringContainsString('Quote Footer s.r.o.', $footer);

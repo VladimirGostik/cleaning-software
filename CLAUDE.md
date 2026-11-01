@@ -1,6 +1,6 @@
 # CleanMaster
 
-Product name in the UI is KEGOS; class names (`CleanMasterServer`) and the local `cleanmaster` MCP handle are unchanged.
+Product name everywhere is `Kegos Clean` (the logo artwork still reads KEGOS); class names (`CleanMasterServer`) and the local `cleanmaster` MCP handle are unchanged.
 
 Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonical inogile `vue-skeleton`
 (rebuild merged into `main`); business modules are ported phase by phase per

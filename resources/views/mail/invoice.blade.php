@@ -17,7 +17,7 @@
 <body>
 <div class="wrapper">
     <div class="header">
-        <img src="{{ isset($message) ? $message->embed(public_path('images/kegos-logo-email.png')) : asset('images/kegos-logo-email.png') }}" alt="KEGOS" width="180" style="display:block; width:180px; height:auto;" />
+        <img src="{{ isset($message) ? $message->embed(public_path('images/kegos-logo-email.png')) : asset('images/kegos-logo-email.png') }}" alt="Kegos Clean" width="180" style="display:block; width:180px; height:auto;" />
         <h1>{{ __('app.invoice_mail_heading') }}</h1>
     </div>
     <div class="body">

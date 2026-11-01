@@ -42,7 +42,7 @@ final class McpAuthTest extends TestCase
             'protocolVersion' => '2025-06-18',
             'capabilities' => (object) [],
             'clientInfo' => ['name' => 'phpunit', 'version' => '1'],
-        ])->assertOk()->assertJsonPath('result.serverInfo.name', 'KEGOS');
+        ])->assertOk()->assertJsonPath('result.serverInfo.name', 'Kegos Clean');
 
         /** @var list<string> $names */
         $names = $this->rpc($token, 'tools/list', ['per_page' => 100])->assertOk()->json('result.tools.*.name');

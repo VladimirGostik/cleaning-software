@@ -149,7 +149,7 @@ final class PohodaXmlBuilderTest extends TestCase
         $this->assertSame('12345678', $this->value($xp, '/dat:dataPack/@ico'));
         $this->assertSame('cleanmaster-12345678-2026-09-01-2026-09-30', $this->value($xp, '/dat:dataPack/@id'));
         $this->assertSame('2.0', $this->value($xp, '/dat:dataPack/@version'));
-        $this->assertSame('KEGOS', $this->value($xp, '/dat:dataPack/@application'));
+        $this->assertSame('Kegos Clean', $this->value($xp, '/dat:dataPack/@application'));
         $this->assertSame('FA-2026-0001', $this->value($xp, '//dat:dataPackItem/@id'));
 
         $h = '//inv:invoiceHeader/';

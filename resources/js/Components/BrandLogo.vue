@@ -34,5 +34,5 @@ const src = computed<string>(() => {
 </script>
 
 <template>
-    <img :src="src" :width="width" :height="size" :style="{ height: `${size}px` }" class="w-auto" alt="KEGOS" />
+    <img :src="src" :width="width" :height="size" :style="{ height: `${size}px` }" class="w-auto" alt="Kegos Clean" />
 </template>

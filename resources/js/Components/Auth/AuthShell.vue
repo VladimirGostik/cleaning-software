@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
     <div class="relative flex min-h-screen flex-col items-center justify-center bg-white px-8 py-24">
-        <a href="/login" class="absolute left-8 top-6" aria-label="KEGOS">
+        <a href="/login" class="absolute left-8 top-6" aria-label="Kegos Clean">
             <BrandLogo :size="28" />
         </a>
 
