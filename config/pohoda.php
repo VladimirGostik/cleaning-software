@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'application' => 'CleanMaster',
+    'application' => 'KEGOS',
 
     'version' => '2.0',
 

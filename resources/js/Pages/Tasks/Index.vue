@@ -54,10 +54,10 @@ const showEmptyState = computed(() => props.tasks.total === 0 && !hasActiveFilte
 const columns: TableColumn<App.Data.Tasks.TaskListItemData>[] = [
     { key: 'title', label: t('task_title'), sortable: true, primary: true },
     { key: 'status', label: t('status'), sortable: true },
-    { key: 'priority', label: t('task_priority'), sortable: false },
+    { key: 'priority', label: t('task_priority'), sortable: false, hideBelow: 1440 },
     { key: 'due_at', label: t('task_due_at'), sortable: true, nowrap: true },
     { key: 'tenant_name', label: t('task_company'), sortable: false },
-    { key: 'assignee_name', label: t('task_assignee'), sortable: false },
+    { key: 'assignee_name', label: t('task_assignee'), sortable: false, hideBelow: 1440 },
     { key: 'subject', label: t('task_subject'), sortable: false, hideBelow: 1440 },
 ];
 
