@@ -32,6 +32,13 @@ final class PrepareActionTool extends TenantTool
         ];
     }
 
+    public function screenedOutput(string $text): string
+    {
+        $data = json_decode($text, true);
+
+        return is_array($data) ? (string) json_encode($data['pending_action'] ?? $data, JSON_UNESCAPED_UNICODE) : $text;
+    }
+
     public function execute(Request $request, User $user, string $companyId, ActionConfirmationService $actions): Response
     {
         $action = PendingActionEnum::from($this->id($request, 'action'));

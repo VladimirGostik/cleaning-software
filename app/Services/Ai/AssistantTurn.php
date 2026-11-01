@@ -27,7 +27,18 @@ final class AssistantTurn
         'update_invoice_draft' => [AssistantActionTypeEnum::Updated, 'invoice', '/invoices/'],
     ];
 
+    public readonly string $nonce;
+
     private float $deadline;
+
+    private bool $restricted = false;
+
+    private int $writeAttempts = 0;
+
+    private int $prepareAttempts = 0;
+
+    /** @var list<string> */
+    private array $blockedTools = [];
 
     /** @var list<string> */
     private array $pendingActionIds = [];
@@ -37,9 +48,53 @@ final class AssistantTurn
 
     public function __construct(?float $budgetSeconds = null)
     {
+        $this->nonce = bin2hex(random_bytes(8));
         $configured = config('ai.assistant.turn_seconds', 45);
 
         $this->deadline = microtime(true) + ($budgetSeconds ?? (is_numeric($configured) ? (float) $configured : 45.0));
+    }
+
+    public function restrict(): void
+    {
+        $this->restricted = true;
+    }
+
+    public function isRestricted(): bool
+    {
+        return $this->restricted;
+    }
+
+    /** Fails closed once anything suspicious was seen in this turn, and caps how much one turn can change. */
+    public function refusalForWrite(string $tool): ?string
+    {
+        if ($this->restricted) {
+            $this->blockedTools[] = $tool;
+
+            return __('app.assistant_guard_blocked');
+        }
+
+        if ($tool === 'prepare_action') {
+            if (++$this->prepareAttempts > config()->integer('ai.guard.max_prepares_per_turn', 5)) {
+                return __('app.assistant_guard_limit');
+            }
+
+            return null;
+        }
+
+        if (++$this->writeAttempts > config()->integer('ai.guard.max_writes_per_turn', 10)) {
+            return __('app.assistant_guard_limit');
+        }
+
+        return null;
+    }
+
+    public function securityNotice(): ?string
+    {
+        if (! $this->restricted) {
+            return null;
+        }
+
+        return __($this->blockedTools === [] ? 'app.assistant_guard_notice' : 'app.assistant_guard_notice_blocked');
     }
 
     public function expired(): bool

@@ -21,6 +21,7 @@ use App\Models\Expense;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use App\Models\User;
+use App\Services\Ai\Guard\PromptGuard;
 use App\Services\Expenses\BankStatementParser;
 use App\Services\Expenses\ParsedStatement;
 use App\Services\Expenses\StatementRow;
@@ -35,6 +36,7 @@ final readonly class ExpenseImportService
         private DatabaseManager $db,
         private AnalyzesExpenses $analyzer,
         private BankStatementParser $parser,
+        private PromptGuard $promptGuard,
     ) {}
 
     public function preview(UploadedFile $file): ExpenseImportPreviewData
@@ -202,7 +204,7 @@ final readonly class ExpenseImportService
     private function sampleRows(ParsedStatement $table): array
     {
         return array_map(
-            static fn (array $cells): array => array_map(static fn (string $cell): string => mb_substr($cell, 0, 80), $cells),
+            fn (array $cells): array => array_map(fn (string $cell): string => $this->promptGuard->scan($cell)->flagged ? '' : mb_substr($cell, 0, 80), $cells),
             array_slice($table->records, 0, 3),
         );
     }
@@ -220,9 +222,19 @@ final readonly class ExpenseImportService
         $pending = [];
 
         foreach ($rows as $position => $row) {
-            if (! isset($known[$hashes[$position]])) {
-                $pending[] = new ExpenseRowData($row->row, $row->amount, $row->counterparty, $row->note);
+            if (isset($known[$hashes[$position]])) {
+                continue;
             }
+
+            $verdict = $this->promptGuard->scan(trim($row->counterparty."\n".$row->note));
+
+            if ($verdict->flagged) {
+                $this->promptGuard->record(null, 'bank_csv_row', current_tenant_id(), null, $verdict);
+
+                continue;
+            }
+
+            $pending[] = new ExpenseRowData($row->row, $row->amount, $row->counterparty, $row->note);
         }
 
         $byRow = [];

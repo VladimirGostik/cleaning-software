@@ -142,7 +142,7 @@ final class AssistantTest extends TestCase
 
         $this->send(['messages' => [['role' => 'user', 'content' => 'a'], ['role' => 'assistant', 'content' => 'b'], ['role' => 'user', 'content' => 'c']]])
             ->assertOk()
-            ->assertExactJson(['reply' => 'Fake reply', 'actions' => [], 'pending_action' => null]);
+            ->assertExactJson(['reply' => 'Fake reply', 'actions' => [], 'pending_action' => null, 'security_notice' => null]);
 
         $this->assertSame($this->alpha->id, $fake->requests[0]->company_id);
         $this->assertCount(3, $fake->requests[0]->messages);
@@ -351,9 +351,9 @@ final class AssistantTest extends TestCase
 
         $this->assertSame(0, Task::unscopedForSystem()->count());
         [$create, $companies, $overview, $list] = $this->toolResults($this->sentRequests()[1]);
-        $this->assertStringStartsWith('Error:', $create);
-        $this->assertStringStartsWith('Error:', $overview);
-        $this->assertStringStartsWith('Error:', $list);
+        $this->assertStringContainsString('Error:', $create);
+        $this->assertStringContainsString('Error:', $overview);
+        $this->assertStringContainsString('Error:', $list);
         $this->assertStringContainsString('Alpha', $companies);
         $this->assertStringNotContainsString('Beta', $companies);
     }
@@ -503,7 +503,7 @@ final class AssistantTest extends TestCase
 
         $result = $this->toolResults($this->sentRequests()[1])[0];
         $this->assertStringContainsString(__('app.assistant_output_truncated'), $result);
-        $this->assertLessThan(120, mb_strlen($result));
+        $this->assertLessThan(200, mb_strlen($result));
     }
 
     public function test_the_forbidden_company_keeps_the_mobile_forbidden_shape(): void

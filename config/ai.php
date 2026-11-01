@@ -31,6 +31,12 @@ return [
         'max_total_chars' => 12000,
     ],
 
+    'guard' => [
+        'mcp_restriction_minutes' => 15,
+        'max_writes_per_turn' => 10,
+        'max_prepares_per_turn' => 5,
+    ],
+
     'task_parse_max_chars' => 2000,
 
     'confirm_channels' => [
