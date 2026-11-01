@@ -57,18 +57,18 @@ final class PeppolIdTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
 
-        $this->put(route('settings.invoicing.update'), $this->payload(['peppol_participant_id' => '0245:12345678']))
+        $this->put(route('settings.invoicing.update'), $this->payload(['peppol_participant_id' => '0245:2012345678']))
             ->assertRedirect(route('settings.invoicing'));
 
-        $this->assertSame('0245:12345678', $tenant->refresh()->peppol_participant_id);
+        $this->assertSame('0245:2012345678', $tenant->refresh()->peppol_participant_id);
         $this->get(route('settings.invoicing'))->assertInertia(
-            fn (AssertableInertia $page) => $page->where('settings.peppol_participant_id', '0245:12345678'),
+            fn (AssertableInertia $page) => $page->where('settings.peppol_participant_id', '0245:2012345678'),
         );
     }
 
     public function test_blank_value_is_stored_as_null_and_omitted_field_is_accepted(): void
     {
-        $tenant = Tenant::factory()->create(['peppol_participant_id' => '0245:12345678']);
+        $tenant = Tenant::factory()->create(['peppol_participant_id' => '0245:2012345678']);
         $this->actingAsTenantUser('Admin', $tenant);
 
         $this->put(route('settings.invoicing.update'), $this->payload(['peppol_participant_id' => '  ']))
@@ -83,7 +83,7 @@ final class PeppolIdTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
 
-        foreach (['abc', '0245-123', '0245:', '0245:a b', '024:123', '0245:'.str_repeat('1', 60)] as $bad) {
+        foreach (['abc', '0245-123', '0245:', '0245:a b', '024:123', '0245:'.str_repeat('1', 60), '0245:12345678'] as $bad) {
             $this->put(route('settings.invoicing.update'), $this->payload(['peppol_participant_id' => $bad]))
                 ->assertSessionHasErrors('peppol_participant_id');
         }
@@ -98,39 +98,39 @@ final class PeppolIdTest extends TestCase
     {
         $this->actingAs($this->userWithPermission('view invoices'));
 
-        $this->put(route('settings.invoicing.update'), $this->payload(['peppol_participant_id' => '0245:12345678']))->assertForbidden();
+        $this->put(route('settings.invoicing.update'), $this->payload(['peppol_participant_id' => '0245:2012345678']))->assertForbidden();
     }
 
     public function test_new_invoice_snapshots_supplier_and_client_peppol_ids(): void
     {
-        $tenant = Tenant::factory()->create(['peppol_participant_id' => '0245:12345678']);
+        $tenant = Tenant::factory()->create(['peppol_participant_id' => '0245:2012345678']);
         $this->bindTenant($tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'peppol_participant_id' => '9950:SK2020']);
 
         $invoice = app(InvoiceService::class)->create($this->upsert($client->id));
 
-        $this->assertSame('0245:12345678', $invoice->supplier_peppol_participant_id);
+        $this->assertSame('0245:2012345678', $invoice->supplier_peppol_participant_id);
         $this->assertSame('9950:SK2020', $invoice->customer_peppol_participant_id);
 
-        $tenant->update(['peppol_participant_id' => '0245:99999999']);
+        $tenant->update(['peppol_participant_id' => '0245:2099999999']);
         $client->update(['peppol_participant_id' => null]);
 
-        $this->assertSame('0245:12345678', $invoice->refresh()->supplier_peppol_participant_id);
+        $this->assertSame('0245:2012345678', $invoice->refresh()->supplier_peppol_participant_id);
         $this->assertSame('9950:SK2020', $invoice->customer_peppol_participant_id);
     }
 
     public function test_draft_update_resnapshots_and_clientless_invoice_has_no_customer_id(): void
     {
-        $tenant = Tenant::factory()->create(['peppol_participant_id' => '0245:12345678']);
+        $tenant = Tenant::factory()->create(['peppol_participant_id' => '0245:2012345678']);
         $this->bindTenant($tenant);
 
         $invoice = app(InvoiceService::class)->create($this->upsert(null));
         $this->assertNull($invoice->customer_peppol_participant_id);
 
-        $tenant->update(['peppol_participant_id' => '0245:77777777']);
+        $tenant->update(['peppol_participant_id' => '0245:2077777777']);
         app(InvoiceService::class)->update($invoice, $this->upsert(null));
 
-        $this->assertSame('0245:77777777', $invoice->refresh()->supplier_peppol_participant_id);
+        $this->assertSame('0245:2077777777', $invoice->refresh()->supplier_peppol_participant_id);
     }
 
     private function upsert(?string $clientId): InvoiceUpsertData

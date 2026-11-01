@@ -7,6 +7,7 @@ namespace App\Services\Efa;
 use App\Enums\PaymentTypeEnum;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Rules\PeppolParticipantId;
 use XMLWriter;
 
 /**
@@ -56,8 +57,12 @@ final readonly class UblInvoiceXmlBuilder
             }
         }
 
-        if ($blank($invoice->customer_ico) && $blank($invoice->customer_peppol_participant_id)) {
-            $missing[] = 'customer_ico';
+        if ($this->supplier($invoice)['endpoint'] === null) {
+            $missing[] = 'supplier_dic';
+        }
+
+        if ($this->customer($invoice)['endpoint'] === null) {
+            $missing[] = 'customer_dic';
         }
 
         $invoice->loadMissing('items');
@@ -206,7 +211,7 @@ final readonly class UblInvoiceXmlBuilder
     {
         return [
             'name' => $invoice->supplier_name,
-            'endpoint' => $this->endpoint($invoice->supplier_peppol_participant_id, $invoice->supplier_ico, null),
+            'endpoint' => $this->endpoint($invoice->supplier_peppol_participant_id, $invoice->supplier_dic, $invoice->supplier_country),
             'street' => $invoice->supplier_address_line,
             'city' => $invoice->supplier_city,
             'zip' => $invoice->supplier_postal_code,
@@ -223,7 +228,7 @@ final readonly class UblInvoiceXmlBuilder
     {
         return [
             'name' => $invoice->customer_name,
-            'endpoint' => $this->endpoint($invoice->customer_peppol_participant_id, $invoice->customer_ico, $invoice->customer_email),
+            'endpoint' => $this->endpoint($invoice->customer_peppol_participant_id, $invoice->customer_dic, $invoice->customer_country),
             'street' => $invoice->customer_street,
             'city' => $invoice->customer_city,
             'zip' => $invoice->customer_postal_code,
@@ -236,21 +241,25 @@ final readonly class UblInvoiceXmlBuilder
     }
 
     /** @return array{0: string, 1: string}|null */
-    private function endpoint(?string $participantId, ?string $ico, ?string $email): ?array
+    private function endpoint(?string $participantId, ?string $dic, ?string $country): ?array
     {
-        if ($participantId !== null && preg_match('/^(\d{4}):(.+)$/', trim($participantId), $m) === 1) {
+        if ($participantId !== null && PeppolParticipantId::isValid(trim($participantId))
+            && preg_match(PeppolParticipantId::PATTERN, trim($participantId), $m) === 1) {
             return [$m[1], $m[2]];
         }
 
-        if ($ico !== null && trim($ico) !== '') {
-            return [config()->string('efa.seller_scheme_id'), trim($ico)];
-        }
+        $dic = $dic === null ? '' : preg_replace('/[\s\x{00A0}]+/u', '', $dic);
 
-        if ($email !== null && trim($email) !== '') {
-            return [config()->string('efa.email_endpoint_scheme_id'), trim($email)];
+        if ($this->isSlovak($country) && preg_match(PeppolParticipantId::DIC_PATTERN, (string) $dic) === 1) {
+            return [config()->string('efa.dic_endpoint_scheme_id'), (string) $dic];
         }
 
         return null;
+    }
+
+    private function isSlovak(?string $country): bool
+    {
+        return $country !== null && strtoupper(trim($country)) === 'SK';
     }
 
     /** @param Party $party */
@@ -290,7 +299,7 @@ final readonly class UblInvoiceXmlBuilder
         $this->el($w, 'cbc:RegistrationName', $this->str($party['name']));
         $companyId = $this->str($party['company_id']);
         if (trim($companyId) !== '') {
-            $this->el($w, 'cbc:CompanyID', trim($companyId), ['schemeID' => config()->string('efa.seller_scheme_id')]);
+            $this->el($w, 'cbc:CompanyID', trim($companyId), $this->isSlovak($party['country']) ? ['schemeID' => config()->string('efa.ico_legal_scheme_id')] : []);
         }
         $w->endElement();
 

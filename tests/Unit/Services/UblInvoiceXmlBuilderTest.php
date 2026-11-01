@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services;
 
+use App\Data\Invoices\InvoiceIssueData;
+use App\Enums\InvoiceStatusEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
+use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Services\Efa\UblInvoiceXmlBuilder;
 use App\Services\InvoiceService;
@@ -211,9 +214,9 @@ final class UblInvoiceXmlBuilderTest extends TestCase
     public function test_peppol_ids_are_used_as_endpoints_and_scheme_is_split(): void
     {
         $invoice = $this->efaInvoice($this->tenant, [
-            'supplier_peppol_participant_id' => '0245:12345678',
+            'supplier_peppol_participant_id' => '0245:2012345678',
             'customer_peppol_participant_id' => '9950:SK2020000000',
-            'customer_ico' => null,
+            'customer_dic' => null,
         ], [
             ['description' => 'A', 'quantity' => 1, 'unit_price' => 10, 'line_base' => 10, 'line_vat' => 0, 'line_total' => 10],
         ]);
@@ -245,23 +248,178 @@ final class UblInvoiceXmlBuilderTest extends TestCase
         $this->assertSame([], $this->builder()->readiness($this->efaInvoice($this->tenant, [], $items)));
 
         $broken = $this->efaInvoice($this->tenant, [
-            'supplier_ico' => null, 'supplier_city' => null, 'customer_ico' => null, 'customer_country' => null, 'supplier_iban' => null,
+            'supplier_ico' => null, 'supplier_city' => null, 'customer_dic' => null, 'customer_country' => null, 'supplier_iban' => null,
         ], $items);
 
         $this->assertEqualsCanonicalizing(
-            ['supplier_ico', 'supplier_city', 'customer_ico', 'customer_country', 'supplier_iban'],
+            ['supplier_ico', 'supplier_city', 'customer_dic', 'customer_country', 'supplier_iban'],
             $this->builder()->readiness($broken),
         );
     }
 
-    public function test_readiness_requires_vat_number_for_payers_and_accepts_peppol_id_instead_of_ico(): void
+    public function test_readiness_requires_vat_number_for_payers_and_accepts_peppol_id_instead_of_dic(): void
     {
         $items = [['description' => 'A', 'quantity' => 1, 'unit_price' => 10, 'line_base' => 10, 'vat_rate' => 23, 'line_vat' => 2.3, 'line_total' => 12.3]];
 
         $payer = $this->efaInvoice($this->tenant, ['supplier_vat_number' => null], $items, vatPayer: true);
         $this->assertSame(['supplier_vat_number'], $this->builder()->readiness($payer));
 
-        $peppolOnly = $this->efaInvoice($this->tenant, ['customer_ico' => null, 'customer_peppol_participant_id' => '0245:11111111'], $items);
+        $peppolOnly = $this->efaInvoice($this->tenant, ['customer_dic' => null, 'customer_peppol_participant_id' => '0245:2011111111'], $items);
         $this->assertSame([], $this->builder()->readiness($peppolOnly));
+    }
+
+    public function test_slovak_parties_without_peppol_id_use_dic_endpoint_and_ico_legal_id(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, [], $this->oneItem());
+
+        $xp = $this->loadUbl($this->builder()->build($invoice));
+
+        foreach (['Supplier' => ['2012345678', '12345678'], 'Customer' => ['2087654321', '87654321']] as $party => [$dic, $ico]) {
+            $this->assertSame($dic, $this->xv($xp, "//cac:Accounting{$party}Party//cbc:EndpointID"));
+            $this->assertSame('0245', $this->xv($xp, "//cac:Accounting{$party}Party//cbc:EndpointID/@schemeID"));
+            $this->assertSame($ico, $this->xv($xp, "//cac:Accounting{$party}Party//cac:PartyLegalEntity/cbc:CompanyID"));
+            $this->assertSame('0158', $this->xv($xp, "//cac:Accounting{$party}Party//cac:PartyLegalEntity/cbc:CompanyID/@schemeID"));
+        }
+    }
+
+    public function test_stored_peppol_id_wins_over_dic(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, [
+            'supplier_peppol_participant_id' => '9950:SK-SUP',
+            'customer_peppol_participant_id' => '0088:1234567890123',
+        ], $this->oneItem());
+
+        $xp = $this->loadUbl($this->builder()->build($invoice));
+
+        $this->assertSame('SK-SUP', $this->xv($xp, '//cac:AccountingSupplierParty//cbc:EndpointID'));
+        $this->assertSame('9950', $this->xv($xp, '//cac:AccountingSupplierParty//cbc:EndpointID/@schemeID'));
+        $this->assertSame('1234567890123', $this->xv($xp, '//cac:AccountingCustomerParty//cbc:EndpointID'));
+        $this->assertSame('0088', $this->xv($xp, '//cac:AccountingCustomerParty//cbc:EndpointID/@schemeID'));
+    }
+
+    public function test_customer_with_ico_but_no_dic_is_not_ready(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, ['customer_dic' => null], $this->oneItem());
+
+        $this->assertSame(['customer_dic'], $this->builder()->readiness($invoice));
+    }
+
+    public function test_supplier_without_dic_and_peppol_id_is_not_ready(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, ['supplier_dic' => null], $this->oneItem());
+
+        $this->assertSame(['supplier_dic'], $this->builder()->readiness($invoice));
+
+        $withPeppol = $this->efaInvoice($this->tenant, ['supplier_dic' => null, 'supplier_peppol_participant_id' => '9950:SK-SUP'], $this->oneItem());
+        $this->assertSame([], $this->builder()->readiness($withPeppol));
+    }
+
+    public function test_issuing_for_non_vat_tenant_without_dic_still_works(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false, 'dic' => null]);
+        $this->bindTenant($tenant);
+        $draft = Invoice::factory()->create(['tenant_id' => $tenant->id, 'issue_date' => now()->toDateString()]);
+
+        $issued = app(InvoiceService::class)->issue($draft, new InvoiceIssueData(number: null), null);
+
+        $this->assertSame(InvoiceStatusEnum::Issued, $issued->status);
+    }
+
+    public function test_malformed_customer_dic_is_not_ready(): void
+    {
+        foreach (['208765432', '20876543210', 'SK2087654321', '20876A4321'] as $bad) {
+            $invoice = $this->efaInvoice($this->tenant, ['customer_dic' => $bad], $this->oneItem());
+
+            $this->assertSame(['customer_dic'], $this->builder()->readiness($invoice), $bad);
+        }
+    }
+
+    public function test_dic_with_spaces_is_normalised_and_emitted(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, ['customer_dic' => ' 20 8765 4321 ', 'supplier_dic' => "2012\u{00A0}345\u{00A0}678"], $this->oneItem());
+
+        $this->assertSame([], $this->builder()->readiness($invoice));
+
+        $xp = $this->loadUbl($this->builder()->build($invoice));
+
+        $this->assertSame('2087654321', $this->xv($xp, '//cac:AccountingCustomerParty//cbc:EndpointID'));
+        $this->assertSame('2012345678', $this->xv($xp, '//cac:AccountingSupplierParty//cbc:EndpointID'));
+    }
+
+    public function test_non_slovak_customer_with_dic_needs_peppol_id_and_gets_unschemed_company_id(): void
+    {
+        $withoutPeppol = $this->efaInvoice($this->tenant, ['customer_country' => 'CZ', 'customer_dic' => '2087654321'], $this->oneItem());
+        $this->assertSame(['customer_dic'], $this->builder()->readiness($withoutPeppol));
+
+        $withPeppol = $this->efaInvoice($this->tenant, [
+            'customer_country' => 'cz',
+            'customer_dic' => '2087654321',
+            'customer_peppol_participant_id' => '9950:CZ-CUST',
+        ], $this->oneItem());
+        $this->assertSame([], $this->builder()->readiness($withPeppol));
+
+        $xp = $this->loadUbl($this->builder()->build($withPeppol));
+
+        $this->assertSame('87654321', $this->xv($xp, '//cac:AccountingCustomerParty//cac:PartyLegalEntity/cbc:CompanyID'));
+        $this->assertSame(0, $this->xn($xp, '//cac:AccountingCustomerParty//cac:PartyLegalEntity/cbc:CompanyID/@schemeID'));
+        $this->assertSame('0158', $this->xv($xp, '//cac:AccountingSupplierParty//cac:PartyLegalEntity/cbc:CompanyID/@schemeID'));
+    }
+
+    public function test_customer_without_ico_but_with_dic_is_ready_and_has_no_company_id(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, ['customer_ico' => null], $this->oneItem());
+
+        $this->assertSame([], $this->builder()->readiness($invoice));
+
+        $xp = $this->loadUbl($this->builder()->build($invoice));
+
+        $this->assertSame('2087654321', $this->xv($xp, '//cac:AccountingCustomerParty//cbc:EndpointID'));
+        $this->assertSame(0, $this->xn($xp, '//cac:AccountingCustomerParty//cac:PartyLegalEntity/cbc:CompanyID'));
+    }
+
+    public function test_credit_note_endpoints_use_the_copied_dic(): void
+    {
+        $original = $this->efaInvoice($this->tenant, [], $this->oneItem());
+        $this->actingAsTenantUser('Admin', $this->tenant);
+
+        app(InvoiceService::class)->cancel($original, null);
+        $creditNote = $original->refresh()->creditNote;
+        $this->assertNotNull($creditNote);
+
+        $xp = $this->loadUbl($this->builder()->build($creditNote));
+
+        $this->assertSame('CreditNote', $xp->document->documentElement?->localName);
+        $this->assertSame('2087654321', $this->xv($xp, '//cac:AccountingCustomerParty//cbc:EndpointID'));
+        $this->assertSame('2012345678', $this->xv($xp, '//cac:AccountingSupplierParty//cbc:EndpointID'));
+        $this->assertSame('0245', $this->xv($xp, '//cac:AccountingSupplierParty//cbc:EndpointID/@schemeID'));
+        $this->assertSame('0158', $this->xv($xp, '//cac:AccountingCustomerParty//cac:PartyLegalEntity/cbc:CompanyID/@schemeID'));
+    }
+
+    public function test_stored_dic_scheme_peppol_id_with_wrong_length_falls_back_to_dic(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, ['supplier_peppol_participant_id' => '0245:12345678', 'customer_peppol_participant_id' => '0245:12345678'], $this->oneItem());
+
+        $this->assertSame([], $this->builder()->readiness($invoice));
+
+        $xp = $this->loadUbl($this->builder()->build($invoice));
+
+        $this->assertSame('2012345678', $this->xv($xp, '//cac:AccountingSupplierParty//cbc:EndpointID'));
+        $this->assertSame('2087654321', $this->xv($xp, '//cac:AccountingCustomerParty//cbc:EndpointID'));
+    }
+
+    public function test_stored_dic_scheme_peppol_id_with_wrong_length_and_no_dic_is_not_ready(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, [
+            'supplier_peppol_participant_id' => '0245:12345678', 'supplier_dic' => null,
+            'customer_peppol_participant_id' => '0245:12345678', 'customer_dic' => null,
+        ], $this->oneItem());
+
+        $this->assertEqualsCanonicalizing(['supplier_dic', 'customer_dic'], $this->builder()->readiness($invoice));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function oneItem(): array
+    {
+        return [['description' => 'A', 'quantity' => 1, 'unit_price' => 10, 'line_base' => 10, 'line_vat' => 0, 'line_total' => 10]];
     }
 }

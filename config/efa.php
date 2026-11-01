@@ -10,11 +10,11 @@ return [
 
     'profile_id' => 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0',
 
-    'seller_scheme_id' => '0245',
+    'dic_endpoint_scheme_id' => '0245',
+
+    'ico_legal_scheme_id' => '0158',
 
     'vat_scheme_id' => 'VAT',
-
-    'email_endpoint_scheme_id' => 'EM',
 
     'participant_schemes' => ['0088', '0192', '0204', '0245', '9925', '9950'],
 

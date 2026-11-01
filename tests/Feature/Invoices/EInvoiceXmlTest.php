@@ -82,6 +82,25 @@ final class EInvoiceXmlTest extends TestCase
         $this->assertSame(EfaStatusEnum::None, $invoice->refresh()->efa_status);
     }
 
+    public function test_customer_without_dic_returns_efa_error_and_no_xml(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = $this->efaInvoice($tenant, ['customer_dic' => null], $this->items());
+
+        $response = $this->get(route('invoices.efa.xml', $invoice));
+
+        $response->assertSessionHasErrors('efa');
+        $this->assertStringContainsString(__('app.efa_missing_customer_dic'), $this->efaError());
+        $this->assertSame(EfaStatusEnum::None, $invoice->refresh()->efa_status);
+
+        $this->get(route('invoices.show', $invoice))->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->where('invoice.efa.xml_available', false)
+                ->where('invoice.efa.missing_fields', ['customer_dic']),
+        );
+    }
+
     public function test_view_only_user_can_download_but_cross_tenant_invoice_is_404(): void
     {
         $user = $this->userWithPermission('view invoices');
@@ -105,13 +124,13 @@ final class EInvoiceXmlTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
-        $invoice = $this->efaInvoice($tenant, ['supplier_ico' => null, 'customer_ico' => null], $this->items());
+        $invoice = $this->efaInvoice($tenant, ['supplier_ico' => null, 'customer_dic' => null], $this->items());
 
         $this->get(route('invoices.show', $invoice))->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->where('invoice.efa.status', 'none')
                 ->where('invoice.efa.xml_available', false)
-                ->where('invoice.efa.missing_fields', ['supplier_ico', 'customer_ico'])
+                ->where('invoice.efa.missing_fields', ['supplier_ico', 'customer_dic'])
                 ->where('invoice.efa.efa_id', null),
         );
     }

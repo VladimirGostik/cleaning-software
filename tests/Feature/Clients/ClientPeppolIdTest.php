@@ -42,13 +42,13 @@ final class ClientPeppolIdTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
 
-        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '0245:12345678']))->assertRedirectContains('/clients/');
+        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '0245:2012345678']))->assertRedirectContains('/clients/');
 
         $client = Client::query()->where('ico', '12345678')->firstOrFail();
-        $this->assertSame('0245:12345678', $client->peppol_participant_id);
+        $this->assertSame('0245:2012345678', $client->peppol_participant_id);
 
         $this->get(route('clients.show', $client))->assertInertia(
-            fn (AssertableInertia $page) => $page->where('client.peppol_participant_id', '0245:12345678'),
+            fn (AssertableInertia $page) => $page->where('client.peppol_participant_id', '0245:2012345678'),
         );
     }
 
@@ -56,7 +56,7 @@ final class ClientPeppolIdTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
-        $client = Client::factory()->create(['tenant_id' => $tenant->id, 'peppol_participant_id' => '0245:11111111']);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id, 'peppol_participant_id' => '0245:2011111111']);
 
         $this->patch(route('clients.update', $client), $this->payload(['ico' => $client->ico, 'peppol_participant_id' => '9950:SK-2020.1']))->assertRedirect();
         $this->assertSame('9950:SK-2020.1', $client->refresh()->peppol_participant_id);
@@ -70,7 +70,7 @@ final class ClientPeppolIdTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
 
-        foreach (['12345678', '024:123', 'abcd:123', '0245:', '0245:ab cd', '0245:ab_cd', '0245:'.str_repeat('1', 60)] as $bad) {
+        foreach (['12345678', '024:123', 'abcd:123', '0245:', '0245:ab cd', '0245:ab_cd', '0245:'.str_repeat('1', 60), '0245:12345678'] as $bad) {
             $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => $bad]))
                 ->assertSessionHasErrors('peppol_participant_id');
         }
@@ -79,6 +79,16 @@ final class ClientPeppolIdTest extends TestCase
             ->assertSessionHasErrors(['peppol_participant_id' => __('app.peppol_participant_scheme_unknown', ['scheme' => '1234'])]);
 
         $this->assertDatabaseCount('clients', 0);
+    }
+
+    public function test_dic_length_rule_applies_only_to_the_dic_scheme(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '0088:123']))->assertRedirectContains('/clients/');
+        $this->post(route('clients.store'), $this->payload(['ico' => '11111111', 'peppol_participant_id' => '0245:20123456789']))
+            ->assertSessionHasErrors(['peppol_participant_id' => __('app.peppol_participant_dic_invalid')]);
     }
 
     public function test_scheme_list_comes_from_config(): void
@@ -104,7 +114,7 @@ final class ClientPeppolIdTest extends TestCase
         $this->actingAs($this->userWithPermission('view clients'));
         $client = Client::factory()->create(['tenant_id' => current_tenant_id()]);
 
-        $this->patch(route('clients.update', $client), $this->payload(['ico' => $client->ico, 'peppol_participant_id' => '0245:12345678']))->assertForbidden();
+        $this->patch(route('clients.update', $client), $this->payload(['ico' => $client->ico, 'peppol_participant_id' => '0245:2012345678']))->assertForbidden();
         $this->assertNull($client->refresh()->peppol_participant_id);
     }
 }

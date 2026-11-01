@@ -162,6 +162,15 @@ final class EInvoiceSubmitTest extends TestCase
         $this->assertSame(EfaStatusEnum::None, $incomplete->refresh()->efa_status);
     }
 
+    public function test_customer_without_dic_is_rejected_without_calling_provider(): void
+    {
+        $this->provider(fn (): EInvoiceSubmissionResult => throw new RuntimeException('must not be called'));
+        $invoice = $this->invoice(['customer_dic' => null]);
+
+        $this->post(route('invoices.efa.submit', $invoice))->assertSessionHasErrors('efa');
+        $this->assertSame(EfaStatusEnum::None, $invoice->refresh()->efa_status);
+    }
+
     public function test_view_only_user_cannot_submit(): void
     {
         $this->actingAs($this->userWithPermission('view invoices'));
@@ -238,13 +247,13 @@ final class EInvoiceSubmitTest extends TestCase
 
     public function test_cancel_copies_peppol_snapshots_onto_credit_note(): void
     {
-        $invoice = $this->invoice(['supplier_peppol_participant_id' => '0245:12345678', 'customer_peppol_participant_id' => '9950:SK1']);
+        $invoice = $this->invoice(['supplier_peppol_participant_id' => '0245:2012345678', 'customer_peppol_participant_id' => '9950:SK1']);
 
         app(InvoiceService::class)->cancel($invoice, null);
 
         $creditNote = $invoice->refresh()->creditNote;
         $this->assertNotNull($creditNote);
-        $this->assertSame('0245:12345678', $creditNote->supplier_peppol_participant_id);
+        $this->assertSame('0245:2012345678', $creditNote->supplier_peppol_participant_id);
         $this->assertSame('9950:SK1', $creditNote->customer_peppol_participant_id);
     }
 
