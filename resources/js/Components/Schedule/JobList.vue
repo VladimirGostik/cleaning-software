@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { EyeIcon } from '@heroicons/vue/24/outline';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import JobTypeBadge from './JobTypeBadge.vue';
@@ -77,7 +77,7 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
 
         <template #buttons="{ row }">
             <Link :href="`/jobs/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')" :aria-label="t('view')">
-                <EyeIcon class="size-4" />
+                <EyeIcon class="size-5" />
             </Link>
         </template>
     </DataTable>

@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';

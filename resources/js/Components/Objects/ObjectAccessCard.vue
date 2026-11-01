@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { KeyIcon } from '@heroicons/vue/24/outline';
+import KeyIcon from '~icons/material-symbols/key-outline-rounded';
 
 defineProps<{
     object: App.Data.Objects.ObjectDetailData;

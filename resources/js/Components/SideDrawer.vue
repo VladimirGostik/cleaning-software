@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 
 const props = defineProps<{
     open: boolean;
@@ -113,7 +113,7 @@ onUnmounted(() => {
                         :aria-label="t('close')"
                         @click="close"
                     >
-                        <XMarkIcon class="size-4" />
+                        <XMarkIcon class="size-5" />
                     </button>
                 </div>
 

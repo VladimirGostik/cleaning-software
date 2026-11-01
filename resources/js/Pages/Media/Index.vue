@@ -6,7 +6,8 @@ import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import { formatDatetime } from '@/utils/date';
 import { formatBytes } from '@/utils/bytes';
-import { EyeIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
+import EyeIcon from '~icons/material-symbols/visibility-rounded';
+import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-rounded';
 import type { Breadcrumb, Paginator } from '@/types';
 import type { FilterConfig, TableColumn } from '@/types/table';
 
@@ -115,7 +116,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         class="btn btn-ghost btn-xs"
                         :title="t('details')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

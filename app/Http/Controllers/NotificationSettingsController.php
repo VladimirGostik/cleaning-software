@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\Notifications\NotificationPreferencesData;
 use App\Data\Notifications\NotificationPreferencesUpdateData;
 use App\Enums\PermissionEnum;
@@ -21,7 +22,7 @@ final class NotificationSettingsController extends Controller
     public function __construct(private readonly NotificationService $notifications) {}
 
     #[Authorize(PermissionEnum::ConfigureNotifications->value)]
-    #[NavItem(label: 'app.notification_settings', route: 'settings.notifications', icon: 'BellAlertIcon', permission: PermissionEnum::ConfigureNotifications->value, group: 'settings', order: 25)]
+    #[NavItem(label: 'app.notification_settings', route: 'settings.notifications', icon: NavIconEnum::NotificationSettings, permission: PermissionEnum::ConfigureNotifications->value, group: 'settings', order: 25)]
     public function show(Request $request): InertiaResponse
     {
         /** @var User $user */

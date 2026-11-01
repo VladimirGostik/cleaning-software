@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { BuildingOffice2Icon, DocumentCheckIcon, DocumentTextIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
+import DocumentCheckIcon from '~icons/material-symbols/task-outline-rounded';
+import DocumentTextIcon from '~icons/material-symbols/description-outline-rounded';
+import UserGroupIcon from '~icons/material-symbols/groups-outline-rounded';
 
 const props = defineProps<{
     job: App.Data.Schedule.JobDetailData;
@@ -20,12 +23,12 @@ const { t } = useI18n();
                 :href="`/clients/${props.job.client_id}`"
                 class="btn btn-sm w-full justify-start"
             >
-                <UserGroupIcon class="size-4" />
+                <UserGroupIcon class="size-5" />
                 {{ props.job.client_name }}
             </Link>
 
             <Link :href="`/objects/${props.job.cleaning_object_id}`" class="btn btn-sm w-full justify-start">
-                <BuildingOffice2Icon class="size-4" />
+                <BuildingOffice2Icon class="size-5" />
                 {{ props.job.object_name }}
             </Link>
 
@@ -34,7 +37,7 @@ const { t } = useI18n();
                 :href="`/contracts/${props.job.contract_id}`"
                 class="btn btn-sm w-full justify-start"
             >
-                <DocumentCheckIcon class="size-4" />
+                <DocumentCheckIcon class="size-5" />
                 {{ props.job.contract_title ?? t('schedule_detail_contract') }}
             </Link>
 
@@ -43,7 +46,7 @@ const { t } = useI18n();
                 :href="`/invoices/${props.job.invoice_id}`"
                 class="btn btn-sm w-full justify-start"
             >
-                <DocumentTextIcon class="size-4" />
+                <DocumentTextIcon class="size-5" />
                 {{ t('schedule_detail_invoice') }}
             </Link>
         </div>

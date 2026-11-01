@@ -2,7 +2,9 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BuildingOffice2Icon, EyeIcon, NoSymbolIcon } from '@heroicons/vue/24/outline';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import NoSymbolIcon from '~icons/material-symbols/block-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -197,7 +199,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
                 <template #buttons="{ row }">
                     <Link :href="`/objects/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -207,7 +209,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                         :title="t('object_deactivate')"
                         @click="openModal(row)"
                     >
-                        <NoSymbolIcon class="size-4" />
+                        <NoSymbolIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

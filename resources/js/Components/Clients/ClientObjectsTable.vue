@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { BuildingOffice2Icon } from '@heroicons/vue/24/outline';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
 
 import EmptyState from '@/Components/EmptyState.vue';
 import ObjectTypeBadge from '@/Components/Objects/ObjectTypeBadge.vue';

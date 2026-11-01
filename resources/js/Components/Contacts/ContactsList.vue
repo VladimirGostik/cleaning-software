@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { UsersIcon } from '@heroicons/vue/24/outline';
+import UsersIcon from '~icons/material-symbols/manage-accounts-outline-rounded';
 
 import EmptyState from '@/Components/EmptyState.vue';
 import type { ContactRow } from './contact';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\DocumentTemplates\DocumentTemplateEditData;
 use App\Data\DocumentTemplates\DocumentTemplatePreviewData;
 use App\Data\DocumentTemplates\DocumentTemplateUpsertData;
@@ -33,7 +34,7 @@ final class DocumentTemplateController extends Controller
     ) {}
 
     #[Authorize('viewAny', DocumentTemplate::class)]
-    #[NavItem(label: 'app.document_templates', route: 'document-templates.index', icon: 'RectangleStackIcon', permission: PermissionEnum::ViewDocumentTemplates->value, group: 'settings', order: 30)]
+    #[NavItem(label: 'app.document_templates', route: 'document-templates.index', icon: NavIconEnum::Documents, permission: PermissionEnum::ViewDocumentTemplates->value, group: 'settings', order: 30)]
     public function index(Request $request): InertiaResponse
     {
         /** @var User $user */

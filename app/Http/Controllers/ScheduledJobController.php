@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\Contracts\MembershipOptionData;
 use App\Data\Schedule\JobAssignData;
 use App\Data\Schedule\JobCalendarFilterData;
@@ -35,7 +36,7 @@ final class ScheduledJobController extends Controller
     ) {}
 
     #[Authorize('viewAny', ScheduledJob::class)]
-    #[NavItem(label: 'app.schedule', route: 'jobs.index', icon: 'CalendarDaysIcon', permission: PermissionEnum::ViewSchedule->value, order: 32)]
+    #[NavItem(label: 'app.schedule', route: 'jobs.index', icon: NavIconEnum::Schedule, permission: PermissionEnum::ViewSchedule->value, order: 32)]
     public function index(Request $request): Response
     {
         /** @var User $actor */

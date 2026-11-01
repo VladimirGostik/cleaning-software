@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="TRow extends object">
 import { computed, ref, useSlots, watch } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
+import { KG_ICONS } from '@/icons/kegosIcons';
 import TableFilters from './TableFilters.vue';
 import TablePagination from './TablePagination.vue';
 import { readSpatieQuery, visitSpatieQuery } from '@/Composables/useSpatieTableQuery';
@@ -252,9 +253,17 @@ function confirmDelete(row: TRow, id: string | number) {
                             <span class="flex items-center gap-1 whitespace-nowrap">
                                 {{ column.label }}
                                 <template v-if="column.sortable">
-                                    <span v-if="currentSortDirection(column) === 'asc'" class="text-xs">▲</span>
-                                    <span v-else-if="currentSortDirection(column) === 'desc'" class="text-xs">▼</span>
-                                    <span v-else class="text-xs opacity-30">▲</span>
+                                    <component
+                                        :is="
+                                            currentSortDirection(column) === 'asc'
+                                                ? KG_ICONS.adminAction.sortAsc
+                                                : currentSortDirection(column) === 'desc'
+                                                  ? KG_ICONS.adminAction.sortDesc
+                                                  : KG_ICONS.adminAction.sortNone
+                                        "
+                                        class="size-4"
+                                        :class="{ 'opacity-30': !currentSortDirection(column) }"
+                                    />
                                 </template>
                             </span>
                         </th>
@@ -310,19 +319,22 @@ function confirmDelete(row: TRow, id: string | number) {
                                         <Link
                                             v-if="canEdit && editUrl"
                                             :href="editUrl(row)"
-                                            class="btn btn-ghost btn-xs"
+                                            class="btn btn-ghost btn-sm btn-square"
                                             :title="$t('edit')"
-                                            >✎</Link
+                                            :aria-label="$t('edit')"
                                         >
+                                            <KG_ICONS.adminAction.edit class="size-5" />
+                                        </Link>
 
                                         <div v-if="canDeleteThisRow(row)" class="relative">
                                             <button
                                                 type="button"
-                                                class="btn btn-ghost btn-xs text-error"
+                                                class="btn btn-ghost btn-sm btn-square text-error"
                                                 :title="$t('delete')"
+                                                :aria-label="$t('delete')"
                                                 @click="openDeletePopover(rowIdentifier(row, index))"
                                             >
-                                                🗑
+                                                <KG_ICONS.adminAction.delete class="size-5" />
                                             </button>
                                             <div
                                                 v-if="popoverOpen[rowIdentifier(row, index)]"

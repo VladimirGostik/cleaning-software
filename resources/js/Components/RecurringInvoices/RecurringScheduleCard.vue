@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { CheckIcon } from '@heroicons/vue/24/outline';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
 import { formatDate, formatDatetime } from '@/utils/date';
 import { recurringFrequencyKey } from '@/utils/enums';
 
@@ -39,12 +39,12 @@ const { t } = useI18n();
                 </div>
                 <div>
                     <p class="text-xs text-base-content/50">{{ t('recurring_invoice_auto_issue') }}</p>
-                    <CheckIcon v-if="props.recurringInvoice.auto_issue" class="size-4 text-success" />
+                    <CheckIcon v-if="props.recurringInvoice.auto_issue" class="size-5 text-success" />
                     <p v-else>{{ t('empty_dash') }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-base-content/50">{{ t('recurring_invoice_auto_send') }}</p>
-                    <CheckIcon v-if="props.recurringInvoice.auto_send" class="size-4 text-success" />
+                    <CheckIcon v-if="props.recurringInvoice.auto_send" class="size-5 text-success" />
                     <p v-else>{{ t('empty_dash') }}</p>
                 </div>
                 <div>

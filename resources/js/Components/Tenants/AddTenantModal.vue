@@ -2,7 +2,7 @@
 import { nextTick, ref, useId, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 import FormProvider from '@/Components/Forms/FormProvider.vue';
 import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import ColorSwatchPicker from '@/Components/Forms/ColorSwatchPicker.vue';
@@ -107,7 +107,7 @@ watch(
             <div class="flex items-center justify-between mb-4">
                 <h3 :id="titleId" class="text-lg font-bold">{{ t('tenant_add_title') }}</h3>
                 <button type="button" class="btn btn-sm btn-ghost btn-circle" :aria-label="t('close')" @click="close">
-                    <XMarkIcon class="size-4" />
+                    <XMarkIcon class="size-5" />
                 </button>
             </div>
 

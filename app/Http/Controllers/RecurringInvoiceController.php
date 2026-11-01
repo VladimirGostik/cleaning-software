@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceListItemData;
 use App\Data\RecurringInvoices\RecurringInvoiceDetailData;
@@ -29,7 +30,7 @@ final class RecurringInvoiceController extends Controller
     public function __construct(private readonly RecurringInvoiceService $service) {}
 
     #[Authorize('viewAny', RecurringInvoice::class)]
-    #[NavItem(label: 'app.recurring_invoices', route: 'recurring-invoices.index', icon: 'ArrowPathIcon', permission: PermissionEnum::ViewRecurringInvoices->value, order: 41)]
+    #[NavItem(label: 'app.recurring_invoices', route: 'recurring-invoices.index', icon: NavIconEnum::RecurringInvoices, permission: PermissionEnum::ViewRecurringInvoices->value, order: 41)]
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('RecurringInvoices/Index', [

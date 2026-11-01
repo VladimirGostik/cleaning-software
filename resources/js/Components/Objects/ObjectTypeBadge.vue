@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BuildingOffice2Icon, BuildingOfficeIcon, HomeIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
+import BuildingOfficeIcon from '~icons/material-symbols/corporate-fare-outline-rounded';
+import HomeIcon from '~icons/material-symbols/dashboard-outline-rounded';
+import Squares2X2Icon from '~icons/material-symbols/grid-view-outline-rounded';
 import { objectTypeKey } from '@/utils/enums';
 
 const props = defineProps<{

@@ -2,7 +2,9 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { EyeIcon, PencilSquareIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import UserGroupIcon from '~icons/material-symbols/groups-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -121,7 +123,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
                 <template #buttons="{ row }">
                     <Link :href="`/employees/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                     <Link
                         v-if="allows('edit employees')"
@@ -129,7 +131,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         class="btn btn-ghost btn-xs"
                         :title="t('edit')"
                     >
-                        <PencilSquareIcon class="size-4" />
+                        <PencilSquareIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

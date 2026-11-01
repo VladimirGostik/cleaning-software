@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Contracts\RendersQuotePdf;
 use App\Data\DocumentTemplates\DocumentTemplateOptionData;
 use App\Data\Quotes\QuoteAttachClientData;
@@ -45,7 +46,7 @@ final class QuoteController extends Controller
     ) {}
 
     #[Authorize('viewAny', Quote::class)]
-    #[NavItem(label: 'app.quotes', route: 'quotes.index', icon: 'DocumentDuplicateIcon', permission: PermissionEnum::ViewQuotes->value, order: 35)]
+    #[NavItem(label: 'app.quotes', route: 'quotes.index', icon: NavIconEnum::Quotes, permission: PermissionEnum::ViewQuotes->value, order: 35)]
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('Quotes/Index', [

@@ -10,32 +10,10 @@ import { useAuthorization } from '@/Composables/useAuthorization';
 import NotificationBell from '@/Components/Notifications/NotificationBell.vue';
 
 type NavigationItem = App.Data.NavigationItemData;
-import {
-    HomeIcon,
-    ClipboardDocumentListIcon,
-    UsersIcon,
-    UserGroupIcon,
-    BuildingOffice2Icon,
-    ShieldCheckIcon,
-    UserCircleIcon,
-    Cog6ToothIcon,
-    ArrowRightOnRectangleIcon,
-    GlobeAltIcon,
-    PhotoIcon,
-    EnvelopeIcon,
-    DocumentTextIcon,
-    DocumentDuplicateIcon,
-    ArrowPathIcon,
-    BanknotesIcon,
-    DocumentCheckIcon,
-    RectangleStackIcon,
-    CalendarDaysIcon,
-    CheckCircleIcon,
-    IdentificationIcon,
-    BellIcon,
-    BellAlertIcon,
-    ShieldExclamationIcon,
-} from '@heroicons/vue/24/outline';
+import MenuIcon from '~icons/material-symbols/menu-rounded';
+import LogoutIcon from '~icons/material-symbols/logout-outline-rounded';
+import LanguageIcon from '~icons/material-symbols/language-outline-rounded';
+import { NAV_ICONS } from '@/icons/kegosIcons';
 import type { ToastPayload } from '@/Composables/useToast';
 
 const { t } = useI18n();
@@ -53,33 +31,9 @@ const isAddTenantOpen = ref(false);
 const canViewNotifications = computed(() => allows('view notifications'));
 const drawerOpen = ref(false);
 
-const ICONS: Record<string, object> = {
-    HomeIcon,
-    UsersIcon,
-    UserGroupIcon,
-    BuildingOffice2Icon,
-    ShieldCheckIcon,
-    ClipboardDocumentListIcon,
-    PhotoIcon,
-    EnvelopeIcon,
-    UserCircleIcon,
-    Cog6ToothIcon,
-    DocumentTextIcon,
-    DocumentDuplicateIcon,
-    ArrowPathIcon,
-    BanknotesIcon,
-    DocumentCheckIcon,
-    RectangleStackIcon,
-    CalendarDaysIcon,
-    CheckCircleIcon,
-    IdentificationIcon,
-    BellIcon,
-    BellAlertIcon,
-    ShieldExclamationIcon,
-};
-
-function resolveIcon(name: string): object {
-    return ICONS[name] ?? HomeIcon;
+function navIcon(item: NavigationItem, active: boolean) {
+    const icons = NAV_ICONS[item.icon];
+    return active ? icons.filled : icons.outline;
 }
 
 function translateLabel(label: string): string {
@@ -162,20 +116,13 @@ function toastAlertClass(type: ToastMessage['type']): string {
             <!-- Mobile top bar -->
             <div class="navbar bg-base-100 border-b border-base-300 lg:hidden sticky top-0 z-10">
                 <div class="flex-none">
-                    <label for="app-drawer" class="btn btn-square btn-ghost">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            class="inline-block size-5 stroke-current"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16"
-                            />
-                        </svg>
+                    <label
+                        for="app-drawer"
+                        class="btn btn-square btn-ghost"
+                        :aria-label="t('open_menu')"
+                        :title="t('open_menu')"
+                    >
+                        <MenuIcon class="size-5" />
                     </label>
                 </div>
                 <div class="flex-1">
@@ -221,20 +168,28 @@ function toastAlertClass(type: ToastMessage['type']): string {
                                     :class="{ active: isActive(item.href) }"
                                     class="flex items-center gap-2"
                                 >
-                                    <component :is="resolveIcon(item.icon)" class="size-4" />
+                                    <component :is="navIcon(item, isActive(item.href))" class="size-5" />
                                     {{ translateLabel(item.label) }}
                                 </Link>
                             </li>
                             <li v-else>
                                 <details :open="item.children.some((c: NavigationItem) => isActive(c.href))">
                                     <summary class="flex items-center gap-2">
-                                        <component :is="resolveIcon(item.icon)" class="size-4" />
+                                        <component
+                                            :is="
+                                                navIcon(
+                                                    item,
+                                                    item.children.some((c: NavigationItem) => isActive(c.href)),
+                                                )
+                                            "
+                                            class="size-5"
+                                        />
                                         {{ translateLabel(item.label) }}
                                     </summary>
                                     <ul>
                                         <li v-for="child in item.children" :key="child.key">
                                             <Link :href="child.href" :class="{ active: isActive(child.href) }">
-                                                <component :is="resolveIcon(child.icon)" class="size-4" />
+                                                <component :is="navIcon(child, isActive(child.href))" class="size-5" />
                                                 {{ translateLabel(child.label) }}
                                             </Link>
                                         </li>
@@ -266,7 +221,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                             class="btn btn-ghost btn-sm justify-start gap-2 text-base-content"
                             @click="logout"
                         >
-                            <ArrowRightOnRectangleIcon class="size-4" />
+                            <LogoutIcon class="size-5" />
                             {{ t('logout') }}
                         </button>
 
@@ -276,7 +231,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                                 role="button"
                                 class="btn btn-ghost btn-sm justify-start gap-2 text-base-content"
                             >
-                                <GlobeAltIcon class="size-4" />
+                                <LanguageIcon class="size-5" />
                                 <span>{{ locale.toUpperCase() }}</span>
                             </div>
                             <ul

@@ -2,13 +2,11 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    CheckCircleIcon,
-    DocumentDuplicateIcon,
-    EyeIcon,
-    PaperAirplaneIcon,
-    XCircleIcon,
-} from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import DocumentDuplicateIcon from '~icons/material-symbols/content-copy-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import PaperAirplaneIcon from '~icons/material-symbols/send-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -203,7 +201,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -214,7 +212,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :aria-label="t('quote_action_send')"
                         @click="sendConfirm.openModal(row)"
                     >
-                        <PaperAirplaneIcon class="size-4" />
+                        <PaperAirplaneIcon class="size-5" />
                     </button>
 
                     <button
@@ -225,7 +223,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :aria-label="t('quote_action_accept')"
                         @click="acceptConfirm.openModal(row)"
                     >
-                        <CheckCircleIcon class="size-4" />
+                        <CheckCircleIcon class="size-5" />
                     </button>
 
                     <button
@@ -236,7 +234,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :aria-label="t('quote_action_reject')"
                         @click="rejectConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-4" />
+                        <XCircleIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

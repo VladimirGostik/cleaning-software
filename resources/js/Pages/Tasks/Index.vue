@@ -2,7 +2,9 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckCircleIcon, CheckIcon, EyeIcon } from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -174,11 +176,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         :disabled="processingId === row.id"
                         @click="transition(row.id, 'complete')"
                     >
-                        <CheckIcon class="size-4" />
+                        <CheckIcon class="size-5" />
                     </button>
 
                     <Link :href="`/tasks/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

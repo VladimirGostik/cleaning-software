@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\Employees\EmployeeDetailData;
 use App\Data\Employees\EmployeeDocumentConstraintsData;
 use App\Data\Employees\EmployeeDocumentData;
@@ -40,7 +41,7 @@ final class EmployeeController extends Controller
     ) {}
 
     #[Authorize('viewAny', TenantMembership::class)]
-    #[NavItem(label: 'app.employees', route: 'employees.index', icon: 'IdentificationIcon', permission: PermissionEnum::ViewEmployees->value, order: 20)]
+    #[NavItem(label: 'app.employees', route: 'employees.index', icon: NavIconEnum::Team, permission: PermissionEnum::ViewEmployees->value, order: 20)]
     public function index(Request $request): Response
     {
         return Inertia::render('Employees/Index', [

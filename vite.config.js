@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
 import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
+import Icons from 'unplugin-icons/vite';
 
 export default defineConfig({
     plugins: [
@@ -17,6 +18,7 @@ export default defineConfig({
                 },
             },
         }),
+        Icons({ compiler: 'vue3', scale: 1 }),
     ],
     resolve: {
         alias: {

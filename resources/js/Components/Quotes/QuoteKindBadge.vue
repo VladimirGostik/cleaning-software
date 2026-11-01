@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
 import { quoteKindKey } from '@/utils/enums';
 
 const props = withDefaults(

@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import ArrowLeftIcon from '~icons/material-symbols/arrow-back-outline-rounded';
 import AuthShell from '@/Components/Auth/AuthShell.vue';
 import InvitationAcceptForm from '@/Components/Invitations/InvitationAcceptForm.vue';
 import InvitationBlockedNotice from '@/Components/Invitations/InvitationBlockedNotice.vue';

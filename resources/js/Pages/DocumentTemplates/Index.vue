@@ -2,7 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PencilSquareIcon, RectangleStackIcon } from '@heroicons/vue/24/outline';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import RectangleStackIcon from '~icons/material-symbols/description-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -147,7 +148,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         :title="t('edit')"
                         :aria-label="t('edit')"
                     >
-                        <PencilSquareIcon class="size-4" />
+                        <PencilSquareIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

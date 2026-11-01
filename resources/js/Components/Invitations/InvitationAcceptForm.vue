@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { UserIcon, EnvelopeIcon } from '@heroicons/vue/24/outline';
+import UserIcon from '~icons/material-symbols/person-outline-rounded';
+import EnvelopeIcon from '~icons/material-symbols/mail-outline-rounded';
 import FormProvider from '@/Components/Forms/FormProvider.vue';
 import AuthTextField from '@/Components/Auth/AuthTextField.vue';
 import AuthPasswordField from '@/Components/Auth/AuthPasswordField.vue';

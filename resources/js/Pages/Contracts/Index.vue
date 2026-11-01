@@ -2,7 +2,10 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckCircleIcon, DocumentCheckIcon, EyeIcon, XCircleIcon } from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import DocumentCheckIcon from '~icons/material-symbols/task-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -179,7 +182,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -190,7 +193,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                         :aria-label="t('contract_action_sign')"
                         @click="signConfirm.openModal(row)"
                     >
-                        <CheckCircleIcon class="size-4" />
+                        <CheckCircleIcon class="size-5" />
                     </button>
 
                     <button
@@ -201,7 +204,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                         :aria-label="t('contract_action_terminate')"
                         @click="ui.terminateFor = row.id"
                     >
-                        <XCircleIcon class="size-4" />
+                        <XCircleIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

@@ -2,7 +2,12 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ArrowPathIcon, CheckIcon, EyeIcon, PauseIcon, PlayIcon, XCircleIcon } from '@heroicons/vue/24/outline';
+import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import PauseIcon from '~icons/material-symbols/pause-outline-rounded';
+import PlayIcon from '~icons/material-symbols/play-arrow-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -157,7 +162,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                 </template>
 
                 <template #cell-auto_issue="{ row }">
-                    <CheckIcon v-if="row.auto_issue" class="size-4 text-success" />
+                    <CheckIcon v-if="row.auto_issue" class="size-5 text-success" />
                     <span v-else>{{ t('empty_dash') }}</span>
                 </template>
 
@@ -170,7 +175,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -181,7 +186,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                         :aria-label="t('recurring_invoice_action_pause')"
                         @click="pauseConfirm.openModal(row)"
                     >
-                        <PauseIcon class="size-4" />
+                        <PauseIcon class="size-5" />
                     </button>
 
                     <button
@@ -192,7 +197,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                         :aria-label="t('recurring_invoice_action_resume')"
                         @click="resumeConfirm.openModal(row)"
                     >
-                        <PlayIcon class="size-4" />
+                        <PlayIcon class="size-5" />
                     </button>
 
                     <button
@@ -203,7 +208,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                         :aria-label="t('recurring_invoice_action_cancel')"
                         @click="cancelConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-4" />
+                        <XCircleIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

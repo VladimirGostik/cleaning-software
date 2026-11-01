@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 
 import InvoiceTemplateThumbnail from './InvoiceTemplateThumbnail.vue';
 import { INVOICE_TEMPLATES, invoiceTemplateKey } from '@/utils/enums';
@@ -89,7 +89,7 @@ function closePreview(): void {
                     :title="t('invoice_settings_close_preview')"
                     @click="closePreview"
                 >
-                    <XMarkIcon class="size-4" />
+                    <XMarkIcon class="size-5" />
                 </button>
             </div>
             <iframe

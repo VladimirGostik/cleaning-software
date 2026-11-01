@@ -344,6 +344,7 @@
     "membership_active": "Active membership",
     "system_role": "System",
     "close": "Close",
+    "open_menu": "Open menu",
     "clients": "Clients",
     "objects": "Objects",
     "client_created": "Client created successfully.",

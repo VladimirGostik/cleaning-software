@@ -2,7 +2,7 @@
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ShieldExclamationIcon } from '@heroicons/vue/24/outline';
+import ShieldExclamationIcon from '~icons/material-symbols/gpp-maybe-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';

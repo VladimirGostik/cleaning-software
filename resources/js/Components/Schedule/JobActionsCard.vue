@@ -2,13 +2,11 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    CheckCircleIcon,
-    HandThumbDownIcon,
-    PencilSquareIcon,
-    PlayCircleIcon,
-    XCircleIcon,
-} from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import HandThumbDownIcon from '~icons/material-symbols/thumb-down-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import PlayCircleIcon from '~icons/material-symbols/play-circle-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 
 const props = defineProps<{
     job: App.Data.Schedule.JobDetailData;
@@ -43,7 +41,7 @@ const hasActions = computed(
                 :href="`/jobs/${props.job.id}/edit`"
                 class="btn btn-sm w-full justify-start"
             >
-                <PencilSquareIcon class="size-4" />
+                <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </Link>
 
@@ -53,7 +51,7 @@ const hasActions = computed(
                 class="btn btn-sm w-full justify-start text-info"
                 @click="emit('start')"
             >
-                <PlayCircleIcon class="size-4" />
+                <PlayCircleIcon class="size-5" />
                 {{ t('schedule_action_start') }}
             </button>
 
@@ -63,7 +61,7 @@ const hasActions = computed(
                 class="btn btn-sm w-full justify-start text-success"
                 @click="emit('complete')"
             >
-                <CheckCircleIcon class="size-4" />
+                <CheckCircleIcon class="size-5" />
                 {{ t('schedule_action_complete') }}
             </button>
 
@@ -73,7 +71,7 @@ const hasActions = computed(
                 class="btn btn-sm w-full justify-start text-error"
                 @click="emit('unapprove')"
             >
-                <HandThumbDownIcon class="size-4" />
+                <HandThumbDownIcon class="size-5" />
                 {{ t('schedule_action_unapprove') }}
             </button>
 
@@ -83,7 +81,7 @@ const hasActions = computed(
                 class="btn btn-sm w-full justify-start text-warning"
                 @click="emit('cancel')"
             >
-                <XCircleIcon class="size-4" />
+                <XCircleIcon class="size-5" />
                 {{ t('schedule_action_cancel') }}
             </button>
         </div>

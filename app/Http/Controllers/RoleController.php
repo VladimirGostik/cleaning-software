@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\CreateRoleData;
 use App\Data\PermissionGroupData;
 use App\Data\RoleDetailData;
@@ -29,7 +30,7 @@ final class RoleController extends Controller
     ) {}
 
     #[Authorize('viewAny', Role::class)]
-    #[NavItem(label: 'app.roles', route: 'roles.index', icon: 'ShieldCheckIcon', permission: PermissionEnum::ViewRoles->value, group: 'settings', order: 40)]
+    #[NavItem(label: 'app.roles', route: 'roles.index', icon: NavIconEnum::Roles, permission: PermissionEnum::ViewRoles->value, group: 'settings', order: 40)]
     public function index(Request $request): Response
     {
         $roles = QueryBuilder::for(Role::inTenant(current_tenant_id())->withCount(['permissions', 'users']))

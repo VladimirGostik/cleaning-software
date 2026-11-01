@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { BellIcon } from '@heroicons/vue/24/outline';
+import BellIcon from '~icons/material-symbols/notifications-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import NotificationList from '@/Components/Notifications/NotificationList.vue';

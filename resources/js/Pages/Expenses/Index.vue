@@ -2,7 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BanknotesIcon, EyeIcon } from '@heroicons/vue/24/outline';
+import BanknotesIcon from '~icons/material-symbols/receipt-long-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -159,7 +160,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
                 <template #buttons="{ row }">
                     <Link :href="`/expenses/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Enums\NavIconEnum;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -15,7 +16,7 @@ final class NavigationItemData extends Data
         public readonly string $key,
         public readonly string $label,
         public readonly string $href,
-        public readonly string $icon,
+        public readonly NavIconEnum $icon,
         public readonly int $order,
         public readonly array $children = [],
     ) {}

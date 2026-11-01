@@ -2,7 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CalendarDaysIcon, ListBulletIcon } from '@heroicons/vue/24/outline';
+import CalendarDaysIcon from '~icons/material-symbols/calendar-month-outline-rounded';
+import ListBulletIcon from '~icons/material-symbols/format-list-bulleted-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { TableFilters } from '@/Components/DataTable';
@@ -134,7 +135,7 @@ watch(
                     :aria-pressed="ui.viewMode === 'list'"
                     @click="ui.viewMode = 'list'"
                 >
-                    <ListBulletIcon class="size-4" />
+                    <ListBulletIcon class="size-5" />
                     {{ t('schedule_view_list') }}
                 </button>
                 <button
@@ -144,7 +145,7 @@ watch(
                     :aria-pressed="ui.viewMode === 'calendar'"
                     @click="ui.viewMode = 'calendar'"
                 >
-                    <CalendarDaysIcon class="size-4" />
+                    <CalendarDaysIcon class="size-5" />
                     {{ t('schedule_view_calendar') }}
                 </button>
             </div>

@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ChevronUpDownIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import ChevronUpDownIcon from '~icons/material-symbols/unfold-more-outline-rounded';
+import PlusIcon from '~icons/material-symbols/add-outline-rounded';
 import TenantColorDot from '@/Components/Tenants/TenantColorDot.vue';
 import { usePageProps } from '@/Composables/usePageProps';
 import type { SharedTenant } from '@/types';
@@ -45,7 +46,7 @@ function switchTo(id: string) {
         >
             <TenantColorDot :color="props.tenant.active?.color ?? null" />
             <span v-if="!compact" class="truncate">{{ props.tenant.active?.name }}</span>
-            <ChevronUpDownIcon class="size-4" :class="compact ? '' : 'ml-auto'" />
+            <ChevronUpDownIcon class="size-5" :class="compact ? '' : 'ml-auto'" />
         </div>
         <ul
             tabindex="0"
@@ -68,7 +69,7 @@ function switchTo(id: string) {
                 <li class="menu-title" aria-hidden="true"><hr class="border-base-300" /></li>
                 <li>
                     <button type="button" @click="emit('add-tenant')">
-                        <PlusIcon class="size-4" />
+                        <PlusIcon class="size-5" />
                         {{ t('nav_add_tenant') }}
                     </button>
                 </li>

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ArrowPathIcon, CheckIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import TaskStatusBadge from '@/Components/Tasks/TaskStatusBadge.vue';
@@ -57,7 +60,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 :disabled="processing"
                 @click="transition(task.id, 'complete')"
             >
-                <CheckIcon class="size-4" />
+                <CheckIcon class="size-5" />
                 {{ t('task_complete') }}
             </button>
 
@@ -68,12 +71,12 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 :disabled="processing"
                 @click="transition(task.id, 'reopen')"
             >
-                <ArrowPathIcon class="size-4" />
+                <ArrowPathIcon class="size-5" />
                 {{ t('task_reopen') }}
             </button>
 
             <button v-if="task.can.update" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
-                <PencilSquareIcon class="size-4" />
+                <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </button>
 
@@ -83,7 +86,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 class="btn btn-ghost btn-sm text-error"
                 @click="openModal(task)"
             >
-                <TrashIcon class="size-4" />
+                <TrashIcon class="size-5" />
                 {{ t('delete') }}
             </button>
         </template>

@@ -113,7 +113,7 @@ export type NavigationItemData = {
 readonly key: string,
 readonly label: string,
 readonly href: string,
-readonly icon: string,
+readonly icon: App.Enums.NavIconEnum,
 readonly order: number,
 readonly children: App.Data.NavigationItemData[],
 };
@@ -1776,6 +1776,7 @@ export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
 export type JobTypeEnum = "regular" | "one_off" | "special";
+export type NavIconEnum = "dashboard" | "buildings" | "team" | "clients" | "quotes" | "invoices" | "recurring_invoices" | "contracts" | "documents" | "schedule" | "tasks" | "expenses" | "notifications" | "notification_settings" | "pending_actions" | "users" | "roles" | "audit_logs" | "media" | "profile" | "invoice_settings" | "settings";
 export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentSourceEnum = "manual" | "bank_import";

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { KG_ICONS } from '@/icons/kegosIcons';
 import { ref, watch } from 'vue';
 
 const props = withDefaults(
@@ -44,7 +45,7 @@ function clear() {
 <template>
     <div v-if="!disabled" class="join">
         <label class="input input-sm input-bordered join-item flex items-center gap-2 min-w-64">
-            <span class="opacity-50">⌕</span>
+            <KG_ICONS.adminAction.search class="size-5 opacity-50" />
             <input
                 :value="value"
                 type="search"
@@ -53,7 +54,16 @@ function clear() {
                 data-autom="input-filter-search"
                 @input="update(($event.target as HTMLInputElement).value)"
             />
-            <button v-if="value" type="button" class="btn btn-ghost btn-xs" @click="clear">✕</button>
+            <button
+                v-if="value"
+                type="button"
+                class="btn btn-ghost btn-xs btn-square"
+                :title="$t('clear_filters')"
+                :aria-label="$t('clear_filters')"
+                @click="clear"
+            >
+                <KG_ICONS.adminAction.close class="size-4" />
+            </button>
             <div
                 v-else-if="searchableAttributes?.length"
                 class="tooltip tooltip-left"

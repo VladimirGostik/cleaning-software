@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { DocumentTextIcon } from '@heroicons/vue/24/outline';
+import DocumentTextIcon from '~icons/material-symbols/description-outline-rounded';
 
 import DocumentFrameToggles from '@/Components/Documents/DocumentFrameToggles.vue';
 import DocumentMissingTokens from '@/Components/Documents/DocumentMissingTokens.vue';
@@ -52,7 +52,7 @@ const missingSummary = computed(() =>
                     <div class="flex flex-wrap items-center gap-3">
                         <DocumentFrameToggles v-model:show-header="showHeader" v-model:show-footer="showFooter" />
                         <button type="button" class="btn btn-sm" @click="pdf.open">
-                            <DocumentTextIcon class="size-4" aria-hidden="true" />
+                            <DocumentTextIcon class="size-5" aria-hidden="true" />
                             {{ t('contract_step_pdf_preview') }}
                         </button>
                     </div>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline';
+import LockClosedIcon from '~icons/material-symbols/lock-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import EyeSlashIcon from '~icons/material-symbols/visibility-off-outline-rounded';
 import { useFormContext } from '@/Components/Forms/useFormContext';
 import { useFieldError, callValidate } from '@/Components/Forms/useFieldError';
 

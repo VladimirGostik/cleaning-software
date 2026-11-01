@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CheckIcon } from '@heroicons/vue/24/outline';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
 import { useFormContext } from '@/Components/Forms/useFormContext';
 import { callValidate } from '@/Components/Forms/useFieldError';
 

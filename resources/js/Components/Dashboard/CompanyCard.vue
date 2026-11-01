@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ArrowsRightLeftIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import ArrowsRightLeftIcon from '~icons/material-symbols/swap-horiz-outline-rounded';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
 import TenantColorDot from '@/Components/Tenants/TenantColorDot.vue';
 import CompanyMetricGroup from '@/Components/Dashboard/CompanyMetricGroup.vue';
 import { useDashboardNavigation } from '@/Components/Dashboard/dashboardNavigation';
@@ -35,7 +36,7 @@ const isSwitching = computed<boolean>(() => switchingTo.value === props.company.
             >
                 <TenantColorDot :color="company.color" />
                 {{ company.name }}
-                <ArrowsRightLeftIcon class="size-4 text-base-content/40" aria-hidden="true" />
+                <ArrowsRightLeftIcon class="size-5 text-base-content/40" aria-hidden="true" />
                 <span v-if="isSwitching" class="loading loading-spinner loading-xs" />
             </button>
             <span v-if="!company.supplier_complete" class="badge badge-warning badge-sm gap-1">

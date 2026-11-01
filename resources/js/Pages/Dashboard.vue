@@ -2,7 +2,8 @@
 import { computed, provide } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ArrowPathIcon, BuildingOffice2Icon } from '@heroicons/vue/24/outline';
+import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import CompanyCard from '@/Components/Dashboard/CompanyCard.vue';
@@ -33,7 +34,7 @@ function refresh(): void {
         <template #actions>
             <span class="text-xs text-base-content/50">{{ generatedLabel }}</span>
             <button type="button" class="btn btn-ghost btn-sm" :aria-label="t('dashboard_refresh')" @click="refresh">
-                <ArrowPathIcon class="size-4" />
+                <ArrowPathIcon class="size-5" />
             </button>
         </template>
     </Header>

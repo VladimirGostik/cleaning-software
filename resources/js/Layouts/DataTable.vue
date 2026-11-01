@@ -1,7 +1,10 @@
 <script setup lang="ts" generic="TRow extends object">
 import { computed, ref, useSlots } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { ChevronUpIcon, ChevronDownIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
+import ChevronUpIcon from '~icons/material-symbols/expand-less-rounded';
+import ChevronDownIcon from '~icons/material-symbols/expand-more-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-rounded';
+import TrashIcon from '~icons/material-symbols/delete-rounded';
 import type { TableColumn, Paginator } from '@/types';
 
 const props = withDefaults(
@@ -178,7 +181,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                                         class="btn btn-ghost btn-xs"
                                         :title="$t('edit')"
                                     >
-                                        <PencilSquareIcon class="size-4" />
+                                        <PencilSquareIcon class="size-5" />
                                     </a>
 
                                     <div v-if="canDeleteThisRow(row)" class="relative">
@@ -188,7 +191,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                                             :title="$t('delete')"
                                             @click="openDeletePopover(index)"
                                         >
-                                            <TrashIcon class="size-4" />
+                                            <TrashIcon class="size-5" />
                                         </button>
 
                                         <div

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\Clients\ClientOptionData;
 use App\Data\Objects\ObjectDetailData;
 use App\Data\Objects\ObjectUpsertData;
@@ -30,7 +31,7 @@ final class ObjectController extends Controller
     ) {}
 
     #[Authorize('viewAny', CleaningObject::class)]
-    #[NavItem(label: 'app.objects', route: 'objects.index', icon: 'BuildingOffice2Icon', permission: PermissionEnum::ViewObjects->value, order: 31)]
+    #[NavItem(label: 'app.objects', route: 'objects.index', icon: NavIconEnum::Buildings, permission: PermissionEnum::ViewObjects->value, order: 31)]
     public function index(Request $request): Response
     {
         /** @var User $actor */

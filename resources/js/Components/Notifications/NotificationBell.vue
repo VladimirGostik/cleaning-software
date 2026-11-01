@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { BellIcon } from '@heroicons/vue/24/outline';
+import BellIcon from '~icons/material-symbols/notifications-outline-rounded';
 import { useNotificationBell } from '@/Composables/useNotificationBell';
 import NotificationItem from './NotificationItem.vue';
 
@@ -69,7 +69,7 @@ function markAllRead(): void {
             "
         >
             <span class="indicator">
-                <BellIcon class="size-4" />
+                <BellIcon class="size-5" />
                 <span v-if="state.unreadCount > 0" class="indicator-item badge badge-error badge-xs" aria-hidden="true">
                     {{ badgeText }}
                 </span>

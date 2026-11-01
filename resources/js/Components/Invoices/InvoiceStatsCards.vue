@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ArrowPathIcon, ClockIcon, ExclamationTriangleIcon, ReceiptPercentIcon } from '@heroicons/vue/24/outline';
+import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
+import ClockIcon from '~icons/material-symbols/schedule-outline-rounded';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
+import ReceiptPercentIcon from '~icons/material-symbols/request-quote-outline-rounded';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 
 const props = defineProps<{

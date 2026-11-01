@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersInvoicePdf;
 use App\Data\Invoices\InvoiceBulkLimitsData;
@@ -36,7 +37,7 @@ final class InvoiceController extends Controller
     public function __construct(private readonly InvoiceService $invoices) {}
 
     #[Authorize('viewAny', Invoice::class)]
-    #[NavItem(label: 'app.invoices', route: 'invoices.index', icon: 'DocumentTextIcon', permission: PermissionEnum::ViewInvoices->value, order: 40)]
+    #[NavItem(label: 'app.invoices', route: 'invoices.index', icon: NavIconEnum::Invoices, permission: PermissionEnum::ViewInvoices->value, order: 40)]
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('Invoices/Index', [

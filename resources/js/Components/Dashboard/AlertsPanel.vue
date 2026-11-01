@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckCircleIcon } from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
 import EmptyState from '@/Components/EmptyState.vue';
 import AlertRow from '@/Components/Dashboard/AlertRow.vue';
 import { ALERT_TYPE_STYLE } from '@/Components/Dashboard/alertTypeStyle';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\Expenses\BankCsvImportData;
 use App\Data\Expenses\ExpenseAnalyzeData;
 use App\Data\Expenses\ExpenseConfirmData;
@@ -33,7 +34,7 @@ final class ExpenseController extends Controller
     ) {}
 
     #[Authorize('viewAny', Expense::class)]
-    #[NavItem(label: 'app.expenses', route: 'expenses.index', icon: 'BanknotesIcon', permission: PermissionEnum::ViewExpenses->value, order: 36)]
+    #[NavItem(label: 'app.expenses', route: 'expenses.index', icon: NavIconEnum::Expenses, permission: PermissionEnum::ViewExpenses->value, order: 36)]
     public function index(Request $request): Response
     {
         /** @var User $actor */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\ChangePasswordData;
 use App\Data\UpdateProfileData;
 use App\Models\User;
@@ -24,7 +25,7 @@ final class ProfileController extends Controller
         private readonly McpTokenService $mcpTokens,
     ) {}
 
-    #[NavItem(label: 'app.profile', route: 'profile.show', icon: 'UserCircleIcon', group: 'settings', order: 10)]
+    #[NavItem(label: 'app.profile', route: 'profile.show', icon: NavIconEnum::Profile, group: 'settings', order: 10)]
     public function show(Request $request): Response
     {
         /** @var User $user */

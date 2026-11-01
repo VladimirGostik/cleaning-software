@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\Clients\ClientDetailData;
 use App\Data\Clients\ClientUpsertData;
 use App\Data\Objects\ObjectListItemData;
@@ -28,7 +29,7 @@ final class ClientController extends Controller
     ) {}
 
     #[Authorize('viewAny', Client::class)]
-    #[NavItem(label: 'app.clients', route: 'clients.index', icon: 'UserGroupIcon', permission: PermissionEnum::ViewClients->value, order: 30)]
+    #[NavItem(label: 'app.clients', route: 'clients.index', icon: NavIconEnum::Clients, permission: PermissionEnum::ViewClients->value, order: 30)]
     public function index(Request $request): Response
     {
         return Inertia::render('Clients/Index', [

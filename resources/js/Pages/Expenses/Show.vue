@@ -2,7 +2,8 @@
 import { useForm } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import SelectInput from '@/Components/Forms/SelectInput.vue';
@@ -70,7 +71,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
     <Header :title="expense.supplier_name ?? formatDate(expense.date)" :breadcrumbs="breadcrumbs">
         <template #actions>
             <button v-if="expense.can.update" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
-                <PencilSquareIcon class="size-4" />
+                <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </button>
 
@@ -80,7 +81,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 class="btn btn-ghost btn-sm text-error"
                 @click="openModal(expense)"
             >
-                <TrashIcon class="size-4" />
+                <TrashIcon class="size-5" />
                 {{ t('delete') }}
             </button>
         </template>

@@ -2,7 +2,9 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { EyeIcon, TrashIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
+import UserGroupIcon from '~icons/material-symbols/groups-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -137,7 +139,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
                 <template #buttons="{ row }">
                     <Link :href="`/clients/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -147,7 +149,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                         :title="t('delete')"
                         @click="openModal(row)"
                     >
-                        <TrashIcon class="size-4" />
+                        <TrashIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

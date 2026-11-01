@@ -2,7 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
+import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-outline-rounded';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import NotificationTypeBadge from './NotificationTypeBadge.vue';
 import { formatDatetime } from '@/utils/date';
@@ -94,7 +95,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 :title="t('view')"
                 :aria-label="t('view')"
             >
-                <ArrowTopRightOnSquareIcon class="size-4" />
+                <ArrowTopRightOnSquareIcon class="size-5" />
             </Link>
             <button
                 v-if="(row as NotificationRow).read_at === null"
@@ -104,7 +105,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 :aria-label="t('notifications_mark_read')"
                 @click="emit('mark-read', row as NotificationRow)"
             >
-                <CheckIcon class="size-4" />
+                <CheckIcon class="size-5" />
             </button>
         </template>
     </DataTable>

@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ArrowDownTrayIcon, PaperAirplaneIcon } from '@heroicons/vue/24/outline';
+import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded';
+import PaperAirplaneIcon from '~icons/material-symbols/send-outline-rounded';
 
 import Can from '@/Components/Can.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
@@ -68,7 +69,7 @@ const submitConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
             <p v-if="submitError" class="text-sm text-error" role="alert">{{ submitError }}</p>
 
             <a v-if="canDownload" :href="`/invoices/${invoice.id}/efa-xml`" class="btn btn-sm w-full justify-start">
-                <ArrowDownTrayIcon class="size-4" />
+                <ArrowDownTrayIcon class="size-5" />
                 {{ t('efa_card_download_xml') }}
             </a>
 
@@ -78,7 +79,7 @@ const submitConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
                     class="btn btn-sm btn-primary w-full justify-start"
                     @click="submitConfirm.openModal(invoice)"
                 >
-                    <PaperAirplaneIcon class="size-4" />
+                    <PaperAirplaneIcon class="size-5" />
                     {{ t('efa_card_submit') }}
                 </button>
             </Can>

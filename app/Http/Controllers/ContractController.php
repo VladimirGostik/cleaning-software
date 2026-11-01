@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Contracts\RendersContractPdf;
 use App\Data\Contracts\ContractCreatePrefillData;
 use App\Data\Contracts\ContractDetailData;
@@ -53,7 +54,7 @@ final class ContractController extends Controller
     ) {}
 
     #[Authorize('viewAny', Contract::class)]
-    #[NavItem(label: 'app.contracts', route: 'contracts.index', icon: 'DocumentCheckIcon', permission: PermissionEnum::ViewContracts->value, order: 36)]
+    #[NavItem(label: 'app.contracts', route: 'contracts.index', icon: NavIconEnum::Contracts, permission: PermissionEnum::ViewContracts->value, order: 36)]
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('Contracts/Index', [

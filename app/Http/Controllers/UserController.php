@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Data\CreateUserData;
 use App\Data\RoleListItemData;
 use App\Data\UpdateUserData;
@@ -33,7 +34,7 @@ final class UserController extends Controller
     ) {}
 
     #[Authorize('viewAny', User::class)]
-    #[NavItem(label: 'app.users', route: 'users.index', icon: 'UsersIcon', permission: PermissionEnum::ViewEmployees->value, group: 'settings', order: 15)]
+    #[NavItem(label: 'app.users', route: 'users.index', icon: NavIconEnum::Users, permission: PermissionEnum::ViewEmployees->value, group: 'settings', order: 15)]
     public function index(Request $request): Response
     {
         $tenantId = current_tenant_id();

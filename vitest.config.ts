@@ -3,6 +3,7 @@ process.env.TZ = 'UTC';
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath, URL } from 'node:url';
 import vue from '@vitejs/plugin-vue';
+import Icons from 'unplugin-icons/vite';
 
 export default defineConfig({
     plugins: [
@@ -14,6 +15,7 @@ export default defineConfig({
                 },
             },
         }),
+        Icons({ compiler: 'vue3', scale: 1 }),
     ],
     resolve: {
         alias: {

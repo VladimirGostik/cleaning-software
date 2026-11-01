@@ -2,14 +2,12 @@
 import { Link, router } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    BanknotesIcon,
-    CheckBadgeIcon,
-    DocumentDuplicateIcon,
-    DocumentTextIcon,
-    EyeIcon,
-    XCircleIcon,
-} from '@heroicons/vue/24/outline';
+import BanknotesIcon from '~icons/material-symbols/receipt-long-outline-rounded';
+import CheckBadgeIcon from '~icons/material-symbols/verified-outline-rounded';
+import DocumentDuplicateIcon from '~icons/material-symbols/content-copy-outline-rounded';
+import DocumentTextIcon from '~icons/material-symbols/description-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -269,7 +267,7 @@ function onSettingsSaved(): void {
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -280,7 +278,7 @@ function onSettingsSaved(): void {
                         :aria-label="t('invoice_action_issue')"
                         @click="ui.issueFor = row.id"
                     >
-                        <CheckBadgeIcon class="size-4" />
+                        <CheckBadgeIcon class="size-5" />
                     </button>
 
                     <button
@@ -291,7 +289,7 @@ function onSettingsSaved(): void {
                         :aria-label="payLabel(row.is_credit_note)"
                         @click="ui.payFor = row"
                     >
-                        <BanknotesIcon class="size-4" />
+                        <BanknotesIcon class="size-5" />
                     </button>
 
                     <button
@@ -302,7 +300,7 @@ function onSettingsSaved(): void {
                         :aria-label="t('invoice_action_duplicate')"
                         @click="duplicate(row.id)"
                     >
-                        <DocumentDuplicateIcon class="size-4" />
+                        <DocumentDuplicateIcon class="size-5" />
                     </button>
 
                     <button
@@ -313,7 +311,7 @@ function onSettingsSaved(): void {
                         :aria-label="t('invoice_action_cancel')"
                         @click="cancelConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-4" />
+                        <XCircleIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>
