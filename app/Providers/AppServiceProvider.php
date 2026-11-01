@@ -15,6 +15,7 @@ use App\Contracts\SendsPush;
 use App\Contracts\SubmitsEInvoices;
 use App\Models\CleaningObject;
 use App\Models\TenantMembership;
+use App\Policies\PersonalAccessTokenPolicy;
 use App\Services\Ai\LaravelAiExpenseAnalyzer;
 use App\Services\Efa\NullEInvoiceAccessPoint;
 use App\Services\Pdf\ContractPdfService;
@@ -29,9 +30,11 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\PersonalAccessToken;
 use ReflectionClass;
 use Spatie\LaravelData\Contracts\BaseData;
 use Spatie\LaravelData\Contracts\ValidateableData;
@@ -85,6 +88,8 @@ final class AppServiceProvider extends ServiceProvider
     {
         $this->loadJsonTranslations();
 
+        Gate::policy(PersonalAccessToken::class, PersonalAccessTokenPolicy::class);
+
         Relation::morphMap([
             'tenant_membership' => TenantMembership::class,
             'cleaning_object' => CleaningObject::class,
@@ -92,6 +97,12 @@ final class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('devices', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
         RateLimiter::for('ai-analyze', fn (Request $request) => Limit::perMinute(config()->integer('ai.throttle.analyze', 20))->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
+        RateLimiter::for('mcp', function (Request $request): Limit {
+            $token = $request->user()?->currentAccessToken();
+            $tokenId = $token instanceof PersonalAccessToken ? (string) $token->id : null;
+
+            return Limit::perMinute(config()->integer('ai.mcp_throttle', 120))->by($tokenId !== null ? 'mcp-token:'.$tokenId : 'ip:'.get_client_ip());
+        });
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
     }
 

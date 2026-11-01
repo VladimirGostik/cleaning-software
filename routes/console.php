@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Console\Commands\CheckContractExpiry;
+use App\Console\Commands\ExpirePendingActions;
 use App\Console\Commands\ExpireQuotes;
 use App\Console\Commands\GenerateRecurringInvoices;
 use App\Console\Commands\GenerateScheduledJobs;
@@ -24,3 +25,4 @@ Schedule::command(ExpireQuotes::class)->daily();
 Schedule::command(CheckContractExpiry::class)->daily();
 Schedule::command(GenerateScheduledJobs::class)->daily();
 Schedule::command(RemindTasks::class)->hourly()->withoutOverlapping();
+Schedule::command(ExpirePendingActions::class)->hourly();

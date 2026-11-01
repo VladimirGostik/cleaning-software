@@ -8,6 +8,7 @@ use App\Data\ChangePasswordData;
 use App\Data\UpdateProfileData;
 use App\Models\User;
 use App\Navigation\NavItem;
+use App\Services\McpTokenService;
 use App\Services\ProfileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,12 +21,21 @@ final class ProfileController extends Controller
 {
     public function __construct(
         private readonly ProfileService $profileService,
+        private readonly McpTokenService $mcpTokens,
     ) {}
 
     #[NavItem(label: 'app.profile', route: 'profile.show', icon: 'UserCircleIcon', group: 'settings', order: 10)]
-    public function show(): Response
+    public function show(Request $request): Response
     {
-        return Inertia::render('Profile/Show');
+        /** @var User $user */
+        $user = $request->user();
+
+        Inertia::encryptHistory();
+
+        return Inertia::render('Profile/Show', [
+            'mcpTokens' => $this->mcpTokens->listFor($user),
+            'mcpUrl' => url('/mcp'),
+        ]);
     }
 
     public function update(UpdateProfileData $data, Request $request): RedirectResponse

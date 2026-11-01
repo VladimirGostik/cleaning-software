@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\ApiLocaleMiddleware;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\LocaleMiddleware;
 use App\Http\Middleware\PermissionMiddleware;
@@ -26,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.context' => TenantContextMiddleware::class,
             'tenant.required' => RequireActiveTenant::class,
             'ability' => CheckForAnyAbility::class,
+            'locale.api' => ApiLocaleMiddleware::class,
+            'user.active' => EnsureUserIsActive::class,
         ]);
 
         $middleware->prependToPriorityList(before: SubstituteBindings::class, prepend: TenantContextMiddleware::class);

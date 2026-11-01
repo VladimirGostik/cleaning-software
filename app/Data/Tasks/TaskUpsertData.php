@@ -7,6 +7,7 @@ namespace App\Data\Tasks;
 use App\Enums\TaskPriorityEnum;
 use App\Enums\TaskSourceEnum;
 use App\Models\Task;
+use Carbon\CarbonImmutable;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Attributes\Validation\Date;
@@ -44,6 +45,16 @@ final class TaskUpsertData extends Data
         public readonly ?string $taskable_id = null,
         public readonly TaskSourceEnum $source = TaskSourceEnum::Manual,
     ) {}
+
+    public function dueAtUtc(): ?CarbonImmutable
+    {
+        return $this->due_at === null ? null : CarbonImmutable::parse($this->due_at)->utc();
+    }
+
+    public function remindAtUtc(): ?CarbonImmutable
+    {
+        return $this->remind_at === null ? null : CarbonImmutable::parse($this->remind_at)->utc();
+    }
 
     /** Omitted `tenant_id` means the bound (active) tenant, explicit null means a global task. */
     public function resolvedTenantId(): ?string

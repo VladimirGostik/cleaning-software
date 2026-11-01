@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\NotificationBellController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PendingActionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\TaskController;
@@ -17,15 +18,15 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+Route::middleware([HandlePrecognitiveRequests::class, 'locale.api'])->group(function (): void {
     Route::post('/auth/login', [AuthController::class, 'login']);
 });
 
-Route::middleware('auth:sanctum')->group(function (): void {
+Route::middleware(['auth:sanctum', 'locale.api'])->group(function (): void {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 });
 
-Route::middleware(['auth:sanctum', 'ability:mobile', 'tenant.context', 'tenant.required'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'user.active', 'ability:mobile', 'locale.api', 'tenant.context', 'tenant.required'])->group(function (): void {
     Route::get('/me', MeController::class);
     Route::get('/dashboard', DashboardController::class)->name('api.dashboard');
     Route::get('/notifications/bell', NotificationBellController::class)->name('api.notifications.bell');
@@ -70,6 +71,10 @@ Route::middleware(['auth:sanctum', 'ability:mobile', 'tenant.context', 'tenant.r
     Route::post('/expenses/{expense}/confirm', [ExpenseController::class, 'confirm'])->name('api.expenses.confirm')->whereUuid('expense');
     Route::post('/expenses/{expense}/receipt', [ExpenseController::class, 'attachReceipt'])->name('api.expenses.attach-receipt')->whereUuid('expense');
     Route::get('/expenses/{expense}/receipt', [ExpenseController::class, 'receipt'])->name('api.expenses.receipt')->whereUuid('expense');
+
+    Route::get('/pending-actions', [PendingActionController::class, 'index'])->name('api.pending-actions.index');
+    Route::post('/pending-actions/{pendingAction}/confirm', [PendingActionController::class, 'confirm'])->name('api.pending-actions.confirm')->whereUuid('pendingAction');
+    Route::post('/pending-actions/{pendingAction}/cancel', [PendingActionController::class, 'cancel'])->name('api.pending-actions.cancel')->whereUuid('pendingAction');
 
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {

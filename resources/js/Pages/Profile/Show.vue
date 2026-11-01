@@ -7,9 +7,15 @@ import TextInput from '@/Components/Forms/TextInput.vue';
 import PasswordInput from '@/Components/Forms/PasswordInput.vue';
 import SelectInput from '@/Components/Forms/SelectInput.vue';
 import FormProvider from '@/Components/Forms/FormProvider.vue';
+import McpTokensCard from '@/Components/Profile/McpTokensCard.vue';
 import { usePageProps } from '@/Composables/usePageProps';
 import type { Breadcrumb } from '@/types';
 import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
+
+defineProps<{
+    mcpTokens: App.Data.Profile.McpTokenData[];
+    mcpUrl: string;
+}>();
 
 const { t } = useI18n();
 const pageProps = usePageProps();
@@ -111,5 +117,9 @@ function submitPassword() {
                 </FormProvider>
             </div>
         </div>
+    </div>
+
+    <div class="mt-6">
+        <McpTokensCard :tokens="mcpTokens" :url="mcpUrl" />
     </div>
 </template>

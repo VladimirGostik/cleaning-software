@@ -24,7 +24,9 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationSettingsController;
 use App\Http\Controllers\ObjectController;
 use App\Http\Controllers\PasswordResetLinkController;
+use App\Http\Controllers\PendingActionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProfileMcpTokenController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\RoleController;
@@ -75,6 +77,15 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
     });
+
+    Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/profile/mcp-tokens', [ProfileMcpTokenController::class, 'store'])->name('profile.mcp-tokens.store');
+    });
+    Route::delete('/profile/mcp-tokens/{token}', [ProfileMcpTokenController::class, 'destroy'])->name('profile.mcp-tokens.destroy')->whereNumber('token');
+
+    Route::get('/pending-actions', [PendingActionController::class, 'index'])->name('pending-actions.index');
+    Route::post('/pending-actions/{pendingAction}/confirm', [PendingActionController::class, 'confirm'])->name('pending-actions.confirm')->whereUuid('pendingAction');
+    Route::post('/pending-actions/{pendingAction}/cancel', [PendingActionController::class, 'cancel'])->name('pending-actions.cancel')->whereUuid('pendingAction');
 
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
