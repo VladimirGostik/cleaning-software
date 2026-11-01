@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { useRowLink } from '@/Composables/useRowLink';
 import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
 
 import EmptyState from '@/Components/EmptyState.vue';
@@ -12,6 +13,9 @@ defineProps<{
 }>();
 
 const { t } = useI18n();
+const rowLink = useRowLink();
+
+const objectHref = (object: App.Data.Objects.ObjectListItemData) => `/objects/${object.id}`;
 </script>
 
 <template>
@@ -32,9 +36,15 @@ const { t } = useI18n();
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="object in objects" :key="object.id">
+                        <tr
+                            v-for="object in objects"
+                            :key="object.id"
+                            :class="rowLink.rowClass(objectHref(object))"
+                            @click="rowLink.onClick(objectHref(object), $event)"
+                            @auxclick="rowLink.onAuxClick(objectHref(object), $event)"
+                        >
                             <td>
-                                <Link :href="`/objects/${object.id}`" class="link link-hover font-medium">
+                                <Link :href="objectHref(object)" class="link link-hover font-medium">
                                     {{ object.name }}
                                 </Link>
                                 <div v-if="object.city" class="text-xs text-base-content/60">{{ object.city }}</div>

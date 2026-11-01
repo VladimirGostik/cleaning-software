@@ -143,7 +143,12 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="recurringInvoices" :filters="filterDefinitions">
+            <DataTable
+                :columns="columns"
+                :rows="recurringInvoices"
+                :filters="filterDefinitions"
+                :row-href="(row) => `/recurring-invoices/${row.id}`"
+            >
                 <template #cell-name="{ row }">
                     <Link :href="`/recurring-invoices/${row.id}`" class="link link-hover font-medium">{{
                         row.name

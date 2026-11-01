@@ -43,6 +43,7 @@ const columns: TableColumn[] = [
                 :edit-url="(row: App.Data.RoleListItemData) => `/roles/${row.id}/edit`"
                 :delete-url="(row: App.Data.RoleListItemData) => `/roles/${row.id}`"
                 :can-delete-row="(row: App.Data.RoleListItemData) => !row.is_system"
+                :row-href="(row: App.Data.RoleListItemData) => (allows('edit roles') ? `/roles/${row.id}/edit` : null)"
             >
                 <template #cell-is_system="{ row }">
                     <span

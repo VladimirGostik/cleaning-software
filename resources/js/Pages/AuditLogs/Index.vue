@@ -49,7 +49,13 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="activities" :filters="filterDefinitions" route-name="audit-logs.index">
+            <DataTable
+                :columns="columns"
+                :rows="activities"
+                :filters="filterDefinitions"
+                route-name="audit-logs.index"
+                :row-href="(row) => `/audit-logs/${(row as App.Data.ActivityLogListItemData).id}`"
+            >
                 <template #cell-created_at="{ value }">
                     {{ formatDatetime(value as string | null) }}
                 </template>

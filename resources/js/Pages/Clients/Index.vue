@@ -110,7 +110,12 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="clients" :filters="filterDefinitions">
+            <DataTable
+                :columns="columns"
+                :rows="clients"
+                :filters="filterDefinitions"
+                :row-href="(row) => `/clients/${row.id}`"
+            >
                 <template #cell-name="{ row }">
                     <Link :href="`/clients/${row.id}`" class="link link-hover font-medium">{{ row.name }}</Link>
                 </template>

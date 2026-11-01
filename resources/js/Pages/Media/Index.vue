@@ -67,7 +67,13 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="media" :filters="filterDefinitions" route-name="media.index">
+            <DataTable
+                :columns="columns"
+                :rows="media"
+                :filters="filterDefinitions"
+                route-name="media.index"
+                :row-href="(row) => `/media/${(row as App.Data.MediaListItemData).id}`"
+            >
                 <template #cell-file_name="{ row }">
                     <Link
                         :href="`/media/${(row as App.Data.MediaListItemData).id}`"

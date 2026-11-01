@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { useRowLink } from '@/Composables/useRowLink';
 import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
@@ -11,6 +12,9 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const rowLink = useRowLink();
+
+const invoiceHref = (invoice: App.Data.Invoices.InvoiceListItemData) => `/invoices/${invoice.id}`;
 const { money } = useMoneyFormat();
 </script>
 
@@ -31,9 +35,15 @@ const { money } = useMoneyFormat();
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="invoice in props.invoices" :key="invoice.id">
+                    <tr
+                        v-for="invoice in props.invoices"
+                        :key="invoice.id"
+                        :class="rowLink.rowClass(invoiceHref(invoice))"
+                        @click="rowLink.onClick(invoiceHref(invoice), $event)"
+                        @auxclick="rowLink.onAuxClick(invoiceHref(invoice), $event)"
+                    >
                         <td>
-                            <Link :href="`/invoices/${invoice.id}`" class="link link-hover tabular-nums">
+                            <Link :href="invoiceHref(invoice)" class="link link-hover tabular-nums">
                                 {{ invoice.number ?? t('invoice_draft_number') }}
                             </Link>
                         </td>

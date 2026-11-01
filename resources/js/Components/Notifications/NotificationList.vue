@@ -57,6 +57,8 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         :filters="filterDefinitions"
         :enable-search="false"
         row-key="id"
+        :row-href="(row) => (row as NotificationRow).url"
+        :open-row="(row) => emit('select', row as NotificationRow)"
         :reload-only="['notifications', 'filters', 'unreadCount']"
     >
         <template #cell-created_at="{ value }">

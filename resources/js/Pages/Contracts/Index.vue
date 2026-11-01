@@ -144,7 +144,12 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="contracts" :filters="filterDefinitions">
+            <DataTable
+                :columns="columns"
+                :rows="contracts"
+                :filters="filterDefinitions"
+                :row-href="(row) => `/contracts/${row.id}`"
+            >
                 <template #cell-title="{ row }">
                     <Link :href="`/contracts/${row.id}`" class="link link-hover font-medium">{{ row.title }}</Link>
                     <p v-if="row.number" class="tabular-nums text-xs text-base-content/60">{{ row.number }}</p>

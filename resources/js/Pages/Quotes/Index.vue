@@ -158,7 +158,12 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="quotes" :filters="filterDefinitions">
+            <DataTable
+                :columns="columns"
+                :rows="quotes"
+                :filters="filterDefinitions"
+                :row-href="(row) => `/quotes/${row.id}`"
+            >
                 <template #cell-number="{ row }">
                     <Link :href="`/quotes/${row.id}`" class="link link-hover tabular-nums font-medium">
                         {{ row.number ?? t('quote_no_number') }}

@@ -38,6 +38,7 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
         :rows="props.jobs"
         :enable-filters="false"
         row-key="id"
+        :row-href="(row) => `/jobs/${row.id}`"
         :reload-only="['jobs', 'filters']"
     >
         <template #cell-scheduled_date="{ row }">

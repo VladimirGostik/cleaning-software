@@ -4,6 +4,7 @@ import { router, Link } from '@inertiajs/vue3';
 import { KG_ICONS } from '@/icons/kegosIcons';
 import TableFilters from './TableFilters.vue';
 import TablePagination from './TablePagination.vue';
+import { useRowLink } from '@/Composables/useRowLink';
 import { readSpatieQuery, visitSpatieQuery } from '@/Composables/useSpatieTableQuery';
 import type { FilterConfig, Paginator, TableColumn, TableTabsConfig } from '@/types/table';
 
@@ -27,6 +28,7 @@ const props = withDefaults(
         canDelete?: boolean;
         canDeleteRow?: (row: TRow) => boolean;
         rowHref?: (row: TRow) => string | null;
+        openRow?: (row: TRow) => void;
         selectable?: boolean;
         selectLabel?: (row: TRow) => string;
         selectAllLabel?: string;
@@ -41,6 +43,7 @@ const props = withDefaults(
         deleteUrl: undefined,
         canDeleteRow: undefined,
         rowHref: undefined,
+        openRow: undefined,
         selectLabel: undefined,
         selectAllLabel: undefined,
         selectable: false,
@@ -200,36 +203,14 @@ function resolveRowHref(row: TRow): string | null {
     return props.rowHref ? props.rowHref(row) : null;
 }
 
-function isInteractiveTarget(event: Event): boolean {
-    const target = event.target as HTMLElement | null;
-    return !!target?.closest('a, button, input, select, textarea, label, [role="button"]');
-}
-
-function hasTextSelection(): boolean {
-    const selection = window.getSelection();
-    return !!selection && selection.toString().length > 0;
-}
+const rowLink = useRowLink();
 
 function onRowClick(row: TRow, event: MouseEvent) {
-    const href = resolveRowHref(row);
-    if (!href) return;
-    if (isInteractiveTarget(event) || hasTextSelection()) return;
-
-    if (event.metaKey || event.ctrlKey) {
-        window.open(href, '_blank', 'noopener');
-        return;
-    }
-
-    router.visit(href);
+    rowLink.onClick(resolveRowHref(row), event, props.openRow ? () => props.openRow?.(row) : undefined);
 }
 
 function onRowAuxClick(row: TRow, event: MouseEvent) {
-    if (event.button !== 1) return;
-    const href = resolveRowHref(row);
-    if (!href) return;
-    if (isInteractiveTarget(event) || hasTextSelection()) return;
-
-    window.open(href, '_blank', 'noopener');
+    rowLink.onAuxClick(resolveRowHref(row), event);
 }
 
 function confirmDelete(row: TRow, id: string | number) {
@@ -316,7 +297,7 @@ function confirmDelete(row: TRow, id: string | number) {
                         <template v-for="(row, index) in rows?.data ?? []" :key="rowIdentifier(row, index)">
                             <tr
                                 class="group"
-                                :class="{ 'cursor-pointer': !!resolveRowHref(row) }"
+                                :class="rowLink.rowClass(resolveRowHref(row))"
                                 @click="onRowClick(row, $event)"
                                 @auxclick="onRowAuxClick(row, $event)"
                             >

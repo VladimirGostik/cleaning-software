@@ -109,6 +109,9 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 :can-delete="allows('delete employees') && allows('manage employee_access')"
                 :edit-url="(row: App.Data.UserListItemData) => `/users/${row.id}/edit`"
                 :delete-url="(row: App.Data.UserListItemData) => `/users/${row.id}`"
+                :row-href="
+                    (row: App.Data.UserListItemData) => (allows('edit employees') ? `/users/${row.id}/edit` : null)
+                "
             >
                 <template #cell-roles="{ row }">
                     <div class="flex flex-wrap gap-1">

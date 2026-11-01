@@ -113,7 +113,13 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="employees" :filters="filterDefinitions" row-key="id">
+            <DataTable
+                :columns="columns"
+                :rows="employees"
+                :filters="filterDefinitions"
+                row-key="id"
+                :row-href="(row) => `/employees/${row.id}`"
+            >
                 <template #cell-last_name="{ row }">
                     <Link :href="`/employees/${row.id}`" class="link link-hover font-medium">{{
                         row.display_name

@@ -159,7 +159,12 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
-            <DataTable :columns="columns" :rows="objects" :filters="filterDefinitions">
+            <DataTable
+                :columns="columns"
+                :rows="objects"
+                :filters="filterDefinitions"
+                :row-href="(row) => `/objects/${row.id}`"
+            >
                 <template #cell-name="{ row }">
                     <Link :href="`/objects/${row.id}`" class="link link-hover font-medium">{{ row.name }}</Link>
                 </template>
