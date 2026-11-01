@@ -213,7 +213,7 @@ Access = `user/permission axis` only. No plan/feature gating.
 ## Out of scope (Phase 1 + 2)
 
 - Employee file expiry tracking, employee self-service access to own files, client/object file uploads, images or firm logo in document templates, template export/import between environments (2026-10-31 decisions).
-- S3 storage for documents is configured but not verified against a real bucket.
+- S3 storage for documents: `documents:verify-disk` passed against MinIO; a real AWS bucket is not verified.
 
 - Live IS EFA / Peppol access-point submission (UBL generation and a null-driver submit flow exist)
 - Slovak accounting system integrations other than the one-way Pohoda XML export (Omega, Money S3)
