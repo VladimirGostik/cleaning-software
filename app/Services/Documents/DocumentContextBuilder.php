@@ -192,7 +192,7 @@ final readonly class DocumentContextBuilder
             'object.address' => 'Dlhá 10, 811 02 Bratislava',
             'employee.name' => 'Mária Ukážková',
             'employee.email' => 'maria@example.com',
-            'employee.birth_date' => '01.01.1990',
+            'employee.birth_date' => '1. 1. 1990',
             'employee.national_id' => '900101/1234',
             'employee.address' => 'Krátka 3, 811 03 Bratislava',
             'employee.phone' => '+421 900 222 222',

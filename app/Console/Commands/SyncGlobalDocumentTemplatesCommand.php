@@ -10,17 +10,28 @@ use Database\Seeders\DocumentTemplateSeeder;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Console\ConfirmableTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'documents:sync-global-templates')]
-#[Signature('documents:sync-global-templates {--dry-run : Only report what would change}')]
+#[Signature('documents:sync-global-templates {--dry-run : Only report what would change} {--force : Run in production}')]
 #[Description('Bring the body of global document templates in line with the seeder definitions.')]
 final class SyncGlobalDocumentTemplatesCommand extends Command
 {
+    use ConfirmableTrait;
+
     public function handle(DocumentTemplateSeeder $seeder): int
     {
         $dryRun = (bool) $this->option('dry-run');
         $updated = 0;
+
+        if (! $dryRun) {
+            $this->warn('Edits made to global template bodies by platform admins will be replaced by the seeder wording.');
+
+            if (! $this->confirmToProceed()) {
+                return self::FAILURE;
+            }
+        }
 
         foreach ($seeder->definitions() as [$name, $type, $employmentType, $body]) {
             $template = DocumentTemplate::query()

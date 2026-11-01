@@ -97,7 +97,16 @@ final readonly class DocumentTemplateCatalogue
 
     public function labelOf(string $key): string
     {
-        return __('app.document_token_'.str_replace('.', '_', $key));
+        $lang = 'app.document_token_'.str_replace('.', '_', $key);
+        $label = __($lang);
+
+        return $label === $lang ? $key : $label;
+    }
+
+    /** @param  list<string>  $keys */
+    public function labelsOf(array $keys): string
+    {
+        return implode(', ', array_map($this->labelOf(...), $keys));
     }
 
     /** @return list<DocumentTokenData> */

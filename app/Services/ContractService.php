@@ -285,7 +285,7 @@ final readonly class ContractService
 
         if ($missing !== []) {
             throw ValidationException::withMessages([
-                'status' => [__('app.contract_unresolved_tokens', ['tokens' => implode(', ', $missing)])],
+                'status' => [__('app.contract_unresolved_tokens', ['tokens' => $this->catalogue->labelsOf($missing)])],
             ]);
         }
 

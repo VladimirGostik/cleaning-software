@@ -816,6 +816,7 @@
     "contract_terminated": "Contract terminated.",
     "contract_not_editable": "This contract can no longer be edited.",
     "contract_cannot_sign": "This contract cannot be signed.",
+    "contract_signed_pdf_unreadable": "The signed PDF could not be read. Contact your administrator.",
     "contract_cannot_terminate": "This contract cannot be terminated.",
     "contract_invalid_contractable": "The selected object or employee does not exist.",
     "contract_end_date_required_for_fixed": "A fixed-term contract requires an end date.",

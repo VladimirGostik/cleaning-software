@@ -121,7 +121,7 @@ describe('toolbar commands', () => {
         expect(getFontFamily(e)).toBe('Times New Roman');
         expect(getFontSizePt(e)).toBe(12);
 
-        setFontFamily(e, 'Arial');
+        setFontFamily(e, 'Geist');
         setFontSizePt(e, 10.5);
         expect(e.getHTML()).toBe('<p>x</p>');
         expect(getFontFamily(e)).toBeNull();
@@ -274,7 +274,7 @@ describe('toolbar commands on a selected block token', () => {
         );
 
         runToolbarAction(e, 'alignLeft');
-        setFontFamily(e, 'Arial');
+        setFontFamily(e, 'Geist');
         setFontSizePt(e, 10.5);
 
         expect(editorToStoredHtml(e.getHTML())).toBe('<p>x</p><p>{{block.signatures}}</p>');

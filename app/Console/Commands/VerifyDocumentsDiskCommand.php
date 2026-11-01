@@ -118,9 +118,14 @@ final class VerifyDocumentsDiskCommand extends Command
         return true;
     }
 
+    private function redact(string $message): string
+    {
+        return (string) preg_replace(['/\?\S*/', '/X-Amz-[A-Za-z-]+=[^&\s]*/i'], '', $message);
+    }
+
     private function reportFailure(string $label, Throwable $e): bool
     {
-        $this->line("  [FAIL] {$label}: ".class_basename($e).' - '.Str::limit(strtok($e->getMessage(), "\n") ?: '', 200));
+        $this->line("  [FAIL] {$label}: ".class_basename($e).' - '.Str::limit($this->redact(strtok($e->getMessage(), "\n") ?: ''), 200));
 
         return false;
     }

@@ -16,9 +16,9 @@ export { MAX_INDENT_LEVEL, rawStyleAttribute };
 
 export const DOCUMENT_PARSE_OPTIONS = { preserveWhitespace: true } as const;
 
-export const DOCUMENT_FONTS = ['Arial', 'Times New Roman', 'Courier New'] as const;
+export const DOCUMENT_FONTS = ['Geist', 'Arial', 'Times New Roman', 'Courier New'] as const;
 export type DocumentFont = (typeof DOCUMENT_FONTS)[number];
-export const DEFAULT_DOCUMENT_FONT: DocumentFont = 'Arial';
+export const DEFAULT_DOCUMENT_FONT: DocumentFont = 'Geist';
 export const DOCUMENT_FONT_SIZES_PT = [8, 9, 10, 10.5, 11, 12, 14, 16, 18, 24] as const;
 export const DEFAULT_DOCUMENT_FONT_SIZE_PT = 10.5;
 export const DOCUMENT_COLORS: readonly string[] = [

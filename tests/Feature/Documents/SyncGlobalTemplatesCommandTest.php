@@ -99,4 +99,19 @@ final class SyncGlobalTemplatesCommandTest extends TestCase
         $this->assertTrue($trashed->trashed());
         $this->assertSame('<p>old</p>', $trashed->body);
     }
+
+    public function test_production_requires_the_force_flag_and_warns_about_platform_admin_edits(): void
+    {
+        $this->global()->update(['body' => '<p>old</p>']);
+        $this->app['env'] = 'production';
+
+        $this->artisanCommand('documents:sync-global-templates')
+            ->expectsOutputToContain('platform admins will be replaced')
+            ->expectsConfirmation('Are you sure you want to run this command?', 'no')
+            ->assertFailed();
+        $this->assertSame('<p>old</p>', $this->global()->body);
+
+        $this->artisanCommand('documents:sync-global-templates', ['--force' => true])->assertSuccessful();
+        $this->assertNotSame('<p>old</p>', $this->global()->body);
+    }
 }

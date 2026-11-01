@@ -467,3 +467,24 @@
 .fieldset-legend {
     font-weight: 500;
 }
+
+.alert-soft.alert-warning {
+    color: var(--kg-chip-warning-fg);
+    background: var(--kg-chip-warning-bg);
+    border-color: transparent;
+}
+.alert-soft.alert-error {
+    color: var(--kg-chip-danger-fg);
+    background: var(--kg-chip-danger-bg);
+    border-color: transparent;
+}
+.alert-soft.alert-success {
+    color: var(--kg-chip-done-fg);
+    background: var(--kg-chip-done-bg);
+    border-color: transparent;
+}
+.alert-soft.alert-info {
+    color: var(--kg-chip-planned-fg);
+    background: var(--kg-chip-planned-bg);
+    border-color: transparent;
+}

@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\ViewErrorBag;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -46,6 +47,22 @@ final class ContractFreezeBlocksTest extends TestCase
     private function storedBody(Contract $contract): string
     {
         return Crypt::decryptString(is_string($body = DB::table('documents')->where('documentable_id', $contract->id)->value('body')) ? $body : '');
+    }
+
+    public function test_the_sign_error_names_missing_values_by_label_not_by_key(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $contract = Contract::factory()->forClient($client)->draft()->withBody('<p>{{client.dic}}</p>')->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('contracts.sign', $contract))->assertSessionHasErrors('status');
+
+        /** @var ViewErrorBag $errors */
+        $errors = session('errors');
+        $status = $errors->first('status');
+        $this->assertStringContainsString(__('app.document_token_client_dic'), $status);
+        $this->assertStringNotContainsString('client.dic', $status);
     }
 
     public function test_signing_expands_blocks_into_the_stored_text(): void

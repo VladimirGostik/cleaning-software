@@ -19,6 +19,7 @@ use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
+use App\Exceptions\SignedPdfUnreadableException;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -36,6 +37,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -157,9 +159,15 @@ final class ContractController extends Controller
     }
 
     #[Authorize('downloadPdf', 'contract')]
-    public function pdf(Contract $contract, RendersContractPdf $pdfService): Response
+    public function pdf(Contract $contract, RendersContractPdf $pdfService): Response|RedirectResponse
     {
-        $pdfContent = $pdfService->render($contract);
+        try {
+            $pdfContent = $pdfService->render($contract);
+        } catch (SignedPdfUnreadableException $e) {
+            Log::error('contract.signed_pdf.unreadable', ['contract_id' => $contract->id, 'media_id' => $e->mediaId]);
+
+            return back()->with('error', __('app.contract_signed_pdf_unreadable'));
+        }
 
         $filename = $contract->pdfFilenameBase().'.pdf';
 

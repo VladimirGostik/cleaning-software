@@ -14,6 +14,7 @@ use App\Services\QuoteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\ViewErrorBag;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -119,6 +120,11 @@ final class QuoteTextDocumentTest extends TestCase
         $quote = Quote::query()->firstOrFail();
 
         $this->post(route('quotes.send', $quote))->assertSessionHasErrors('status');
+        /** @var ViewErrorBag $errors */
+        $errors = session('errors');
+        $status = $errors->first('status');
+        $this->assertStringContainsString(__('app.document_token_object_name'), $status);
+        $this->assertStringNotContainsString('object.name', $status);
 
         $this->assertSame(QuoteStatusEnum::Draft, $quote->fresh()?->status);
         $this->get(route('quotes.show', $quote))->assertInertia(fn (AssertableInertia $page) => $page->where('quote.text_document.missing_tokens', ['object.name']));

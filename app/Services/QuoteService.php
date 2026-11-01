@@ -147,7 +147,7 @@ final readonly class QuoteService
 
         if ($missing !== []) {
             throw ValidationException::withMessages([
-                'status' => [__('app.quote_unresolved_tokens', ['tokens' => implode(', ', $missing)])],
+                'status' => [__('app.quote_unresolved_tokens', ['tokens' => $this->catalogue->labelsOf($missing)])],
             ]);
         }
 

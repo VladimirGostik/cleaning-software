@@ -816,6 +816,7 @@
     "contract_terminated": "Zmluva bola ukončená.",
     "contract_not_editable": "Túto zmluvu už nie je možné upravovať.",
     "contract_cannot_sign": "Túto zmluvu nie je možné podpísať.",
+    "contract_signed_pdf_unreadable": "Podpísané PDF sa nepodarilo prečítať. Kontaktujte správcu.",
     "contract_cannot_terminate": "Túto zmluvu nie je možné ukončiť.",
     "contract_invalid_contractable": "Vybraný objekt alebo zamestnanec neexistuje.",
     "contract_end_date_required_for_fixed": "Pri zmluve na dobu určitú je potrebné zadať dátum ukončenia.",

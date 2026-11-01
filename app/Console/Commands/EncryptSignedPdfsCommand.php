@@ -22,14 +22,19 @@ final class EncryptSignedPdfsCommand extends Command
         $dryRun = (bool) $this->option('dry-run');
         $upgraded = [];
         $alreadyEncrypted = 0;
+        $repaired = 0;
 
         Media::query()
             ->where('model_type', (new Document)->getMorphClass())
             ->where('collection_name', SignedPdfStore::COLLECTION)
             ->lazyById()
-            ->each(function (Media $media) use ($store, $dryRun, &$upgraded, &$alreadyEncrypted): void {
+            ->each(function (Media $media) use ($store, $dryRun, &$upgraded, &$alreadyEncrypted, &$repaired): void {
                 if ($store->isEncrypted($media)) {
                     $alreadyEncrypted++;
+
+                    if (! $dryRun && $store->syncMetadata($media)) {
+                        $repaired++;
+                    }
 
                     return;
                 }
@@ -46,7 +51,7 @@ final class EncryptSignedPdfsCommand extends Command
         }
 
         $verb = $dryRun ? 'Would encrypt' : 'Encrypted';
-        $this->info("{$verb} ".array_sum($upgraded)." plain PDF(s); {$alreadyEncrypted} already encrypted.");
+        $this->info("{$verb} ".array_sum($upgraded)." plain PDF(s); {$alreadyEncrypted} already encrypted; {$repaired} metadata repaired.");
 
         return self::SUCCESS;
     }

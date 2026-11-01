@@ -816,6 +816,7 @@
     "contract_terminated": "Договір розірвано.",
     "contract_not_editable": "Цей договір більше не можна редагувати.",
     "contract_cannot_sign": "Цей договір не можна підписати.",
+    "contract_signed_pdf_unreadable": "Не вдалося прочитати підписаний PDF. Зверніться до адміністратора.",
     "contract_cannot_terminate": "Цей договір не можна розірвати.",
     "contract_invalid_contractable": "Обраний об'єкт або співробітник не існує.",
     "contract_end_date_required_for_fixed": "Для договору на визначений термін потрібно вказати дату закінчення.",
