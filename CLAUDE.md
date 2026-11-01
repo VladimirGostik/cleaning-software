@@ -3,7 +3,7 @@
 Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonical inogile `vue-skeleton`
 (rebuild merged into `main`); business modules are ported phase by phase per
 `.claude/plans/port-from-cleaning-software.md` (read ONLY when a parent passes it as `plan_path`).
-Phase 11 (mobile admin API, tasks, expenses, AI assistant, MCP, push) is on branch `feat/mobile-admin-api`.
+Phase 11 (mobile admin API, tasks, expenses, AI assistant, MCP, push) is merged into `main`.
 
 ## Stack
 - Backend: Laravel 13, PHP 8.5 (Docker: `docker compose exec app php artisan ...`)
