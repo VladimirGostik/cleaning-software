@@ -14,6 +14,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Scribe\Attributes\ResponseFromSpatieData;
 use App\Services\TaskService;
+use App\Utils\PerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -44,6 +45,8 @@ final class TaskController extends Controller
     {
         /** @var User $actor */
         $actor = $request->user();
+
+        PerPage::clamp($request);
 
         $acrossCompanies = $request->query('scope') === 'all';
 

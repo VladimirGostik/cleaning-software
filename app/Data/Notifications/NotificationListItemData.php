@@ -6,6 +6,7 @@ namespace App\Data\Notifications;
 
 use App\Enums\NotificationTypeEnum;
 use App\Models\Notification;
+use App\Services\Push\PushRoute;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -18,6 +19,7 @@ final class NotificationListItemData extends Data
         public readonly string $title,
         public readonly string $body,
         public readonly ?string $url,
+        public readonly string $route,
         public readonly ?string $read_at,
         public readonly string $created_at,
     ) {}
@@ -33,6 +35,7 @@ final class NotificationListItemData extends Data
             title: $data['title'] ?? '',
             body: $data['body'] ?? '',
             url: $data['url'] ?? null,
+            route: PushRoute::fromUrl($data['url'] ?? null),
             read_at: $notification->read_at?->toIso8601String(),
             created_at: $notification->created_at->toIso8601String(),
         );

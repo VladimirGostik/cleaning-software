@@ -1,0 +1,164 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Api;
+
+use App\Contracts\RendersInvoicePdf;
+use App\Models\Invoice;
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Mockery\Expectation;
+use Tests\Support\CreatesTaskFixtures;
+use Tests\TestCase;
+
+final class InvoiceApiTest extends TestCase
+{
+    use CreatesTaskFixtures;
+    use RefreshDatabase;
+
+    private Tenant $alpha;
+
+    private Tenant $beta;
+
+    private User $accountant;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seedPermissionCatalog();
+        $this->alpha = $this->firm('Alpha');
+        $this->beta = $this->firm('Beta');
+        $this->accountant = $this->member($this->alpha, 'Účtovníčka');
+    }
+
+    public function test_lists_invoices_of_the_active_firm_only(): void
+    {
+        $mine = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);
+        $foreign = Invoice::factory()->issued()->create(['tenant_id' => $this->beta->id]);
+
+        $ids = $this->apiAs($this->accountant, $this->alpha)->getJson('/api/invoices')
+            ->assertOk()
+            ->json('data.*.id');
+
+        $this->assertContains($mine->id, (array) $ids);
+        $this->assertNotContains($foreign->id, (array) $ids);
+    }
+
+    public function test_filters_by_status(): void
+    {
+        $issued = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);
+        $paid = Invoice::factory()->paid()->create(['tenant_id' => $this->alpha->id]);
+
+        $ids = $this->apiAs($this->accountant, $this->alpha)->getJson('/api/invoices?filter[status]=paid')
+            ->assertOk()
+            ->json('data.*.id');
+
+        $this->assertSame([$paid->id], $ids);
+        $this->assertNotContains($issued->id, (array) $ids);
+    }
+
+    public function test_shows_invoice_detail(): void
+    {
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);
+
+        $this->apiAs($this->accountant, $this->alpha)->getJson("/api/invoices/{$invoice->id}")
+            ->assertOk()
+            ->assertJsonPath('id', $invoice->id)
+            ->assertJsonStructure(['items', 'payments', 'vat_breakdown', 'supplier']);
+    }
+
+    public function test_foreign_firm_invoice_is_not_found_in_the_active_firm(): void
+    {
+        $this->member($this->beta, 'Účtovníčka', $this->accountant);
+        $foreign = Invoice::factory()->issued()->create(['tenant_id' => $this->beta->id]);
+
+        $this->apiAs($this->accountant, $this->alpha)->getJson("/api/invoices/{$foreign->id}")->assertNotFound();
+        $this->apiAs($this->accountant, $this->alpha)->getJson("/api/invoices/{$foreign->id}/pdf")->assertNotFound();
+    }
+
+    public function test_header_for_a_firm_without_membership_is_forbidden(): void
+    {
+        $this->apiAs($this->accountant, $this->beta)->getJson('/api/invoices')->assertForbidden();
+    }
+
+    public function test_role_without_view_invoices_is_forbidden(): void
+    {
+        $leader = $this->member($this->alpha, 'Vedúca');
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);
+
+        $this->apiAs($leader, $this->alpha)->getJson('/api/invoices')->assertForbidden();
+        $this->apiAs($leader, $this->alpha)->getJson("/api/invoices/{$invoice->id}")->assertForbidden();
+        $this->apiAs($leader, $this->alpha)->getJson("/api/invoices/{$invoice->id}/pdf")->assertForbidden();
+    }
+
+    public function test_requires_authentication(): void
+    {
+        $this->getJson('/api/invoices')->assertUnauthorized();
+    }
+
+    public function test_pdf_is_streamed_inline_as_pdf(): void
+    {
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);
+        $this->fakeRenderer();
+
+        $response = $this->apiAs($this->accountant, $this->alpha)->get("/api/invoices/{$invoice->id}/pdf");
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('inline', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('.pdf', (string) $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_pdf_of_a_draft_renders_like_the_web_route(): void
+    {
+        $invoice = Invoice::factory()->create(['tenant_id' => $this->alpha->id]);
+        $this->fakeRenderer();
+
+        $this->apiAs($this->accountant, $this->alpha)->get("/api/invoices/{$invoice->id}/pdf")
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_per_page_is_clamped(): void
+    {
+        Invoice::factory()->count(3)->issued()->create(['tenant_id' => $this->alpha->id]);
+
+        $this->apiAs($this->accountant, $this->alpha)->getJson('/api/invoices?per_page=-5')
+            ->assertOk()
+            ->assertJsonPath('per_page', 1);
+        $this->apiAs($this->accountant, $this->alpha)->getJson('/api/invoices?per_page=100000')
+            ->assertOk()
+            ->assertJsonPath('per_page', 100);
+        $this->apiAs($this->accountant, $this->alpha)->getJson('/api/invoices?per_page=10')
+            ->assertOk()
+            ->assertJsonPath('per_page', 10);
+    }
+
+    public function test_user_without_mobile_access_permission_is_forbidden(): void
+    {
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($this->accountant, ['mobile']);
+
+        $this->withHeaders(['X-Tenant-Id' => $this->alpha->id])->getJson('/api/invoices')->assertForbidden();
+    }
+
+    public function test_mcp_token_is_forbidden(): void
+    {
+        $this->actingAsMobile($this->accountant);
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($this->accountant, ['mcp']);
+
+        $this->withHeaders(['X-Tenant-Id' => $this->alpha->id])->getJson('/api/invoices')->assertForbidden();
+    }
+
+    private function fakeRenderer(): void
+    {
+        /** @var Expectation $expectation */
+        $expectation = $this->mock(RendersInvoicePdf::class)->shouldReceive('render');
+        $expectation->once()->andReturn('%PDF-1.4 fake');
+    }
+}

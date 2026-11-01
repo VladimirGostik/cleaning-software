@@ -5,9 +5,12 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeviceController;
+use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\NotificationBellController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
@@ -25,6 +28,17 @@ Route::middleware(['auth:sanctum', 'ability:mobile', 'tenant.context', 'tenant.r
     Route::get('/me', MeController::class);
     Route::get('/dashboard', DashboardController::class)->name('api.dashboard');
     Route::get('/notifications/bell', NotificationBellController::class)->name('api.notifications.bell');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('api.notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('api.notifications.read')->whereUuid('notification');
+
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('api.invoices.index');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('api.invoices.show')->whereUuid('invoice');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('api.invoices.pdf')->whereUuid('invoice');
+
+    Route::get('/quotes', [QuoteController::class, 'index'])->name('api.quotes.index');
+    Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->name('api.quotes.show')->whereUuid('quote');
+    Route::get('/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('api.quotes.pdf')->whereUuid('quote');
 
     Route::middleware('throttle:devices')->group(function (): void {
         Route::post('/devices', [DeviceController::class, 'store'])->name('api.devices.store');

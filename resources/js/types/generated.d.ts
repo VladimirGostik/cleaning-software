@@ -831,6 +831,7 @@ readonly type: App.Enums.NotificationTypeEnum,
 readonly title: string,
 readonly body: string,
 readonly url: string | null,
+readonly route: string,
 readonly read_at: string | null,
 readonly created_at: string,
 };
