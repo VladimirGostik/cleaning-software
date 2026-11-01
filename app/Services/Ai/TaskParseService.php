@@ -12,6 +12,7 @@ use App\Exceptions\AiUnavailableException;
 use App\Models\Task;
 use App\Models\TenantMembership;
 use App\Models\User;
+use App\Services\Ai\Guard\PromptGuard;
 use App\Services\Dashboard\TenantVisibility;
 use App\Services\Tenancy\TenantPermissionSnapshot;
 use Carbon\CarbonImmutable;
@@ -25,6 +26,7 @@ final readonly class TaskParseService
     public function __construct(
         private ExtractsTaskDraft $extractor,
         private TenantPermissionSnapshot $snapshot,
+        private PromptGuard $promptGuard,
     ) {}
 
     public function parse(TaskParseData $data, User $actor): TaskDraftData
@@ -82,9 +84,16 @@ final readonly class TaskParseService
         $memberIds = array_column($context->members, 'id');
         $assignee = $tenantId === $context->companyId && in_array($draft->assigned_membership_id, $memberIds, true) ? $draft->assigned_membership_id : null;
 
+        $verdict = $this->promptGuard->scanValues([$draft->title, $draft->description, $draft->assignee_hint]);
+
+        if ($verdict->flagged) {
+            $this->promptGuard->record(null, 'task_parse', $tenantId, null, $verdict);
+            $assignee = null;
+        }
+
         return new TaskDraftData(
-            title: Str::limit($this->clean($draft->title), 200, ''),
-            description: $draft->description === null ? null : Str::limit($this->clean($draft->description, true), 5000, ''),
+            title: Str::limit($this->clean(PromptGuard::stripInvisible($draft->title)), 200, ''),
+            description: $draft->description === null || $verdict->flagged ? null : Str::limit($this->clean(PromptGuard::stripInvisible($draft->description), true), 5000, ''),
             due_at: $this->utc($draft->due_at, $timezone),
             priority: $draft->priority,
             tenant_id: $tenantId,

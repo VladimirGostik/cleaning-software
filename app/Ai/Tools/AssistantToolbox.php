@@ -9,7 +9,9 @@ use App\Mcp\Servers\CleanMasterServer;
 use App\Mcp\Tools\CleanMasterTool;
 use App\Mcp\Tools\ConfirmActionTool;
 use App\Mcp\Tools\DeleteGlobalTaskTool;
+use App\Mcp\Tools\UpdateDocumentTemplateTool;
 use App\Services\Ai\AssistantTurn;
+use App\Services\Ai\Guard\PromptGuard;
 
 final class AssistantToolbox
 {
@@ -17,6 +19,7 @@ final class AssistantToolbox
     public const array EXCLUDED = [
         ConfirmActionTool::class,
         DeleteGlobalTaskTool::class,
+        UpdateDocumentTemplateTool::class,
     ];
 
     /** @return list<class-string<CleanMasterTool>> */
@@ -33,7 +36,7 @@ final class AssistantToolbox
         foreach (self::toolClasses() as $class) {
             /** @var CleanMasterTool $tool */
             $tool = app($class);
-            $adapters[] = new McpToolAdapter($tool->asChannel(ActionChannelEnum::Assistant), $turn);
+            $adapters[] = new McpToolAdapter($tool->asChannel(ActionChannelEnum::Assistant), $turn, app(PromptGuard::class));
         }
 
         return $adapters;

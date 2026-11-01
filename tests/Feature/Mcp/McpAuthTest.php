@@ -47,12 +47,8 @@ final class McpAuthTest extends TestCase
         /** @var list<string> $names */
         $names = $this->rpc($token, 'tools/list', ['per_page' => 100])->assertOk()->json('result.tools.*.name');
 
-        foreach (['list_companies', 'company_overview', 'list_invoices', 'get_invoice', 'list_quotes', 'get_quote', 'list_clients', 'get_client', 'list_objects', 'list_jobs', 'list_tasks', 'get_task', 'list_expenses', 'search', 'create_task', 'update_task', 'complete_task', 'assign_task', 'create_expense', 'update_expense', 'create_quote_draft', 'update_quote_draft', 'create_invoice_draft', 'update_invoice_draft', 'prepare_action', 'confirm_action'] as $tool) {
+        foreach (['list_companies', 'company_overview', 'list_invoices', 'get_invoice', 'list_quotes', 'get_quote', 'list_clients', 'get_client', 'list_objects', 'list_jobs', 'list_tasks', 'get_task', 'list_expenses', 'search', 'create_task', 'update_task', 'complete_task', 'assign_task', 'create_expense', 'update_expense', 'create_quote_draft', 'update_quote_draft', 'create_invoice_draft', 'update_invoice_draft', 'prepare_action', 'confirm_action', 'list_document_templates', 'get_document_template', 'update_document_template'] as $tool) {
             $this->assertContains($tool, $names);
-        }
-
-        foreach (['list_document_templates', 'get_document_template', 'update_document_template'] as $deferred) {
-            $this->assertNotContains($deferred, $names);
         }
 
         $templates = $this->rpc($token, 'resources/templates/list')->assertOk()->json('result.resourceTemplates.*.uriTemplate');

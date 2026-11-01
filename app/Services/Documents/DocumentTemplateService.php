@@ -118,6 +118,25 @@ final readonly class DocumentTemplateService
         return $template;
     }
 
+    public function companyTarget(DocumentTemplate $template, Tenant $tenant): DocumentTemplate
+    {
+        if ($template->tenant_id !== null) {
+            return $template;
+        }
+
+        return DocumentTemplate::query()->where('tenant_id', $tenant->id)->where('parent_id', $template->id)->first() ?? $template;
+    }
+
+    /** Copy and edit succeed together, so a refused edit leaves no unchanged copy behind. */
+    public function updateForCompany(DocumentTemplate $target, Tenant $tenant, DocumentTemplateUpsertData $data): DocumentTemplate
+    {
+        if ($target->tenant_id !== null) {
+            return $this->update($target, $data);
+        }
+
+        return $this->db->transaction(fn (): DocumentTemplate => $this->update($this->customize($target, $tenant), $data));
+    }
+
     public function delete(DocumentTemplate $template): void
     {
         $this->db->transaction(fn () => $template->delete());

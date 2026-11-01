@@ -7,6 +7,7 @@ namespace App\Mcp\Tools;
 use App\Enums\ActionChannelEnum;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Ai\Guard\PromptGuard;
 use App\Services\Ai\ToolAudit;
 use App\Services\Ai\ToolContext;
 use Closure;
@@ -19,8 +20,10 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 use Laravel\Mcp\Support\ValidationMessages;
 use LogicException;
+use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
@@ -30,7 +33,7 @@ abstract class CleanMasterTool extends Tool
     /** @var array<string, mixed> */
     protected array $auditExtra = [];
 
-    public function __construct(protected ToolContext $context, protected ToolAudit $audit) {}
+    public function __construct(protected ToolContext $context, protected ToolAudit $audit, protected PromptGuard $promptGuard) {}
 
     private ActionChannelEnum $actingChannel = ActionChannelEnum::Mcp;
 
@@ -45,6 +48,19 @@ abstract class CleanMasterTool extends Tool
     protected function channel(): ActionChannelEnum
     {
         return $this->actingChannel;
+    }
+
+    public function isReadOnly(): bool
+    {
+        $attribute = (new ReflectionClass($this))->getAttributes(IsReadOnly::class)[0] ?? null;
+
+        return $attribute?->newInstance()->value === true;
+    }
+
+    /** What the injection screen reads: tools that add their own server-authored text exclude it here. */
+    public function screenedOutput(string $text): string
+    {
+        return $text;
     }
 
     protected function assertCompanyAllowed(User $user, string $companyId): void
@@ -83,8 +99,16 @@ abstract class CleanMasterTool extends Tool
         $user = $this->actor($request);
         $this->auditExtra = [];
 
+        if ($this->channel() === ActionChannelEnum::Mcp && $this->refusedByGuard($user, $request, $companyId)) {
+            return $this->failed($user, $request, $companyId, $audit, __('app.mcp_guard_blocked'));
+        }
+
         try {
             $response = $callback($user);
+
+            if ($this->channel() === ActionChannelEnum::Mcp) {
+                $response = $this->screenResponse($user, $companyId, $response);
+            }
         } catch (AuthorizationException) {
             return $this->failed($user, $request, $companyId, $audit, __('app.tool_not_allowed'));
         } catch (ValidationException $exception) {
@@ -110,6 +134,48 @@ abstract class CleanMasterTool extends Tool
         return $response;
     }
 
+    private function refusedByGuard(User $user, Request $request, ?string $companyId): bool
+    {
+        if ($this->isReadOnly()) {
+            return false;
+        }
+
+        $verdict = $this->promptGuard->scanValues($request->all());
+
+        if ($verdict->flagged) {
+            $this->promptGuard->restrictMcp($user);
+            $this->promptGuard->record($user, 'arguments:'.$this->name(), $this->auditTenant($user, $companyId), ActionChannelEnum::Mcp, $verdict);
+        }
+
+        return $this->promptGuard->isMcpRestricted($user);
+    }
+
+    private function screenResponse(User $user, ?string $companyId, Response $response): Response
+    {
+        $text = (string) $response->content();
+        $verdict = $this->promptGuard->scanOutput($this->screenedOutput($text));
+        $clean = PromptGuard::stripInvisible($text);
+
+        if ($verdict->flagged) {
+            $this->promptGuard->restrictMcp($user);
+            $this->promptGuard->record($user, 'output:'.$this->name(), $this->auditTenant($user, $companyId), ActionChannelEnum::Mcp, $verdict);
+
+            $clean = (string) json_encode(
+                ['_security_notice' => __('app.mcp_guard_notice'), 'data' => json_decode($clean) ?? $clean],
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+            );
+        } elseif ($clean === $text) {
+            return $response;
+        }
+
+        return $response->isError() ? Response::error($clean) : Response::text($clean);
+    }
+
+    private function auditTenant(User $user, ?string $companyId): ?string
+    {
+        return $companyId !== null && Str::isUuid($companyId) && $user->hasActiveMembership($companyId) ? $companyId : null;
+    }
+
     protected function json(mixed $data): Response
     {
         return Response::text(json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
@@ -129,8 +195,6 @@ abstract class CleanMasterTool extends Tool
             return;
         }
 
-        $tenantId = $companyId !== null && Str::isUuid($companyId) && $user->hasActiveMembership($companyId) ? $companyId : null;
-
-        $this->audit->record($user, $this->name(), $tenantId, $this->channel(), $request->all(), $outcome, [...$this->auditExtra, ...$extra]);
+        $this->audit->record($user, $this->name(), $this->auditTenant($user, $companyId), $this->channel(), $request->all(), $outcome, [...$this->auditExtra, ...$extra]);
     }
 }

@@ -24,6 +24,7 @@ use App\Exceptions\AiUnavailableException;
 use App\Models\Expense;
 use App\Models\User;
 use App\Scopes\TenantScope;
+use App\Services\Ai\Guard\PromptGuard;
 use App\Services\Dashboard\TenantVisibility;
 use App\Services\Expenses\BankStatementParser;
 use App\Services\Tenancy\TenantPermissionSnapshot;
@@ -47,6 +48,7 @@ final readonly class ExpenseService
         private TemporaryUploadService $uploads,
         private AnalyzesExpenses $analyzer,
         private BankStatementParser $parser,
+        private PromptGuard $promptGuard,
     ) {}
 
     /** @return LengthAwarePaginator<int, ExpenseListItemData> */
@@ -193,7 +195,38 @@ final readonly class ExpenseService
             throw ValidationException::withMessages(['ai' => [__('app.ai_unavailable')]]);
         }
 
-        return $this->guardDraft($draft, $context);
+        $draft = $this->guardDraft($draft, $context);
+
+        return $this->neutraliseInjection($draft, (string) $data->text, $actor);
+    }
+
+    /** Text planted in a receipt or an email must not steer the proposal the user is asked to accept. */
+    private function neutraliseInjection(ExpenseDraftData $draft, string $source, User $actor): ExpenseDraftData
+    {
+        $output = implode("\n", array_filter([$draft->supplier_name, $draft->description, $draft->proposal->reason]));
+        $text = trim($source."\n".$output);
+        $verdict = $this->promptGuard->scan($text);
+
+        if (! $verdict->flagged) {
+            return $draft;
+        }
+
+        $this->promptGuard->record($actor, 'expense_analysis', null, null, $verdict);
+
+        return new ExpenseDraftData(
+            date: $draft->date,
+            amount: $draft->amount,
+            currency: $draft->currency,
+            vat_amount: $draft->vat_amount,
+            supplier_name: $this->promptGuard->scan((string) $draft->supplier_name)->flagged ? null : $draft->supplier_name,
+            description: null,
+            proposal: new ExpenseProposalData(
+                category: null,
+                tenant_id: null,
+                confidence: 0.0,
+                reason: __('app.expense_guard_notice'),
+            ),
+        );
     }
 
     public function analysisContext(User $actor): ExpenseAnalysisContextData

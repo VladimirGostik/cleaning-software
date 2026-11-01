@@ -17,5 +17,6 @@ final class AssistantReplyData extends Data
         #[DataCollectionOf(AssistantActionData::class)]
         public readonly array $actions,
         public readonly ?PendingActionData $pending_action,
+        public readonly ?string $security_notice = null,
     ) {}
 }

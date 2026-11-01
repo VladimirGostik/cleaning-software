@@ -210,6 +210,7 @@ export type AssistantReplyData = {
 readonly reply: string,
 readonly actions: App.Data.Ai.AssistantActionData[],
 readonly pending_action: App.Data.Ai.PendingActionData | null,
+readonly security_notice: string | null,
 };
 export type AssistantRequestData = {
 readonly company_id: string,

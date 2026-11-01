@@ -6,8 +6,6 @@ namespace Tests\Unit\Ai;
 
 use App\Ai\Tools\AssistantToolbox;
 use App\Mcp\Servers\CleanMasterServer;
-use App\Mcp\Tools\ConfirmActionTool;
-use App\Mcp\Tools\DeleteGlobalTaskTool;
 use App\Mcp\Tools\PrepareActionTool;
 use App\Services\Ai\AssistantTurn;
 use Illuminate\JsonSchema\JsonSchemaTypeFactory;
@@ -30,12 +28,13 @@ final class AssistantAgentToolsTest extends TestCase
         $adapters = (new AssistantToolbox)->make(new AssistantTurn);
         $names = array_map(ToolNameResolver::resolve(...), $adapters);
 
-        $excluded = [app(ConfirmActionTool::class)->name(), app(DeleteGlobalTaskTool::class)->name()];
+        $excluded = array_map(fn (string $class): string => app($class)->name(), AssistantToolbox::EXCLUDED);
 
         $this->assertEqualsCanonicalizing(array_values(array_diff($this->serverToolNames(), $excluded)), $names);
         $this->assertContains('prepare_action', $names);
         $this->assertNotContains('confirm_action', $names);
         $this->assertNotContains('delete_global_task', $names);
+        $this->assertNotContains('update_document_template', $names);
         $this->assertCount(count($names), array_unique($names));
     }
 
