@@ -40,7 +40,7 @@ final class QuoteTotalsParityTest extends TestCase
 
         $invoice = app(InvoiceService::class)->create(InvoiceUpsertData::from([
             'client_id' => null, 'cleaning_object_id' => null, 'type' => InvoiceTypeEnum::OneOff->value,
-            'template' => null, 'issue_date' => now()->toDateString(), 'delivery_date' => now()->toDateString(),
+            'issue_date' => now()->toDateString(), 'delivery_date' => now()->toDateString(),
             'due_date' => now()->addDays(14)->toDateString(), 'period_from' => null, 'period_to' => null,
             'customer_name' => 'Parity Co', 'customer_representative' => null, 'customer_ico' => null,
             'customer_dic' => null, 'customer_vat_number' => null, 'customer_street' => null, 'customer_city' => null,
@@ -79,7 +79,7 @@ final class QuoteTotalsParityTest extends TestCase
 
         $invoice = app(InvoiceService::class)->create(InvoiceUpsertData::from([
             'client_id' => null, 'cleaning_object_id' => null, 'type' => InvoiceTypeEnum::OneOff->value,
-            'template' => null, 'issue_date' => now()->toDateString(), 'delivery_date' => now()->toDateString(),
+            'issue_date' => now()->toDateString(), 'delivery_date' => now()->toDateString(),
             'due_date' => now()->addDays(14)->toDateString(), 'period_from' => null, 'period_to' => null,
             'customer_name' => 'Parity Co', 'customer_representative' => null, 'customer_ico' => null,
             'customer_dic' => null, 'customer_vat_number' => null, 'customer_street' => null, 'customer_city' => null,

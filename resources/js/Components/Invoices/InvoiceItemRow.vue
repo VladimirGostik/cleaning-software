@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { TrashIcon } from '@heroicons/vue/24/outline';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 
 import TextInput from '@/Components/Forms/TextInput.vue';
 import NumberInput from '@/Components/Forms/NumberInput.vue';
@@ -125,7 +125,7 @@ function setField(index: number, key: string, value: unknown): void {
             :title="t('invoice_item_remove', { index: index + 1 })"
             @click="emit('remove')"
         >
-            <TrashIcon class="size-4" />
+            <TrashIcon class="size-5" />
         </button>
 
         <div v-if="$slots['row-extra']" class="col-span-2 2xl:col-span-full">

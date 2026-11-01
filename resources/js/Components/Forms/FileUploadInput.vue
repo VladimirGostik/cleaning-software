@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CloseIcon from '~icons/material-symbols/close-rounded';
 import { reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { formatBytes } from '@/utils/bytes';
@@ -384,22 +385,10 @@ watch(
                     class="btn btn-ghost btn-xs btn-circle"
                     :disabled="disabled"
                     :title="t('remove_file')"
+                    :aria-label="t('remove_file')"
                     @click.stop="removeItem(item.id)"
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                    </svg>
+                    <CloseIcon class="size-5" />
                 </button>
             </li>
         </ul>

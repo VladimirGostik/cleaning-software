@@ -39,7 +39,7 @@ async function run(): Promise<void> {
 
         <button
             type="button"
-            class="btn btn-sm btn-outline"
+            class="btn btn-sm btn-neutral"
             :disabled="loading || (!file && text.trim() === '')"
             @click="run"
         >

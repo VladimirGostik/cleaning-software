@@ -12,6 +12,7 @@ use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoicePaymentData;
 use App\Data\Invoices\InvoiceUpsertData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;
@@ -36,7 +37,7 @@ final class InvoiceController extends Controller
     public function __construct(private readonly InvoiceService $invoices) {}
 
     #[Authorize('viewAny', Invoice::class)]
-    #[NavItem(label: 'app.invoices', route: 'invoices.index', icon: 'DocumentTextIcon', permission: PermissionEnum::ViewInvoices->value, order: 40)]
+    #[NavItem(label: 'app.invoices', route: 'invoices.index', icon: NavIconEnum::Invoices, permission: PermissionEnum::ViewInvoices->value, order: 40)]
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('Invoices/Index', [

@@ -8,7 +8,7 @@ use App\Contracts\ResolvesSupplierSignature;
 use App\Data\Invoices\InvoiceSettingsData;
 use App\Data\Invoices\InvoiceSignatureConstraintsData;
 use App\Data\Tenants\TenantSignatureData;
-use App\Enums\InvoiceTemplateEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Tenant;
 use App\Navigation\NavItem;
@@ -29,7 +29,7 @@ final class InvoiceSettingsController extends Controller
     public function __construct(private readonly InvoiceSettingsService $settings) {}
 
     #[Authorize(PermissionEnum::ManageBillingSettings->value)]
-    #[NavItem(label: 'app.invoicing_settings', route: 'settings.invoicing', icon: 'BanknotesIcon', permission: PermissionEnum::ManageBillingSettings->value, group: 'settings', order: 20)]
+    #[NavItem(label: 'app.invoicing_settings', route: 'settings.invoicing', icon: NavIconEnum::InvoiceSettings, permission: PermissionEnum::ManageBillingSettings->value, group: 'settings', order: 20)]
     public function show(PlaceholderResolverService $placeholders): InertiaResponse
     {
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
@@ -76,21 +76,19 @@ final class InvoiceSettingsController extends Controller
     }
 
     #[Authorize(PermissionEnum::ManageBillingSettings->value)]
-    public function preview(InvoiceTemplateEnum $template, ResolvesSupplierSignature $signatures): Response
+    public function preview(ResolvesSupplierSignature $signatures): Response
     {
         $tenant = Tenant::query()->findOrFail(current_tenant_id());
-        $invoice = InvoicePreviewData::make($template);
+        $invoice = InvoicePreviewData::make();
 
-        $footerView = $template->footerView();
-        $footerHtml = $footerView !== null
-            ? View::make($footerView, ['invoice' => $invoice, 'preview' => true])->render()
-            : null;
+        $footerHtml = View::make('pdf.invoices.kegos-footer', ['invoice' => $invoice, 'preview' => true])->render();
 
-        $html = View::make($template->view(), [
+        $html = View::make('pdf.invoices.kegos', [
             'invoice' => $invoice,
             'qrDataUri' => null,
             'signatureDataUri' => $signatures->forTenant($tenant),
             'footerHtml' => $footerHtml,
+            'webFonts' => true,
         ])->render();
 
         return response($html)->header('Content-Type', 'text/html');

@@ -2,7 +2,10 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ArrowPathIcon, ArrowsRightLeftIcon, NoSymbolIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
+import ArrowsRightLeftIcon from '~icons/material-symbols/swap-horiz-outline-rounded';
+import NoSymbolIcon from '~icons/material-symbols/block-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
 
 const props = defineProps<{
     employee: App.Data.Employees.EmployeeDetailData;
@@ -29,39 +32,39 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
             <Link
                 v-if="props.canUpdate"
                 :href="`/employees/${props.employee.id}/edit`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
             >
-                <PencilSquareIcon class="size-4" />
+                <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </Link>
 
             <button
                 v-if="props.canAssignRole"
                 type="button"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
                 @click="emit('changeRole')"
             >
-                <ArrowsRightLeftIcon class="size-4" />
+                <ArrowsRightLeftIcon class="size-5" />
                 {{ t('employee_change_role') }}
             </button>
 
             <button
                 v-if="props.canReactivate"
                 type="button"
-                class="btn btn-sm btn-success w-full justify-start"
+                class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('reactivate')"
             >
-                <ArrowPathIcon class="size-4" />
+                <ArrowPathIcon class="size-5" />
                 {{ t('employee_reactivate') }}
             </button>
 
             <button
                 v-if="props.canDeactivate"
                 type="button"
-                class="btn btn-sm w-full justify-start text-warning"
+                class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('deactivate')"
             >
-                <NoSymbolIcon class="size-4" />
+                <NoSymbolIcon class="size-5" />
                 {{ t('employee_deactivate') }}
             </button>
         </div>

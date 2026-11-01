@@ -33,7 +33,7 @@ const { money } = useMoneyFormat();
                 <tbody>
                     <tr v-for="invoice in props.invoices" :key="invoice.id">
                         <td>
-                            <Link :href="`/invoices/${invoice.id}`" class="link link-hover font-mono">
+                            <Link :href="`/invoices/${invoice.id}`" class="link link-hover tabular-nums">
                                 {{ invoice.number ?? t('invoice_draft_number') }}
                             </Link>
                         </td>

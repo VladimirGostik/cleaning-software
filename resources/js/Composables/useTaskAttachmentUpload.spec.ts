@@ -81,6 +81,7 @@ describe('useTaskAttachmentUpload', () => {
 
         expect(post).toHaveBeenCalledTimes(1);
         expect(post.mock.calls[0][0]).toBe('/tasks/t1/attachments');
+        expect(optionsOf(0).only).toEqual(['attachments', 'flash']);
         expect((post.mock.calls[0][1] as { file: File }).file.name).toBe('a.pdf');
         expect(api.uploading.value).toBe(true);
 
@@ -133,7 +134,7 @@ describe('useTaskAttachmentUpload', () => {
 
         expect(result).toBe(false);
         expect(api.items.value[0].error).toBe('task_attachment_unknown_result');
-        expect(router.reload).toHaveBeenCalledWith({ only: ['attachments'] });
+        expect(router.reload).toHaveBeenCalledWith({ only: ['attachments', 'flash'] });
     });
 
     it('stops the queue on cancel', async () => {

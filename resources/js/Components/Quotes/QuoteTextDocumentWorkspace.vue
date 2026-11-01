@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 
 import DocumentFrameToggles from '@/Components/Documents/DocumentFrameToggles.vue';
 import DocumentTokenEditor from '@/Components/Documents/DocumentTokenEditor.vue';
@@ -91,13 +91,13 @@ watch(fullscreen, (on) => {
                 <div class="flex flex-wrap items-center gap-4">
                     <DocumentFrameToggles v-model:show-header="showHeader" v-model:show-footer="showFooter" />
                     <button type="button" class="btn btn-sm btn-primary" @click="emit('close')">
-                        <XMarkIcon class="size-4" aria-hidden="true" />
+                        <XMarkIcon class="size-5" aria-hidden="true" />
                         {{ t('quote_text_workspace_done') }}
                     </button>
                 </div>
             </div>
 
-            <div class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
+            <div class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
                 <DocumentTokenEditor
                     ref="editor"
                     v-model="body"

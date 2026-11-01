@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Navigation;
 
+use App\Enums\NavIconEnum;
 use App\Navigation\NavigationRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesUsers;
@@ -41,6 +42,16 @@ final class NavigationRegistryTest extends TestCase
         ], $childKeys);
     }
 
+    public function test_invokable_dashboard_is_the_first_top_level_item(): void
+    {
+        $admin = $this->actingAsTenantUser();
+
+        $navigation = app(NavigationRegistry::class)->forUser($admin);
+
+        $this->assertSame('dashboard', $navigation[0]->key);
+        $this->assertSame('/', $navigation[0]->href);
+    }
+
     public function test_user_without_view_permissions_does_not_see_restricted_children(): void
     {
         // 'Vedúca' template lacks ViewRoles / ViewAuditLogs / ViewMedia but keeps ViewEmployees,
@@ -69,5 +80,23 @@ final class NavigationRegistryTest extends TestCase
         $this->assertNotContains('roles.index', $topKeys);
         $this->assertNotContains('audit-logs.index', $topKeys);
         $this->assertNotContains('media.index', $topKeys);
+    }
+
+    public function test_every_navigation_icon_is_a_nav_icon_enum_value(): void
+    {
+        $admin = $this->actingAsTenantUser();
+
+        $navigation = app(NavigationRegistry::class)->forUser($admin);
+
+        $icons = [];
+        foreach ($navigation as $item) {
+            $icons[] = $item->icon->value;
+            foreach ($item->children as $child) {
+                $icons[] = $child->icon->value;
+            }
+        }
+
+        $this->assertNotEmpty($icons);
+        $this->assertSame([], array_diff($icons, array_column(NavIconEnum::cases(), 'value')));
     }
 }

@@ -83,7 +83,7 @@ function post(path: 'customize' | 'acknowledge'): void {
             <button
                 v-if="template.can.delete"
                 type="button"
-                class="btn btn-ghost btn-sm text-error"
+                class="btn btn-error btn-sm"
                 @click="remove.openModal(template)"
             >
                 {{ t('delete') }}

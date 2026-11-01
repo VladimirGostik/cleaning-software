@@ -14,7 +14,7 @@ const { t } = useI18n();
     <div class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
         <div v-if="props.contract.number">
             <p class="text-xs text-base-content/50">{{ t('contract_number') }}</p>
-            <p class="font-mono">{{ props.contract.number }}</p>
+            <p class="tabular-nums">{{ props.contract.number }}</p>
         </div>
 
         <div>

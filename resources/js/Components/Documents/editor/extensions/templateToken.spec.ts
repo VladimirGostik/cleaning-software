@@ -39,7 +39,7 @@ describe('TemplateToken', () => {
         const chip = e.view.dom.querySelector('[data-template-token="if.vat_payer"]')!;
         expect(chip.textContent).toBe('Príznak');
         expect(chip.getAttribute('contenteditable')).toBe('false');
-        expect(chip.className).toContain('badge-warning');
+        expect(chip.className).toContain('kg-chip--warning');
     });
 
     it('falls back to the key when the label is empty and to the text tone for unknown kinds', () => {
@@ -47,7 +47,7 @@ describe('TemplateToken', () => {
 
         const chip = e.view.dom.querySelector('[data-template-token="a.b"]')!;
         expect(chip.textContent).toBe('a.b');
-        expect(chip.className).toContain('badge-info');
+        expect(chip.className).toContain('kg-chip--planned');
     });
 });
 

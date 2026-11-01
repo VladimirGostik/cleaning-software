@@ -7,7 +7,6 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
 use App\Enums\CurrencyEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
@@ -33,7 +32,6 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property RecurringInvoiceStatusEnum $status
  * @property RecurringFrequencyEnum $frequency
  * @property InvoiceTypeEnum $type
- * @property InvoiceTemplateEnum|null $template
  * @property PaymentTypeEnum $payment_type
  * @property CurrencyEnum $currency
  * @property RoundingModeEnum $rounding_mode
@@ -58,7 +56,6 @@ use Spatie\Activitylog\Support\LogOptions;
     'cleaning_object_id',
     'name',
     'type',
-    'template',
     'frequency',
     'day_of_month',
     'status',
@@ -102,7 +99,6 @@ final class RecurringInvoice extends Model
     {
         return [
             'type' => InvoiceTypeEnum::class,
-            'template' => InvoiceTemplateEnum::class,
             'frequency' => RecurringFrequencyEnum::class,
             'status' => RecurringInvoiceStatusEnum::class,
             'payment_type' => PaymentTypeEnum::class,

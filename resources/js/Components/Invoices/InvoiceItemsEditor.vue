@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PlusIcon } from '@heroicons/vue/24/outline';
+import PlusIcon from '~icons/material-symbols/add-outline-rounded';
 
 import { useFormContext } from '@/Components/Forms/useFormContext';
 import { callValidate } from '@/Components/Forms/useFieldError';
@@ -139,7 +139,7 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
         <p v-if="rows.length === 0" class="text-sm text-base-content/60">{{ t('invoice_items_empty') }}</p>
 
         <button type="button" class="btn btn-ghost btn-sm" @click="addRow">
-            <PlusIcon class="size-4" />
+            <PlusIcon class="size-5" />
             {{ t('invoice_item_add') }}
         </button>
     </div>

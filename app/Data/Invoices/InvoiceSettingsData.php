@@ -6,7 +6,6 @@ namespace App\Data\Invoices;
 
 use App\Data\Tenants\TenantSupplierProfileData;
 use App\Enums\CurrencyEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RoundingModeEnum;
@@ -51,7 +50,6 @@ final class InvoiceSettingsData extends Data
         public readonly ?string $contact_email,
         #[Nullable, Max(30)]
         public readonly ?string $contact_phone,
-        public readonly InvoiceTemplateEnum $invoice_template,
         #[Regex('/\{X+\}/')]
         #[Max(100)]
         public readonly string $invoice_number_format,
@@ -109,7 +107,6 @@ final class InvoiceSettingsData extends Data
             country: $tenant->country ?? 'SK',
             contact_email: $tenant->contact_email,
             contact_phone: $tenant->contact_phone,
-            invoice_template: $interface->invoice_template ?? InvoiceTemplateEnum::Classic,
             invoice_number_format: $tenant->invoice_number_format ?? 'FA-{YYYY}-{XXXX}',
             iban: $tenant->iban,
             vat_rate: $tenant->vat_rate !== null ? (float) $tenant->vat_rate : null,

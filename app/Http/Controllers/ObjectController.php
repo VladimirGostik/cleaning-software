@@ -8,6 +8,7 @@ use App\Data\Clients\ClientOptionData;
 use App\Data\Objects\ObjectDetailData;
 use App\Data\Objects\ObjectUpsertData;
 use App\Data\Schedule\WorkBreakdownDetailData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
@@ -30,7 +31,7 @@ final class ObjectController extends Controller
     ) {}
 
     #[Authorize('viewAny', CleaningObject::class)]
-    #[NavItem(label: 'app.objects', route: 'objects.index', icon: 'BuildingOffice2Icon', permission: PermissionEnum::ViewObjects->value, order: 31)]
+    #[NavItem(label: 'app.objects', route: 'objects.index', icon: NavIconEnum::Buildings, permission: PermissionEnum::ViewObjects->value, order: 31)]
     public function index(Request $request): Response
     {
         /** @var User $actor */

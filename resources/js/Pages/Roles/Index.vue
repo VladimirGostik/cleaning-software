@@ -27,7 +27,7 @@ const columns: TableColumn[] = [
 <template>
     <Header :title="t('roles')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create roles')" href="/roles/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create roles')" href="/roles/create" class="btn btn-secondary btn-sm">
                 {{ t('create') }}
             </Link>
         </template>
@@ -45,7 +45,10 @@ const columns: TableColumn[] = [
                 :can-delete-row="(row: App.Data.RoleListItemData) => !row.is_system"
             >
                 <template #cell-is_system="{ row }">
-                    <span v-if="(row as App.Data.RoleListItemData).is_system" class="badge badge-warning badge-sm">
+                    <span
+                        v-if="(row as App.Data.RoleListItemData).is_system"
+                        class="kg-chip kg-chip--warning kg-chip--sm"
+                    >
                         {{ t('system_role') }}
                     </span>
                 </template>

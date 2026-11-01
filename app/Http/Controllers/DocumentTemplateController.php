@@ -9,6 +9,7 @@ use App\Data\DocumentTemplates\DocumentTemplatePreviewData;
 use App\Data\DocumentTemplates\DocumentTemplateUpsertData;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\DocumentTemplate;
 use App\Models\Tenant;
@@ -33,7 +34,7 @@ final class DocumentTemplateController extends Controller
     ) {}
 
     #[Authorize('viewAny', DocumentTemplate::class)]
-    #[NavItem(label: 'app.document_templates', route: 'document-templates.index', icon: 'RectangleStackIcon', permission: PermissionEnum::ViewDocumentTemplates->value, group: 'settings', order: 30)]
+    #[NavItem(label: 'app.document_templates', route: 'document-templates.index', icon: NavIconEnum::Documents, permission: PermissionEnum::ViewDocumentTemplates->value, group: 'settings', order: 30)]
     public function index(Request $request): InertiaResponse
     {
         /** @var User $user */

@@ -6,7 +6,8 @@ import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import { formatDatetime } from '@/utils/date';
 import { formatBytes } from '@/utils/bytes';
-import { EyeIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
+import EyeIcon from '~icons/material-symbols/visibility-rounded';
+import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-rounded';
 import type { Breadcrumb, Paginator } from '@/types';
 import type { FilterConfig, TableColumn } from '@/types/table';
 
@@ -26,7 +27,7 @@ const columns: TableColumn<App.Data.MediaListItemData>[] = [
     { key: 'collection_name', label: t('collection_name'), sortable: false },
     { key: 'model_type_label', label: t('owner'), sortable: false },
     { key: 'model_url', label: t('parent_model'), sortable: false },
-    { key: 'created_at', label: t('created_at'), sortable: true },
+    { key: 'created_at', label: t('created_at'), sortable: true, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [
@@ -77,7 +78,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-mime_type="{ value }">
-                    <span v-if="value" class="badge badge-ghost badge-sm">{{ value }}</span>
+                    <span v-if="value" class="kg-chip kg-chip--neutral kg-chip--sm">{{ value }}</span>
                     <span v-else class="text-base-content/40">—</span>
                 </template>
 
@@ -86,7 +87,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-collection_name="{ value }">
-                    <span class="badge badge-outline badge-sm">{{ value }}</span>
+                    <span class="kg-chip kg-chip--neutral kg-chip--sm">{{ value }}</span>
                 </template>
 
                 <template #cell-model_type_label="{ row }">
@@ -115,7 +116,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         class="btn btn-ghost btn-xs"
                         :title="t('details')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

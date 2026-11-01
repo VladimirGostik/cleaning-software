@@ -2,13 +2,11 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    ArrowDownTrayIcon,
-    CheckCircleIcon,
-    PencilSquareIcon,
-    TrashIcon,
-    XCircleIcon,
-} from '@heroicons/vue/24/outline';
+import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 
 import Can from '@/Components/Can.vue';
 
@@ -33,15 +31,18 @@ const hasText = computed(() => props.contract.body !== null);
             <h2 class="card-title text-base">{{ t('contract_section_actions') }}</h2>
 
             <Can v-if="hasText && props.contract.is_editable" permission="edit contracts">
-                <Link :href="`/contracts/${props.contract.id}/edit`" class="btn btn-sm w-full justify-start">
-                    <PencilSquareIcon class="size-4" />
+                <Link
+                    :href="`/contracts/${props.contract.id}/edit`"
+                    class="btn btn-sm btn-neutral w-full justify-start"
+                >
+                    <PencilSquareIcon class="size-5" />
                     {{ t('edit') }}
                 </Link>
             </Can>
 
             <Can v-if="hasText && props.contract.can_be_signed" permission="edit contracts">
-                <button type="button" class="btn btn-sm btn-success w-full justify-start" @click="emit('sign')">
-                    <CheckCircleIcon class="size-4" />
+                <button type="button" class="btn btn-sm btn-secondary w-full justify-start" @click="emit('sign')">
+                    <CheckCircleIcon class="size-5" />
                     {{ t('contract_action_sign') }}
                 </button>
             </Can>
@@ -51,22 +52,22 @@ const hasText = computed(() => props.contract.body !== null);
                 :href="`/contracts/${props.contract.id}/pdf`"
                 target="_blank"
                 rel="noopener"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral w-full justify-start"
             >
-                <ArrowDownTrayIcon class="size-4" />
+                <ArrowDownTrayIcon class="size-5" />
                 {{ t('contract_action_download_pdf') }}
             </a>
 
             <Can v-if="props.contract.can_be_terminated" permission="terminate contracts">
-                <button type="button" class="btn btn-sm w-full justify-start text-warning" @click="emit('terminate')">
-                    <XCircleIcon class="size-4" />
+                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('terminate')">
+                    <XCircleIcon class="size-5" />
                     {{ t('contract_action_terminate') }}
                 </button>
             </Can>
 
             <Can v-if="hasText && props.contract.is_editable" permission="delete contracts">
-                <button type="button" class="btn btn-sm w-full justify-start text-error" @click="emit('delete')">
-                    <TrashIcon class="size-4" />
+                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('delete')">
+                    <TrashIcon class="size-5" />
                     {{ t('delete') }}
                 </button>
             </Can>

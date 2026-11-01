@@ -1,7 +1,10 @@
 <script setup lang="ts" generic="TRow extends object">
 import { computed, ref, useSlots } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { ChevronUpIcon, ChevronDownIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
+import ChevronUpIcon from '~icons/material-symbols/expand-less-rounded';
+import ChevronDownIcon from '~icons/material-symbols/expand-more-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-rounded';
+import TrashIcon from '~icons/material-symbols/delete-rounded';
 import type { TableColumn, Paginator } from '@/types';
 
 const props = withDefaults(
@@ -125,7 +128,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
 <template>
     <div class="flex flex-col gap-4">
         <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
+            <table class="table w-full">
                 <thead>
                     <tr>
                         <th
@@ -178,7 +181,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                                         class="btn btn-ghost btn-xs"
                                         :title="$t('edit')"
                                     >
-                                        <PencilSquareIcon class="size-4" />
+                                        <PencilSquareIcon class="size-5" />
                                     </a>
 
                                     <div v-if="canDeleteThisRow(row)" class="relative">
@@ -188,12 +191,12 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                                             :title="$t('delete')"
                                             @click="openDeletePopover(index)"
                                         >
-                                            <TrashIcon class="size-4" />
+                                            <TrashIcon class="size-5" />
                                         </button>
 
                                         <div
                                             v-if="popoverOpen[index]"
-                                            class="absolute right-0 bottom-full mb-1 z-50 w-44 rounded-box bg-base-100 shadow-lg border border-base-300 p-3 flex flex-col gap-2"
+                                            class="absolute right-0 bottom-full mb-1 z-50 w-44 rounded-box bg-base-100 shadow-float border border-base-300 p-3 flex flex-col gap-2"
                                         >
                                             <p class="text-sm text-center font-medium">{{ $t('confirm_delete') }}</p>
                                             <div class="flex gap-2">

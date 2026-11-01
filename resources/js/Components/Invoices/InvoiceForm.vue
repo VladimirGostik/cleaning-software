@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n';
 import { addDays } from 'date-fns';
 
 import FormProvider from '@/Components/Forms/FormProvider.vue';
-import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import NumberInput from '@/Components/Forms/NumberInput.vue';
 import DateInput from '@/Components/Forms/DateInput.vue';
 import TextareaInput from '@/Components/Forms/TextareaInput.vue';
@@ -22,15 +21,7 @@ import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
 import { useDependentValidation } from '@/Composables/useDependentValidation';
-import {
-    enumOptions,
-    INVOICE_TEMPLATES,
-    INVOICE_TYPES,
-    invoiceTemplateKey,
-    invoiceTypeKey,
-    paymentTypeKey,
-    roundingModeKey,
-} from '@/utils/enums';
+import { enumOptions, INVOICE_TYPES, invoiceTypeKey, paymentTypeKey, roundingModeKey } from '@/utils/enums';
 
 type InvoiceItemRow = ItemRow & {
     id: string | null;
@@ -43,7 +34,6 @@ interface InvoiceFormData {
     client_id: string | null;
     cleaning_object_id: string | null;
     type: App.Enums.InvoiceTypeEnum;
-    template: App.Enums.InvoiceTemplateEnum | '';
     issue_date: string;
     delivery_date: string;
     due_date: string;
@@ -109,7 +99,6 @@ function initialData(): InvoiceFormData {
             client_id: invoice.client_id,
             cleaning_object_id: invoice.cleaning_object_id,
             type: invoice.type,
-            template: invoice.template,
             issue_date: toDateInputValue(invoice.issue_date),
             delivery_date: toDateInputValue(invoice.delivery_date),
             due_date: toDateInputValue(invoice.due_date),
@@ -144,7 +133,6 @@ function initialData(): InvoiceFormData {
         client_id: null,
         cleaning_object_id: null,
         type: 'one_off',
-        template: '',
         issue_date: toDateInputValue(today),
         delivery_date: toDateInputValue(today),
         due_date: toDateInputValue(addDays(today, 14)),
@@ -181,7 +169,6 @@ const form = useForm<InvoiceFormData>(
 
 form.transform((data: InvoiceFormData) => ({
     ...data,
-    template: data.template || null,
     header_text: data.header_text || null,
     footer_text: data.footer_text || null,
     note: data.note || null,
@@ -245,10 +232,6 @@ const totals = useInvoiceTotals(
 );
 
 const typeOptions = computed<RadioOption[]>(() => enumOptions(INVOICE_TYPES, invoiceTypeKey, t));
-const templateOptions = computed<SelectOption[]>(() => [
-    { value: '', label: t('invoice_template_default') },
-    ...enumOptions(INVOICE_TEMPLATES, invoiceTemplateKey, t),
-]);
 
 function updateRequiredDate(field: 'issue_date' | 'delivery_date' | 'due_date', value: string | null): void {
     form[field] = value ?? '';
@@ -274,7 +257,7 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" @submit.prevent="submit">
+        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
             <div class="space-y-6">
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">
@@ -293,9 +276,7 @@ function submit(): void {
 
                         <RadioGroup field="type" :label="t('type')" :options="typeOptions" />
 
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <SelectInput field="template" :label="t('invoice_template')" :options="templateOptions" />
-
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <DateInput
                                 :model-value="form.issue_date"
                                 :label="t('invoice_pdf_issue_date')"

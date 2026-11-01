@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Data\RecurringInvoices;
 
 use App\Enums\CurrencyEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
@@ -37,7 +36,6 @@ final class RecurringInvoiceDetailData extends Data
         public readonly string $start_date,
         public readonly ?string $end_date,
         public readonly InvoiceTypeEnum $type,
-        public readonly ?InvoiceTemplateEnum $template,
         public readonly ?string $cleaning_object_id,
         public readonly ?string $last_generated_at,
         public readonly int $due_days,
@@ -98,7 +96,6 @@ final class RecurringInvoiceDetailData extends Data
             start_date: $ri->start_date->toDateString(),
             end_date: $ri->end_date?->toDateString(),
             type: $ri->type,
-            template: $ri->template,
             cleaning_object_id: $ri->cleaning_object_id,
             last_generated_at: $ri->last_generated_at?->toIso8601String(),
             due_days: $ri->due_days,

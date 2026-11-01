@@ -30,7 +30,7 @@ const { t } = useI18n();
             <h2 class="card-title text-base">{{ t('invoice_section_summary') }}</h2>
 
             <div class="flex items-center justify-between">
-                <span class="font-mono font-medium">{{ props.number ?? t('invoice_draft_number') }}</span>
+                <span class="tabular-nums font-medium">{{ props.number ?? t('invoice_draft_number') }}</span>
                 <InvoiceTypeBadge :type="props.type" />
             </div>
 

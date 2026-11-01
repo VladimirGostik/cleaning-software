@@ -85,6 +85,6 @@ const numberFormatHint = computed(() =>
         </p>
 
         <p class="text-sm text-base-content/60">{{ numberFormatHint }}</p>
-        <p class="text-sm font-mono">{{ t('invoice_settings_number_preview') }}: {{ previewNumber }}</p>
+        <p class="text-sm tabular-nums">{{ t('invoice_settings_number_preview') }}: {{ previewNumber }}</p>
     </div>
 </template>

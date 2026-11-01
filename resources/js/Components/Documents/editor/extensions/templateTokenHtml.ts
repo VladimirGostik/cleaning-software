@@ -14,9 +14,9 @@ const STYLE_ATTR_RE = /\bstyle="([^"]*)"/;
 const BLOCK_STYLE_PROPERTIES = ['text-align', 'font-family', 'font-size'] as const;
 
 export const TOKEN_CHIP_TONE: Record<DocumentTokenKind, string> = {
-    text: 'badge badge-info',
-    optional: 'badge badge-ghost',
-    flag: 'badge badge-warning',
+    text: 'kg-chip kg-chip--planned',
+    optional: 'kg-chip kg-chip--neutral',
+    flag: 'kg-chip kg-chip--warning',
     block: 'document-block-chip',
 };
 

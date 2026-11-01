@@ -1,8 +1,8 @@
 .document-body {
-    font-family: 'Liberation Sans', 'DejaVu Sans', Arial, sans-serif;
+    font-family: 'Geist', 'Liberation Sans', 'DejaVu Sans', Arial, sans-serif;
     font-size: 11pt;
     line-height: 1.45;
-    color: #1a1a1a;
+    color: #111c18;
 }
 
 .document-body p {
@@ -74,6 +74,6 @@
 }
 
 .document-body mark {
-    background: #fff3a3;
+    background: #fff0e8;
     color: inherit;
 }

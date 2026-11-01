@@ -6,7 +6,6 @@ namespace Database\Factories;
 
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
@@ -33,7 +32,6 @@ final class InvoiceFactory extends Factory
         return [
             'type' => InvoiceTypeEnum::OneOff,
             'status' => InvoiceStatusEnum::Draft,
-            'template' => InvoiceTemplateEnum::Classic,
             'number' => null,
             'variable_symbol' => null,
             'period_from' => null,

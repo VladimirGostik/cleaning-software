@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { BuildingOffice2Icon } from '@heroicons/vue/24/outline';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
 
 import EmptyState from '@/Components/EmptyState.vue';
 import ObjectTypeBadge from '@/Components/Objects/ObjectTypeBadge.vue';
@@ -22,7 +22,7 @@ const { t } = useI18n();
             <EmptyState v-if="objects.length === 0" :title="t('client_no_objects')" :icon="BuildingOffice2Icon" />
 
             <div v-else class="overflow-x-auto">
-                <table class="table table-zebra table-sm">
+                <table class="table table-sm">
                     <thead>
                         <tr>
                             <th>{{ t('name') }}</th>

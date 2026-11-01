@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import PlusIcon from '~icons/material-symbols/add-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ClientFormDrawer from '@/Components/Clients/ClientFormDrawer.vue';
@@ -50,30 +52,30 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('edit clients')"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-neutral btn-sm"
                 @click="ui.editOpen = true"
             >
-                <PencilSquareIcon class="size-4" />
+                <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </button>
 
             <button
                 v-if="allows('create objects')"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-neutral btn-sm"
                 @click="ui.objectOpen = true"
             >
-                <PlusIcon class="size-4" />
+                <PlusIcon class="size-5" />
                 {{ t('client_object_add') }}
             </button>
 
             <button
                 v-if="allows('delete clients')"
                 type="button"
-                class="btn btn-ghost btn-sm text-error"
+                class="btn btn-error btn-sm"
                 @click="openModal(client)"
             >
-                <TrashIcon class="size-4" />
+                <TrashIcon class="size-5" />
                 {{ t('delete') }}
             </button>
         </template>

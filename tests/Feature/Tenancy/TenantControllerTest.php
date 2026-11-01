@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Tenancy;
 
 use App\Enums\CurrencyEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RoundingModeEnum;
@@ -182,7 +181,6 @@ final class TenantControllerTest extends TestCase
         $sourceInterface = $source->interface;
         $this->assertNotNull($sourceInterface);
         $sourceInterface->update([
-            'invoice_template' => InvoiceTemplateEnum::Modern,
             'recurring_default_state' => RecurringDefaultStateEnum::Issued,
             'default_constant_symbol' => '0308',
             'default_payment_type' => PaymentTypeEnum::Cash,
@@ -205,7 +203,6 @@ final class TenantControllerTest extends TestCase
         $this->assertNotNull($newInterface);
         $this->assertSame('SRC-{YYYY}-{XXXX}', $newTenant->invoice_number_format);
         $this->assertSame('23.50', $newTenant->vat_rate);
-        $this->assertSame(InvoiceTemplateEnum::Modern, $newInterface->invoice_template);
         $this->assertSame(RecurringDefaultStateEnum::Issued, $newInterface->recurring_default_state);
         $this->assertSame('0308', $newInterface->default_constant_symbol);
         $this->assertSame(PaymentTypeEnum::Cash, $newInterface->default_payment_type);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 
 const props = withDefaults(
     defineProps<{
@@ -57,7 +57,7 @@ function dismiss(): void {
                     :title="t('document_missing_dismiss')"
                     @click="dismiss"
                 >
-                    <XMarkIcon class="size-4" aria-hidden="true" />
+                    <XMarkIcon class="size-5" aria-hidden="true" />
                 </button>
             </div>
             <ul v-if="expanded" id="document-missing-list" class="mt-2 flex max-h-32 flex-wrap gap-1 overflow-y-auto">
@@ -65,13 +65,13 @@ function dismiss(): void {
                     <button
                         v-if="pickable"
                         type="button"
-                        class="badge badge-outline cursor-pointer"
+                        class="kg-chip kg-chip--neutral cursor-pointer"
                         :aria-label="t('document_missing_insert', { label: token.label })"
                         @click="emit('pick', token.key)"
                     >
                         {{ token.label }}
                     </button>
-                    <span v-else class="badge badge-outline">{{ token.label }}</span>
+                    <span v-else class="kg-chip kg-chip--neutral">{{ token.label }}</span>
                 </li>
             </ul>
         </div>

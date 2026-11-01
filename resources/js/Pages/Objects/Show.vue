@@ -2,7 +2,9 @@
 import { computed, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ExclamationTriangleIcon, NoSymbolIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
+import NoSymbolIcon from '~icons/material-symbols/block-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
@@ -65,18 +67,18 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 <template>
     <Header :title="object.name" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button v-if="canEdit" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
-                <PencilSquareIcon class="size-4" />
+            <button v-if="canEdit" type="button" class="btn btn-neutral btn-sm" @click="ui.editOpen = true">
+                <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </button>
 
             <button
                 v-if="allows('delete objects') && object.is_active"
                 type="button"
-                class="btn btn-ghost btn-sm text-warning"
+                class="btn btn-error btn-sm"
                 @click="openModal(object)"
             >
-                <NoSymbolIcon class="size-4" />
+                <NoSymbolIcon class="size-5" />
                 {{ t('object_deactivate') }}
             </button>
         </template>

@@ -15,6 +15,7 @@ use App\Data\Employees\EmployeeStoreData;
 use App\Data\Employees\EmployeeUpdateData;
 use App\Data\RoleListItemData;
 use App\Enums\JobStatusEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Document;
 use App\Models\Role;
@@ -40,7 +41,7 @@ final class EmployeeController extends Controller
     ) {}
 
     #[Authorize('viewAny', TenantMembership::class)]
-    #[NavItem(label: 'app.employees', route: 'employees.index', icon: 'IdentificationIcon', permission: PermissionEnum::ViewEmployees->value, order: 20)]
+    #[NavItem(label: 'app.employees', route: 'employees.index', icon: NavIconEnum::Team, permission: PermissionEnum::ViewEmployees->value, order: 20)]
     public function index(Request $request): Response
     {
         return Inertia::render('Employees/Index', [

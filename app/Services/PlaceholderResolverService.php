@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Data\Contracts\PlaceholderTokenData;
 use App\Data\Invoices\InvoiceMailPlaceholderCatalogData;
 use App\Models\Invoice;
+use App\Support\Formats;
 
 /** Plain-text `{{token}}` substitution for invoice mail; documents use `DocumentTemplateRenderer`. */
 final readonly class PlaceholderResolverService
@@ -30,7 +31,7 @@ final readonly class PlaceholderResolverService
     {
         $currency = $invoice->currency;
         $period = $invoice->period_from !== null && $invoice->period_to !== null
-            ? $invoice->period_from->format('d.m.Y').' – '.$invoice->period_to->format('d.m.Y')
+            ? $invoice->period_from->format(Formats::DATE).' – '.$invoice->period_to->format(Formats::DATE)
             : null;
 
         return [
@@ -38,8 +39,8 @@ final readonly class PlaceholderResolverService
             'invoice.variable_symbol' => $invoice->variable_symbol,
             'invoice.total' => $currency->format((float) $invoice->total),
             'invoice.balance_due' => $currency->format($invoice->balance_due),
-            'invoice.issue_date' => $invoice->issue_date->format('d.m.Y'),
-            'invoice.due_date' => $invoice->due_date->format('d.m.Y'),
+            'invoice.issue_date' => $invoice->issue_date->format(Formats::DATE),
+            'invoice.due_date' => $invoice->due_date->format(Formats::DATE),
             'invoice.period' => $period,
             'customer.name' => $invoice->customer_name,
             'supplier.name' => $invoice->supplier_name,

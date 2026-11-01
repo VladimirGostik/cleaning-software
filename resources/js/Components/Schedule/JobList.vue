@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { EyeIcon } from '@heroicons/vue/24/outline';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import JobTypeBadge from './JobTypeBadge.vue';
@@ -22,13 +22,13 @@ function slice5(value: string | null): string {
 }
 
 const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
-    { key: 'scheduled_date', label: t('date'), sortable: true },
-    { key: 'start_time', label: t('schedule_col_time'), sortable: false, value: (r) => r.start_time },
-    { key: 'object_name', label: t('object'), sortable: false },
+    { key: 'scheduled_date', label: t('date'), sortable: true, nowrap: true },
+    { key: 'start_time', label: t('schedule_col_time'), sortable: false, value: (r) => r.start_time, nowrap: true },
+    { key: 'object_name', label: t('object'), sortable: false, primary: true },
     { key: 'client_name', label: t('client'), sortable: false },
     { key: 'assignee_display_name', label: t('schedule_col_assignee'), sortable: false },
-    { key: 'type', label: t('type'), sortable: true },
-    { key: 'status', label: t('status'), sortable: true },
+    { key: 'type', label: t('type'), sortable: true, nowrap: true },
+    { key: 'status', label: t('status'), sortable: true, nowrap: true },
 ];
 </script>
 
@@ -41,7 +41,7 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
         :reload-only="['jobs', 'filters']"
     >
         <template #cell-scheduled_date="{ row }">
-            <Link :href="`/jobs/${row.id}`" class="link link-hover font-medium font-mono">
+            <Link :href="`/jobs/${row.id}`" class="link link-hover font-medium tabular-nums">
                 {{ formatDate(row.scheduled_date) }}
             </Link>
         </template>
@@ -72,12 +72,14 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
 
         <template #cell-status="{ row }">
             <JobStatusBadge :status="row.status" />
-            <span v-if="row.is_invoiced" class="badge badge-xs badge-success ml-1">{{ t('schedule_invoiced') }}</span>
+            <span v-if="row.is_invoiced" class="kg-chip kg-chip--done kg-chip--sm ml-1">{{
+                t('schedule_invoiced')
+            }}</span>
         </template>
 
         <template #buttons="{ row }">
             <Link :href="`/jobs/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')" :aria-label="t('view')">
-                <EyeIcon class="size-4" />
+                <EyeIcon class="size-5" />
             </Link>
         </template>
     </DataTable>

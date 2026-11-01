@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ChevronUpDownIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import ChevronUpDownIcon from '~icons/material-symbols/unfold-more-outline-rounded';
+import PlusIcon from '~icons/material-symbols/add-outline-rounded';
 import TenantColorDot from '@/Components/Tenants/TenantColorDot.vue';
 import { usePageProps } from '@/Composables/usePageProps';
 import type { SharedTenant } from '@/types';
@@ -40,16 +41,16 @@ function switchTo(id: string) {
             role="button"
             aria-haspopup="menu"
             :aria-label="t('tenant_switch')"
-            class="btn btn-sm btn-ghost text-neutral-content/70 hover:text-white hover:bg-white/5"
+            class="btn btn-sm btn-ghost text-base-content"
             :class="compact ? 'btn-square' : 'w-full justify-start gap-2'"
         >
             <TenantColorDot :color="props.tenant.active?.color ?? null" />
             <span v-if="!compact" class="truncate">{{ props.tenant.active?.name }}</span>
-            <ChevronUpDownIcon class="size-4" :class="compact ? '' : 'ml-auto'" />
+            <ChevronUpDownIcon class="size-5" :class="compact ? '' : 'ml-auto'" />
         </div>
         <ul
             tabindex="0"
-            class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-56 p-1"
+            class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-float z-50 w-56 p-1"
         >
             <li v-for="item in props.tenant.available" :key="item.id">
                 <button
@@ -68,7 +69,7 @@ function switchTo(id: string) {
                 <li class="menu-title" aria-hidden="true"><hr class="border-base-300" /></li>
                 <li>
                     <button type="button" @click="emit('add-tenant')">
-                        <PlusIcon class="size-4" />
+                        <PlusIcon class="size-5" />
                         {{ t('nav_add_tenant') }}
                     </button>
                 </li>

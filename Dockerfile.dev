@@ -24,6 +24,9 @@ RUN apk add --no-cache bash curl git nodejs npm \
         chromium nss freetype harfbuzz ca-certificates ttf-dejavu ttf-liberation font-noto qpdf \
     && npm install -g pnpm@latest
 
+COPY resources/fonts/geist/*.otf /usr/share/fonts/geist/
+RUN fc-cache -f
+
 ENV CHROMIUM_PATH=/usr/bin/chromium-browser
 
 # Build-time smoke test: fail the build if headless Chromium cannot launch.

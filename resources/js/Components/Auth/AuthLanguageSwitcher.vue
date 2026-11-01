@@ -9,13 +9,13 @@ const locale = computed(() => props.value.locale);
 </script>
 
 <template>
-    <div class="flex items-center justify-center gap-3 text-[12px] text-slate-500">
+    <div class="flex items-center justify-center gap-3 text-xs text-muted">
         <template v-for="(lang, i) in languages" :key="lang.value">
-            <span v-if="i > 0" class="text-slate-300" aria-hidden="true">|</span>
+            <span v-if="i > 0" class="text-base-300" aria-hidden="true">|</span>
             <a
                 :href="`/language/${lang.value}`"
-                class="transition hover:text-slate-800"
-                :class="lang.value === locale ? 'font-semibold text-slate-800' : ''"
+                class="transition hover:text-base-content"
+                :class="lang.value === locale ? 'font-semibold text-base-content' : ''"
                 :aria-current="lang.value === locale ? 'true' : undefined"
                 :lang="lang.value"
             >

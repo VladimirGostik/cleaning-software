@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
+import type { StatusTone } from '@/Components/statusTone';
 import { taskPriorityKey } from '@/utils/enums';
 
 const props = defineProps<{
@@ -9,15 +11,15 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const STYLE: Record<App.Enums.TaskPriorityEnum, string> = {
-    low: 'badge-ghost',
-    normal: 'badge-outline',
-    high: 'badge-warning',
+const STATUS: Record<App.Enums.TaskPriorityEnum, { tone: StatusTone }> = {
+    low: { tone: 'neutral' },
+    normal: { tone: 'neutral' },
+    high: { tone: 'warning' },
 };
 
-const badgeClass = computed(() => STYLE[props.priority]);
+const entry = computed(() => STATUS[props.priority]);
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="badgeClass">{{ t(taskPriorityKey(priority)) }}</span>
+    <StatusChip :tone="entry.tone" :label="t(taskPriorityKey(props.priority))" size="sm" />
 </template>

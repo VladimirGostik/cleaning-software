@@ -12,7 +12,7 @@ import ukLocale from '@fullcalendar/core/locales/uk';
 import { subDays, format } from 'date-fns';
 import { usePageProps } from '@/Composables/usePageProps';
 import type { CalendarRange } from '@/Composables/useJobCalendar';
-import { JOB_STATUS_STYLE } from './jobStatusStyle';
+import { jobStatusColors } from './jobStatusStyle';
 
 const props = defineProps<{
     events: readonly App.Data.Schedule.JobCalendarItemData[];
@@ -30,7 +30,7 @@ const pageProps = usePageProps();
 
 const fcEvents = computed<EventInput[]>(() =>
     props.events.map((job) => {
-        const style = JOB_STATUS_STYLE[job.status];
+        const colors = jobStatusColors(job.status);
 
         return {
             id: job.id,
@@ -38,9 +38,9 @@ const fcEvents = computed<EventInput[]>(() =>
             start: job.start_time ? `${job.scheduled_date}T${job.start_time}` : job.scheduled_date,
             end: job.end_time ? `${job.scheduled_date}T${job.end_time}` : undefined,
             allDay: !job.start_time,
-            backgroundColor: style.color,
-            borderColor: style.color,
-            textColor: style.text,
+            backgroundColor: colors.bg,
+            borderColor: colors.bg,
+            textColor: colors.fg,
         };
     }),
 );
@@ -59,7 +59,7 @@ function onEventDidMount(info: EventMountArg): void {
     info.el.title = info.event.title;
 }
 
-const calendarOptions = computed<CalendarOptions>(() => ({
+const STATIC_OPTIONS: CalendarOptions = {
     plugins: [dayGridPlugin, timeGridPlugin],
     initialView: 'dayGridMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
@@ -70,8 +70,21 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     dayMaxEvents: true,
     slotMinTime: '06:00:00',
     slotMaxTime: '22:00:00',
-    events: fcEvents.value,
     locales: [skLocale, ukLocale],
+    eventDisplay: 'block',
+    views: {
+        timeGridWeek: {
+            titleFormat: { day: 'numeric', month: 'numeric', year: 'numeric' },
+            dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
+        },
+    },
+    eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: false },
+    slotLabelFormat: { hour: 'numeric', minute: '2-digit', hour12: false },
+};
+
+const calendarOptions = computed<CalendarOptions>(() => ({
+    ...STATIC_OPTIONS,
+    events: fcEvents.value,
     locale: pageProps.value.locale,
     datesSet: onDatesSet,
     eventClick: onEventClick,
@@ -105,11 +118,47 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     --fc-border-color: var(--color-base-300);
     --fc-page-bg-color: var(--color-base-100);
     --fc-neutral-bg-color: var(--color-base-200);
-    --fc-button-bg-color: var(--color-primary);
-    --fc-button-border-color: var(--color-primary);
-    --fc-button-hover-bg-color: color-mix(in oklch, var(--color-primary) 80%, black);
-    --fc-button-active-bg-color: var(--color-primary);
-    --fc-today-bg-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
-    --fc-button-text-color: var(--color-primary-content);
+    --fc-today-bg-color: color-mix(in oklch, var(--color-primary) 4%, transparent);
+    --fc-button-bg-color: var(--color-neutral);
+    --fc-button-border-color: var(--color-neutral);
+    --fc-button-text-color: var(--color-base-content);
+    --fc-button-hover-bg-color: var(--color-base-300);
+    --fc-button-hover-border-color: var(--color-base-300);
+    --fc-button-active-bg-color: var(--color-primary-soft);
+    --fc-button-active-border-color: var(--color-primary-soft);
+}
+:deep(.fc .fc-toolbar-title) {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+:deep(.fc .fc-button) {
+    height: 36px;
+    padding: 0 12px;
+    border-radius: var(--radius-field);
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: none;
+}
+:deep(.fc .fc-button:focus-visible) {
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+:deep(.fc .fc-button-group > .fc-button:not(:first-child)) {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+    margin-inline-start: 1px;
+}
+:deep(.fc .fc-button-group > .fc-button:not(:last-child)) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+:deep(.fc .fc-button-primary:not(:disabled).fc-button-active),
+:deep(.fc .fc-button-primary:not(:disabled):active) {
+    color: var(--color-primary-hover);
+}
+:deep(.fc .fc-event) {
+    border: 0;
+    border-radius: 6px;
+    padding: 2px 6px;
 }
 </style>

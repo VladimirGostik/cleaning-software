@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { contractTermTypeKey } from '@/utils/enums';
 
-defineProps<{
+const props = defineProps<{
     termType: App.Enums.ContractTermTypeEnum;
 }>();
 
@@ -10,5 +11,5 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <span class="badge badge-sm badge-ghost">{{ t(contractTermTypeKey(termType)) }}</span>
+    <StatusChip tone="neutral" :label="t(contractTermTypeKey(props.termType))" size="sm" />
 </template>

@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Data\Ai\PendingActionData;
 use App\Enums\ConfirmationChannelEnum;
+use App\Enums\NavIconEnum;
 use App\Models\PendingAction;
 use App\Models\User;
 use App\Navigation\NavItem;
@@ -21,7 +22,7 @@ final class PendingActionController extends Controller
     public function __construct(private readonly ActionConfirmationService $actions) {}
 
     #[Authorize('viewAny', PendingAction::class)]
-    #[NavItem(label: 'app.pending_actions', route: 'pending-actions.index', icon: 'ShieldExclamationIcon', order: 46)]
+    #[NavItem(label: 'app.pending_actions', route: 'pending-actions.index', icon: NavIconEnum::PendingActions, order: 46)]
     public function index(Request $request): Response
     {
         /** @var User $actor */

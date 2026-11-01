@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ArrowsRightLeftIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import ArrowsRightLeftIcon from '~icons/material-symbols/swap-horiz-outline-rounded';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
 import TenantColorDot from '@/Components/Tenants/TenantColorDot.vue';
 import CompanyMetricGroup from '@/Components/Dashboard/CompanyMetricGroup.vue';
 import { useDashboardNavigation } from '@/Components/Dashboard/dashboardNavigation';
@@ -18,17 +19,12 @@ const isSwitching = computed<boolean>(() => switchingTo.value === props.company.
 </script>
 
 <template>
-    <article
-        class="card border border-base-300 border-t-4 bg-base-100 shadow-sm"
-        :class="{ 'border-t-primary': company.color === null }"
-        :style="company.color ? { borderTopColor: company.color } : undefined"
-        :aria-busy="isSwitching"
-    >
+    <article class="card bg-base-100" :aria-busy="isSwitching">
         <div class="card-body pb-2">
             <h2 v-if="company.is_current" class="card-title items-center text-base">
                 <TenantColorDot :color="company.color" />
                 {{ company.name }}
-                <span class="badge badge-primary badge-sm">{{ t('dashboard_current_company') }}</span>
+                <span class="kg-chip kg-chip--planned kg-chip--sm">{{ t('dashboard_current_company') }}</span>
             </h2>
             <button
                 v-else
@@ -40,10 +36,10 @@ const isSwitching = computed<boolean>(() => switchingTo.value === props.company.
             >
                 <TenantColorDot :color="company.color" />
                 {{ company.name }}
-                <ArrowsRightLeftIcon class="size-4 text-base-content/40" aria-hidden="true" />
+                <ArrowsRightLeftIcon class="size-5 text-base-content/40" aria-hidden="true" />
                 <span v-if="isSwitching" class="loading loading-spinner loading-xs" />
             </button>
-            <span v-if="!company.supplier_complete" class="badge badge-warning badge-sm gap-1">
+            <span v-if="!company.supplier_complete" class="kg-chip kg-chip--warning kg-chip--sm gap-1">
                 <ExclamationTriangleIcon class="size-3" aria-hidden="true" />
                 {{ t('dashboard_supplier_incomplete') }}
             </span>

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { BellIcon } from '@heroicons/vue/24/outline';
+import BellIcon from '~icons/material-symbols/notifications-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import NotificationList from '@/Components/Notifications/NotificationList.vue';
@@ -64,10 +64,10 @@ function markAllRead(): void {
 <template>
     <Header :title="t('notifications')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <span v-if="unreadCount > 0" class="badge badge-primary">
+            <span v-if="unreadCount > 0" class="kg-chip kg-chip--planned">
                 {{ t('notifications_unread_count', { count: unreadCount }) }}
             </span>
-            <button type="button" class="btn btn-sm btn-ghost" :disabled="unreadCount === 0" @click="markAllRead">
+            <button type="button" class="btn btn-sm btn-neutral" :disabled="unreadCount === 0" @click="markAllRead">
                 {{ t('notifications_mark_all_read') }}
             </button>
         </template>

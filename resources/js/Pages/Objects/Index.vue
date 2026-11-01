@@ -2,7 +2,9 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BuildingOffice2Icon, EyeIcon, NoSymbolIcon } from '@heroicons/vue/24/outline';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import NoSymbolIcon from '~icons/material-symbols/block-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -46,18 +48,23 @@ const showContactsColumn = computed(
 
 const columns = computed<TableColumn<App.Data.Objects.ObjectListItemData>[]>(() => {
     const definitions: TableColumn<App.Data.Objects.ObjectListItemData>[] = [
-        { key: 'name', label: t('name'), sortable: true },
+        { key: 'name', label: t('name'), sortable: true, primary: true },
         { key: 'type', label: t('type'), sortable: true },
         { key: 'client_name', label: t('client'), sortable: false },
-        { key: 'city', label: t('city'), sortable: true },
+        { key: 'city', label: t('city'), sortable: true, hideBelow: 1440 },
     ];
 
     if (showContactsColumn.value) {
-        definitions.push({ key: 'primary_contact_email', label: t('contact_is_primary'), sortable: false });
+        definitions.push({
+            key: 'primary_contact_email',
+            label: t('contact_is_primary'),
+            sortable: false,
+            hideBelow: 1600,
+        });
     }
 
     definitions.push(
-        { key: 'area_sqm', label: t('object_area_sqm'), sortable: false },
+        { key: 'area_sqm', label: t('object_area_sqm'), sortable: false, hideBelow: 1440 },
         { key: 'is_active', label: t('status'), sortable: true },
     );
 
@@ -120,7 +127,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('create objects') && filterOptions.clients.length > 0"
                 type="button"
-                class="btn btn-primary btn-sm"
+                class="btn btn-secondary btn-sm"
                 @click="ui.createOpen = true"
             >
                 {{ t('object_add') }}
@@ -197,7 +204,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
                 <template #buttons="{ row }">
                     <Link :href="`/objects/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -207,7 +214,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                         :title="t('object_deactivate')"
                         @click="openModal(row)"
                     >
-                        <NoSymbolIcon class="size-4" />
+                        <NoSymbolIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

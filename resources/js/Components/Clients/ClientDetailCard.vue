@@ -18,7 +18,7 @@ const { t } = useI18n();
 
             <div class="flex flex-wrap gap-2">
                 <ClientTypeBadge :type="client.type" />
-                <span v-if="client.is_vat_payer" class="badge badge-outline">
+                <span v-if="client.is_vat_payer" class="kg-chip kg-chip--neutral">
                     {{ t('client_is_vat_payer') }}
                 </span>
             </div>

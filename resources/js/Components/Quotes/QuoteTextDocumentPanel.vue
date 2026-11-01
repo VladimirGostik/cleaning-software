@@ -25,10 +25,10 @@ const summary = computed(() => t('document_missing_summary', { count: missing.va
         <div class="card-body space-y-4">
             <div class="flex flex-wrap items-center gap-2">
                 <h2 class="card-title text-base">{{ t('quote_section_text') }}</h2>
-                <span v-if="textDocument.document_template_name" class="badge badge-ghost">
+                <span v-if="textDocument.document_template_name" class="kg-chip kg-chip--neutral">
                     {{ textDocument.document_template_name }}
                 </span>
-                <span v-if="textDocument.is_frozen" class="badge badge-neutral">{{ t('quote_text_frozen') }}</span>
+                <span v-if="textDocument.is_frozen" class="kg-chip kg-chip--neutral">{{ t('quote_text_frozen') }}</span>
             </div>
 
             <DocumentMissingTokens :tokens="missing" :summary="summary" />

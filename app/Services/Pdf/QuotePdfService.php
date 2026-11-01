@@ -45,6 +45,9 @@ final readonly class QuotePdfService implements RendersQuotePdf
         return $this->locale->run(fn (): string => Pdf::view('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])
             ->format('A4')
             ->portrait()
+            ->headerHtml('<div></div>')
+            ->footerView('pdf.quotes.footer', ['tenant' => $tenant, 'preview' => false])
+            ->margins(18, 18, 26, 18)
             ->generatePdfContent());
     }
 }

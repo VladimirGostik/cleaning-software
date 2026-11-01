@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { TrashIcon } from '@heroicons/vue/24/outline';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -66,7 +66,7 @@ const deleteConfirm = useDeleteConfirm<App.Data.Invoices.InvoicePaymentListItemD
                         :aria-label="t('delete')"
                         @click="deleteConfirm.openModal(payment)"
                     >
-                        <TrashIcon class="size-4" />
+                        <TrashIcon class="size-5" />
                     </button>
                 </li>
             </ul>

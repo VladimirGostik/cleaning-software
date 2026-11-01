@@ -2,8 +2,10 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
+import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-outline-rounded';
 import DataTable from '@/Components/DataTable/DataTable.vue';
+import StatusChip from '@/Components/StatusChip.vue';
 import NotificationTypeBadge from './NotificationTypeBadge.vue';
 import { formatDatetime } from '@/utils/date';
 import type { Paginator, TableColumn } from '@/types';
@@ -24,7 +26,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const columns: TableColumn[] = [
-    { key: 'created_at', label: t('created_at'), sortable: true },
+    { key: 'created_at', label: t('created_at'), sortable: true, class: 'whitespace-nowrap' },
     { key: 'type', label: t('type') },
     { key: 'title', label: t('notifications_col_message') },
     { key: 'read_at', label: t('status') },
@@ -78,12 +80,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         </template>
 
         <template #cell-read_at="{ row }">
-            <span
-                class="badge badge-sm"
-                :class="(row as NotificationRow).read_at === null ? 'badge-primary' : 'badge-ghost'"
-            >
-                {{ t((row as NotificationRow).read_at === null ? 'notifications_unread' : 'notifications_read') }}
-            </span>
+            <StatusChip
+                :tone="(row as NotificationRow).read_at === null ? 'planned' : 'neutral'"
+                :label="t((row as NotificationRow).read_at === null ? 'notifications_unread' : 'notifications_read')"
+                size="sm"
+            />
         </template>
 
         <template #buttons="{ row }">
@@ -94,7 +95,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 :title="t('view')"
                 :aria-label="t('view')"
             >
-                <ArrowTopRightOnSquareIcon class="size-4" />
+                <ArrowTopRightOnSquareIcon class="size-5" />
             </Link>
             <button
                 v-if="(row as NotificationRow).read_at === null"
@@ -104,7 +105,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 :aria-label="t('notifications_mark_read')"
                 @click="emit('mark-read', row as NotificationRow)"
             >
-                <CheckIcon class="size-4" />
+                <CheckIcon class="size-5" />
             </button>
         </template>
     </DataTable>

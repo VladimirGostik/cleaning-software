@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { taskFrequencyKey } from '@/utils/enums';
 
-defineProps<{
+const props = defineProps<{
     frequency: App.Enums.TaskFrequencyEnum;
 }>();
 
@@ -10,5 +11,5 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <span class="badge badge-sm badge-ghost">{{ t(taskFrequencyKey(frequency)) }}</span>
+    <StatusChip tone="neutral" :label="t(taskFrequencyKey(props.frequency))" size="sm" />
 </template>

@@ -6,7 +6,6 @@ namespace App\Data\Invoices;
 
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
@@ -32,7 +31,6 @@ final class InvoiceDetailData extends Data
         public readonly ?string $quote_number,
         public readonly InvoiceTypeEnum $type,
         public readonly InvoiceStatusEnum $status,
-        public readonly InvoiceTemplateEnum $template,
         public readonly ?string $number,
         public readonly ?string $variable_symbol,
         public readonly ?string $period_from,
@@ -114,7 +112,6 @@ final class InvoiceDetailData extends Data
             quote_number: $invoice->quote?->number,
             type: $invoice->type,
             status: $invoice->status,
-            template: $invoice->template,
             number: $invoice->number,
             variable_symbol: $invoice->variable_symbol,
             period_from: $invoice->period_from?->toDateString(),

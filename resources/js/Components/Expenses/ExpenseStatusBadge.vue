@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { expenseStatusKey } from '@/utils/enums';
 
-defineProps<{
+const props = defineProps<{
     status: App.Enums.ExpenseStatusEnum;
 }>();
 
@@ -10,7 +11,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="status === 'confirmed' ? 'badge-success' : 'badge-warning'">
-        {{ t(expenseStatusKey(status)) }}
-    </span>
+    <StatusChip
+        :tone="props.status === 'confirmed' ? 'done' : 'warning'"
+        :label="t(expenseStatusKey(props.status))"
+        size="sm"
+    />
 </template>

@@ -18,14 +18,14 @@ const { t } = useI18n();
                 <h2 class="card-title text-base">{{ t('employee_section_role') }}</h2>
 
                 <div class="mt-2">
-                    <span v-if="props.employee.role_name" class="badge badge-primary badge-sm">
+                    <span v-if="props.employee.role_name" class="kg-chip kg-chip--neutral kg-chip--sm">
                         {{ props.employee.role_name }}
                     </span>
                     <span v-else class="text-base-content/60">{{ t('employee_no_role') }}</span>
                 </div>
 
                 <ul v-if="props.employee.permissions.length > 0" class="flex flex-wrap gap-1.5 mt-3">
-                    <li v-for="p in props.employee.permissions" :key="p" class="badge badge-outline badge-sm">
+                    <li v-for="p in props.employee.permissions" :key="p" class="kg-chip kg-chip--neutral kg-chip--sm">
                         {{ t(permissionLabelKey(p as App.Enums.PermissionEnum)) }}
                     </li>
                 </ul>

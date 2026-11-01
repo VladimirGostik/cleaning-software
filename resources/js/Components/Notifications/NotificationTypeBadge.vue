@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { notificationTypeKey } from '@/utils/enums';
 import { NOTIFICATION_TYPE_STYLE } from './notificationTypeStyle';
 
@@ -9,10 +9,12 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-
-const badgeClass = computed(() => NOTIFICATION_TYPE_STYLE[props.type].badge);
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="badgeClass">{{ t(notificationTypeKey(type)) }}</span>
+    <StatusChip
+        :tone="NOTIFICATION_TYPE_STYLE[props.type].tone"
+        :label="t(notificationTypeKey(props.type))"
+        size="sm"
+    />
 </template>

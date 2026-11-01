@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { KG_ICONS } from '@/icons/kegosIcons';
 import { computed, ref, watch } from 'vue';
 import type { FilterConfig, FilterOperator } from '@/types/table';
 import {
@@ -147,7 +148,7 @@ function toggleBoolean(): void {
             type="button"
             class="btn btn-sm join-item"
             :class="{
-                'btn-success': value === 'true' || value === '1',
+                'btn-primary': value === 'true' || value === '1',
                 'btn-error': value === 'false' || value === '0',
             }"
             @click="toggleBoolean"
@@ -199,9 +200,10 @@ function toggleBoolean(): void {
             type="button"
             class="btn btn-sm btn-ghost join-item"
             :title="$t('remove_filter')"
+            :aria-label="$t('remove_filter')"
             @click="emit('remove', filter.property)"
         >
-            ✕
+            <KG_ICONS.adminAction.close class="size-4" />
         </button>
     </div>
 </template>

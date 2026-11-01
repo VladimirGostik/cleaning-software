@@ -13,6 +13,7 @@ use App\Data\Quotes\QuoteFormContextData;
 use App\Data\Quotes\QuoteTemplateOptionData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Enums\DocumentTypeEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
@@ -45,7 +46,7 @@ final class QuoteController extends Controller
     ) {}
 
     #[Authorize('viewAny', Quote::class)]
-    #[NavItem(label: 'app.quotes', route: 'quotes.index', icon: 'DocumentDuplicateIcon', permission: PermissionEnum::ViewQuotes->value, order: 35)]
+    #[NavItem(label: 'app.quotes', route: 'quotes.index', icon: NavIconEnum::Quotes, permission: PermissionEnum::ViewQuotes->value, order: 35)]
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('Quotes/Index', [

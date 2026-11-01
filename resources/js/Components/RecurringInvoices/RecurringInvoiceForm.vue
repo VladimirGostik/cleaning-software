@@ -27,9 +27,7 @@ import {
     CURRENCIES,
     currencyKey,
     enumOptions,
-    INVOICE_TEMPLATES,
     INVOICE_TYPES,
-    invoiceTemplateKey,
     invoiceTypeKey,
     PAYMENT_TYPES,
     paymentTypeKey,
@@ -47,7 +45,6 @@ interface RecurringInvoiceFormData {
     cleaning_object_id: string | null;
     name: string;
     type: App.Enums.InvoiceTypeEnum;
-    template: App.Enums.InvoiceTemplateEnum | '';
     frequency: App.Enums.RecurringFrequencyEnum;
     day_of_month: number;
     auto_issue: boolean;
@@ -119,7 +116,6 @@ function initialData(): RecurringInvoiceFormData {
             cleaning_object_id: ri.cleaning_object_id,
             name: ri.name,
             type: ri.type,
-            template: ri.template ?? '',
             frequency: ri.frequency,
             day_of_month: ri.day_of_month,
             auto_issue: ri.auto_issue,
@@ -155,7 +151,6 @@ function initialData(): RecurringInvoiceFormData {
         cleaning_object_id: null,
         name: '',
         type: 'monthly',
-        template: '',
         frequency: 'monthly',
         day_of_month: 1,
         auto_issue: false,
@@ -194,7 +189,6 @@ const form = useForm<RecurringInvoiceFormData>(
 
 form.transform((data: RecurringInvoiceFormData) => ({
     ...data,
-    template: data.template || null,
     header_text: data.header_text || null,
     footer_text: data.footer_text || null,
     note: data.note || null,
@@ -222,10 +216,6 @@ const totals = useInvoiceTotals(
 );
 
 const typeOptions = computed<RadioOption[]>(() => enumOptions(INVOICE_TYPES, invoiceTypeKey, t));
-const templateOptions = computed<SelectOption[]>(() => [
-    { value: '', label: t('invoice_template_default') },
-    ...enumOptions(INVOICE_TEMPLATES, invoiceTemplateKey, t),
-]);
 const frequencyOptions = computed<SelectOption[]>(() => enumOptions(RECURRING_FREQUENCIES, recurringFrequencyKey, t));
 const paymentTypeOptions = computed<SelectOption[]>(() => enumOptions(PAYMENT_TYPES, paymentTypeKey, t));
 const currencyOptions = computed<SelectOption[]>(() => enumOptions(CURRENCIES, currencyKey, t));
@@ -281,7 +271,7 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" @submit.prevent="submit">
+        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
             <div class="space-y-6">
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">
@@ -325,8 +315,6 @@ function submit(): void {
                                     callValidate(form, 'day_of_month');
                                 "
                             />
-
-                            <SelectInput field="template" :label="t('invoice_template')" :options="templateOptions" />
 
                             <DateInput
                                 :model-value="form.start_date"

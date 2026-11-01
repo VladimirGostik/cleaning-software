@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { KG_ICONS } from '@/icons/kegosIcons';
 import { onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
@@ -283,7 +284,7 @@ function setLink(): void {
                     :title="t('editor_link')"
                     @click="setLink"
                 >
-                    🔗
+                    <KG_ICONS.adminAction.link class="size-5" />
                 </button>
                 <button
                     type="button"
@@ -293,7 +294,7 @@ function setLink(): void {
                     @click="onPickImage"
                 >
                     <span v-if="isUploading" class="loading loading-spinner loading-xs" />
-                    <span v-else>🖼</span>
+                    <KG_ICONS.adminAction.image v-else class="size-5" />
                 </button>
                 <input ref="fileInputRef" type="file" class="hidden" accept="image/*" @change="onFileInputChange" />
                 <span class="divider divider-horizontal mx-0" />

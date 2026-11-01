@@ -46,7 +46,7 @@ function formatJson(data: Record<string, unknown> | null): string {
                     <div class="py-2 flex justify-between">
                         <dt class="text-sm text-base-content/60">{{ t('event') }}</dt>
                         <dd>
-                            <span v-if="activity.event" class="badge badge-ghost badge-sm">
+                            <span v-if="activity.event" class="kg-chip kg-chip--neutral kg-chip--sm">
                                 {{ activity.event }}
                             </span>
                             <span v-else>-</span>

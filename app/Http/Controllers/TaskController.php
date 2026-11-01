@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Data\Tasks\TaskAssignData;
 use App\Data\Tasks\TaskUpsertData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Task;
 use App\Models\User;
@@ -23,7 +24,7 @@ final class TaskController extends Controller
     public function __construct(private readonly TaskService $tasks, private readonly TaskAttachmentService $attachments) {}
 
     #[Authorize('viewAny', Task::class)]
-    #[NavItem(label: 'app.tasks', route: 'tasks.index', icon: 'CheckCircleIcon', permission: PermissionEnum::ViewTasks->value, order: 12)]
+    #[NavItem(label: 'app.tasks', route: 'tasks.index', icon: NavIconEnum::Tasks, permission: PermissionEnum::ViewTasks->value, order: 12)]
     public function index(Request $request): Response
     {
         /** @var User $actor */

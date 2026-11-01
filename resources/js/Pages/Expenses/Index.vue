@@ -2,7 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BanknotesIcon, EyeIcon } from '@heroicons/vue/24/outline';
+import BanknotesIcon from '~icons/material-symbols/receipt-long-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -44,9 +45,9 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.expenses.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Expenses.ExpenseListItemData>[] = [
-    { key: 'date', label: t('expense_date'), sortable: true },
+    { key: 'date', label: t('expense_date'), sortable: true, nowrap: true },
     { key: 'supplier_name', label: t('expense_supplier'), sortable: true },
-    { key: 'amount', label: t('expense_amount'), sortable: true },
+    { key: 'amount', label: t('expense_amount'), sortable: true, align: 'right' },
     { key: 'category', label: t('expense_category'), sortable: false },
     { key: 'status', label: t('status'), sortable: true },
     { key: 'source', label: t('expense_source'), sortable: false },
@@ -105,10 +106,10 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('expenses')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="canCreate && allows('manage expenses')" href="/expenses/import" class="btn btn-ghost btn-sm">
+            <Link v-if="canCreate && allows('manage expenses')" href="/expenses/import" class="btn btn-neutral btn-sm">
                 {{ t('expense_import') }}
             </Link>
-            <button v-if="canCreate" type="button" class="btn btn-primary btn-sm" @click="ui.createOpen = true">
+            <button v-if="canCreate" type="button" class="btn btn-secondary btn-sm" @click="ui.createOpen = true">
                 {{ t('expense_add') }}
             </button>
         </template>
@@ -159,7 +160,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
                 <template #buttons="{ row }">
                     <Link :href="`/expenses/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

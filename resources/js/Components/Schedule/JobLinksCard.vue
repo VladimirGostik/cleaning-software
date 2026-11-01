@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { BuildingOffice2Icon, DocumentCheckIcon, DocumentTextIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
+import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
+import DocumentCheckIcon from '~icons/material-symbols/task-outline-rounded';
+import DocumentTextIcon from '~icons/material-symbols/description-outline-rounded';
+import UserGroupIcon from '~icons/material-symbols/groups-outline-rounded';
 
 const props = defineProps<{
     job: App.Data.Schedule.JobDetailData;
@@ -18,32 +21,35 @@ const { t } = useI18n();
             <Link
                 v-if="props.job.client_id"
                 :href="`/clients/${props.job.client_id}`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <UserGroupIcon class="size-4" />
+                <UserGroupIcon class="size-5 shrink-0" />
                 {{ props.job.client_name }}
             </Link>
 
-            <Link :href="`/objects/${props.job.cleaning_object_id}`" class="btn btn-sm w-full justify-start">
-                <BuildingOffice2Icon class="size-4" />
+            <Link
+                :href="`/objects/${props.job.cleaning_object_id}`"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
+            >
+                <BuildingOffice2Icon class="size-5 shrink-0" />
                 {{ props.job.object_name }}
             </Link>
 
             <Link
                 v-if="props.job.contract_id"
                 :href="`/contracts/${props.job.contract_id}`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <DocumentCheckIcon class="size-4" />
+                <DocumentCheckIcon class="size-5 shrink-0" />
                 {{ props.job.contract_title ?? t('schedule_detail_contract') }}
             </Link>
 
             <Link
                 v-if="props.job.invoice_id"
                 :href="`/invoices/${props.job.invoice_id}`"
-                class="btn btn-sm w-full justify-start"
+                class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <DocumentTextIcon class="size-4" />
+                <DocumentTextIcon class="size-5 shrink-0" />
                 {{ t('schedule_detail_invoice') }}
             </Link>
         </div>

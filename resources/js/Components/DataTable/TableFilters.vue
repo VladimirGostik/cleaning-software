@@ -91,7 +91,7 @@ function handleTab(value: string) {
 
 <template>
     <div class="flex flex-col gap-3">
-        <div v-if="tabs" role="tablist" class="tabs tabs-border overflow-x-auto">
+        <div v-if="tabs" role="tablist" class="tabs tabs-box w-fit max-w-full overflow-x-auto">
             <button
                 v-for="tab in tabs.options"
                 :key="tab.value"
@@ -105,7 +105,7 @@ function handleTab(value: string) {
             </button>
         </div>
 
-        <div class="flex flex-wrap items-start gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             <TableSearch
                 v-model="search"
                 :disabled="disableSearch"
@@ -123,7 +123,7 @@ function handleTab(value: string) {
             />
 
             <div v-if="availableFilters.length" class="dropdown dropdown-bottom">
-                <button tabindex="0" type="button" class="btn btn-sm btn-outline" data-autom="button-add-filter">
+                <button tabindex="0" type="button" class="btn btn-sm btn-neutral" data-autom="button-add-filter">
                     {{ $t('filter') }}
                 </button>
                 <ul

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 
 const props = defineProps<{
     open: boolean;
@@ -92,7 +92,7 @@ onUnmounted(() => {
 <template>
     <Teleport to="body">
         <template v-if="open">
-            <div class="fixed inset-0 z-40 bg-neutral/40" aria-hidden="true" @click="close" />
+            <div class="fixed inset-0 z-40 bg-base-content/40" aria-hidden="true" @click="close" />
 
             <aside
                 ref="panel"
@@ -100,7 +100,7 @@ onUnmounted(() => {
                 aria-modal="true"
                 :aria-labelledby="titleId"
                 tabindex="-1"
-                class="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-base-100 shadow-xl"
+                class="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-base-100 shadow-float"
                 @keydown="onKeydown"
             >
                 <div
@@ -113,7 +113,7 @@ onUnmounted(() => {
                         :aria-label="t('close')"
                         @click="close"
                     >
-                        <XMarkIcon class="size-4" />
+                        <XMarkIcon class="size-5" />
                     </button>
                 </div>
 

@@ -13,6 +13,7 @@ use App\Data\Schedule\JobFormContextData;
 use App\Data\Schedule\JobStoreData;
 use App\Data\Schedule\JobUpdateData;
 use App\Data\Schedule\WorkBreakdownDetailData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\ScheduledJob;
 use App\Models\TenantMembership;
@@ -35,7 +36,7 @@ final class ScheduledJobController extends Controller
     ) {}
 
     #[Authorize('viewAny', ScheduledJob::class)]
-    #[NavItem(label: 'app.schedule', route: 'jobs.index', icon: 'CalendarDaysIcon', permission: PermissionEnum::ViewSchedule->value, order: 32)]
+    #[NavItem(label: 'app.schedule', route: 'jobs.index', icon: NavIconEnum::Schedule, permission: PermissionEnum::ViewSchedule->value, order: 32)]
     public function index(Request $request): Response
     {
         /** @var User $actor */

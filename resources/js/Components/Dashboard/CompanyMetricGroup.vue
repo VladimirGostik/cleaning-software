@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { InformationCircleIcon } from '@heroicons/vue/24/outline';
+import InformationCircleIcon from '~icons/material-symbols/info-outline-rounded';
 import MetricStat from '@/Components/Dashboard/MetricStat.vue';
 import type { MetricGroupVm } from '@/Composables/useCompanyMetricGroups';
 

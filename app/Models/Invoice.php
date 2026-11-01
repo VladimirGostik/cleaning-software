@@ -10,7 +10,6 @@ use App\Concerns\HasUuids;
 use App\Enums\CurrencyEnum;
 use App\Enums\EfaStatusEnum;
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
@@ -40,7 +39,6 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property string|null $quote_id
  * @property InvoiceStatusEnum $status
  * @property InvoiceTypeEnum $type
- * @property InvoiceTemplateEnum $template
  * @property PaymentTypeEnum $payment_type
  * @property CurrencyEnum $currency
  * @property RoundingModeEnum $rounding_mode
@@ -89,7 +87,6 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'quote_id',
     'type',
     'status',
-    'template',
     'number',
     'variable_symbol',
     'period_from',
@@ -170,7 +167,6 @@ final class Invoice extends Model implements HasMedia
         return [
             'type' => InvoiceTypeEnum::class,
             'status' => InvoiceStatusEnum::class,
-            'template' => InvoiceTemplateEnum::class,
             'payment_type' => PaymentTypeEnum::class,
             'currency' => CurrencyEnum::class,
             'rounding_mode' => RoundingModeEnum::class,

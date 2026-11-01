@@ -20,31 +20,19 @@ final readonly class InvoicePdfService implements RendersInvoicePdf
     /** Returns raw PDF bytes via the `chrome` driver. All display values come from snapshot columns. */
     public function render(Invoice $invoice): string
     {
-        $invoice->loadMissing('items');
+        $invoice->loadMissing(['items', 'creditedInvoice']);
 
-        $pdf = Pdf::view($invoice->template->view(), [
+        return Pdf::view('pdf.invoices.kegos', [
             'invoice' => $invoice,
             'qrDataUri' => $this->qrGenerator->dataUri($invoice),
             'signatureDataUri' => $this->signatures->forInvoice($invoice),
         ])
             ->format('A4')
-            ->portrait();
-
-        $footerView = $invoice->template->footerView();
-
-        if ($footerView !== null) {
-            // Only Classic has a footer view today; the wider gutters + bottom margin
-            // give the two-row footer (dotted rule + page number) room to breathe.
-            //
-            // Chrome's `displayHeaderFooter` flips on for *both* header and footer as soon as
-            // either is set (see ChromeDriver::buildPdfOptions()). Without an explicit header
-            // template we'd get Chromium's own default header (render date + document title)
-            // stamped on every page — an empty template is the only way to suppress it.
-            $pdf->headerHtml('<div></div>')
-                ->footerView($footerView, ['invoice' => $invoice, 'preview' => false])
-                ->margins(12, 15, 22, 15);
-        }
-
-        return $pdf->generatePdfContent();
+            ->portrait()
+            // An explicit empty header stops Chrome stamping its default date/title header once the footer enables displayHeaderFooter.
+            ->headerHtml('<div></div>')
+            ->footerView('pdf.invoices.kegos-footer', ['invoice' => $invoice, 'preview' => false])
+            ->margins(18, 18, 26, 18)
+            ->generatePdfContent();
     }
 }

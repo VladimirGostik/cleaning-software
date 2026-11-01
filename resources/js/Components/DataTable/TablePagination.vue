@@ -17,6 +17,12 @@ const emit = defineEmits<{
     perPage: [perPage: number];
 }>();
 
+const sizeOptions = computed(() => {
+    const current = props.rows.per_page;
+    if (!current || props.perPageOptions.includes(current)) return props.perPageOptions;
+    return [...props.perPageOptions, current].sort((a, b) => a - b);
+});
+
 const visiblePages = computed(() => {
     const current = props.rows.current_page ?? 1;
     const last = props.rows.last_page ?? 1;
@@ -44,7 +50,7 @@ function go(page: number) {
                     data-autom="select-page-size"
                     @change="emit('perPage', Number(($event.target as HTMLSelectElement).value))"
                 >
-                    <option v-for="option in perPageOptions" :key="option" :value="option">{{ option }}</option>
+                    <option v-for="option in sizeOptions" :key="option" :value="option">{{ option }}</option>
                 </select>
             </div>
 

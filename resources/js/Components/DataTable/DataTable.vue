@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="TRow extends object">
-import { computed, ref, useSlots, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
+import { KG_ICONS } from '@/icons/kegosIcons';
 import TableFilters from './TableFilters.vue';
 import TablePagination from './TablePagination.vue';
 import { readSpatieQuery, visitSpatieQuery } from '@/Composables/useSpatieTableQuery';
@@ -94,8 +95,18 @@ const allSelected = computed(
     () => pageIds.value.length > 0 && pageIds.value.every((id) => selected.value.includes(id)),
 );
 const someSelected = computed(() => selected.value.length > 0 && !allSelected.value);
+const viewportWidth = ref(typeof window === 'undefined' ? 1920 : window.innerWidth);
+const updateViewport = () => {
+    viewportWidth.value = window.innerWidth;
+};
+onMounted(() => window.addEventListener('resize', updateViewport));
+onBeforeUnmount(() => window.removeEventListener('resize', updateViewport));
+
 const columnCount = computed(
-    () => resolvedColumns.value.length + (showActionsColumn.value ? 1 : 0) + (props.selectable ? 1 : 0),
+    () =>
+        resolvedColumns.value.filter((column) => !column.hideBelow || viewportWidth.value >= column.hideBelow).length +
+        (showActionsColumn.value ? 1 : 0) +
+        (props.selectable ? 1 : 0),
 );
 
 if (import.meta.env.DEV && props.selectable && !props.rowKey) {
@@ -109,6 +120,21 @@ function toggleAll(checked: boolean) {
 function toggleRow(id: string, checked: boolean) {
     const rest = selected.value.filter((value) => value !== id);
     selected.value = checked ? pageIds.value.filter((value) => value === id || rest.includes(value)) : rest;
+}
+
+function alignClass(column: TableColumn<TRow>): string {
+    return column.align === 'right' ? 'text-right tabular-nums' : '';
+}
+
+const HIDE_BELOW_CLASS = {
+    1440: 'hidden min-[1440px]:table-cell',
+    1600: 'hidden min-[1600px]:table-cell',
+} as const;
+
+function widthClass(column: TableColumn<TRow>): string {
+    const hide = column.hideBelow ? HIDE_BELOW_CLASS[column.hideBelow] : '';
+    if (column.primary) return `min-w-40 ${hide}`;
+    return `${column.nowrap ? 'whitespace-nowrap' : ''} ${hide}`;
 }
 
 function cellValue(row: TRow, column: TableColumn<TRow>) {
@@ -226,8 +252,8 @@ function confirmDelete(row: TRow, id: string | number) {
             @clear="clearFilters"
         />
 
-        <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
-            <table class="table table-zebra w-full">
+        <div class="kg-table-bleed overflow-x-auto bg-base-100">
+            <table class="table w-full">
                 <thead>
                     <tr>
                         <th v-if="selectable" class="w-0">
@@ -245,20 +271,33 @@ function confirmDelete(row: TRow, id: string | number) {
                             :key="column.key"
                             :class="[
                                 column.headerClass ?? column.class,
+                                alignClass(column),
+                                widthClass(column),
                                 column.sortable ? 'cursor-pointer select-none' : '',
                             ]"
                             @click="sortBy(column)"
                         >
-                            <span class="flex items-center gap-1 whitespace-nowrap">
+                            <span
+                                class="flex items-center gap-1 whitespace-nowrap"
+                                :class="{ 'justify-end': column.align === 'right' }"
+                            >
                                 {{ column.label }}
                                 <template v-if="column.sortable">
-                                    <span v-if="currentSortDirection(column) === 'asc'" class="text-xs">▲</span>
-                                    <span v-else-if="currentSortDirection(column) === 'desc'" class="text-xs">▼</span>
-                                    <span v-else class="text-xs opacity-30">▲</span>
+                                    <component
+                                        :is="
+                                            currentSortDirection(column) === 'asc'
+                                                ? KG_ICONS.adminAction.sortAsc
+                                                : currentSortDirection(column) === 'desc'
+                                                  ? KG_ICONS.adminAction.sortDesc
+                                                  : KG_ICONS.adminAction.sortNone
+                                        "
+                                        class="size-4"
+                                        :class="{ 'opacity-30': !currentSortDirection(column) }"
+                                    />
                                 </template>
                             </span>
                         </th>
-                        <th v-if="showActionsColumn" class="w-0" />
+                        <th v-if="showActionsColumn" class="sticky right-0 z-10 w-0 bg-base-100" />
                     </tr>
                 </thead>
 
@@ -266,7 +305,7 @@ function confirmDelete(row: TRow, id: string | number) {
                     <template v-if="loading">
                         <tr v-for="i in skeletonCount" :key="`skeleton-${i}`">
                             <td v-if="selectable"><div class="skeleton size-4" /></td>
-                            <td v-for="column in resolvedColumns" :key="column.key">
+                            <td v-for="column in resolvedColumns" :key="column.key" :class="widthClass(column)">
                                 <div class="skeleton h-4 w-full" />
                             </td>
                             <td v-if="showActionsColumn"><div class="skeleton h-6 w-16 ml-auto" /></td>
@@ -295,38 +334,46 @@ function confirmDelete(row: TRow, id: string | number) {
                                         "
                                     />
                                 </td>
-                                <td v-for="column in resolvedColumns" :key="column.key" :class="cellClass(row, column)">
+                                <td
+                                    v-for="column in resolvedColumns"
+                                    :key="column.key"
+                                    :class="[cellClass(row, column), alignClass(column), widthClass(column)]"
+                                >
                                     <slot :name="`cell-${column.key}`" :row="row" :value="cellValue(row, column)">
                                         {{ cellValue(row, column) }}
                                     </slot>
                                 </td>
 
-                                <td v-if="showActionsColumn">
-                                    <div
-                                        class="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-                                    >
+                                <td
+                                    v-if="showActionsColumn"
+                                    class="sticky right-0 z-10 bg-base-100 group-hover:bg-base-200"
+                                >
+                                    <div class="flex items-center justify-end gap-1">
                                         <slot name="buttons" :row="row" :index="index" />
 
                                         <Link
                                             v-if="canEdit && editUrl"
                                             :href="editUrl(row)"
-                                            class="btn btn-ghost btn-xs"
+                                            class="btn btn-ghost btn-sm btn-square"
                                             :title="$t('edit')"
-                                            >✎</Link
+                                            :aria-label="$t('edit')"
                                         >
+                                            <KG_ICONS.adminAction.edit class="size-5" />
+                                        </Link>
 
                                         <div v-if="canDeleteThisRow(row)" class="relative">
                                             <button
                                                 type="button"
-                                                class="btn btn-ghost btn-xs text-error"
+                                                class="btn btn-ghost btn-sm btn-square text-error"
                                                 :title="$t('delete')"
+                                                :aria-label="$t('delete')"
                                                 @click="openDeletePopover(rowIdentifier(row, index))"
                                             >
-                                                🗑
+                                                <KG_ICONS.adminAction.delete class="size-5" />
                                             </button>
                                             <div
                                                 v-if="popoverOpen[rowIdentifier(row, index)]"
-                                                class="absolute right-0 bottom-full z-50 mb-1 flex w-44 flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 shadow-lg"
+                                                class="absolute right-0 bottom-full z-50 mb-1 flex w-44 flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 shadow-float"
                                                 @click.stop
                                             >
                                                 <p class="text-center text-sm font-medium">

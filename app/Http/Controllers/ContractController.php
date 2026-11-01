@@ -17,6 +17,7 @@ use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\CleaningObject;
@@ -53,7 +54,7 @@ final class ContractController extends Controller
     ) {}
 
     #[Authorize('viewAny', Contract::class)]
-    #[NavItem(label: 'app.contracts', route: 'contracts.index', icon: 'DocumentCheckIcon', permission: PermissionEnum::ViewContracts->value, order: 36)]
+    #[NavItem(label: 'app.contracts', route: 'contracts.index', icon: NavIconEnum::Contracts, permission: PermissionEnum::ViewContracts->value, order: 36)]
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('Contracts/Index', [

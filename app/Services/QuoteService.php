@@ -327,7 +327,6 @@ final readonly class QuoteService
                 'client_id' => $quote->client_id,
                 'cleaning_object_id' => $quote->cleaning_object_id,
                 'type' => InvoiceTypeEnum::OneOff->value,
-                'template' => null,
                 'issue_date' => $today,
                 'delivery_date' => $today,
                 'due_date' => $dueDate,

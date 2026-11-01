@@ -59,10 +59,12 @@ watch(
     >
         <summary class="collapse-title flex min-h-0 items-center gap-2 py-3 text-sm font-medium">
             {{ t('invoice_section_advanced') }}
-            <span v-if="hasOverride" class="badge badge-warning badge-sm">
+            <span v-if="hasOverride" class="kg-chip kg-chip--warning kg-chip--sm">
                 {{ t('invoice_advanced_differs_from_settings') }}
             </span>
-            <span v-if="hasError" class="badge badge-error badge-sm">{{ t('invoice_advanced_has_errors') }}</span>
+            <span v-if="hasError" class="kg-chip kg-chip--danger kg-chip--sm">{{
+                t('invoice_advanced_has_errors')
+            }}</span>
             <span class="ml-auto hidden truncate text-xs font-normal text-base-content/60 sm:inline">
                 {{ summary }}
             </span>

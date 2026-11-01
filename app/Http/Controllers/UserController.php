@@ -9,6 +9,7 @@ use App\Data\RoleListItemData;
 use App\Data\UpdateUserData;
 use App\Data\UserAutocompleteItemData;
 use App\Data\UserListItemData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Role;
 use App\Models\User;
@@ -33,7 +34,7 @@ final class UserController extends Controller
     ) {}
 
     #[Authorize('viewAny', User::class)]
-    #[NavItem(label: 'app.users', route: 'users.index', icon: 'UsersIcon', permission: PermissionEnum::ViewEmployees->value, group: 'settings', order: 15)]
+    #[NavItem(label: 'app.users', route: 'users.index', icon: NavIconEnum::Users, permission: PermissionEnum::ViewEmployees->value, group: 'settings', order: 15)]
     public function index(Request $request): Response
     {
         $tenantId = current_tenant_id();

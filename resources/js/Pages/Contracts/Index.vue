@@ -2,7 +2,10 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckCircleIcon, DocumentCheckIcon, EyeIcon, XCircleIcon } from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import DocumentCheckIcon from '~icons/material-symbols/task-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -48,13 +51,13 @@ const ui = reactive({
 });
 
 const columns: TableColumn<App.Data.Contracts.ContractListItemData>[] = [
-    { key: 'title', label: t('name'), sortable: true },
+    { key: 'title', label: t('name'), sortable: true, primary: true },
     { key: 'contractable_label', label: t('contract_contractable'), sortable: false },
-    { key: 'category', label: t('type'), sortable: true },
+    { key: 'category', label: t('type'), sortable: true, hideBelow: 1440 },
     { key: 'status', label: t('status'), sortable: true },
-    { key: 'term_type', label: t('contract_term_type'), sortable: false },
-    { key: 'valid_from', label: t('contract_valid_from'), sortable: true },
-    { key: 'end_date', label: t('contract_end_date'), sortable: true },
+    { key: 'term_type', label: t('contract_term_type'), sortable: false, hideBelow: 1440 },
+    { key: 'valid_from', label: t('contract_valid_from'), sortable: true, hideBelow: 1440, nowrap: true },
+    { key: 'end_date', label: t('contract_end_date'), sortable: true, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [
@@ -118,7 +121,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
 <template>
     <Header :title="t('contracts')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create contracts')" href="/contracts/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create contracts')" href="/contracts/create" class="btn btn-secondary btn-sm">
                 {{ t('contract_add') }}
             </Link>
         </template>
@@ -144,7 +147,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
             <DataTable :columns="columns" :rows="contracts" :filters="filterDefinitions">
                 <template #cell-title="{ row }">
                     <Link :href="`/contracts/${row.id}`" class="link link-hover font-medium">{{ row.title }}</Link>
-                    <p v-if="row.number" class="font-mono text-xs text-base-content/60">{{ row.number }}</p>
+                    <p v-if="row.number" class="tabular-nums text-xs text-base-content/60">{{ row.number }}</p>
                 </template>
 
                 <template #cell-contractable_label="{ row }">
@@ -179,7 +182,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -190,7 +193,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                         :aria-label="t('contract_action_sign')"
                         @click="signConfirm.openModal(row)"
                     >
-                        <CheckCircleIcon class="size-4" />
+                        <CheckCircleIcon class="size-5" />
                     </button>
 
                     <button
@@ -201,7 +204,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                         :aria-label="t('contract_action_terminate')"
                         @click="ui.terminateFor = row.id"
                     >
-                        <XCircleIcon class="size-4" />
+                        <XCircleIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

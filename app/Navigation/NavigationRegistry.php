@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Navigation;
 
 use App\Data\NavigationItemData;
+use App\Enums\NavIconEnum;
 use App\Models\User;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
@@ -16,10 +17,10 @@ final class NavigationRegistry
     /**
      * Synthetic group parents. Children NavItems set `group` to one of these keys.
      *
-     * @var array<string, array{label: string, icon: string, order: int}>
+     * @var array<string, array{label: string, icon: NavIconEnum, order: int}>
      */
     public const GROUPS = [
-        'settings' => ['label' => 'app.settings', 'icon' => 'Cog6ToothIcon', 'order' => 9000],
+        'settings' => ['label' => 'app.settings', 'icon' => NavIconEnum::Settings, 'order' => 9000],
     ];
 
     /** @var array<int, array{attr: NavItem, route: Route}>|null */
@@ -55,11 +56,15 @@ final class NavigationRegistry
 
         foreach ($this->router->getRoutes()->getRoutes() as $route) {
             $controller = $route->getControllerClass();
-            $method = $route->getActionMethod();
-
-            if ($controller === null || $method === $controller) {
+            if ($controller === null) {
                 continue;
             }
+
+            $method = $route->getActionMethod();
+            if ($method === $controller) {
+                $method = '__invoke';
+            }
+
             if (! class_exists($controller) || ! method_exists($controller, $method)) {
                 continue;
             }

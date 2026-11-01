@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckCircleIcon } from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
 import EmptyState from '@/Components/EmptyState.vue';
 import AlertRow from '@/Components/Dashboard/AlertRow.vue';
 import { ALERT_TYPE_STYLE } from '@/Components/Dashboard/alertTypeStyle';
@@ -41,7 +41,7 @@ const isEmpty = computed<boolean>(() => sections.value.length === 0);
 </script>
 
 <template>
-    <aside class="card border border-base-300 bg-base-100 shadow-sm" aria-labelledby="dashboard-alerts-title">
+    <aside class="card bg-base-100" aria-labelledby="dashboard-alerts-title">
         <div class="card-body gap-4">
             <h2 id="dashboard-alerts-title" class="card-title text-base">{{ t('dashboard_alerts_title') }}</h2>
             <EmptyState
@@ -60,7 +60,7 @@ const isEmpty = computed<boolean>(() => sections.value.length === 0);
                         <h3 :id="`dashboard-alerts-${section.type}`" class="text-sm font-medium">
                             {{ section.label }}
                         </h3>
-                        <span class="badge badge-sm" :class="ALERT_TYPE_STYLE[section.type].badge">{{
+                        <span class="kg-chip kg-chip--sm" :class="`kg-chip--${ALERT_TYPE_STYLE[section.type].tone}`">{{
                             section.count
                         }}</span>
                     </div>

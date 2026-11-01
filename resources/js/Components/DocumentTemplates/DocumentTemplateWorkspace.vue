@@ -2,7 +2,8 @@
 import { computed, nextTick, ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ArrowsPointingInIcon, ArrowsPointingOutIcon } from '@heroicons/vue/24/outline';
+import ArrowsPointingInIcon from '~icons/material-symbols/fullscreen-exit-outline-rounded';
+import ArrowsPointingOutIcon from '~icons/material-symbols/fullscreen-outline-rounded';
 import FormProvider from '@/Components/Forms/FormProvider.vue';
 import DocumentFrameToggles from '@/Components/Documents/DocumentFrameToggles.vue';
 import DocumentMissingTokens from '@/Components/Documents/DocumentMissingTokens.vue';
@@ -166,11 +167,11 @@ function submit(): void {
                 :class="fullscreen ? 'document-workspace--fullscreen' : 'lg:h-[calc(100dvh-18rem)] lg:min-h-[36rem]'"
             >
                 <div class="flex shrink-0 flex-wrap items-center gap-2">
-                    <div class="join" role="group" :aria-label="t('document_template_mode_label')">
+                    <div class="tabs tabs-box" role="group" :aria-label="t('document_template_mode_label')">
                         <button
                             type="button"
-                            class="btn join-item btn-sm"
-                            :class="{ 'btn-active': mode === 'edit' }"
+                            class="tab"
+                            :class="{ 'tab-active': mode === 'edit' }"
                             :aria-pressed="mode === 'edit'"
                             @click="mode = 'edit'"
                         >
@@ -178,8 +179,8 @@ function submit(): void {
                         </button>
                         <button
                             type="button"
-                            class="btn join-item btn-sm"
-                            :class="{ 'btn-active': mode === 'preview' }"
+                            class="tab"
+                            :class="{ 'tab-active': mode === 'preview' }"
                             :aria-pressed="mode === 'preview'"
                             @click="mode = 'preview'"
                         >
@@ -214,8 +215,8 @@ function submit(): void {
                         :title="fullscreen ? t('document_template_fullscreen_exit') : t('document_template_fullscreen')"
                         @click="fullscreen = !fullscreen"
                     >
-                        <ArrowsPointingInIcon v-if="fullscreen" class="size-4" aria-hidden="true" />
-                        <ArrowsPointingOutIcon v-else class="size-4" aria-hidden="true" />
+                        <ArrowsPointingInIcon v-if="fullscreen" class="size-5" aria-hidden="true" />
+                        <ArrowsPointingOutIcon v-else class="size-5" aria-hidden="true" />
                     </button>
                     <span class="flex-1" />
                     <Link v-if="!fullscreen" :href="BASE_URL" class="btn btn-ghost btn-sm">

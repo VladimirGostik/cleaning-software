@@ -55,7 +55,6 @@ final readonly class InvoiceSettingsService
             }
 
             $interfaceFields = [
-                'invoice_template' => $data->invoice_template,
                 'recurring_default_state' => $data->recurring_default_state,
                 'default_constant_symbol' => $data->default_constant_symbol,
                 'default_payment_type' => $data->default_payment_type,

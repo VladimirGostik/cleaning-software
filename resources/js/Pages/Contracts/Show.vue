@@ -94,7 +94,7 @@ const deleteConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
 
     <StatusErrorAlert class="mb-4" />
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div class="flex flex-col gap-6 [&>.card:last-child]:flex-1">
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-6">

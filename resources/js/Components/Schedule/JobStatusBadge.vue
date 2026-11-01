@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { jobStatusKey } from '@/utils/enums';
-import { JOB_STATUS_STYLE } from './jobStatusStyle';
+import { JOB_STATUS_TONE } from './jobStatusStyle';
 
 const props = defineProps<{
     status: App.Enums.JobStatusEnum;
 }>();
 
 const { t } = useI18n();
-
-const badgeClass = computed(() => JOB_STATUS_STYLE[props.status].badge);
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="badgeClass">{{ t(jobStatusKey(status)) }}</span>
+    <StatusChip :tone="JOB_STATUS_TONE[props.status]" :label="t(jobStatusKey(props.status))" size="sm" />
 </template>

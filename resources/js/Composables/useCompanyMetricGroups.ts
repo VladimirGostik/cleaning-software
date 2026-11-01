@@ -1,6 +1,9 @@
 import { computed, toValue, type Component, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BanknotesIcon, CalendarDaysIcon, DocumentTextIcon, UsersIcon } from '@heroicons/vue/24/outline';
+import BanknotesIcon from '~icons/material-symbols/receipt-long-outline-rounded';
+import CalendarDaysIcon from '~icons/material-symbols/calendar-month-outline-rounded';
+import DocumentTextIcon from '~icons/material-symbols/description-outline-rounded';
+import UsersIcon from '~icons/material-symbols/manage-accounts-outline-rounded';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 
 export type MetricTone = 'neutral' | 'primary' | 'error';

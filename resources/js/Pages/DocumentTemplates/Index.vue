@@ -2,7 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PencilSquareIcon, RectangleStackIcon } from '@heroicons/vue/24/outline';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import RectangleStackIcon from '~icons/material-symbols/description-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -38,11 +39,11 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.templates.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.DocumentTemplates.DocumentTemplateListItemData>[] = [
-    { key: 'name', label: t('name'), sortable: true },
+    { key: 'name', label: t('name'), sortable: true, primary: true },
     { key: 'type', label: t('type'), sortable: true },
-    { key: 'scope', label: t('document_template_scope') },
+    { key: 'scope', label: t('document_template_scope'), hideBelow: 1440 },
     { key: 'is_active', label: t('status') },
-    { key: 'updated_at', label: t('updated_at'), sortable: true },
+    { key: 'updated_at', label: t('updated_at'), sortable: true, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [
@@ -73,14 +74,14 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
             <Link
                 v-if="canCreateGlobal"
                 href="/settings/document-templates/create?global=1"
-                class="btn btn-outline btn-sm"
+                class="btn btn-neutral btn-sm"
             >
                 {{ t('document_template_add_global') }}
             </Link>
             <Link
                 v-if="allows('create document_templates')"
                 href="/settings/document-templates/create"
-                class="btn btn-primary btn-sm"
+                class="btn btn-secondary btn-sm"
             >
                 {{ t('document_template_add') }}
             </Link>
@@ -121,7 +122,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 <template #cell-type="{ row }">
                     <div class="flex flex-wrap items-center gap-1">
                         <DocumentTypeBadge :type="row.type" />
-                        <span v-if="row.employment_type" class="badge badge-sm badge-ghost">{{
+                        <span v-if="row.employment_type" class="kg-chip kg-chip--neutral kg-chip--sm">{{
                             t(employmentTypeKey(row.employment_type))
                         }}</span>
                     </div>
@@ -147,7 +148,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         :title="t('edit')"
                         :aria-label="t('edit')"
                     >
-                        <PencilSquareIcon class="size-4" />
+                        <PencilSquareIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

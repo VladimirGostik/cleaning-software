@@ -53,7 +53,7 @@ const confirmDescription = computed(() =>
         <div class="card-body space-y-4">
             <div class="flex items-center gap-2">
                 <h2 class="card-title text-base">{{ t('quote_section_text') }}</h2>
-                <span v-if="frozen" class="badge badge-neutral">{{ t('quote_text_frozen') }}</span>
+                <span v-if="frozen" class="kg-chip kg-chip--neutral">{{ t('quote_text_frozen') }}</span>
             </div>
 
             <p class="text-sm text-base-content/70">{{ t('quote_text_hint') }}</p>

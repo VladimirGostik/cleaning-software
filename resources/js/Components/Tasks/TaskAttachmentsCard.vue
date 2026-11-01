@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    ArrowDownTrayIcon,
-    CameraIcon,
-    DocumentIcon,
-    ExclamationTriangleIcon,
-    PaperClipIcon,
-    TrashIcon,
-    XMarkIcon,
-} from '@heroicons/vue/24/outline';
+import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded';
+import CameraIcon from '~icons/material-symbols/photo-camera-outline-rounded';
+import DocumentIcon from '~icons/material-symbols/description-outline-rounded';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
+import PaperClipIcon from '~icons/material-symbols/attach-file-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
+import XMarkIcon from '~icons/material-symbols/close-rounded';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import FilePickerButton from '@/Components/Forms/FilePickerButton.vue';
 import TaskAttachmentPreviewModal from './TaskAttachmentPreviewModal.vue';
@@ -93,17 +91,17 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         :disabled="atLimit"
                         @selected="emit('add', $event)"
                     >
-                        <PaperClipIcon class="size-4" />
+                        <PaperClipIcon class="size-5" />
                     </FilePickerButton>
                     <FilePickerButton
-                        class="btn btn-ghost btn-sm hidden pointer-coarse:inline-flex"
+                        class="btn btn-neutral btn-sm hidden pointer-coarse:inline-flex"
                         :label="t('task_attachment_take_photo')"
                         accept="image/*"
                         capture="environment"
                         :disabled="atLimit"
                         @selected="onCamera"
                     >
-                        <CameraIcon class="size-4" />
+                        <CameraIcon class="size-5" />
                     </FilePickerButton>
                 </template>
             </div>
@@ -139,7 +137,7 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                             {{ t('loading') }}
                         </p>
                         <p v-else role="alert" class="flex items-center gap-1 text-xs text-error">
-                            <ExclamationTriangleIcon class="size-4 shrink-0" />
+                            <ExclamationTriangleIcon class="size-5 shrink-0" />
                             {{ item.error }}
                         </p>
                     </div>
@@ -151,7 +149,7 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         :title="t('remove_file')"
                         @click="emit('dismiss', item.id)"
                     >
-                        <XMarkIcon class="size-4" />
+                        <XMarkIcon class="size-5" />
                     </button>
                 </li>
             </ul>
@@ -185,7 +183,7 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         :title="t('task_attachment_delete')"
                         @click="deleteConfirm.openModal(image)"
                     >
-                        <TrashIcon class="size-4" />
+                        <TrashIcon class="size-5" />
                     </button>
                 </li>
             </ul>
@@ -215,7 +213,7 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         :aria-label="t('task_attachment_download')"
                         :title="t('task_attachment_download')"
                     >
-                        <ArrowDownTrayIcon class="size-4" />
+                        <ArrowDownTrayIcon class="size-5" />
                     </a>
                     <button
                         v-if="file.can_delete"
@@ -226,7 +224,7 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         :title="t('task_attachment_delete')"
                         @click="deleteConfirm.openModal(file)"
                     >
-                        <TrashIcon class="size-4" />
+                        <TrashIcon class="size-5" />
                     </button>
                 </li>
             </ul>

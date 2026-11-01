@@ -2,7 +2,9 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { EyeIcon, PencilSquareIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import UserGroupIcon from '~icons/material-symbols/groups-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -32,20 +34,19 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.employees.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Employees.EmployeeListItemData>[] = [
-    { key: 'last_name', label: t('name'), sortable: true, value: (r) => r.display_name },
-    { key: 'email', label: t('email'), sortable: false },
+    { key: 'last_name', label: t('name'), sortable: true, primary: true, value: (r) => r.display_name },
+    { key: 'email', label: t('email'), sortable: false, hideBelow: 1600 },
     { key: 'role_name', label: t('employee_role'), sortable: false },
-    { key: 'position', label: t('position'), sortable: false },
-    { key: 'employment_type', label: t('employee_employment_type'), sortable: false },
+    { key: 'position', label: t('position'), sortable: false, hideBelow: 1440 },
+    { key: 'employment_type', label: t('type'), sortable: false },
     {
         key: 'upcoming_jobs_count',
-        label: t('employee_upcoming_jobs'),
+        label: t('employee_col_upcoming_jobs'),
         sortable: false,
-        headerClass: 'text-right',
-        cellClass: 'text-right font-mono',
+        align: 'right',
     },
     { key: 'is_active', label: t('status'), sortable: true },
-    { key: 'joined_at', label: t('employee_joined_at'), sortable: true },
+    { key: 'joined_at', label: t('employee_joined_at'), sortable: true, hideBelow: 1440, nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [
@@ -73,7 +74,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('employees')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create employees')" href="/employees/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create employees')" href="/employees/create" class="btn btn-secondary btn-sm">
                 {{ t('employee_add') }}
             </Link>
         </template>
@@ -121,7 +122,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
                 <template #buttons="{ row }">
                     <Link :href="`/employees/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                     <Link
                         v-if="allows('edit employees')"
@@ -129,7 +130,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         class="btn btn-ghost btn-xs"
                         :title="t('edit')"
                     >
-                        <PencilSquareIcon class="size-4" />
+                        <PencilSquareIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

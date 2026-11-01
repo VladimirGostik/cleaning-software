@@ -2,14 +2,12 @@
 import { Link, router } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    BanknotesIcon,
-    CheckBadgeIcon,
-    DocumentDuplicateIcon,
-    DocumentTextIcon,
-    EyeIcon,
-    XCircleIcon,
-} from '@heroicons/vue/24/outline';
+import BanknotesIcon from '~icons/material-symbols/receipt-long-outline-rounded';
+import CheckBadgeIcon from '~icons/material-symbols/verified-outline-rounded';
+import DocumentDuplicateIcon from '~icons/material-symbols/content-copy-outline-rounded';
+import DocumentTextIcon from '~icons/material-symbols/description-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -82,14 +80,14 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.invoices.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Invoices.InvoiceListItemData>[] = [
-    { key: 'number', label: t('invoice_pdf_number'), sortable: true },
-    { key: 'status', label: t('status'), sortable: true },
-    { key: 'type', label: t('type'), sortable: true },
-    { key: 'customer_name', label: t('client'), sortable: true },
-    { key: 'issue_date', label: t('invoice_pdf_issue_date'), sortable: true },
-    { key: 'due_date', label: t('invoice_pdf_due_date'), sortable: true },
-    { key: 'total', label: t('invoice_pdf_total'), sortable: true, class: 'text-right' },
-    { key: 'balance_due', label: t('invoice_pdf_balance_due'), class: 'text-right' },
+    { key: 'number', label: t('invoice_col_number'), sortable: true, nowrap: true },
+    { key: 'status', label: t('status'), sortable: true, nowrap: true },
+    { key: 'type', label: t('type'), sortable: true, nowrap: true, hideBelow: 1440 },
+    { key: 'customer_name', label: t('client'), sortable: true, primary: true },
+    { key: 'issue_date', label: t('invoice_pdf_issue_date'), sortable: true, nowrap: true, hideBelow: 1600 },
+    { key: 'due_date', label: t('invoice_col_due_date'), sortable: true, nowrap: true },
+    { key: 'total', label: t('invoice_payment_amount'), sortable: true, align: 'right', nowrap: true },
+    { key: 'balance_due', label: t('invoice_col_balance'), align: 'right', nowrap: true, hideBelow: 1440 },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => {
@@ -174,17 +172,17 @@ function onSettingsSaved(): void {
             <button
                 v-if="allows('view invoices')"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-neutral btn-sm"
                 @click="ui.pohodaOpen = true"
             >
                 {{ t('pohoda_export_button') }}
             </button>
             <Can permission="manage billing settings">
-                <button type="button" class="btn btn-ghost btn-sm" @click="settingsDrawer.open">
+                <button type="button" class="btn btn-neutral btn-sm" @click="settingsDrawer.open">
                     {{ t('invoicing_settings') }}
                 </button>
             </Can>
-            <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-secondary btn-sm">
                 {{ t('invoice_add') }}
             </Link>
         </template>
@@ -228,7 +226,7 @@ function onSettingsSaved(): void {
                 :row-href="(row) => `/invoices/${row.id}`"
             >
                 <template #cell-number="{ row }">
-                    <Link :href="`/invoices/${row.id}`" class="link link-hover font-mono font-medium">
+                    <Link :href="`/invoices/${row.id}`" class="link link-hover tabular-nums font-medium">
                         {{ row.number ?? t('invoice_draft_number') }}
                     </Link>
                 </template>
@@ -269,7 +267,7 @@ function onSettingsSaved(): void {
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -280,7 +278,7 @@ function onSettingsSaved(): void {
                         :aria-label="t('invoice_action_issue')"
                         @click="ui.issueFor = row.id"
                     >
-                        <CheckBadgeIcon class="size-4" />
+                        <CheckBadgeIcon class="size-5" />
                     </button>
 
                     <button
@@ -291,7 +289,7 @@ function onSettingsSaved(): void {
                         :aria-label="payLabel(row.is_credit_note)"
                         @click="ui.payFor = row"
                     >
-                        <BanknotesIcon class="size-4" />
+                        <BanknotesIcon class="size-5" />
                     </button>
 
                     <button
@@ -302,7 +300,7 @@ function onSettingsSaved(): void {
                         :aria-label="t('invoice_action_duplicate')"
                         @click="duplicate(row.id)"
                     >
-                        <DocumentDuplicateIcon class="size-4" />
+                        <DocumentDuplicateIcon class="size-5" />
                     </button>
 
                     <button
@@ -313,7 +311,7 @@ function onSettingsSaved(): void {
                         :aria-label="t('invoice_action_cancel')"
                         @click="cancelConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-4" />
+                        <XCircleIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

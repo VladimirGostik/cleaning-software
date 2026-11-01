@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ArrowPathIcon, ClockIcon, ExclamationTriangleIcon, ReceiptPercentIcon } from '@heroicons/vue/24/outline';
+import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
+import ClockIcon from '~icons/material-symbols/schedule-outline-rounded';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
+import ReceiptPercentIcon from '~icons/material-symbols/request-quote-outline-rounded';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 
 const props = defineProps<{
@@ -20,17 +23,13 @@ const cards = [
 
 <template>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div
-            v-for="card in cards"
-            :key="card.key"
-            class="card border border-base-300 border-b-2 border-b-primary bg-base-100 shadow-sm"
-        >
+        <div v-for="card in cards" :key="card.key" class="card bg-base-100">
             <div class="card-body">
                 <div class="flex items-center justify-between">
                     <p class="text-sm text-base-content/60">{{ t(card.label) }}</p>
                     <component :is="card.icon" class="size-5 text-base-content/40" />
                 </div>
-                <p class="text-2xl font-bold" :class="card.error ? 'text-error' : 'text-primary'">
+                <p class="text-2xl font-semibold tabular-nums" :class="card.error ? 'text-error' : 'text-base-content'">
                     {{ money(props.stats[card.key].amount, props.stats.currency) }}
                 </p>
                 <p class="text-xs text-base-content/50">

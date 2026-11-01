@@ -2,17 +2,15 @@
 import { computed, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Editor } from '@tiptap/vue-3';
-import {
-    ArrowUturnLeftIcon,
-    ArrowUturnRightIcon,
-    Bars3BottomLeftIcon,
-    Bars3BottomRightIcon,
-    Bars3Icon,
-    Bars4Icon,
-    ListBulletIcon,
-    MinusIcon,
-    NumberedListIcon,
-} from '@heroicons/vue/24/outline';
+import ArrowUturnLeftIcon from '~icons/material-symbols/undo-outline-rounded';
+import ArrowUturnRightIcon from '~icons/material-symbols/redo-outline-rounded';
+import Bars3BottomLeftIcon from '~icons/material-symbols/format-align-left-outline-rounded';
+import Bars3BottomRightIcon from '~icons/material-symbols/format-align-right-outline-rounded';
+import Bars3Icon from '~icons/material-symbols/format-align-center-rounded';
+import Bars4Icon from '~icons/material-symbols/format-align-justify-outline-rounded';
+import ListBulletIcon from '~icons/material-symbols/format-list-bulleted-outline-rounded';
+import MinusIcon from '~icons/material-symbols/remove-outline-rounded';
+import NumberedListIcon from '~icons/material-symbols/format-list-numbered-outline-rounded';
 import {
     DEFAULT_DOCUMENT_FONT,
     DEFAULT_DOCUMENT_FONT_SIZE_PT,

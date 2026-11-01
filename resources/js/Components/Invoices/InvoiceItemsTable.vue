@@ -36,7 +36,6 @@ const { lines } = useInvoiceTotals(
 );
 
 const hasDiscount = computed(() => props.items.some((item) => item.discount_percent > 0));
-const hasFrequency = computed(() => props.items.some((item) => !!item.frequency));
 
 function lineTotal(index: number, row: InvoiceItemsTableRow): number {
     return row.line_total ?? lines.value[index]?.total ?? 0;
@@ -44,37 +43,46 @@ function lineTotal(index: number, row: InvoiceItemsTableRow): number {
 </script>
 
 <template>
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>{{ t('invoice_pdf_item_description') }}</th>
-                <th v-if="hasFrequency">{{ t('quote_item_frequency') }}</th>
-                <th class="text-right">{{ t('invoice_pdf_item_quantity') }}</th>
-                <th>{{ t('invoice_pdf_item_unit') }}</th>
-                <th class="text-right">{{ t('invoice_pdf_item_unit_price') }}</th>
-                <th v-if="hasDiscount" class="text-right">{{ t('invoice_pdf_discount') }}</th>
-                <th v-if="props.isVatPayer" class="text-right">{{ t('invoice_pdf_vat_rate') }}</th>
-                <th class="text-right">{{ t('invoice_pdf_item_total') }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="(item, index) in props.items" :key="index">
-                <td>
-                    {{ item.description }}
-                    <p v-if="item.note" class="text-xs text-base-content/60">{{ item.note }}</p>
-                </td>
-                <td v-if="hasFrequency">
-                    {{ item.frequency ? t(taskFrequencyKey(item.frequency)) : t('empty_dash') }}
-                </td>
-                <td class="text-right">{{ item.quantity }}</td>
-                <td>{{ item.unit ?? t('empty_dash') }}</td>
-                <td class="text-right">{{ money(item.unit_price, props.currency) }}</td>
-                <td v-if="hasDiscount" class="text-right">
-                    {{ item.discount_percent > 0 ? `${item.discount_percent} %` : t('empty_dash') }}
-                </td>
-                <td v-if="props.isVatPayer" class="text-right">{{ item.vat_rate }} %</td>
-                <td class="text-right font-mono">{{ money(lineTotal(index, item), props.currency) }}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="-mx-3 overflow-x-auto px-3">
+        <table class="table table-sm w-full [&_td]:px-2 [&_th]:px-2">
+            <thead>
+                <tr>
+                    <th>{{ t('invoice_pdf_item_description') }}</th>
+                    <th class="text-right whitespace-nowrap">{{ t('invoice_pdf_item_quantity') }}</th>
+                    <th class="text-right whitespace-nowrap">{{ t('invoice_pdf_item_unit_price') }}</th>
+                    <th v-if="hasDiscount" class="text-right whitespace-nowrap">{{ t('invoice_pdf_discount') }}</th>
+                    <th v-if="props.isVatPayer" class="text-right whitespace-nowrap">
+                        {{ t('invoice_pdf_vat_rate') }}
+                    </th>
+                    <th class="text-right whitespace-nowrap">{{ t('invoice_pdf_item_total') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(item, index) in props.items" :key="index">
+                    <td class="min-w-32">
+                        {{ item.description }}
+                        <p v-if="item.frequency" class="text-xs text-base-content/60">
+                            {{ t(taskFrequencyKey(item.frequency)) }}
+                        </p>
+                        <p v-if="item.note" class="text-xs text-base-content/60">{{ item.note }}</p>
+                    </td>
+                    <td class="text-right tabular-nums whitespace-nowrap">
+                        {{ item.unit ? `${item.quantity} ${item.unit}` : item.quantity }}
+                    </td>
+                    <td class="text-right tabular-nums whitespace-nowrap">
+                        {{ money(item.unit_price, props.currency) }}
+                    </td>
+                    <td v-if="hasDiscount" class="text-right tabular-nums whitespace-nowrap">
+                        {{ item.discount_percent > 0 ? `${item.discount_percent} %` : t('empty_dash') }}
+                    </td>
+                    <td v-if="props.isVatPayer" class="text-right tabular-nums whitespace-nowrap">
+                        {{ item.vat_rate }} %
+                    </td>
+                    <td class="text-right tabular-nums whitespace-nowrap">
+                        {{ money(lineTotal(index, item), props.currency) }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </template>

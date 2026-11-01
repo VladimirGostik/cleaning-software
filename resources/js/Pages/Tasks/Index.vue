@@ -2,7 +2,9 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CheckCircleIcon, CheckIcon, EyeIcon } from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import CheckIcon from '~icons/material-symbols/check-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -50,13 +52,13 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.tasks.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Tasks.TaskListItemData>[] = [
-    { key: 'title', label: t('task_title'), sortable: true },
+    { key: 'title', label: t('task_title'), sortable: true, primary: true },
     { key: 'status', label: t('status'), sortable: true },
-    { key: 'priority', label: t('task_priority'), sortable: false },
-    { key: 'due_at', label: t('task_due_at'), sortable: true },
+    { key: 'priority', label: t('task_priority'), sortable: false, hideBelow: 1440 },
+    { key: 'due_at', label: t('task_due_at'), sortable: true, nowrap: true },
     { key: 'tenant_name', label: t('task_company'), sortable: false },
-    { key: 'assignee_name', label: t('task_assignee'), sortable: false },
-    { key: 'subject', label: t('task_subject'), sortable: false },
+    { key: 'assignee_name', label: t('task_assignee'), sortable: false, hideBelow: 1440 },
+    { key: 'subject', label: t('task_subject'), sortable: false, hideBelow: 1440 },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [
@@ -114,7 +116,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('tasks')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button v-if="canCreate" type="button" class="btn btn-primary btn-sm" @click="ui.createOpen = true">
+            <button v-if="canCreate" type="button" class="btn btn-secondary btn-sm" @click="ui.createOpen = true">
                 {{ t('task_add') }}
             </button>
         </template>
@@ -174,11 +176,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         :disabled="processingId === row.id"
                         @click="transition(row.id, 'complete')"
                     >
-                        <CheckIcon class="size-4" />
+                        <CheckIcon class="size-5" />
                     </button>
 
                     <Link :href="`/tasks/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
                 </template>
             </DataTable>

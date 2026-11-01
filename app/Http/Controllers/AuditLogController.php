@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Data\ActivityLogDetailData;
 use App\Data\ActivityLogListItemData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Activity;
 use App\Navigation\NavItem;
@@ -22,7 +23,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 final class AuditLogController extends Controller
 {
     #[Authorize('viewAny', Activity::class)]
-    #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: 'ClipboardDocumentListIcon', permission: PermissionEnum::ViewAuditLogs->value, group: 'settings', order: 50)]
+    #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: NavIconEnum::AuditLogs, permission: PermissionEnum::ViewAuditLogs->value, group: 'settings', order: 50)]
     public function index(Request $request): Response
     {
         $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';

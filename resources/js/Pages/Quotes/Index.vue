@@ -2,13 +2,11 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    CheckCircleIcon,
-    DocumentDuplicateIcon,
-    EyeIcon,
-    PaperAirplaneIcon,
-    XCircleIcon,
-} from '@heroicons/vue/24/outline';
+import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
+import DocumentDuplicateIcon from '~icons/material-symbols/content-copy-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import PaperAirplaneIcon from '~icons/material-symbols/send-outline-rounded';
+import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -44,13 +42,13 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.quotes.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Quotes.QuoteListItemData>[] = [
-    { key: 'number', label: t('quote_pdf_number'), sortable: true },
-    { key: 'kind', label: t('quote_kind'), sortable: true },
-    { key: 'status', label: t('status'), sortable: true },
-    { key: 'customer_name', label: t('quote_col_customer'), sortable: false },
-    { key: 'object_name', label: t('quote_col_object'), sortable: false },
-    { key: 'valid_until', label: t('quote_valid_until'), sortable: true },
-    { key: 'total', label: t('invoice_pdf_total'), sortable: true, class: 'text-right' },
+    { key: 'number', label: t('quote_pdf_number'), sortable: true, nowrap: true },
+    { key: 'kind', label: t('quote_kind'), sortable: true, nowrap: true, hideBelow: 1440 },
+    { key: 'status', label: t('status'), sortable: true, nowrap: true },
+    { key: 'customer_name', label: t('quote_col_customer'), sortable: false, primary: true },
+    { key: 'object_name', label: t('quote_col_object'), sortable: false, hideBelow: 1440 },
+    { key: 'valid_until', label: t('quote_valid_until'), sortable: true, nowrap: true },
+    { key: 'total', label: t('invoice_payment_amount'), sortable: true, align: 'right', nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => {
@@ -139,7 +137,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
 <template>
     <Header :title="t('quotes')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create quotes')" href="/quotes/create" class="btn btn-primary btn-sm">
+            <Link v-if="allows('create quotes')" href="/quotes/create" class="btn btn-secondary btn-sm">
                 {{ t('quote_add') }}
             </Link>
         </template>
@@ -162,7 +160,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
         <div class="card-body">
             <DataTable :columns="columns" :rows="quotes" :filters="filterDefinitions">
                 <template #cell-number="{ row }">
-                    <Link :href="`/quotes/${row.id}`" class="link link-hover font-mono font-medium">
+                    <Link :href="`/quotes/${row.id}`" class="link link-hover tabular-nums font-medium">
                         {{ row.number ?? t('quote_no_number') }}
                     </Link>
                 </template>
@@ -203,7 +201,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-4" />
+                        <EyeIcon class="size-5" />
                     </Link>
 
                     <button
@@ -214,7 +212,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :aria-label="t('quote_action_send')"
                         @click="sendConfirm.openModal(row)"
                     >
-                        <PaperAirplaneIcon class="size-4" />
+                        <PaperAirplaneIcon class="size-5" />
                     </button>
 
                     <button
@@ -225,7 +223,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :aria-label="t('quote_action_accept')"
                         @click="acceptConfirm.openModal(row)"
                     >
-                        <CheckCircleIcon class="size-4" />
+                        <CheckCircleIcon class="size-5" />
                     </button>
 
                     <button
@@ -236,7 +234,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         :aria-label="t('quote_action_reject')"
                         @click="rejectConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-4" />
+                        <XCircleIcon class="size-5" />
                     </button>
                 </template>
             </DataTable>

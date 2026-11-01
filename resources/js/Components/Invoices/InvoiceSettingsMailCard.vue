@@ -61,7 +61,7 @@ function onInsert(token: string): void {
             <h2 class="card-title text-base">{{ t('invoice_mail_card_title') }}</h2>
             <p class="text-sm text-base-content/60">{{ t('invoice_mail_card_hint') }}</p>
 
-            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
                 <div class="space-y-4">
                     <TextInput
                         :model-value="subject ?? ''"

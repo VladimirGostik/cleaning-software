@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';
@@ -74,7 +74,7 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
     <Header :title="employee.display_name" :breadcrumbs="breadcrumbs">
         <template #actions>
             <ObjectStatusBadge :is-active="employee.is_active" />
-            <span v-if="employee.role_name" class="badge badge-primary badge-sm">{{ employee.role_name }}</span>
+            <span v-if="employee.role_name" class="kg-chip kg-chip--neutral kg-chip--sm">{{ employee.role_name }}</span>
         </template>
     </Header>
 
@@ -92,7 +92,7 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
         </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div class="space-y-6">
             <EmployeeProfileCard :employee="employee" />
             <EmployeePersonalCard v-if="personal" :personal="personal" />

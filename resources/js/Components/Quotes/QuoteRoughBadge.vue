@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 
 const { t } = useI18n();
 </script>
 
 <template>
-    <span class="badge badge-sm badge-outline badge-warning" :title="t('quote_rough_hint')">
-        {{ t('quote_rough') }}
+    <span :title="t('quote_rough_hint')">
+        <StatusChip tone="warning" :label="t('quote_rough')" size="sm" />
     </span>
 </template>

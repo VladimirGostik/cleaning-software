@@ -6,7 +6,6 @@ namespace App\Services\Pdf;
 
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
@@ -17,13 +16,11 @@ use Illuminate\Support\Collection;
 
 final readonly class InvoicePreviewData
 {
-    /** Build an unsaved Invoice model with fake snapshot data for PDF template preview. */
-    public static function make(InvoiceTemplateEnum $template): Invoice
+    public static function make(): Invoice
     {
         $invoice = (new Invoice)->forceFill([
             'type' => InvoiceTypeEnum::OneOff,
             'status' => InvoiceStatusEnum::Issued,
-            'template' => $template,
             'number' => 'FA-2024-0001',
             'variable_symbol' => '20240001',
             'issue_date' => Carbon::now(),

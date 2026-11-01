@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
 import { formatDatetime } from '@/utils/date';
 import { formatBytes } from '@/utils/bytes';
-import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
+import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-rounded';
 import type { Breadcrumb } from '@/types';
 
 const { t } = useI18n();
@@ -53,7 +53,9 @@ const customPropsJson = computed(() => {
                     <div class="py-2 flex justify-between">
                         <dt class="text-sm text-base-content/60">{{ t('mime_type') }}</dt>
                         <dd>
-                            <span v-if="media.mime_type" class="badge badge-ghost badge-sm">{{ media.mime_type }}</span>
+                            <span v-if="media.mime_type" class="kg-chip kg-chip--neutral kg-chip--sm">{{
+                                media.mime_type
+                            }}</span>
                             <span v-else class="text-base-content/40">—</span>
                         </dd>
                     </div>
@@ -64,7 +66,7 @@ const customPropsJson = computed(() => {
                     <div class="py-2 flex justify-between">
                         <dt class="text-sm text-base-content/60">{{ t('collection_name') }}</dt>
                         <dd>
-                            <span class="badge badge-outline badge-sm">{{ media.collection_name }}</span>
+                            <span class="kg-chip kg-chip--neutral kg-chip--sm">{{ media.collection_name }}</span>
                         </dd>
                     </div>
                     <div class="py-2 flex justify-between">
@@ -82,7 +84,7 @@ const customPropsJson = computed(() => {
                 </dl>
                 <div class="card-actions mt-2">
                     <a :href="media.url" target="_blank" rel="noopener" class="btn btn-primary btn-sm gap-1">
-                        <ArrowTopRightOnSquareIcon class="size-4" />
+                        <ArrowTopRightOnSquareIcon class="size-5" />
                         {{ t('open_file') }}
                     </a>
                 </div>
@@ -108,8 +110,8 @@ const customPropsJson = computed(() => {
                     </div>
                 </dl>
                 <div v-if="media.model_url" class="card-actions mt-2">
-                    <Link :href="media.model_url" class="btn btn-outline btn-sm gap-1">
-                        <ArrowTopRightOnSquareIcon class="size-4" />
+                    <Link :href="media.model_url" class="btn btn-neutral btn-sm gap-1">
+                        <ArrowTopRightOnSquareIcon class="size-5" />
                         {{ t('open_owner') }}
                     </Link>
                 </div>

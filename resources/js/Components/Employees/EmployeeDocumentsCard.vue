@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ArrowDownTrayIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import EmployeeDocumentUploadForm from './EmployeeDocumentUploadForm.vue';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
@@ -50,7 +51,7 @@ const deleteConfirm = useDeleteConfirm<EmployeeDocument>({
                         :aria-label="t('employee_document_download')"
                         :title="t('employee_document_download')"
                     >
-                        <ArrowDownTrayIcon class="size-4" />
+                        <ArrowDownTrayIcon class="size-5" />
                     </a>
                     <button
                         v-if="canManage"
@@ -60,7 +61,7 @@ const deleteConfirm = useDeleteConfirm<EmployeeDocument>({
                         :title="t('employee_document_delete')"
                         @click="deleteConfirm.openModal(doc)"
                     >
-                        <TrashIcon class="size-4" />
+                        <TrashIcon class="size-5" />
                     </button>
                 </li>
             </ul>

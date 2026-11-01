@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import PlusIcon from '~icons/material-symbols/add-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 
 import TextInput from '@/Components/Forms/TextInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
@@ -103,7 +104,7 @@ function setField(index: number, key: 'name' | 'position' | 'email' | 'phone', v
                     :aria-label="t('contact_remove')"
                     @click="remove(index)"
                 >
-                    <TrashIcon class="size-4" />
+                    <TrashIcon class="size-5" />
                 </button>
             </div>
 
@@ -148,7 +149,7 @@ function setField(index: number, key: 'name' | 'position' | 'email' | 'phone', v
         <p v-if="errors[field]" class="text-error text-sm">{{ errors[field] }}</p>
 
         <button type="button" class="btn btn-ghost btn-sm" @click="add">
-            <PlusIcon class="size-4" />
+            <PlusIcon class="size-5" />
             {{ t('contact_add') }}
         </button>
     </div>

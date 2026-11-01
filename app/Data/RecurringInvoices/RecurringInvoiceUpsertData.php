@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Data\RecurringInvoices;
 
 use App\Enums\CurrencyEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringFrequencyEnum;
@@ -38,7 +37,6 @@ final class RecurringInvoiceUpsertData extends Data
         #[Required]
         public readonly InvoiceTypeEnum $type,
         #[Nullable]
-        public readonly ?InvoiceTemplateEnum $template,
         #[Required]
         public readonly RecurringFrequencyEnum $frequency,
         #[Required]

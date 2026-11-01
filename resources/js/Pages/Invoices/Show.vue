@@ -99,7 +99,7 @@ function onSettingsSaved(): void {
         </Link>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div class="space-y-6">
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-6">

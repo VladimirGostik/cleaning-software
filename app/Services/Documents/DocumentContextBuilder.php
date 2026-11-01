@@ -14,6 +14,7 @@ use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
+use App\Support\Formats;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\View;
 
@@ -52,7 +53,7 @@ final readonly class DocumentContextBuilder
             'contract.valid_from' => $this->date($terms->valid_from),
             'contract.number' => $terms->number,
             'contract.end_date' => $this->date($terms->end_date),
-            'date.today' => now()->format('d.m.Y'),
+            'date.today' => now()->format(Formats::DATE),
         ];
 
         $client = null;
@@ -132,7 +133,7 @@ final readonly class DocumentContextBuilder
         $values = [
             ...$this->tenantValues($tenant),
             ...$this->quoteValues($quote),
-            'date.today' => now()->format('d.m.Y'),
+            'date.today' => now()->format(Formats::DATE),
         ];
 
         if ($quote->cleaningObject !== null) {
@@ -171,10 +172,10 @@ final readonly class DocumentContextBuilder
             'tenant.contact_phone' => '+421 900 000 000',
             'tenant.registration_info' => 'Obchodný register OS Bratislava I, oddiel Sro, vložka 12345/B',
             'contract.title' => 'Ukážková zmluva',
-            'contract.valid_from' => now()->format('d.m.Y'),
+            'contract.valid_from' => now()->format(Formats::DATE),
             'contract.number' => '2026/001',
-            'contract.end_date' => now()->addYear()->format('d.m.Y'),
-            'date.today' => now()->format('d.m.Y'),
+            'contract.end_date' => now()->addYear()->format(Formats::DATE),
+            'date.today' => now()->format(Formats::DATE),
             'client.name' => 'Ukážkový klient a.s.',
             'client.ico' => '87654321',
             'client.dic' => '2087654321',
@@ -198,12 +199,12 @@ final readonly class DocumentContextBuilder
             'employment.hourly_rate' => '6,50 EUR',
             'employment.monthly_salary' => '900,00 EUR',
             'employment.weekly_hours' => '40,00',
-            'employment.probation_end_date' => now()->addMonths(3)->format('d.m.Y'),
+            'employment.probation_end_date' => now()->addMonths(3)->format(Formats::DATE),
             'customer.name' => 'Ukážkový zákazník',
             'customer.email' => 'zakaznik@example.com',
             'customer.address' => 'Stredná 7, 811 04 Bratislava',
-            'quote.issue_date' => now()->format('d.m.Y'),
-            'quote.valid_until' => now()->addDays(30)->format('d.m.Y'),
+            'quote.issue_date' => now()->format(Formats::DATE),
+            'quote.valid_until' => now()->addDays(30)->format(Formats::DATE),
             'quote.total' => '1 200,00 EUR',
             'quote.number' => 'CP-2026-001',
             'quote.subject' => 'Pravidelné upratovanie',
@@ -287,7 +288,7 @@ final readonly class DocumentContextBuilder
         return [
             'employee.name' => $employee->display_name,
             'employee.email' => $employee->user->email ?? null,
-            'employee.birth_date' => $employee->birth_date?->format('d.m.Y'),
+            'employee.birth_date' => $employee->birth_date?->format(Formats::DATE),
             'employee.national_id' => $employee->national_id,
             'employee.address' => $this->address($employee->street, $employee->postal_code, $employee->city),
             'employee.phone' => $employee->phone,
@@ -307,8 +308,8 @@ final readonly class DocumentContextBuilder
             'customer.address' => $client !== null
                 ? $this->address($client->street, $client->postal_code, $client->city)
                 : $this->address($quote->customer_street, $quote->customer_postal_code, $quote->customer_city),
-            'quote.issue_date' => $quote->issue_date->format('d.m.Y'),
-            'quote.valid_until' => $quote->valid_until->format('d.m.Y'),
+            'quote.issue_date' => $quote->issue_date->format(Formats::DATE),
+            'quote.valid_until' => $quote->valid_until->format(Formats::DATE),
             'quote.total' => $quote->currency->format((float) $quote->total),
             'quote.number' => $quote->number,
             'quote.subject' => $quote->subject,
@@ -473,11 +474,11 @@ final readonly class DocumentContextBuilder
 
     private function date(?string $date): ?string
     {
-        return $date !== null ? Carbon::parse($date)->format('d.m.Y') : null;
+        return $date !== null ? Carbon::parse($date)->format(Formats::DATE) : null;
     }
 
     private function decimal(float $value): string
     {
-        return number_format($value, 2, ',', ' ');
+        return number_format($value, 2, ',', "\u{00A0}");
     }
 }

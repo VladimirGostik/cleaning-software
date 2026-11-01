@@ -12,5 +12,7 @@ return [
 
     'locale' => env('DOCUMENTS_LOCALE', 'sk'),
 
+    'show_brand_line' => false,
+
     'max_body_length' => 200000,
 ];

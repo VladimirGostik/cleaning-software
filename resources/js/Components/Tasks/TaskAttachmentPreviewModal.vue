@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded';
+import ChevronLeftIcon from '~icons/material-symbols/chevron-left-rounded';
+import ChevronRightIcon from '~icons/material-symbols/chevron-right-rounded';
+import XMarkIcon from '~icons/material-symbols/close-rounded';
 import { formatDatetime } from '@/utils/date';
 
 const props = defineProps<{
@@ -81,7 +84,7 @@ function onKeydown(event: KeyboardEvent): void {
                     :aria-label="t('task_attachment_download')"
                     :title="t('task_attachment_download')"
                 >
-                    <ArrowDownTrayIcon class="size-4" />
+                    <ArrowDownTrayIcon class="size-5" />
                 </a>
                 <button
                     type="button"
@@ -90,7 +93,7 @@ function onKeydown(event: KeyboardEvent): void {
                     :title="t('close')"
                     @click="emit('update:activeId', null)"
                 >
-                    <XMarkIcon class="size-4" />
+                    <XMarkIcon class="size-5" />
                 </button>
             </div>
 
@@ -117,7 +120,7 @@ function onKeydown(event: KeyboardEvent): void {
                         :aria-label="t('previous')"
                         @click="step(-1)"
                     >
-                        <ChevronLeftIcon class="size-4" />
+                        <ChevronLeftIcon class="size-5" />
                     </button>
                     <button
                         type="button"
@@ -125,7 +128,7 @@ function onKeydown(event: KeyboardEvent): void {
                         :aria-label="t('next')"
                         @click="step(1)"
                     >
-                        <ChevronRightIcon class="size-4" />
+                        <ChevronRightIcon class="size-5" />
                     </button>
                 </template>
             </div>

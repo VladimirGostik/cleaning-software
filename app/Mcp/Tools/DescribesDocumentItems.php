@@ -58,7 +58,6 @@ trait DescribesDocumentItems
             'client_id' => $pick('client_id', $existing?->client_id),
             'cleaning_object_id' => $pick('cleaning_object_id', $existing?->cleaning_object_id),
             'type' => $pick('type', $existing?->type->value ?? InvoiceTypeEnum::OneOff->value),
-            'template' => $existing?->template->value,
             'issue_date' => $pick('issue_date', $date($existing?->issue_date)),
             'delivery_date' => $pick('delivery_date', $date($existing?->delivery_date)),
             'due_date' => $pick('due_date', $date($existing?->due_date)),

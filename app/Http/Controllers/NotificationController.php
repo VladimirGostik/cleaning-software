@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\NavIconEnum;
 use App\Enums\NotificationTypeEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Notification;
@@ -22,7 +23,7 @@ final class NotificationController extends Controller
     public function __construct(private readonly NotificationService $notifications) {}
 
     #[Authorize('viewAny', Notification::class)]
-    #[NavItem(label: 'app.notifications', route: 'notifications.index', icon: 'BellIcon', permission: PermissionEnum::ViewNotifications->value, order: 45)]
+    #[NavItem(label: 'app.notifications', route: 'notifications.index', icon: NavIconEnum::Notifications, permission: PermissionEnum::ViewNotifications->value, order: 45)]
     public function index(Request $request): InertiaResponse
     {
         /** @var User $user */
