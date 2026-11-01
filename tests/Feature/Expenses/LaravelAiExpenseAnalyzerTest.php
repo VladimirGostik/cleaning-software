@@ -156,6 +156,40 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
         });
     }
 
+    public function test_every_schema_stays_within_what_native_structured_output_accepts(): void
+    {
+        $this->fakeProvider(['rows' => []]);
+        $analyzer = app(LaravelAiExpenseAnalyzer::class);
+
+        $analyzer->analyzeText('x', $this->context());
+        $analyzer->mapBankCsv(['Dátum', 'Suma'], [['01.10.2026', '-5,00']]);
+        $analyzer->categorize([new ExpenseRowData(0, '5.00', 'Shell', null)], $this->context());
+
+        Http::assertSentCount(3);
+        Http::assertSent(function (Request $request): bool {
+            $this->assertSchemaIsAccepted(data_get($request->data(), 'output_config.format.schema'));
+
+            return true;
+        });
+    }
+
+    private function assertSchemaIsAccepted(mixed $node): void
+    {
+        $this->assertIsArray($node);
+
+        foreach (['minimum', 'maximum'] as $unsupported) {
+            $this->assertArrayNotHasKey($unsupported, $node);
+        }
+
+        if (is_array($node['type'] ?? null) && in_array('null', $node['type'], true)) {
+            $this->assertArrayNotHasKey('enum', $node);
+        }
+
+        foreach ([...array_values((array) ($node['properties'] ?? [])), ...(isset($node['items']) ? [$node['items']] : [])] as $child) {
+            $this->assertSchemaIsAccepted($child);
+        }
+    }
+
     public function test_images_are_sent_as_image_blocks(): void
     {
         $this->fakeProvider(['currency' => 'EUR', 'confidence' => 0.1]);

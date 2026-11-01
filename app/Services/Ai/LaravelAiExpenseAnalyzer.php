@@ -105,8 +105,8 @@ final readonly class LaravelAiExpenseAnalyzer implements AnalyzesExpenses
             fn (JsonSchema $schema): array => [
                 'rows' => $schema->array()->required()->items($schema->object([
                     'row' => $schema->integer()->required(),
-                    'category' => $schema->string()->enum($this->categoryValues())->required()->nullable(),
-                    'confidence' => $schema->number()->min(0)->max(1)->required(),
+                    'category' => $this->categoryField($schema),
+                    'confidence' => $schema->number()->required()->description('From 0 to 1'),
                 ])),
             ],
         );
@@ -173,9 +173,9 @@ final readonly class LaravelAiExpenseAnalyzer implements AnalyzesExpenses
             'vat_amount' => $schema->string()->required()->nullable()->description('VAT amount if shown'),
             'supplier_name' => $schema->string()->required()->nullable(),
             'description' => $schema->string()->required()->nullable()->description('Short description of what was bought'),
-            'category' => $schema->string()->enum($this->categoryValues())->required()->nullable(),
+            'category' => $this->categoryField($schema),
             'company_id' => $schema->string()->required()->nullable()->description('Id of the company from the list that this expense belongs to, matched by name, ICO or IBAN'),
-            'confidence' => $schema->number()->min(0)->max(1)->required(),
+            'confidence' => $schema->number()->required()->description('From 0 to 1'),
             'reason' => $schema->string()->required()->nullable()->description('One short sentence in Slovak explaining the category and company choice'),
         ];
     }
@@ -217,6 +217,12 @@ final readonly class LaravelAiExpenseAnalyzer implements AnalyzesExpenses
                 reason: $this->string($result['reason'] ?? null),
             ),
         );
+    }
+
+    // Native structured output rejects an enum on a nullable type, so draftFrom() and categorize() validate the value.
+    private function categoryField(JsonSchema $schema): Type
+    {
+        return $schema->string()->required()->nullable()->description('One of: '.implode(', ', $this->categoryValues()).'. Null when unsure.');
     }
 
     /** @return list<string> */
