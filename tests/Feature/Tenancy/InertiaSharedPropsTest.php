@@ -45,6 +45,22 @@ final class InertiaSharedPropsTest extends TestCase
         });
     }
 
+    public function test_assistant_available_follows_the_configured_key(): void
+    {
+        $user = User::factory()->create();
+        $tenant = Tenant::factory()->forOwner($user)->create();
+        TenantInterface::factory()->create(['tenant_id' => $tenant->id]);
+        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
+
+        config(['ai.providers.anthropic.key' => null]);
+        $this->withoutVite()->actingAs($user)->get('/profile')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('assistantAvailable', false));
+
+        config(['ai.providers.anthropic.key' => 'test-key']);
+        $this->withoutVite()->actingAs($user)->get('/profile')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('assistantAvailable', true)->has('can.useAssistant'));
+    }
+
     public function test_languages_prop_includes_uk(): void
     {
         $user = User::factory()->create();

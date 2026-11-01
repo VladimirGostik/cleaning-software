@@ -49,6 +49,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::EditTasks->value,
                 PermissionEnum::ViewAllTasks->value,
                 PermissionEnum::RunTasksWithAi->value,
+                PermissionEnum::UseAssistant->value,
             ],
             'Interná upratovačka' => [
                 PermissionEnum::ViewSchedule->value,

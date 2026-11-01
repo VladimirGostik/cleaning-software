@@ -8,6 +8,8 @@ import AddTenantModal from '@/Components/Tenants/AddTenantModal.vue';
 import { usePageProps } from '@/Composables/usePageProps';
 import { useAuthorization } from '@/Composables/useAuthorization';
 import NotificationBell from '@/Components/Notifications/NotificationBell.vue';
+import AssistantLauncher from '@/Components/Assistant/AssistantLauncher.vue';
+import { useAssistantChat } from '@/Composables/useAssistantChat';
 
 type NavigationItem = App.Data.NavigationItemData;
 import MenuIcon from '~icons/material-symbols/menu-rounded';
@@ -29,6 +31,8 @@ const tenant = computed(() => props.value.tenant);
 const tenantColors = computed(() => props.value.tenantColors);
 const isAddTenantOpen = ref(false);
 const canViewNotifications = computed(() => allows('view notifications'));
+const canUseAssistant = computed(() => allows('use assistant'));
+const assistant = useAssistantChat();
 const drawerOpen = ref(false);
 
 function navIcon(item: NavigationItem, active: boolean) {
@@ -75,6 +79,14 @@ watch(
     { immediate: true, deep: true },
 );
 
+watch(
+    [() => auth.value.user?.id, () => tenant.value.active?.id],
+    ([userId, companyId]) => {
+        if (userId && companyId && assistant.bind(userId, companyId)) addToast(t('assistant_discarded'), 'info');
+    },
+    { immediate: true },
+);
+
 let removeNavigate: (() => void) | undefined;
 
 onMounted(() => {
@@ -87,6 +99,8 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener('app-toast', handleToastEvent);
     removeNavigate?.();
+    assistant.reset();
+    assistant.close();
 });
 
 function logout() {
@@ -265,10 +279,15 @@ function toastAlertClass(type: ToastMessage['type']): string {
         </div>
 
         <AddTenantModal :open="isAddTenantOpen" :colors="tenantColors" @close="isAddTenantOpen = false" />
+
+        <AssistantLauncher v-if="canUseAssistant" :hidden="drawerOpen" />
     </div>
 
     <!-- Toast container -->
-    <div class="toast toast-bottom toast-end z-50">
+    <div
+        class="toast toast-bottom toast-end z-50"
+        :class="{ 'mb-20': canUseAssistant, 'sm:me-[27rem]': canUseAssistant && assistant.state.open }"
+    >
         <div v-for="toast in toasts" :key="toast.id" class="alert" :class="toastAlertClass(toast.type)">
             <span>{{ toast.message }}</span>
         </div>

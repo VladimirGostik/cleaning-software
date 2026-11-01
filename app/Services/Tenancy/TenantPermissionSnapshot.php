@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Tenancy;
 
+use App\Enums\ActionChannelEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Permission;
 use App\Models\User;
@@ -33,6 +34,11 @@ final readonly class TenantPermissionSnapshot
         return array_any($this->forRequest($user), static fn (TenantVisibility $visibility): bool => $visibility->tenant->id === $companyId);
     }
 
+    public function allowsAssistantIn(User $user, string $companyId): bool
+    {
+        return array_any($this->forRequest($user), static fn (TenantVisibility $visibility): bool => $visibility->tenant->id === $companyId && $visibility->assistant);
+    }
+
     /**
      * Reads the token from the instance passed in, so callers acting as a user must pass the token-bearing instance.
      *
@@ -49,6 +55,20 @@ final readonly class TenantPermissionSnapshot
         }
 
         return array_values(array_filter($all, fn (TenantVisibility $visibility): bool => $visibility->mobileAccess));
+    }
+
+    /**
+     * The assistant channel only sees companies where the user holds `use assistant`; the other channels see what the token sees.
+     *
+     * @return list<TenantVisibility>
+     */
+    public function forChannel(User $user, ActionChannelEnum $channel): array
+    {
+        $visible = $this->forRequest($user);
+
+        return $channel === ActionChannelEnum::Assistant
+            ? array_values(array_filter($visible, static fn (TenantVisibility $visibility): bool => $visibility->assistant))
+            : $visible;
     }
 
     /**
@@ -113,6 +133,7 @@ final readonly class TenantPermissionSnapshot
                     tasksAll: $can(PermissionEnum::ViewTasks) && $can(PermissionEnum::ViewAllTasks),
                     expenses: $can(PermissionEnum::ViewExpenses),
                     manageExpenses: $can(PermissionEnum::ManageExpenses),
+                    assistant: $can(PermissionEnum::UseAssistant),
                     permissions: array_values($granted
                         ->map(fn (Permission $permission): ?PermissionEnum => PermissionEnum::tryFrom($permission->name))
                         ->filter()

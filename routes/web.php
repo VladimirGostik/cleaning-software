@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\PermissionEnum;
+use App\Http\Controllers\Api\AssistantController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
@@ -87,6 +88,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     });
     Route::delete('/profile/mcp-tokens/{token}', [ProfileMcpTokenController::class, 'destroy'])->name('profile.mcp-tokens.destroy')->whereNumber('token');
 
+    Route::post('/assistant/messages', [AssistantController::class, 'store'])->middleware('throttle:assistant')->name('assistant.messages');
     Route::get('/pending-actions', [PendingActionController::class, 'index'])->name('pending-actions.index');
     Route::post('/pending-actions/{pendingAction}/confirm', [PendingActionController::class, 'confirm'])->name('pending-actions.confirm')->whereUuid('pendingAction');
     Route::post('/pending-actions/{pendingAction}/cancel', [PendingActionController::class, 'cancel'])->name('pending-actions.cancel')->whereUuid('pendingAction');

@@ -104,6 +104,9 @@ enum PermissionEnum: string
     case ViewAllTasks = 'view all tasks';
     case RunTasksWithAi = 'run tasks with ai';
 
+    // AI assistant
+    case UseAssistant = 'use assistant';
+
     // Expenses
     case ViewExpenses = 'view expenses';
     case ManageExpenses = 'manage expenses';
@@ -159,6 +162,8 @@ enum PermissionEnum: string
             self::DeleteTasks, self::ViewAllTasks, self::RunTasksWithAi => 'tasks',
 
             self::ViewExpenses, self::ManageExpenses => 'expenses',
+
+            self::UseAssistant => 'ai',
         };
     }
 

@@ -7,6 +7,7 @@ namespace App\Mcp\Tools;
 use App\Data\Dashboard\CompanyOverviewData;
 use App\Data\Dashboard\DashboardAlertData;
 use App\Models\User;
+use App\Services\Dashboard\TenantVisibility;
 use App\Services\DashboardService;
 use App\Services\Tenancy\TenantPermissionSnapshot;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -35,7 +36,11 @@ final class CompanyOverviewTool extends CleanMasterTool
                 $this->assertCompanyAllowed($user, $companyId);
             }
 
-            $anchor = $companyId ?? $snapshot->forRequest($user)[0]->tenant->id ?? null;
+            $allowed = array_map(
+                static fn (TenantVisibility $visibility): string => $visibility->tenant->id,
+                $snapshot->forChannel($user, $this->channel()),
+            );
+            $anchor = $companyId ?? $allowed[0] ?? null;
 
             if ($anchor === null) {
                 throw new AuthorizationException;
@@ -45,11 +50,11 @@ final class CompanyOverviewTool extends CleanMasterTool
 
             $companies = array_values(array_filter(
                 $overview->companies,
-                fn (CompanyOverviewData $company): bool => $companyId === null || $company->tenant_id === $companyId,
+                fn (CompanyOverviewData $company): bool => in_array($company->tenant_id, $allowed, true) && ($companyId === null || $company->tenant_id === $companyId),
             ));
             $alerts = array_values(array_filter(
                 $overview->alerts,
-                fn (DashboardAlertData $alert): bool => $companyId === null || $alert->tenant_id === $companyId,
+                fn (DashboardAlertData $alert): bool => in_array($alert->tenant_id, $allowed, true) && ($companyId === null || $alert->tenant_id === $companyId),
             ));
 
             return $this->json(['companies' => $companies, 'alerts' => $alerts, 'generated_at' => $overview->generated_at]);

@@ -145,4 +145,21 @@ final class RoleTemplatesSeederTest extends TestCase
             );
         }
     }
+
+    public function test_admin_and_vedúca_hold_use_assistant_others_do_not(): void
+    {
+        $tenant = Tenant::factory()->create();
+        RoleTemplatesSeeder::seedForTenant($tenant);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+
+        foreach (['Admin', 'Vedúca'] as $roleName) {
+            $role = Role::inTenant($tenant->id)->where('name', $roleName)->firstOrFail();
+            $this->assertTrue($role->permissions()->where('name', PermissionEnum::UseAssistant->value)->exists(), "{$roleName} is expected to hold UseAssistant");
+        }
+
+        foreach (['Interná upratovačka', 'Sekretárka', 'Účtovníčka', 'Zákazník'] as $roleName) {
+            $role = Role::inTenant($tenant->id)->where('name', $roleName)->firstOrFail();
+            $this->assertFalse($role->permissions()->where('name', PermissionEnum::UseAssistant->value)->exists(), "{$roleName} is expected NOT to hold UseAssistant");
+        }
+    }
 }

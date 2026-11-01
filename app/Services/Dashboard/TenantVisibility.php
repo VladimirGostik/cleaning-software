@@ -33,6 +33,7 @@ final readonly class TenantVisibility
         public bool $tasksAll,
         public bool $expenses,
         public bool $manageExpenses,
+        public bool $assistant,
         public array $permissions,
     ) {}
 

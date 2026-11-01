@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ShieldExclamationIcon from '~icons/material-symbols/gpp-maybe-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import PendingActionRow from '@/Components/Ai/PendingActionRow.vue';
+import { usePendingActionDecision } from '@/Composables/usePendingActionDecision';
 import type { Breadcrumb } from '@/types';
 
 defineProps<{
@@ -15,47 +14,10 @@ defineProps<{
 
 const { t } = useI18n();
 
-const DESTRUCTIVE: readonly App.Enums.PendingActionEnum[] = [
-    'cancel_invoice',
-    'delete_invoice_draft',
-    'delete_quote',
-    'delete_task',
-    'delete_expense',
-];
-
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('pending_actions') }];
 
-const processingId = ref<string | null>(null);
-const errorMessage = ref<string | null>(null);
-const toConfirm = ref<App.Data.Ai.PendingActionData | null>(null);
-
-function post(action: App.Data.Ai.PendingActionData, verb: 'confirm' | 'cancel'): void {
-    router.post(`/pending-actions/${action.id}/${verb}`, undefined, {
-        preserveScroll: true,
-        onStart: () => {
-            processingId.value = action.id;
-            errorMessage.value = null;
-        },
-        onFinish: () => (processingId.value = null),
-        onError: (errors: Record<string, string>) => {
-            errorMessage.value = errors.status ?? Object.values(errors)[0] ?? t('expense_request_failed');
-        },
-    });
-}
-
-function requestConfirm(action: App.Data.Ai.PendingActionData): void {
-    if (DESTRUCTIVE.includes(action.action)) {
-        toConfirm.value = action;
-        return;
-    }
-    post(action, 'confirm');
-}
-
-function confirmModal(): void {
-    const action = toConfirm.value;
-    toConfirm.value = null;
-    if (action) post(action, 'confirm');
-}
+const { processingId, toConfirm, errorMessage, requestConfirm, cancel, confirmModal, dismissModal } =
+    usePendingActionDecision();
 </script>
 
 <template>
@@ -80,7 +42,7 @@ function confirmModal(): void {
                 :action="action"
                 :processing="processingId === action.id"
                 @confirm="requestConfirm(action)"
-                @cancel="post(action, 'cancel')"
+                @cancel="cancel(action)"
             />
         </ul>
     </div>
@@ -90,7 +52,7 @@ function confirmModal(): void {
         :title="t('pending_action_confirm_title')"
         :description="toConfirm ? t('pending_action_confirm_description', { preview: toConfirm.preview }) : ''"
         :confirm-label="t('pending_action_confirm')"
-        @cancel="toConfirm = null"
+        @cancel="dismissModal"
         @confirm="confirmModal"
     />
 </template>

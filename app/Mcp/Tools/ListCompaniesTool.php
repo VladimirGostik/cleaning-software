@@ -24,7 +24,7 @@ final class ListCompaniesTool extends CleanMasterTool
                 'company_id' => $visibility->tenant->id,
                 'name' => $visibility->tenant->name,
                 'permissions' => array_map(fn ($permission): string => $permission->value, $visibility->permissions),
-            ], $snapshot->forRequest($user)),
+            ], $snapshot->forChannel($user, $this->channel())),
         ]));
     }
 }

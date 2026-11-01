@@ -90,4 +90,5 @@ export interface SharedProps {
     tenant: SharedTenant;
     tenantColors: TenantColorOption[];
     canCreateTenant: boolean;
+    assistantAvailable: boolean;
 }
