@@ -8,6 +8,7 @@ use App\Contracts\RendersContractPdf;
 use App\Events\ContractSigned;
 use App\Models\Contract;
 use App\Scopes\TenantScope;
+use App\Services\Documents\SignedPdfStore;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Tries;
@@ -23,6 +24,7 @@ final class StoreSignedContractPdf implements ShouldQueue
     public function __construct(
         private readonly RendersContractPdf $pdf,
         private readonly PermissionRegistrar $registrar,
+        private readonly SignedPdfStore $store,
     ) {}
 
     public function handle(ContractSigned $event): void
@@ -56,12 +58,10 @@ final class StoreSignedContractPdf implements ShouldQueue
 
         $document = $contract->document;
 
-        if ($document === null || $document->getFirstMedia('pdf') !== null) {
+        if ($document === null || $document->getFirstMedia(SignedPdfStore::COLLECTION) !== null) {
             return;
         }
 
-        $document->addMediaFromString($this->pdf->renderFresh($contract))
-            ->usingFileName('contract-'.$contract->id.'.pdf')
-            ->toMediaCollection('pdf');
+        $this->store->store($document, $this->pdf->renderFresh($contract), 'contract-'.$contract->id.'.pdf');
     }
 }

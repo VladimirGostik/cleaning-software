@@ -12,7 +12,7 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/site.webmanifest">
-        <meta name="theme-color" content="#1F5D4C">
+        <meta name="theme-color" content="#0E7C5F">
 
         @vite(['resources/css/app.css', 'resources/js/app.ts'])
         @inertiaHead

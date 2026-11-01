@@ -1,8 +1,8 @@
 {
     "name": "KEGOS",
     "short_name": "KEGOS",
-    "theme_color": "#1F5D4C",
-    "background_color": "#1F5D4C",
+    "theme_color": "#0E7C5F",
+    "background_color": "#0E7C5F",
     "display": "standalone",
     "icons": [
         {

@@ -613,12 +613,6 @@ parameters:
 			path: tests/Feature/Users/UserControllerTest.php
 
 		-
-			message: '#^Parameter \#1 \$stream of function stream_get_contents expects resource, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Support/FakeContractPdfRenderer.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>body" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
