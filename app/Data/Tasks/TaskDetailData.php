@@ -33,10 +33,11 @@ final class TaskDetailData extends Data
         public readonly ?string $assigned_membership_id,
         public readonly string $created_by_name,
         public readonly TaskCanData $can,
+        public readonly int $attachments_count,
     ) {}
 
     /** Expects `tenant`, `creator`, `assignedMembership.user` and `taskable` eager loaded. */
-    public static function fromModel(Task $task, TaskCanData $can): self
+    public static function fromModel(Task $task, TaskCanData $can, int $attachmentsCount): self
     {
         return new self(
             id: $task->id,
@@ -57,6 +58,7 @@ final class TaskDetailData extends Data
             assigned_membership_id: $task->assigned_membership_id,
             created_by_name: $task->creator->name ?? '',
             can: $can,
+            attachments_count: $attachmentsCount,
         );
     }
 }

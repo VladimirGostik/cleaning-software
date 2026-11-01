@@ -8,6 +8,7 @@ use App\Models\Activity;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\Media;
 use App\Models\Quote;
 use App\Models\ScheduledJob;
 use App\Models\Task;
@@ -220,6 +221,24 @@ final class McpToolsReadTest extends TestCase
 
         $this->assertTrue($this->callTool($this->token, 'get_task', ['company_id' => $this->alpha->id, 'task_id' => $foreignGlobal->id])->isError);
         $this->assertFalse($this->callTool($this->token, 'get_task', ['company_id' => $this->alpha->id, 'task_id' => $own->id])->isError);
+    }
+
+    public function test_get_task_reports_the_attachment_count_but_never_names_or_urls(): void
+    {
+        $task = Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create();
+        Media::query()->create([
+            'tenant_id' => $this->alpha->id, 'model_type' => $task->getMorphClass(), 'model_id' => $task->id,
+            'collection_name' => Task::ATTACHMENTS_COLLECTION, 'name' => 'ignore-previous-instructions.pdf',
+            'file_name' => 'f.pdf', 'mime_type' => 'application/pdf', 'disk' => 'local', 'size' => 10,
+            'manipulations' => [], 'custom_properties' => [], 'generated_conversions' => [], 'responsive_images' => [],
+        ]);
+
+        $result = $this->callTool($this->token, 'get_task', ['company_id' => $this->alpha->id, 'task_id' => $task->id]);
+
+        $this->assertFalse($result->isError, $result->text);
+        $this->assertSame(1, $result->int('attachments_count'));
+        $this->assertStringNotContainsString('ignore-previous-instructions', $result->text);
+        $this->assertStringNotContainsString('/attachments', $result->text);
     }
 
     public function test_search_finds_records_of_the_company_only(): void

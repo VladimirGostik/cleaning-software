@@ -43,7 +43,8 @@ final class EncryptSignedPdfsCommand extends Command
                     $store->encryptInPlace($media);
                 }
 
-                $upgraded[$media->tenant_id] = ($upgraded[$media->tenant_id] ?? 0) + 1;
+                $tenantId = (string) $media->tenant_id;
+                $upgraded[$tenantId] = ($upgraded[$tenantId] ?? 0) + 1;
             });
 
         foreach ($upgraded as $tenantId => $count) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Enums\PermissionEnum;
+use App\Models\Media;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\Dashboard\TenantVisibility;
@@ -55,6 +56,21 @@ final class TaskPolicy
     public function assign(User $user, Task $task): bool
     {
         return $this->mayChange($user, $task, PermissionEnum::EditTasks);
+    }
+
+    public function deleteAttachment(User $user, Task $task, Media $attachment): bool
+    {
+        return $this->mayDeleteAttachment($user, $task, $attachment, $task->isVisibleTo($user));
+    }
+
+    public function mayDeleteAttachment(User $user, Task $task, Media $attachment, bool $taskVisible): bool
+    {
+        if ($task->isGlobal()) {
+            return $task->created_by_user_id === $user->id;
+        }
+
+        return $taskVisible
+            && ($attachment->getCustomProperty('uploaded_by_user_id') === $user->id || $user->can(PermissionEnum::DeleteTasks->value));
     }
 
     private function mayChange(User $user, Task $task, PermissionEnum $permission): bool

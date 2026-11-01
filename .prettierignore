@@ -11,3 +11,5 @@ resources/js/generated/**
 *.lock
 pnpm-lock.yaml
 composer.lock
+
+tests/Fixtures/task-attachments/

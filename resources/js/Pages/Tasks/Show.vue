@@ -12,7 +12,9 @@ import TaskPriorityBadge from '@/Components/Tasks/TaskPriorityBadge.vue';
 import TaskSubjectLink from '@/Components/Tasks/TaskSubjectLink.vue';
 import TaskFormDrawer from '@/Components/Tasks/TaskFormDrawer.vue';
 import TaskAssignPanel from '@/Components/Tasks/TaskAssignPanel.vue';
+import TaskAttachmentsCard from '@/Components/Tasks/TaskAttachmentsCard.vue';
 
+import { useTaskAttachmentUpload } from '@/Composables/useTaskAttachmentUpload';
 import { useTaskTransition } from '@/Composables/useTaskTransition';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { formatDatetime } from '@/utils/date';
@@ -22,6 +24,7 @@ const { t } = useI18n();
 
 const props = defineProps<{
     task: App.Data.Tasks.TaskDetailData;
+    attachments: App.Data.Tasks.TaskAttachmentListData;
     context: App.Data.Tasks.TaskFormContextData;
 }>();
 
@@ -36,7 +39,16 @@ const ui = reactive({
 });
 
 const { processingId, transition } = useTaskTransition();
-const processing = computed(() => processingId.value !== null);
+const {
+    items: uploadItems,
+    uploading,
+    add,
+    dismiss,
+} = useTaskAttachmentUpload({
+    taskId: props.task.id,
+    list: () => props.attachments,
+});
+const processing = computed(() => processingId.value !== null || uploading.value);
 
 const isOpen = computed(() => props.task.status === 'open');
 const assignMembers = computed(() => (props.task.tenant_id ? (props.context.members[props.task.tenant_id] ?? []) : []));
@@ -75,12 +87,24 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 {{ t('task_reopen') }}
             </button>
 
-            <button v-if="task.can.update" type="button" class="btn btn-ghost btn-sm" @click="ui.editOpen = true">
+            <button
+                v-if="task.can.update"
+                type="button"
+                class="btn btn-ghost btn-sm"
+                :disabled="uploading"
+                @click="ui.editOpen = true"
+            >
                 <PencilSquareIcon class="size-5" />
                 {{ t('edit') }}
             </button>
 
-            <button v-if="task.can.delete" type="button" class="btn btn-error btn-sm" @click="openModal(task)">
+            <button
+                v-if="task.can.delete"
+                type="button"
+                class="btn btn-error btn-sm"
+                :disabled="uploading"
+                @click="openModal(task)"
+            >
                 <TrashIcon class="size-5" />
                 {{ t('delete') }}
             </button>
@@ -96,6 +120,15 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <p v-else class="text-base-content/60">{{ t('empty_dash') }}</p>
                 </div>
             </div>
+
+            <TaskAttachmentsCard
+                :task-id="task.id"
+                :list="attachments"
+                :items="uploadItems"
+                :uploading="uploading"
+                @add="add"
+                @dismiss="dismiss"
+            />
         </div>
 
         <div class="space-y-6">

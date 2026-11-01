@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PendingActionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\QuoteController;
+use App\Http\Controllers\Api\TaskAttachmentController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TaskParseController;
 use App\Http\Controllers\Api\UserController;
@@ -61,6 +62,10 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::post('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('api.tasks.complete')->whereUuid('task');
     Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('api.tasks.reopen')->whereUuid('task');
     Route::post('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('api.tasks.assign')->whereUuid('task');
+    Route::get('/tasks/{task}/attachments', [TaskAttachmentController::class, 'index'])->name('api.tasks.attachments.index')->whereUuid('task');
+    Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:task-attachments')->name('api.tasks.attachments.store')->whereUuid('task');
+    Route::get('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'show'])->name('api.tasks.attachments.show')->whereUuid(['task', 'attachment']);
+    Route::delete('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('api.tasks.attachments.destroy')->whereUuid(['task', 'attachment']);
 
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('api.expenses.index');
     Route::get('/expenses/form-context', [ExpenseController::class, 'formContext'])->name('api.expenses.form-context');

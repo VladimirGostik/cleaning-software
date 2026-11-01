@@ -33,16 +33,19 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
 use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\BuildsTaskAttachmentFiles;
 use Tests\Support\CreatesMcpFixtures;
 use Tests\TestCase;
 
 final class ActionConfirmationTest extends TestCase
 {
+    use BuildsTaskAttachmentFiles;
     use CreatesMcpFixtures;
     use RefreshDatabase;
 
@@ -388,6 +391,22 @@ final class ActionConfirmationTest extends TestCase
         $this->assertTrue($refused->isError);
         $this->assertNotNull(Task::unscopedForSystem()->find($global->id));
         $this->assertSame(1, PendingAction::query()->count());
+    }
+
+    public function test_viewing_a_task_and_adding_an_attachment_does_not_cancel_a_pending_delete_task(): void
+    {
+        Storage::fake('local');
+        $firm = Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create();
+        ['pending' => $pending] = $this->prepare(PendingActionEnum::DeleteTask, $firm->id);
+
+        $this->webAs($this->admin, $this->alpha)->get(route('tasks.show', $firm))->assertOk();
+        $this->webAs($this->admin, $this->alpha)->post(route('tasks.attachments.store', $firm), [
+            'file' => $this->attachmentFile('photo.jpg'),
+        ])->assertRedirect();
+        $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $pending))->assertRedirect();
+
+        $this->assertSame(PendingActionStatusEnum::Executed, $pending->refresh()->status);
+        $this->assertNull(Task::unscopedForSystem()->find($firm->id));
     }
 
     public function test_delete_global_task_is_direct_creator_only_and_audited_as_executed(): void

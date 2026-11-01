@@ -1613,6 +1613,31 @@ namespace Tasks {
 export type TaskAssignData = {
 readonly assigned_membership_id: string | null,
 };
+export type TaskAttachmentConstraintsData = {
+readonly max_size_kb: number,
+readonly max_count: number,
+readonly allowed_mimes: string[],
+readonly allowed_extensions: string[],
+};
+export type TaskAttachmentData = {
+readonly id: string,
+readonly name: string,
+readonly mime_type: string,
+readonly size: number,
+readonly previewable: boolean,
+readonly uploaded_by_name: string | null,
+readonly created_at: string,
+readonly download_url: string,
+readonly can_delete: boolean,
+};
+export type TaskAttachmentListData = {
+readonly attachments: App.Data.Tasks.TaskAttachmentData[],
+readonly can_add: boolean,
+readonly constraints: App.Data.Tasks.TaskAttachmentConstraintsData,
+};
+export type TaskAttachmentUploadData = {
+readonly file: File,
+};
 export type TaskCanData = {
 readonly update: boolean,
 readonly delete: boolean,
@@ -1637,6 +1662,7 @@ readonly source: App.Enums.TaskSourceEnum,
 readonly assigned_membership_id: string | null,
 readonly created_by_name: string,
 readonly can: App.Data.Tasks.TaskCanData,
+readonly attachments_count: number,
 };
 export type TaskDraftData = {
 readonly title: string,

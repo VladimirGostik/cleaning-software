@@ -139,7 +139,7 @@ final readonly class TaskService
             update: $actor->can('update', $task),
             delete: $actor->can('delete', $task),
             assign: ! $task->isGlobal() && $actor->can('assign', $task),
-        ));
+        ), $task->media()->where('collection_name', Task::ATTACHMENTS_COLLECTION)->count());
     }
 
     /** Create permission (and, when assigning, edit permission) in the target tenant, or anywhere for a global task. */
