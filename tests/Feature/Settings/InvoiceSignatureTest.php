@@ -67,7 +67,6 @@ final class InvoiceSignatureTest extends TestCase
             'country' => 'SK',
             'contact_email' => 'billing@example.com',
             'contact_phone' => '+421900000000',
-            'invoice_template' => 'classic',
             'invoice_number_format' => 'FA-{YYYY}-{XXXX}',
             'iban' => 'SK8975000000000123456789',
             'vat_rate' => 23,

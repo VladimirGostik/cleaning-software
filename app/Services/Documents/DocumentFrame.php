@@ -20,7 +20,7 @@ final class DocumentFrame
         return array_values(array_filter([
             $tenant->name,
             $tenant->contact_email,
-            $tenant->contact_phone,
+            format_phone($tenant->contact_phone),
             $tenant->registration_info,
         ], static fn (?string $line): bool => $line !== null && trim($line) !== ''));
     }

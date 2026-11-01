@@ -24,7 +24,6 @@ final class InvoiceVatCalcTest extends TestCase
             'client_id' => null,
             'cleaning_object_id' => null,
             'type' => InvoiceTypeEnum::OneOff->value,
-            'template' => null,
             'issue_date' => now()->toDateString(),
             'delivery_date' => now()->toDateString(),
             'due_date' => now()->addDays(14)->toDateString(),

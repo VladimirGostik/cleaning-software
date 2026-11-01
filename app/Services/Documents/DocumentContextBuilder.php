@@ -479,6 +479,6 @@ final readonly class DocumentContextBuilder
 
     private function decimal(float $value): string
     {
-        return number_format($value, 2, ',', ' ');
+        return number_format($value, 2, ',', "\u{00A0}");
     }
 }

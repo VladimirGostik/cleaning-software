@@ -7,10 +7,10 @@ namespace Tests\Feature\Invoices;
 use App\Contracts\RendersInvoicePdf;
 use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceUpsertData;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Tenant;
 use App\Services\InvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,37 +33,17 @@ final class InvoicePdfTest extends TestCase
     // happy
     // -------------------------------------------------------------------------
 
-    public function test_download_pdf_for_classic_template(): void
+    public function test_download_pdf_returns_pdf_for_issued_invoice(): void
     {
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
-        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'template' => 'classic']);
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
         $this->mockPdfRenderer();
 
         $response = $this->get(route('invoices.pdf', $invoice));
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/pdf');
-    }
-
-    public function test_download_pdf_for_modern_template(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Admin', $tenant);
-        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'template' => 'modern']);
-        $this->mockPdfRenderer();
-
-        $this->get(route('invoices.pdf', $invoice))->assertOk();
-    }
-
-    public function test_download_pdf_for_minimal_template(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Admin', $tenant);
-        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'template' => 'minimal']);
-        $this->mockPdfRenderer();
-
-        $this->get(route('invoices.pdf', $invoice))->assertOk();
     }
 
     public function test_download_pdf_draft_without_number_uses_draft_filename(): void
@@ -162,7 +142,6 @@ final class InvoicePdfTest extends TestCase
             client_id: null,
             cleaning_object_id: null,
             type: InvoiceTypeEnum::OneOff,
-            template: InvoiceTemplateEnum::Classic,
             issue_date: now()->toDateString(),
             delivery_date: now()->toDateString(),
             due_date: now()->addDays(14)->toDateString(),
@@ -196,11 +175,11 @@ final class InvoicePdfTest extends TestCase
         return Invoice::factory()->create(array_merge(['tenant_id' => $tenant->id], $overrides));
     }
 
-    public function test_classic_template_renders_full_supplier_snapshot(): void
+    public function test_kegos_layout_renders_full_supplier_snapshot(): void
     {
         $invoice = $this->invoiceWithFullSupplierSnapshot();
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString('Hlavná 1', $html);
         $this->assertStringContainsString('811 01 Bratislava', $html);
@@ -213,81 +192,77 @@ final class InvoicePdfTest extends TestCase
         $this->assertStringContainsString(__('app.invoice_pdf_vat_number'), $html);
     }
 
-    public function test_classic_template_renders_note_when_present_and_omits_when_null(): void
+    public function test_kegos_layout_renders_note_when_present_and_omits_when_null(): void
     {
         $withNote = $this->invoiceWithFullSupplierSnapshot();
-        $htmlWithNote = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $withNote, 'qrDataUri' => null])->render();
+        $htmlWithNote = View::make('pdf.invoices.kegos', ['invoice' => $withNote, 'qrDataUri' => null])->render();
         $this->assertStringContainsString('Ďakujeme za spoluprácu', $htmlWithNote);
 
         $withoutNote = $this->boundInvoice(['note' => null]);
-        $htmlWithoutNote = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $withoutNote, 'qrDataUri' => null])->render();
+        $htmlWithoutNote = View::make('pdf.invoices.kegos', ['invoice' => $withoutNote, 'qrDataUri' => null])->render();
         $this->assertStringNotContainsString(__('app.invoice_pdf_note'), $htmlWithoutNote);
     }
 
-    public function test_classic_template_renders_payment_strip_when_iban_present_and_omits_when_null(): void
+    public function test_kegos_layout_renders_payment_strip_when_iban_present_and_omits_when_null(): void
     {
         $withIban = $this->boundInvoice(['supplier_iban' => 'SK8975000000000123456789']);
-        $htmlWithIban = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $withIban, 'qrDataUri' => null])->render();
+        $htmlWithIban = View::make('pdf.invoices.kegos', ['invoice' => $withIban, 'qrDataUri' => null])->render();
         $this->assertStringContainsString('SK8975000000000123456789', $htmlWithIban);
         $this->assertStringContainsString(__('app.invoice_pdf_amount_due'), $htmlWithIban);
 
         $withoutIban = $this->boundInvoice(['supplier_iban' => null]);
-        $htmlWithoutIban = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $withoutIban, 'qrDataUri' => null])->render();
+        $htmlWithoutIban = View::make('pdf.invoices.kegos', ['invoice' => $withoutIban, 'qrDataUri' => null])->render();
         $this->assertStringNotContainsString(__('app.invoice_pdf_amount_due'), $htmlWithoutIban);
     }
 
-    public function test_classic_template_omits_qr_block_when_qr_data_uri_is_null(): void
+    public function test_kegos_layout_omits_qr_block_when_qr_data_uri_is_null(): void
     {
         $invoice = $this->boundInvoice();
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringNotContainsString('PAY by square', $html);
     }
 
-    public function test_classic_template_renders_qr_block_when_present(): void
+    public function test_kegos_layout_renders_qr_block_when_present(): void
     {
         $invoice = $this->boundInvoice();
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => 'data:image/png;base64,Zm9v'])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => 'data:image/png;base64,Zm9v'])->render();
 
         $this->assertStringContainsString('PAY by square', $html);
         $this->assertStringContainsString('data:image/png;base64,Zm9v', $html);
     }
 
     // -------------------------------------------------------------------------
-    // signature block — shared partial across all 3 templates
+    // signature block
     // -------------------------------------------------------------------------
 
-    public function test_all_templates_render_signature_block_when_data_uri_present(): void
+    public function test_signature_block_renders_when_data_uri_present(): void
     {
         $invoice = $this->boundInvoice();
         $dataUri = 'data:image/png;base64,Zm9v';
 
-        foreach ([InvoiceTemplateEnum::Classic, InvoiceTemplateEnum::Modern, InvoiceTemplateEnum::Minimal] as $template) {
-            $html = View::make($template->view(), ['invoice' => $invoice, 'qrDataUri' => null, 'signatureDataUri' => $dataUri])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null, 'signatureDataUri' => $dataUri])->render();
 
-            $this->assertStringContainsString(__('app.invoice_pdf_signature'), $html, $template->value);
-            $this->assertStringContainsString('<img src="'.$dataUri.'"', $html, $template->value);
-        }
+        $this->assertStringContainsString(__('app.invoice_pdf_signature'), $html);
+        $this->assertStringContainsString('<img src="'.$dataUri.'"', $html);
     }
 
-    public function test_all_templates_render_without_signature_data_uri_variable_at_all(): void
+    public function test_signature_block_absent_without_data_uri_variable(): void
     {
         $invoice = $this->boundInvoice();
 
-        foreach ([InvoiceTemplateEnum::Classic, InvoiceTemplateEnum::Modern, InvoiceTemplateEnum::Minimal] as $template) {
-            $html = View::make($template->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
-            $this->assertStringNotContainsString(__('app.invoice_pdf_signature'), $html, $template->value);
-        }
+        $this->assertStringNotContainsString(__('app.invoice_pdf_signature'), $html);
     }
 
     // -------------------------------------------------------------------------
     // classic pinned footer (Chrome footerView template)
     // -------------------------------------------------------------------------
 
-    public function test_classic_footer_renders_supplier_contact_info(): void
+    public function test_kegos_footer_renders_supplier_contact_info(): void
     {
         $invoice = $this->boundInvoice([
             'supplier_contact_phone' => '+421900000000',
@@ -295,24 +270,24 @@ final class InvoicePdfTest extends TestCase
             'issued_by_name' => null,
         ]);
 
-        $html = View::make('pdf.invoices.classic-footer', ['invoice' => $invoice, 'preview' => false])->render();
+        $html = View::make('pdf.invoices.kegos-footer', ['invoice' => $invoice, 'preview' => false])->render();
 
         $this->assertStringContainsString('+421 900 000 000', $html);
         $this->assertStringContainsString('fakturacia@democleaning.sk', $html);
     }
 
-    public function test_classic_footer_renders_issued_by_when_present(): void
+    public function test_kegos_footer_renders_issued_by_when_present(): void
     {
         $invoice = $this->boundInvoice(['issued_by_name' => 'Jana Nováková']);
 
-        $html = View::make('pdf.invoices.classic-footer', ['invoice' => $invoice, 'preview' => false])->render();
+        $html = View::make('pdf.invoices.kegos-footer', ['invoice' => $invoice, 'preview' => false])->render();
 
         // Label is now a bold `<strong>` tag around just the label, not the whole "label: value" run.
         $this->assertStringContainsString(__('app.invoice_pdf_issued_by').':</strong> Jana Nováková', $html);
         $this->assertStringContainsString('<strong>'.__('app.invoice_pdf_issued_by'), $html);
     }
 
-    public function test_classic_footer_omits_issued_by_label_when_null(): void
+    public function test_kegos_footer_omits_issued_by_label_when_null(): void
     {
         $invoice = $this->boundInvoice([
             'issued_by_name' => null,
@@ -320,7 +295,7 @@ final class InvoicePdfTest extends TestCase
             'supplier_contact_email' => 'fakturacia@democleaning.sk',
         ]);
 
-        $html = View::make('pdf.invoices.classic-footer', ['invoice' => $invoice, 'preview' => false])->render();
+        $html = View::make('pdf.invoices.kegos-footer', ['invoice' => $invoice, 'preview' => false])->render();
 
         $this->assertStringNotContainsString(__('app.invoice_pdf_issued_by'), $html);
         $this->assertStringNotContainsString(__('app.invoice_pdf_issued_by').':', $html);
@@ -332,21 +307,21 @@ final class InvoicePdfTest extends TestCase
     // classic block 3 — constant/specific symbol (previously dropped)
     // -------------------------------------------------------------------------
 
-    public function test_classic_template_renders_constant_and_specific_symbol_when_present(): void
+    public function test_kegos_layout_renders_constant_and_specific_symbol_when_present(): void
     {
         $invoice = $this->boundInvoice(['constant_symbol' => '0308', 'specific_symbol' => '1234567890']);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString(__('app.invoice_pdf_constant_symbol').': 0308', $html);
         $this->assertStringContainsString(__('app.invoice_pdf_specific_symbol').': 1234567890', $html);
     }
 
-    public function test_classic_template_omits_constant_and_specific_symbol_when_null(): void
+    public function test_kegos_layout_omits_constant_and_specific_symbol_when_null(): void
     {
         $invoice = $this->boundInvoice(['constant_symbol' => null, 'specific_symbol' => null]);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringNotContainsString(__('app.invoice_pdf_constant_symbol'), $html);
         $this->assertStringNotContainsString(__('app.invoice_pdf_specific_symbol'), $html);
@@ -356,7 +331,7 @@ final class InvoicePdfTest extends TestCase
     // classic status chrome — issued/paid stay chrome-free, everything else warns
     // -------------------------------------------------------------------------
 
-    public function test_classic_template_omits_status_chrome_for_issued_and_paid(): void
+    public function test_kegos_layout_omits_status_chrome_for_issued_and_paid(): void
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
@@ -365,13 +340,13 @@ final class InvoicePdfTest extends TestCase
             /** @var Invoice $invoice */
             $invoice = Invoice::factory()->{$state}()->create(['tenant_id' => $tenant->id]);
 
-            $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+            $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
             $this->assertStringNotContainsString(__('app.invoice_pdf_status').':', $html, $state);
         }
     }
 
-    public function test_classic_template_renders_status_chrome_for_draft_overdue_and_cancelled(): void
+    public function test_kegos_layout_renders_status_chrome_for_draft_overdue_and_cancelled(): void
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
@@ -382,7 +357,7 @@ final class InvoicePdfTest extends TestCase
                 ? Invoice::factory()->create(['tenant_id' => $tenant->id])
                 : Invoice::factory()->{$state}()->create(['tenant_id' => $tenant->id]);
 
-            $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+            $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
             $this->assertStringContainsString(__('app.invoice_pdf_status').': '.$invoice->status->label(), $html, $state);
         }
@@ -390,7 +365,7 @@ final class InvoicePdfTest extends TestCase
         // Overdue is payment-timing state, not print-time state (owner decision) — no banner.
         /** @var Invoice $overdueInvoice */
         $overdueInvoice = Invoice::factory()->overdue()->create(['tenant_id' => $tenant->id]);
-        $overdueHtml = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $overdueInvoice, 'qrDataUri' => null])->render();
+        $overdueHtml = View::make('pdf.invoices.kegos', ['invoice' => $overdueInvoice, 'qrDataUri' => null])->render();
 
         $this->assertStringNotContainsString(__('app.invoice_pdf_status').':', $overdueHtml);
     }
@@ -399,50 +374,50 @@ final class InvoicePdfTest extends TestCase
     // classic block 4 — customer DIC, billing period, payment type (previously dropped)
     // -------------------------------------------------------------------------
 
-    public function test_classic_template_renders_customer_dic_when_present(): void
+    public function test_kegos_layout_renders_customer_dic_when_present(): void
     {
         $invoice = $this->boundInvoice(['customer_dic' => '2098765432']);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString(__('app.invoice_pdf_dic').': 2098765432', $html);
     }
 
-    public function test_classic_template_omits_customer_dic_when_null(): void
+    public function test_kegos_layout_omits_customer_dic_when_null(): void
     {
         $invoice = $this->boundInvoice(['customer_dic' => null, 'supplier_dic' => null]);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringNotContainsString(__('app.invoice_pdf_dic'), $html);
     }
 
-    public function test_classic_template_renders_billing_period_when_present(): void
+    public function test_kegos_layout_renders_billing_period_when_present(): void
     {
         $invoice = $this->boundInvoice(['period_from' => '2026-08-01', 'period_to' => '2026-08-31']);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString(__('app.invoice_pdf_period'), $html);
         $this->assertStringContainsString('1. 8. 2026', $html);
         $this->assertStringContainsString('31. 8. 2026', $html);
     }
 
-    public function test_classic_template_omits_billing_period_when_null(): void
+    public function test_kegos_layout_omits_billing_period_when_null(): void
     {
         $invoice = $this->boundInvoice(['period_from' => null, 'period_to' => null]);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringNotContainsString(__('app.invoice_pdf_period'), $html);
     }
 
     // payment_type has a non-nullable DB default (`transfer`) — no absence case exists to test.
-    public function test_classic_template_renders_payment_type_label(): void
+    public function test_kegos_layout_renders_payment_type_label(): void
     {
         $invoice = $this->boundInvoice(['payment_type' => PaymentTypeEnum::Cash]);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString(__('app.invoice_pdf_payment_type').':', $html);
         $this->assertStringContainsString($invoice->payment_type->label(), $html);
@@ -452,7 +427,7 @@ final class InvoicePdfTest extends TestCase
     // classic block 6 — VAT recapitulation total column (previously dropped)
     // -------------------------------------------------------------------------
 
-    public function test_classic_template_renders_vat_recap_total_column_when_vat_payer(): void
+    public function test_kegos_layout_renders_vat_recap_total_column_when_vat_payer(): void
     {
         $invoice = $this->boundInvoice([
             'is_vat_payer' => true,
@@ -464,16 +439,16 @@ final class InvoicePdfTest extends TestCase
             ],
         ]);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString(__('app.invoice_vat_recap_total'), $html);
     }
 
-    public function test_classic_template_omits_vat_recap_total_column_for_non_vat_payer(): void
+    public function test_kegos_layout_omits_vat_recap_total_column_for_non_vat_payer(): void
     {
         $invoice = $this->boundInvoice(['is_vat_payer' => false, 'vat_breakdown' => null]);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         // "Total" alone collides with invoice_pdf_item_total / invoice_pdf_total labels
         // elsewhere on the page — assert on the recap section's unique title instead, which
@@ -486,11 +461,11 @@ final class InvoicePdfTest extends TestCase
     // QR/strip overlap geometry, signature label styling
     // -------------------------------------------------------------------------
 
-    public function test_classic_template_renders_currency_symbol_not_iso_code(): void
+    public function test_kegos_layout_renders_currency_symbol_not_iso_code(): void
     {
         $invoice = $this->invoiceWithFullSupplierSnapshot();
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString("100,00\u{00A0}€", $html);
         $this->assertStringNotContainsString(' EUR', $html);
@@ -498,54 +473,136 @@ final class InvoicePdfTest extends TestCase
         $this->assertStringContainsString(__('app.invoice_pdf_subtotal'), $html);
     }
 
-    public function test_classic_template_drops_subtotal_row_for_non_vat_payer(): void
+    public function test_kegos_layout_drops_subtotal_row_for_non_vat_payer(): void
     {
         $invoice = $this->boundInvoice(['is_vat_payer' => false, 'vat_breakdown' => null, 'rounding_amount' => '0.00']);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringNotContainsString(__('app.invoice_pdf_subtotal'), $html);
         $this->assertStringContainsString(__('app.invoice_pdf_total'), $html);
     }
 
-    public function test_classic_template_non_vat_payer_deposit_path_not_regressed(): void
+    public function test_kegos_layout_non_vat_payer_deposit_path_not_regressed(): void
     {
         $invoice = $this->boundInvoice(['is_vat_payer' => false, 'deposit' => '10.00']);
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $invoice, 'qrDataUri' => null])->render();
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
         $this->assertStringContainsString(__('app.invoice_pdf_deposit'), $html);
         $this->assertStringContainsString(__('app.invoice_pdf_balance_due'), $html);
     }
 
-    public function test_classic_template_payment_strip_offsets_by_qr_presence(): void
+    public function test_kegos_layout_payment_panel_places_qr_beside_payment_details_only_when_present(): void
     {
         $withQr = $this->boundInvoice(['supplier_iban' => 'SK8975000000000123456789']);
-        $htmlWithQr = View::make(InvoiceTemplateEnum::Classic->view(), [
+        $htmlWithQr = View::make('pdf.invoices.kegos', [
             'invoice' => $withQr,
             'qrDataUri' => 'data:image/png;base64,Zm9v',
         ])->render();
-        $this->assertStringContainsString('left:166px', $htmlWithQr);
+        $this->assertStringContainsString('class="block pay panel"', $htmlWithQr);
+        $this->assertStringContainsString('alt="PAY by square QR"', $htmlWithQr);
 
         $withoutQr = $this->boundInvoice(['supplier_iban' => 'SK8975000000000123456789']);
-        $htmlWithoutQr = View::make(InvoiceTemplateEnum::Classic->view(), ['invoice' => $withoutQr, 'qrDataUri' => null])->render();
-        $this->assertStringContainsString('left:0', $htmlWithoutQr);
+        $htmlWithoutQr = View::make('pdf.invoices.kegos', ['invoice' => $withoutQr, 'qrDataUri' => null])->render();
+        $this->assertStringContainsString('class="block pay panel"', $htmlWithoutQr);
+        $this->assertStringNotContainsString('alt="PAY by square QR"', $htmlWithoutQr);
     }
 
-    public function test_classic_template_renders_sentence_case_signature_label(): void
+    public function test_kegos_layout_renders_sentence_case_signature_label(): void
     {
         $invoice = $this->boundInvoice();
-        $dataUri = 'data:image/png;base64,Zm9v';
 
-        $html = View::make(InvoiceTemplateEnum::Classic->view(), [
+        $html = View::make('pdf.invoices.kegos', [
             'invoice' => $invoice,
             'qrDataUri' => null,
-            'signatureDataUri' => $dataUri,
+            'signatureDataUri' => 'data:image/png;base64,Zm9v',
         ])->render();
 
-        $this->assertStringContainsString(__('app.invoice_pdf_signature').':', $html);
-        // Sentence case (no `text-transform:uppercase` class): assert the dedicated class instead
-        // of the CSS declaration itself, which also appears elsewhere for `.label`.
-        $this->assertStringContainsString('class="sig-label"', $html);
+        $this->assertStringContainsString('kg-label">'.__('app.invoice_pdf_signature').':', $html);
+    }
+
+    public function test_kegos_layout_renders_logo_orange_rule_and_geist_without_legacy_colours(): void
+    {
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $this->boundInvoice(), 'qrDataUri' => null])->render();
+
+        $this->assertStringContainsString('aria-label="KEGOS"', $html);
+        $this->assertStringContainsString('class="kg-rule"', $html);
+        $this->assertStringContainsString("'Geist'", $html);
+        $this->assertStringNotContainsString('#1e40af', $html);
+        $this->assertStringNotContainsString('#dbeaf5', $html);
+    }
+
+    public function test_kegos_footer_renders_supplier_identity_and_page_counter(): void
+    {
+        $invoice = $this->boundInvoice([
+            'supplier_name' => 'Footer Supplier s.r.o.',
+            'supplier_ico' => '12345678',
+            'supplier_dic' => '2012345678',
+            'supplier_registration_info' => 'Zapísaná v OR SR, vložka 1/B',
+        ]);
+
+        $html = View::make('pdf.invoices.kegos-footer', ['invoice' => $invoice, 'preview' => false])->render();
+
+        $this->assertStringContainsString('Footer Supplier s.r.o.', $html);
+        $this->assertStringContainsString('12345678', $html);
+        $this->assertStringContainsString('Zapísaná v OR SR, vložka 1/B', $html);
+        $this->assertStringContainsString('class="pageNumber"', $html);
+        $this->assertStringContainsString('class="totalPages"', $html);
+    }
+
+    public function test_kegos_footer_brand_line_follows_config(): void
+    {
+        $invoice = $this->boundInvoice();
+
+        config(['documents.show_brand_line' => false]);
+        $this->assertStringNotContainsString(__('app.pdf_under_brand'), View::make('pdf.invoices.kegos-footer', ['invoice' => $invoice])->render());
+
+        config(['documents.show_brand_line' => true]);
+        $this->assertStringContainsString(__('app.pdf_under_brand'), View::make('pdf.invoices.kegos-footer', ['invoice' => $invoice])->render());
+    }
+
+    public function test_kegos_layout_titles_a_real_credit_note_and_keeps_item_amounts_negative(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $original = Invoice::factory()->issued()->vatPayer()->create(['tenant_id' => $tenant->id, 'supplier_name' => 'Original Snapshot s.r.o.']);
+        InvoiceItem::factory()->withVat()->create(['tenant_id' => $tenant->id, 'invoice_id' => $original->id, 'description' => 'Upratovanie', 'quantity' => 2, 'unit_price' => 30, 'line_base' => 60]);
+
+        app(InvoiceService::class)->cancel($original, null);
+        $creditNote = Invoice::where('credited_invoice_id', $original->id)->firstOrFail()->load(['items', 'creditedInvoice']);
+
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $creditNote, 'qrDataUri' => null])->render();
+
+        $this->assertStringContainsString('kg-doc-title">'.__('app.invoice_credit_note').' '.$creditNote->number, $html);
+        $this->assertStringNotContainsString('kg-doc-title">'.__('app.invoice_pdf_title').' ', $html);
+        $this->assertStringContainsString(__('app.invoice_credit_note_for').' '.$original->number, $html);
+        $this->assertStringContainsString('Original Snapshot s.r.o.', $html);
+        $this->assertCount(1, $creditNote->items);
+        foreach ($creditNote->items as $item) {
+            $this->assertLessThan(0, (float) $item->line_base);
+            $this->assertStringContainsString($creditNote->currency->format((float) $item->line_base), $html);
+        }
+    }
+
+    public function test_kegos_layout_titles_regular_invoices_as_invoice_for_every_type(): void
+    {
+        foreach (InvoiceTypeEnum::cases() as $type) {
+            $invoice = $this->boundInvoice(['type' => $type]);
+
+            $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
+
+            $this->assertStringContainsString('kg-doc-title">'.__('app.invoice_pdf_title').' ', $html, $type->value);
+        }
+    }
+
+    public function test_kegos_items_table_right_aligns_numeric_headers_and_zeroes_edge_padding(): void
+    {
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $this->boundInvoice(), 'qrDataUri' => null])->render();
+
+        $this->assertStringContainsString('<th class="num">'.__('app.invoice_pdf_item_total').'</th>', $html);
+        $this->assertStringContainsString('.kg-items th.num, .kg-items td.num { text-align: right; }', $html);
+        $this->assertStringContainsString('.kg-items th:first-child, .kg-items td:first-child { padding-inline-start: 0; }', $html);
+        $this->assertStringContainsString('.kg-items th:last-child, .kg-items td:last-child { padding-inline-end: 0; }', $html);
     }
 }

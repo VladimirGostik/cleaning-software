@@ -27,7 +27,6 @@ final class RecurringInvoiceFactory extends Factory
         return [
             'name' => fake()->company().' - Monthly cleaning',
             'type' => InvoiceTypeEnum::Monthly,
-            'template' => null,
             'frequency' => RecurringFrequencyEnum::Monthly,
             'day_of_month' => fake()->numberBetween(1, 28),
             'status' => RecurringInvoiceStatusEnum::Active,

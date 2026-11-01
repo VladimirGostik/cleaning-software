@@ -12,7 +12,6 @@ use App\Data\Invoices\InvoiceStatsData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceStatusEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentSourceEnum;
 use App\Models\CleaningObject;
@@ -107,10 +106,7 @@ final readonly class InvoiceService
 
             $client = $data->client_id !== null ? Client::findOrFail($data->client_id) : null;
             $object = $data->cleaning_object_id !== null ? CleaningObject::findOrFail($data->cleaning_object_id) : null;
-
-            $templateDefault = $tenant->interface->invoice_template ?? InvoiceTemplateEnum::Classic;
-
-            $attributes = $this->buildAttributes($data, $tenant, $client, $object, $templateDefault);
+            $attributes = $this->buildAttributes($data, $tenant, $client, $object);
             $invoice = Invoice::create($attributes);
 
             $this->syncItems($invoice, $data->items, $tenant->id, (bool) $tenant->is_vat_payer);
@@ -133,7 +129,7 @@ final readonly class InvoiceService
             $client = $data->client_id !== null ? Client::findOrFail($data->client_id) : null;
             $object = $data->cleaning_object_id !== null ? CleaningObject::findOrFail($data->cleaning_object_id) : null;
 
-            $attributes = $this->buildAttributes($data, $tenant, $client, $object, $invoice->template);
+            $attributes = $this->buildAttributes($data, $tenant, $client, $object);
 
             $invoice->update($attributes);
 
@@ -293,7 +289,6 @@ final readonly class InvoiceService
                 'credited_invoice_id' => $invoice->id,
                 'type' => $invoice->type,
                 'status' => InvoiceStatusEnum::Issued,
-                'template' => $invoice->template,
                 'number' => $creditNumber,
                 'variable_symbol' => $this->numberService->variableSymbol($creditNumber),
                 'issue_date' => now()->toDateString(),
@@ -386,7 +381,6 @@ final readonly class InvoiceService
                 'cleaning_object_id' => $invoice->cleaning_object_id,
                 'type' => $invoice->type,
                 'status' => InvoiceStatusEnum::Draft,
-                'template' => $invoice->template,
                 'number' => null,
                 'variable_symbol' => null,
                 'issue_date' => $today,
@@ -553,7 +547,6 @@ final readonly class InvoiceService
         Tenant $tenant,
         ?Client $client,
         ?CleaningObject $object,
-        InvoiceTemplateEnum $templateDefault,
     ): array {
         $customerName = $client->name ?? ($data->customer_name ?? '');
         $customerCountry = $client !== null ? $client->country : ($data->customer_country ?? 'SK');
@@ -563,7 +556,6 @@ final readonly class InvoiceService
             'cleaning_object_id' => $data->cleaning_object_id,
             'type' => $data->type,
             'status' => InvoiceStatusEnum::Draft,
-            'template' => $data->template ?? $templateDefault,
             'period_from' => $data->period_from,
             'period_to' => $data->period_to,
             'issue_date' => $data->issue_date,

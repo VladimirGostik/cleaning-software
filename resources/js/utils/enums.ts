@@ -25,8 +25,6 @@ export const INVOICE_STATUSES: readonly App.Enums.InvoiceStatusEnum[] = [
 
 export const INVOICE_TYPES: readonly App.Enums.InvoiceTypeEnum[] = ['monthly', 'one_off', 'special'];
 
-export const INVOICE_TEMPLATES: readonly App.Enums.InvoiceTemplateEnum[] = ['classic', 'modern', 'minimal'];
-
 export const PAYMENT_TYPES: readonly App.Enums.PaymentTypeEnum[] = ['transfer', 'cash', 'card', 'cod', 'other'];
 
 export const CURRENCIES: readonly App.Enums.CurrencyEnum[] = ['EUR', 'CZK', 'USD'];
@@ -66,10 +64,6 @@ export function invoiceStatusKey(status: App.Enums.InvoiceStatusEnum): string {
 
 export function invoiceTypeKey(type: App.Enums.InvoiceTypeEnum): string {
     return `invoice_type_${type}`;
-}
-
-export function invoiceTemplateKey(template: App.Enums.InvoiceTemplateEnum): string {
-    return `invoice_template_${template}`;
 }
 
 export function paymentTypeKey(type: App.Enums.PaymentTypeEnum): string {

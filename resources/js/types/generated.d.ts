@@ -922,7 +922,6 @@ readonly quote_id: string | null,
 readonly quote_number: string | null,
 readonly type: App.Enums.InvoiceTypeEnum,
 readonly status: App.Enums.InvoiceStatusEnum,
-readonly template: App.Enums.InvoiceTemplateEnum,
 readonly number: string | null,
 readonly variable_symbol: string | null,
 readonly period_from: string | null,
@@ -1051,7 +1050,6 @@ readonly postal_code: string | null,
 readonly country: string,
 readonly contact_email: string | null,
 readonly contact_phone: string | null,
-readonly invoice_template: App.Enums.InvoiceTemplateEnum,
 readonly invoice_number_format: string,
 readonly iban: string | null,
 readonly vat_rate: number | null,
@@ -1105,7 +1103,6 @@ export type InvoiceUpsertData = {
 readonly client_id: string | null,
 readonly cleaning_object_id: string | null,
 readonly type: App.Enums.InvoiceTypeEnum,
-readonly template: App.Enums.InvoiceTemplateEnum | null,
 readonly issue_date: string,
 readonly delivery_date: string,
 readonly due_date: string,
@@ -1422,7 +1419,6 @@ readonly auto_send: boolean,
 readonly start_date: string,
 readonly end_date: string | null,
 readonly type: App.Enums.InvoiceTypeEnum,
-readonly template: App.Enums.InvoiceTemplateEnum | null,
 readonly cleaning_object_id: string | null,
 readonly last_generated_at: string | null,
 readonly due_days: number,
@@ -1475,7 +1471,6 @@ readonly client_id: string | null,
 readonly cleaning_object_id: string | null,
 readonly name: string,
 readonly type: App.Enums.InvoiceTypeEnum,
-readonly template: App.Enums.InvoiceTemplateEnum | null,
 readonly frequency: App.Enums.RecurringFrequencyEnum,
 readonly day_of_month: number,
 readonly auto_issue: boolean,
@@ -1772,7 +1767,6 @@ export type ExpenseStatusEnum = "draft" | "confirmed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";
-export type InvoiceTemplateEnum = "classic" | "modern" | "minimal";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
 export type JobTypeEnum = "regular" | "one_off" | "special";

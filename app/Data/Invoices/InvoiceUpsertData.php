@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Data\Invoices;
 
 use App\Enums\CurrencyEnum;
-use App\Enums\InvoiceTemplateEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\RoundingModeEnum;
@@ -33,7 +32,6 @@ final class InvoiceUpsertData extends Data
         #[Required]
         public readonly InvoiceTypeEnum $type,
         #[Nullable]
-        public readonly ?InvoiceTemplateEnum $template,
         #[Required]
         public readonly string $issue_date,
         #[Required]

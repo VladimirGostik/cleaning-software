@@ -97,4 +97,49 @@ final class QuotePdfTest extends TestCase
 
         $this->assertStringContainsString('Cleaning service', $html);
     }
+
+    public function test_quote_renders_kegos_header_currency_format_and_tenant_footer(): void
+    {
+        $tenant = Tenant::factory()->create(['name' => 'Quote Footer s.r.o.', 'ico' => '11223344']);
+        $this->bindTenant($tenant);
+
+        $quote = app(QuoteService::class)->create(QuoteUpsertData::from([
+            'client_id' => null,
+            'cleaning_object_id' => null,
+            'subject' => 'Office cleaning',
+            'issue_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(30)->toDateString(),
+            'note' => null,
+            'items' => [new QuoteItemData(
+                id: null,
+                description: 'Cleaning service',
+                frequency: null,
+                quantity: 1,
+                unit: 'hod',
+                unit_price: 1250,
+                discount_percent: 0,
+                vat_rate: 23,
+            )],
+            'customer_name' => 'Acme s.r.o.',
+            'customer_email' => null,
+            'customer_street' => null,
+            'customer_city' => null,
+            'customer_postal_code' => null,
+            'number' => null,
+            'document_uuid' => null,
+            'kind' => QuoteKindEnum::Itemized->value,
+            'currency' => 'EUR',
+        ]), null, 'sess-1');
+        $quote->loadMissing(['items', 'client', 'cleaningObject']);
+
+        $html = View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])->render();
+        $footer = View::make('pdf.quotes.footer', ['tenant' => $tenant, 'preview' => false])->render();
+
+        $this->assertStringContainsString('aria-label="KEGOS"', $html);
+        $this->assertStringContainsString('class="kg-rule"', $html);
+        $this->assertStringContainsString("1\u{00A0}250,00\u{00A0}€", $html);
+        $this->assertStringContainsString('Quote Footer s.r.o.', $footer);
+        $this->assertStringContainsString('11223344', $footer);
+        $this->assertStringContainsString('class="totalPages"', $footer);
+    }
 }

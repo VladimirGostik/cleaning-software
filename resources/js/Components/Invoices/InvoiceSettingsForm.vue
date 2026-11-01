@@ -10,7 +10,7 @@ import FormActions from '@/Components/Forms/FormActions.vue';
 import InvoiceSettingsSupplierCard from './InvoiceSettingsSupplierCard.vue';
 import InvoiceSettingsBankCard from './InvoiceSettingsBankCard.vue';
 import InvoiceNumberFormatField from './InvoiceNumberFormatField.vue';
-import InvoiceTemplatePicker from './InvoiceTemplatePicker.vue';
+import InvoiceSettingsPreviewCard from './InvoiceSettingsPreviewCard.vue';
 import InvoiceSettingsSignatureCard from './InvoiceSettingsSignatureCard.vue';
 import InvoiceSettingsDefaultsCard from './InvoiceSettingsDefaultsCard.vue';
 import InvoiceSettingsTextsCard from './InvoiceSettingsTextsCard.vue';
@@ -33,7 +33,6 @@ interface InvoiceSettingsFormData {
     contact_email: string | null;
     contact_phone: string | null;
     peppol_participant_id: string | null;
-    invoice_template: App.Enums.InvoiceTemplateEnum;
     invoice_number_format: string;
     iban: string | null;
     vat_rate: number | null;
@@ -138,17 +137,6 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoice_settings_section_templates') }}</h2>
-                        <InvoiceTemplatePicker
-                            :model-value="form.invoice_template"
-                            :error="form.errors.invoice_template"
-                            @update:model-value="form.invoice_template = $event"
-                        />
-                    </div>
-                </div>
-
                 <InvoiceSettingsSignatureCard
                     :signature="signature"
                     :constraints="signatureConstraints"
@@ -171,6 +159,8 @@ function submit(): void {
                     :subject-error="form.errors.invoice_mail_subject"
                     :body-error="form.errors.invoice_mail_body"
                 />
+
+                <InvoiceSettingsPreviewCard />
 
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body space-y-2">

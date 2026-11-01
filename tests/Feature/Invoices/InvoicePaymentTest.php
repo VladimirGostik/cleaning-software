@@ -425,7 +425,7 @@ final class InvoicePaymentTest extends TestCase
         $render = function (Invoice $i): string {
             app()->setLocale('sk');
 
-            return view('pdf.invoices.classic', ['invoice' => $i->load('items'), 'qrDataUri' => null, 'signatureDataUri' => null])->render();
+            return view('pdf.invoices.kegos', ['invoice' => $i->load('items'), 'qrDataUri' => null, 'signatureDataUri' => null])->render();
         };
         $qr = app(PayBySquareService::class);
 

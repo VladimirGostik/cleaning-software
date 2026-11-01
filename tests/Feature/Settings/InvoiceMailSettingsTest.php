@@ -32,7 +32,6 @@ final class InvoiceMailSettingsTest extends TestCase
             'country' => 'SK',
             'contact_email' => 'billing@example.com',
             'contact_phone' => null,
-            'invoice_template' => 'classic',
             'invoice_number_format' => 'FA-{YYYY}-{XXXX}',
             'iban' => null,
             'vat_rate' => 20,

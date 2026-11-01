@@ -88,7 +88,6 @@ final readonly class RegistrationService
     {
         if ($source->interface !== null) {
             $target->interface?->forceFill([
-                'invoice_template' => $source->interface->invoice_template,
                 'recurring_default_state' => $source->interface->recurring_default_state,
                 'default_constant_symbol' => $source->interface->default_constant_symbol,
                 'default_payment_type' => $source->interface->default_payment_type,

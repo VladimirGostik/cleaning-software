@@ -34,7 +34,6 @@ final class InvoiceSettingsTest extends TestCase
             'country' => 'SK',
             'contact_email' => 'billing@example.com',
             'contact_phone' => '+421900000000',
-            'invoice_template' => 'modern',
             'invoice_number_format' => 'FA-{YYYY}-{XXXX}',
             'iban' => 'SK8975000000000123456789',
             'vat_rate' => 20,
@@ -61,7 +60,6 @@ final class InvoiceSettingsTest extends TestCase
             'client_id' => null,
             'cleaning_object_id' => null,
             'type' => 'one_off',
-            'template' => null,
             'issue_date' => now()->toDateString(),
             'delivery_date' => now()->toDateString(),
             'due_date' => now()->addDays(14)->toDateString(),
@@ -123,7 +121,6 @@ final class InvoiceSettingsTest extends TestCase
         $this->assertNotNull($interface);
         $this->assertSame('Updated Supplier s.r.o.', $tenant->name);
         $this->assertSame('SK8975000000000123456789', $tenant->iban);
-        $this->assertSame('modern', $interface->invoice_template->value);
         $this->assertSame('issued', $interface->recurring_default_state->value);
     }
 
@@ -155,19 +152,6 @@ final class InvoiceSettingsTest extends TestCase
 
         $interface = TenantInterface::query()->where('tenant_id', $tenant->id)->firstOrFail();
         $this->assertSame('draft', $interface->recurring_default_state->value);
-    }
-
-    public function test_updated_template_default_applies_to_next_invoice(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $this->actingAsTenantUser('Admin', $tenant);
-        $this->put(route('settings.invoicing.update'), $this->payload(['invoice_template' => 'minimal']));
-
-        $response = $this->post(route('invoices.store'), $this->invoicePayload());
-
-        $response->assertRedirect();
-        $invoice = Invoice::where('customer_name', 'Template Test')->firstOrFail();
-        $this->assertSame('minimal', $invoice->template->value);
     }
 
     public function test_update_persists_default_header_and_footer_text(): void
