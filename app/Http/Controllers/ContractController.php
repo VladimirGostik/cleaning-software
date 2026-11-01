@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Contracts\RendersContractPdf;
 use App\Data\Contracts\ContractCreatePrefillData;
 use App\Data\Contracts\ContractDetailData;
@@ -18,6 +17,7 @@ use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\CleaningObject;

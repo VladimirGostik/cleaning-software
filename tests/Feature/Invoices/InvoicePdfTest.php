@@ -234,10 +234,6 @@ final class InvoicePdfTest extends TestCase
         $this->assertStringContainsString('data:image/png;base64,Zm9v', $html);
     }
 
-    // -------------------------------------------------------------------------
-    // signature block
-    // -------------------------------------------------------------------------
-
     public function test_signature_block_renders_when_data_uri_present(): void
     {
         $invoice = $this->boundInvoice();

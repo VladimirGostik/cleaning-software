@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceListItemData;
 use App\Data\RecurringInvoices\RecurringInvoiceDetailData;
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;

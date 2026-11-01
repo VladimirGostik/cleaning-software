@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\Tasks\TaskAssignData;
 use App\Data\Tasks\TaskUpsertData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Task;
 use App\Models\User;

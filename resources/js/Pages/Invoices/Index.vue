@@ -84,10 +84,10 @@ const columns: TableColumn<App.Data.Invoices.InvoiceListItemData>[] = [
     { key: 'status', label: t('status'), sortable: true, nowrap: true },
     { key: 'type', label: t('type'), sortable: true, nowrap: true, hideBelow: 1440 },
     { key: 'customer_name', label: t('client'), sortable: true, primary: true },
-    { key: 'issue_date', label: t('invoice_pdf_issue_date'), sortable: true, nowrap: true, hideBelow: 1440 },
+    { key: 'issue_date', label: t('invoice_pdf_issue_date'), sortable: true, nowrap: true, hideBelow: 1600 },
     { key: 'due_date', label: t('invoice_col_due_date'), sortable: true, nowrap: true },
-    { key: 'total', label: t('invoice_payment_amount'), sortable: true, align: 'right', nowrap: true, hideBelow: 1600 },
-    { key: 'balance_due', label: t('invoice_col_balance'), align: 'right', nowrap: true },
+    { key: 'total', label: t('invoice_payment_amount'), sortable: true, align: 'right', nowrap: true },
+    { key: 'balance_due', label: t('invoice_col_balance'), align: 'right', nowrap: true, hideBelow: 1440 },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => {

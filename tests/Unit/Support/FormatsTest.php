@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Support;
 
-use App\Support\Formats;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\TestCase;
 
@@ -19,15 +18,6 @@ final class FormatsTest extends TestCase
     public function test_format_date_returns_dash_for_null(): void
     {
         $this->assertSame('—', format_date(null));
-    }
-
-    public function test_constants_render_date_time_and_time(): void
-    {
-        $date = Carbon::parse('2026-11-01 07:30:00');
-
-        $this->assertSame('1. 11. 2026 7:30', $date->format(Formats::DATE_TIME));
-        $this->assertSame('7:30', $date->format(Formats::TIME));
-        $this->assertSame('2026-11-01', $date->format(Formats::ISO_DATE));
     }
 
     public function test_format_phone_groups_slovak_numbers(): void

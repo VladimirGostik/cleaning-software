@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\ChangePasswordData;
 use App\Data\UpdateProfileData;
+use App\Enums\NavIconEnum;
 use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\McpTokenService;

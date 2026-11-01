@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersInvoicePdf;
 use App\Data\Invoices\InvoiceBulkLimitsData;
@@ -13,6 +12,7 @@ use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoicePaymentData;
 use App\Data\Invoices\InvoiceUpsertData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;

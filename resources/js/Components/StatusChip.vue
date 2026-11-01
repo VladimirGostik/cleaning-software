@@ -16,7 +16,7 @@ const resolvedIcon = computed(() => props.icon ?? TONE_ICON[props.tone]);
 </script>
 
 <template>
-    <span class="kg-chip" :class="[`kg-chip--${tone}`, { 'kg-chip--sm': size === 'sm' }]" role="status">
+    <span class="kg-chip" :class="[`kg-chip--${tone}`, { 'kg-chip--sm': size === 'sm' }]">
         <component :is="resolvedIcon" v-if="resolvedIcon" aria-hidden="true" />
         {{ label }}
     </span>

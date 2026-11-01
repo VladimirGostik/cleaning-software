@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\Contracts\MembershipOptionData;
 use App\Data\Schedule\JobAssignData;
 use App\Data\Schedule\JobCalendarFilterData;
@@ -14,6 +13,7 @@ use App\Data\Schedule\JobFormContextData;
 use App\Data\Schedule\JobStoreData;
 use App\Data\Schedule\JobUpdateData;
 use App\Data\Schedule\WorkBreakdownDetailData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\ScheduledJob;
 use App\Models\TenantMembership;

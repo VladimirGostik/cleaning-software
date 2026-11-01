@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Contracts\ResolvesSupplierSignature;
 use App\Data\Invoices\InvoiceSettingsData;
 use App\Data\Invoices\InvoiceSignatureConstraintsData;
 use App\Data\Tenants\TenantSignatureData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Tenant;
 use App\Navigation\NavItem;

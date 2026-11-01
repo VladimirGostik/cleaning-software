@@ -9,9 +9,9 @@ function render(props: Record<string, unknown>): HTMLElement {
 }
 
 describe('StatusChip', () => {
-    it('renders label, tone class and role', () => {
+    it('renders label and tone class', () => {
         const el = render({ tone: 'done', label: 'Zaplatená' });
-        expect(el.getAttribute('role')).toBe('status');
+        expect(el.getAttribute('role')).toBeNull();
         expect(el.classList.contains('kg-chip--done')).toBe(true);
         expect(el.textContent?.trim()).toBe('Zaplatená');
     });

@@ -6,6 +6,7 @@ namespace Tests\Feature\Settings;
 
 use App\Enums\PermissionEnum;
 use App\Models\Tenant;
+use App\Services\Pdf\InvoicePreviewData;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -39,7 +40,7 @@ final class InvoiceSettingsPreviewTest extends TestCase
 
         $this->get(route('settings.invoicing.preview'))->assertOk()->assertSee('@font-face', false)->assertSee('Geist', false);
 
-        $pdfHtml = view('pdf.invoices.kegos', ['invoice' => \App\Services\Pdf\InvoicePreviewData::make(), 'qrDataUri' => null])->render();
+        $pdfHtml = view('pdf.invoices.kegos', ['invoice' => InvoicePreviewData::make(), 'qrDataUri' => null])->render();
         $this->assertStringNotContainsString('@font-face', $pdfHtml);
     }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Documents;
 
-use App\Support\Formats;
 use App\Data\Contracts\ContractGenerateData;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\DocumentTypeEnum;
@@ -15,6 +14,7 @@ use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
+use App\Support\Formats;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\View;
 

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\DocumentTemplates\DocumentTemplateEditData;
 use App\Data\DocumentTemplates\DocumentTemplatePreviewData;
 use App\Data\DocumentTemplates\DocumentTemplateUpsertData;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\DocumentTemplate;
 use App\Models\Tenant;

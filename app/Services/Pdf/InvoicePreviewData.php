@@ -16,7 +16,6 @@ use Illuminate\Support\Collection;
 
 final readonly class InvoicePreviewData
 {
-    /** Build an unsaved Invoice model with fake snapshot data for the PDF preview. */
     public static function make(): Invoice
     {
         $invoice = (new Invoice)->forceFill([

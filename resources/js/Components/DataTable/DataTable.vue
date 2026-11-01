@@ -305,7 +305,7 @@ function confirmDelete(row: TRow, id: string | number) {
                     <template v-if="loading">
                         <tr v-for="i in skeletonCount" :key="`skeleton-${i}`">
                             <td v-if="selectable"><div class="skeleton size-4" /></td>
-                            <td v-for="column in resolvedColumns" :key="column.key">
+                            <td v-for="column in resolvedColumns" :key="column.key" :class="widthClass(column)">
                                 <div class="skeleton h-4 w-full" />
                             </td>
                             <td v-if="showActionsColumn"><div class="skeleton h-6 w-16 ml-auto" /></td>

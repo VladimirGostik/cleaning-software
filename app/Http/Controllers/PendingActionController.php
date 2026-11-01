@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\Ai\PendingActionData;
 use App\Enums\ConfirmationChannelEnum;
+use App\Enums\NavIconEnum;
 use App\Models\PendingAction;
 use App\Models\User;
 use App\Navigation\NavItem;

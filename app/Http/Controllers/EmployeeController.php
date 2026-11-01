@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\Employees\EmployeeDetailData;
 use App\Data\Employees\EmployeeDocumentConstraintsData;
 use App\Data\Employees\EmployeeDocumentData;
@@ -16,6 +15,7 @@ use App\Data\Employees\EmployeeStoreData;
 use App\Data\Employees\EmployeeUpdateData;
 use App\Data\RoleListItemData;
 use App\Enums\JobStatusEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Document;
 use App\Models\Role;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\Notifications\NotificationPreferencesData;
 use App\Data\Notifications\NotificationPreferencesUpdateData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\User;
 use App\Navigation\NavItem;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\MediaIndexFilterData;
 use App\Data\MediaListItemData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Media;
 use App\Navigation\NavItem;

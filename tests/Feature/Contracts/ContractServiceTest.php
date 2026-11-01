@@ -19,6 +19,7 @@ use App\Models\DocumentTemplate;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Services\ContractService;
+use App\Support\Formats;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -65,7 +66,7 @@ final class ContractServiceTest extends TestCase
         $this->assertStringContainsString('CleanCo s.r.o.', $contract->document?->body);
         $this->assertStringContainsString('Acme s.r.o.', $contract->document?->body);
         $this->assertStringContainsString('Hlavná 1, 811 01 Bratislava', $contract->document?->body);
-        $this->assertStringContainsString(now()->format(\App\Support\Formats::DATE), $contract->document?->body);
+        $this->assertStringContainsString(now()->format(Formats::DATE), $contract->document?->body);
         $this->assertSame(ContractStatusEnum::Draft, $contract->status);
     }
 

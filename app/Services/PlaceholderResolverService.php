@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Support\Formats;
 use App\Data\Contracts\PlaceholderTokenData;
 use App\Data\Invoices\InvoiceMailPlaceholderCatalogData;
 use App\Models\Invoice;
+use App\Support\Formats;
 
 /** Plain-text `{{token}}` substitution for invoice mail; documents use `DocumentTemplateRenderer`. */
 final readonly class PlaceholderResolverService

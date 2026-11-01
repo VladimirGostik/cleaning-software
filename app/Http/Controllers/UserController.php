@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Data\CreateUserData;
 use App\Data\RoleListItemData;
 use App\Data\UpdateUserData;
 use App\Data\UserAutocompleteItemData;
 use App\Data\UserListItemData;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Role;
 use App\Models\User;

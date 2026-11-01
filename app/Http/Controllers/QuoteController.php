@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\NavIconEnum;
 use App\Contracts\RendersQuotePdf;
 use App\Data\DocumentTemplates\DocumentTemplateOptionData;
 use App\Data\Quotes\QuoteAttachClientData;
@@ -14,6 +13,7 @@ use App\Data\Quotes\QuoteFormContextData;
 use App\Data\Quotes\QuoteTemplateOptionData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Enums\DocumentTypeEnum;
+use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
