@@ -65,13 +65,13 @@ function dismiss(): void {
                     <button
                         v-if="pickable"
                         type="button"
-                        class="badge badge-outline cursor-pointer"
+                        class="kg-chip kg-chip--neutral cursor-pointer"
                         :aria-label="t('document_missing_insert', { label: token.label })"
                         @click="emit('pick', token.key)"
                     >
                         {{ token.label }}
                     </button>
-                    <span v-else class="badge badge-outline">{{ token.label }}</span>
+                    <span v-else class="kg-chip kg-chip--neutral">{{ token.label }}</span>
                 </li>
             </ul>
         </div>

@@ -74,7 +74,7 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
     <Header :title="employee.display_name" :breadcrumbs="breadcrumbs">
         <template #actions>
             <ObjectStatusBadge :is-active="employee.is_active" />
-            <span v-if="employee.role_name" class="badge badge-primary badge-sm">{{ employee.role_name }}</span>
+            <span v-if="employee.role_name" class="kg-chip kg-chip--neutral kg-chip--sm">{{ employee.role_name }}</span>
         </template>
     </Header>
 

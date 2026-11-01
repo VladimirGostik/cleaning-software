@@ -108,7 +108,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
             >
                 <template #cell-roles="{ row }">
                     <div class="flex flex-wrap gap-1">
-                        <span v-for="role in row.roles" :key="role" class="badge badge-ghost badge-sm">
+                        <span v-for="role in row.roles" :key="role" class="kg-chip kg-chip--neutral kg-chip--sm">
                             {{ role }}
                         </span>
 
@@ -119,10 +119,10 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-is_active="{ value }">
-                    <span v-if="value" class="badge badge-success badge-sm">
+                    <span v-if="value" class="kg-chip kg-chip--done kg-chip--sm">
                         {{ t('membership_active') }}
                     </span>
-                    <span v-else class="badge badge-ghost badge-sm">
+                    <span v-else class="kg-chip kg-chip--neutral kg-chip--sm">
                         {{ t('inactive') }}
                     </span>
                 </template>

@@ -42,13 +42,13 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.quotes.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Quotes.QuoteListItemData>[] = [
-    { key: 'number', label: t('quote_pdf_number'), sortable: true },
-    { key: 'kind', label: t('quote_kind'), sortable: true },
-    { key: 'status', label: t('status'), sortable: true },
-    { key: 'customer_name', label: t('quote_col_customer'), sortable: false },
-    { key: 'object_name', label: t('quote_col_object'), sortable: false },
-    { key: 'valid_until', label: t('quote_valid_until'), sortable: true },
-    { key: 'total', label: t('invoice_pdf_total'), sortable: true, class: 'text-right' },
+    { key: 'number', label: t('quote_pdf_number'), sortable: true, nowrap: true },
+    { key: 'kind', label: t('quote_kind'), sortable: true, nowrap: true, hideBelow: 1440 },
+    { key: 'status', label: t('status'), sortable: true, nowrap: true },
+    { key: 'customer_name', label: t('quote_col_customer'), sortable: false, primary: true },
+    { key: 'object_name', label: t('quote_col_object'), sortable: false, hideBelow: 1440 },
+    { key: 'valid_until', label: t('quote_valid_until'), sortable: true, nowrap: true },
+    { key: 'total', label: t('invoice_payment_amount'), sortable: true, align: 'right', nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => {
@@ -160,7 +160,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
         <div class="card-body">
             <DataTable :columns="columns" :rows="quotes" :filters="filterDefinitions">
                 <template #cell-number="{ row }">
-                    <Link :href="`/quotes/${row.id}`" class="link link-hover font-mono font-medium">
+                    <Link :href="`/quotes/${row.id}`" class="link link-hover tabular-nums font-medium">
                         {{ row.number ?? t('quote_no_number') }}
                     </Link>
                 </template>

@@ -78,7 +78,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-mime_type="{ value }">
-                    <span v-if="value" class="badge badge-ghost badge-sm">{{ value }}</span>
+                    <span v-if="value" class="kg-chip kg-chip--neutral kg-chip--sm">{{ value }}</span>
                     <span v-else class="text-base-content/40">—</span>
                 </template>
 
@@ -87,7 +87,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-collection_name="{ value }">
-                    <span class="badge badge-outline badge-sm">{{ value }}</span>
+                    <span class="kg-chip kg-chip--neutral kg-chip--sm">{{ value }}</span>
                 </template>
 
                 <template #cell-model_type_label="{ row }">

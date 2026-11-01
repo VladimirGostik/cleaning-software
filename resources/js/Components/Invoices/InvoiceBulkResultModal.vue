@@ -19,10 +19,10 @@ const { t } = useI18n();
             <h3 class="text-lg font-bold">{{ t('invoice_bulk_result_title') }}</h3>
 
             <div class="mt-3 flex flex-wrap gap-2">
-                <span class="badge badge-success">{{
+                <span class="kg-chip kg-chip--done">{{
                     t('invoice_bulk_result_processed', { count: result.processed })
                 }}</span>
-                <span v-if="result.skipped.length" class="badge badge-warning">
+                <span v-if="result.skipped.length" class="kg-chip kg-chip--warning">
                     {{ t('invoice_bulk_result_skipped', { count: result.skipped.length }) }}
                 </span>
             </div>
@@ -37,7 +37,7 @@ const { t } = useI18n();
                     </thead>
                     <tbody>
                         <tr v-for="item in result.skipped" :key="item.id">
-                            <td class="font-mono">{{ item.number ?? t('invoice_draft_number') }}</td>
+                            <td class="tabular-nums">{{ item.number ?? t('invoice_draft_number') }}</td>
                             <td>{{ t(`invoice_bulk_skip_${item.reason}`) }}</td>
                         </tr>
                     </tbody>

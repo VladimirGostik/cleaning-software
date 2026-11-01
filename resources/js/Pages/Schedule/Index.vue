@@ -117,6 +117,13 @@ function clearFilters(): void {
 }
 
 watch(
+    () => ui.viewMode,
+    (mode) => {
+        if (mode === 'calendar') void calendar.reload();
+    },
+);
+
+watch(
     () => props.filters,
     () => {
         if (ui.viewMode === 'calendar') void calendar.reload();
@@ -127,11 +134,11 @@ watch(
 <template>
     <Header :title="t('schedule')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <div class="join" role="group" :aria-label="t('schedule_view_mode')">
+            <div class="tabs tabs-box" role="group" :aria-label="t('schedule_view_mode')">
                 <button
                     type="button"
-                    class="btn btn-sm join-item"
-                    :class="{ 'btn-active': ui.viewMode === 'list' }"
+                    class="tab"
+                    :class="{ 'tab-active': ui.viewMode === 'list' }"
                     :aria-pressed="ui.viewMode === 'list'"
                     @click="ui.viewMode = 'list'"
                 >
@@ -140,8 +147,8 @@ watch(
                 </button>
                 <button
                     type="button"
-                    class="btn btn-sm join-item"
-                    :class="{ 'btn-active': ui.viewMode === 'calendar' }"
+                    class="tab"
+                    :class="{ 'tab-active': ui.viewMode === 'calendar' }"
                     :aria-pressed="ui.viewMode === 'calendar'"
                     @click="ui.viewMode = 'calendar'"
                 >
@@ -160,15 +167,6 @@ watch(
         <span>{{ t('schedule_own_only_hint') }}</span>
     </div>
 
-    <TableFilters
-        :filters="filterDefinitions"
-        :query-filters="query.filters"
-        :disable-search="ui.viewMode === 'calendar'"
-        class="mb-4"
-        @change="changeFilter"
-        @clear="clearFilters"
-    />
-
     <EmptyState
         v-if="showEmptyState"
         :title="t('schedule_empty')"
@@ -180,22 +178,28 @@ watch(
         </template>
     </EmptyState>
 
-    <template v-else>
-        <div v-if="ui.viewMode === 'list'" class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <JobList :jobs="props.jobs" />
-            </div>
-        </div>
-
-        <div v-else>
-            <p class="mb-2 text-xs text-base-content/60">{{ t('schedule_calendar_filters_hint') }}</p>
-            <JobCalendar
-                :events="calendar.state.events"
-                :loading="calendar.state.loading"
-                :error="calendar.state.error"
-                @dates-set="calendar.load"
-                @retry="calendar.reload"
+    <div v-else class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <TableFilters
+                :filters="filterDefinitions"
+                :query-filters="query.filters"
+                :disable-search="ui.viewMode === 'calendar'"
+                @change="changeFilter"
+                @clear="clearFilters"
             />
+
+            <JobList v-if="ui.viewMode === 'list'" :jobs="props.jobs" />
+
+            <template v-else>
+                <p class="text-xs text-base-content/60">{{ t('schedule_calendar_filters_hint') }}</p>
+                <JobCalendar
+                    :events="calendar.state.events"
+                    :loading="calendar.state.loading"
+                    :error="calendar.state.error"
+                    @dates-set="calendar.loadIfChanged"
+                    @retry="calendar.reload"
+                />
+            </template>
         </div>
-    </template>
+    </div>
 </template>

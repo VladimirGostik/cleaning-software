@@ -56,11 +56,15 @@ final class NavigationRegistry
 
         foreach ($this->router->getRoutes()->getRoutes() as $route) {
             $controller = $route->getControllerClass();
-            $method = $route->getActionMethod();
-
-            if ($controller === null || $method === $controller) {
+            if ($controller === null) {
                 continue;
             }
+
+            $method = $route->getActionMethod();
+            if ($method === $controller) {
+                $method = '__invoke';
+            }
+
             if (! class_exists($controller) || ! method_exists($controller, $method)) {
                 continue;
             }

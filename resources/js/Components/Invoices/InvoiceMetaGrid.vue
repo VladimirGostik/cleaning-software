@@ -33,15 +33,15 @@ const { t } = useI18n();
 
         <div v-if="props.invoice.variable_symbol">
             <p class="text-xs text-base-content/50">{{ t('invoice_pdf_variable_symbol') }}</p>
-            <p class="font-mono">{{ props.invoice.variable_symbol }}</p>
+            <p class="tabular-nums">{{ props.invoice.variable_symbol }}</p>
         </div>
         <div v-if="props.invoice.constant_symbol">
             <p class="text-xs text-base-content/50">{{ t('invoice_pdf_constant_symbol') }}</p>
-            <p class="font-mono">{{ props.invoice.constant_symbol }}</p>
+            <p class="tabular-nums">{{ props.invoice.constant_symbol }}</p>
         </div>
         <div v-if="props.invoice.specific_symbol">
             <p class="text-xs text-base-content/50">{{ t('invoice_pdf_specific_symbol') }}</p>
-            <p class="font-mono">{{ props.invoice.specific_symbol }}</p>
+            <p class="tabular-nums">{{ props.invoice.specific_symbol }}</p>
         </div>
         <div v-if="props.invoice.period_from">
             <p class="text-xs text-base-content/50">{{ t('invoice_pdf_period') }}</p>

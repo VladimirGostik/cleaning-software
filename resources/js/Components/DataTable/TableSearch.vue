@@ -44,7 +44,7 @@ function clear() {
 
 <template>
     <div v-if="!disabled" class="join">
-        <label class="input input-sm input-bordered join-item flex items-center gap-2 min-w-64">
+        <label class="input input-sm join-item flex w-72 items-center gap-2">
             <KG_ICONS.adminAction.search class="size-5 opacity-50" />
             <input
                 :value="value"

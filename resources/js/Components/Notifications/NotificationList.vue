@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import CheckIcon from '~icons/material-symbols/check-outline-rounded';
 import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-outline-rounded';
 import DataTable from '@/Components/DataTable/DataTable.vue';
+import StatusChip from '@/Components/StatusChip.vue';
 import NotificationTypeBadge from './NotificationTypeBadge.vue';
 import { formatDatetime } from '@/utils/date';
 import type { Paginator, TableColumn } from '@/types';
@@ -79,12 +80,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         </template>
 
         <template #cell-read_at="{ row }">
-            <span
-                class="badge badge-sm"
-                :class="(row as NotificationRow).read_at === null ? 'badge-primary' : 'badge-ghost'"
-            >
-                {{ t((row as NotificationRow).read_at === null ? 'notifications_unread' : 'notifications_read') }}
-            </span>
+            <StatusChip
+                :tone="(row as NotificationRow).read_at === null ? 'planned' : 'neutral'"
+                :label="t((row as NotificationRow).read_at === null ? 'notifications_unread' : 'notifications_read')"
+                size="sm"
+            />
         </template>
 
         <template #buttons="{ row }">

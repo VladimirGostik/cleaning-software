@@ -80,14 +80,14 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.invoices.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Invoices.InvoiceListItemData>[] = [
-    { key: 'number', label: t('invoice_pdf_number'), sortable: true },
-    { key: 'status', label: t('status'), sortable: true },
-    { key: 'type', label: t('type'), sortable: true },
-    { key: 'customer_name', label: t('client'), sortable: true },
-    { key: 'issue_date', label: t('invoice_pdf_issue_date'), sortable: true },
-    { key: 'due_date', label: t('invoice_pdf_due_date'), sortable: true },
-    { key: 'total', label: t('invoice_pdf_total'), sortable: true, class: 'text-right' },
-    { key: 'balance_due', label: t('invoice_pdf_balance_due'), class: 'text-right' },
+    { key: 'number', label: t('invoice_col_number'), sortable: true, nowrap: true },
+    { key: 'status', label: t('status'), sortable: true, nowrap: true },
+    { key: 'type', label: t('type'), sortable: true, nowrap: true, hideBelow: 1440 },
+    { key: 'customer_name', label: t('client'), sortable: true, primary: true },
+    { key: 'issue_date', label: t('invoice_pdf_issue_date'), sortable: true, nowrap: true, hideBelow: 1440 },
+    { key: 'due_date', label: t('invoice_col_due_date'), sortable: true, nowrap: true },
+    { key: 'total', label: t('invoice_payment_amount'), sortable: true, align: 'right', nowrap: true, hideBelow: 1600 },
+    { key: 'balance_due', label: t('invoice_col_balance'), align: 'right', nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => {
@@ -226,7 +226,7 @@ function onSettingsSaved(): void {
                 :row-href="(row) => `/invoices/${row.id}`"
             >
                 <template #cell-number="{ row }">
-                    <Link :href="`/invoices/${row.id}`" class="link link-hover font-mono font-medium">
+                    <Link :href="`/invoices/${row.id}`" class="link link-hover tabular-nums font-medium">
                         {{ row.number ?? t('invoice_draft_number') }}
                     </Link>
                 </template>

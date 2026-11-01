@@ -17,7 +17,7 @@ const toneClass = computed<string>(
 <template>
     <button
         type="button"
-        class="rounded-box p-2 text-left hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        class="-mx-2 rounded-box p-2 text-left hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         :disabled="switchingTo !== null"
         @click="navigate(tenantId, stat.href)"
     >

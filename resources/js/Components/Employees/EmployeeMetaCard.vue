@@ -17,7 +17,9 @@ const { t } = useI18n();
                 <p>{{ formatDate(props.employee.joined_at) }}</p>
             </div>
 
-            <span v-if="props.employee.is_owner" class="badge badge-info badge-sm">{{ t('employee_owner') }}</span>
+            <span v-if="props.employee.is_owner" class="kg-chip kg-chip--planned kg-chip--sm">{{
+                t('employee_owner')
+            }}</span>
 
             <p v-if="props.employee.other_tenants_count > 0" class="text-base-content/70">
                 {{ t('employee_other_tenants', { count: props.employee.other_tenants_count }) }}
@@ -25,7 +27,7 @@ const { t } = useI18n();
 
             <div>
                 <p class="text-xs text-base-content/50">{{ t('employee_upcoming_jobs') }}</p>
-                <p class="font-mono">{{ props.employee.upcoming_jobs_count }}</p>
+                <p class="tabular-nums">{{ props.employee.upcoming_jobs_count }}</p>
             </div>
         </div>
     </div>

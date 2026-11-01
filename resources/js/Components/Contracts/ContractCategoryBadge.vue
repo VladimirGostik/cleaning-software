@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { contractCategoryKey } from '@/utils/enums';
 
-defineProps<{
+const props = defineProps<{
     category: App.Enums.ContractCategoryEnum;
 }>();
 
@@ -10,5 +11,5 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <span class="badge badge-sm badge-outline">{{ t(contractCategoryKey(category)) }}</span>
+    <StatusChip tone="neutral" :label="t(contractCategoryKey(props.category))" size="sm" />
 </template>

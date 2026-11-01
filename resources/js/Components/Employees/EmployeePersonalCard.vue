@@ -28,7 +28,7 @@ const address = computed(() => {
 
                 <div>
                     <p class="text-xs text-base-content/50">{{ t('employee_national_id') }}</p>
-                    <p class="font-mono">{{ personal.national_id_masked ?? t('empty_dash') }}</p>
+                    <p class="tabular-nums">{{ personal.national_id_masked ?? t('empty_dash') }}</p>
                 </div>
 
                 <div>

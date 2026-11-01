@@ -167,11 +167,11 @@ function submit(): void {
                 :class="fullscreen ? 'document-workspace--fullscreen' : 'lg:h-[calc(100dvh-18rem)] lg:min-h-[36rem]'"
             >
                 <div class="flex shrink-0 flex-wrap items-center gap-2">
-                    <div class="join" role="group" :aria-label="t('document_template_mode_label')">
+                    <div class="tabs tabs-box" role="group" :aria-label="t('document_template_mode_label')">
                         <button
                             type="button"
-                            class="btn join-item btn-sm"
-                            :class="{ 'btn-active': mode === 'edit' }"
+                            class="tab"
+                            :class="{ 'tab-active': mode === 'edit' }"
                             :aria-pressed="mode === 'edit'"
                             @click="mode = 'edit'"
                         >
@@ -179,8 +179,8 @@ function submit(): void {
                         </button>
                         <button
                             type="button"
-                            class="btn join-item btn-sm"
-                            :class="{ 'btn-active': mode === 'preview' }"
+                            class="tab"
+                            :class="{ 'tab-active': mode === 'preview' }"
                             :aria-pressed="mode === 'preview'"
                             @click="mode = 'preview'"
                         >

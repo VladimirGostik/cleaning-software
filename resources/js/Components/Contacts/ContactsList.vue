@@ -25,7 +25,7 @@ const { t } = useI18n();
                 <li v-for="contact in contacts" :key="contact.id ?? contact.name" class="text-sm">
                     <div class="flex items-center gap-2">
                         <span class="font-medium">{{ contact.name }}</span>
-                        <span v-if="contact.is_primary" class="badge badge-primary badge-xs">
+                        <span v-if="contact.is_primary" class="kg-chip kg-chip--planned kg-chip--sm">
                             {{ t('contact_is_primary') }}
                         </span>
                     </div>

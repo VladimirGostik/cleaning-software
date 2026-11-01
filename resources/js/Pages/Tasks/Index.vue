@@ -52,13 +52,13 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.tasks.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Tasks.TaskListItemData>[] = [
-    { key: 'title', label: t('task_title'), sortable: true },
+    { key: 'title', label: t('task_title'), sortable: true, primary: true },
     { key: 'status', label: t('status'), sortable: true },
     { key: 'priority', label: t('task_priority'), sortable: false },
     { key: 'due_at', label: t('task_due_at'), sortable: true },
     { key: 'tenant_name', label: t('task_company'), sortable: false },
     { key: 'assignee_name', label: t('task_assignee'), sortable: false },
-    { key: 'subject', label: t('task_subject'), sortable: false },
+    { key: 'subject', label: t('task_subject'), sortable: false, hideBelow: 1440 },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

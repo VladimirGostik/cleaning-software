@@ -22,7 +22,7 @@ const { t } = useI18n();
             <EmptyState v-if="objects.length === 0" :title="t('client_no_objects')" :icon="BuildingOffice2Icon" />
 
             <div v-else class="overflow-x-auto">
-                <table class="table table-zebra table-sm">
+                <table class="table table-sm">
                     <thead>
                         <tr>
                             <th>{{ t('name') }}</th>

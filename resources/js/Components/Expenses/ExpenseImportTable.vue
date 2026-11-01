@@ -53,7 +53,7 @@ function onCategory(row: ImportRow, value: string): void {
                     <td>{{ row.amount }}</td>
                     <td>
                         {{ row.counterparty ?? t('empty_dash') }}
-                        <span v-if="row.duplicate" class="badge badge-warning badge-sm ml-1">
+                        <span v-if="row.duplicate" class="kg-chip kg-chip--warning kg-chip--sm ml-1">
                             {{ t('expense_import_duplicate') }}
                         </span>
                     </td>

@@ -35,7 +35,7 @@ const { t } = useI18n();
                             {{ contract.title }}
                         </Link>
                         <p class="text-xs text-base-content/60">
-                            <span v-if="contract.number" class="font-mono">{{ contract.number }} · </span>
+                            <span v-if="contract.number" class="tabular-nums">{{ contract.number }} · </span>
                             {{ contract.contractable_label }} · {{ formatDate(contract.valid_from) }}
                         </p>
                     </div>

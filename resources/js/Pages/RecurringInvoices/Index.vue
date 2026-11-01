@@ -40,13 +40,13 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.recurringInvoices.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.RecurringInvoices.RecurringInvoiceListItemData>[] = [
-    { key: 'name', label: t('recurring_invoice_name'), sortable: true },
+    { key: 'name', label: t('recurring_invoice_name'), sortable: true, primary: true },
     { key: 'frequency', label: t('recurring_invoice_frequency'), sortable: true },
     { key: 'status', label: t('status'), sortable: true },
-    { key: 'next_run_at', label: t('recurring_invoice_next_run'), sortable: true },
+    { key: 'next_run_at', label: t('recurring_col_next_run'), sortable: true },
     { key: 'occurrences', label: t('recurring_invoice_occurrences'), sortable: false },
-    { key: 'auto_issue', label: t('recurring_invoice_auto_issue'), sortable: false },
-    { key: 'start_date', label: t('recurring_invoice_start_date'), sortable: false },
+    { key: 'auto_issue', label: t('recurring_invoice_auto_issue'), sortable: false, hideBelow: 1440 },
+    { key: 'start_date', label: t('recurring_invoice_start_date'), sortable: false, hideBelow: 1440 },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => {

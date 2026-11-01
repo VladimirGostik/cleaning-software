@@ -34,20 +34,19 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.employees.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Employees.EmployeeListItemData>[] = [
-    { key: 'last_name', label: t('name'), sortable: true, value: (r) => r.display_name },
-    { key: 'email', label: t('email'), sortable: false },
+    { key: 'last_name', label: t('name'), sortable: true, primary: true, value: (r) => r.display_name },
+    { key: 'email', label: t('email'), sortable: false, hideBelow: 1600 },
     { key: 'role_name', label: t('employee_role'), sortable: false },
-    { key: 'position', label: t('position'), sortable: false },
-    { key: 'employment_type', label: t('employee_employment_type'), sortable: false },
+    { key: 'position', label: t('position'), sortable: false, hideBelow: 1440 },
+    { key: 'employment_type', label: t('type'), sortable: false },
     {
         key: 'upcoming_jobs_count',
-        label: t('employee_upcoming_jobs'),
+        label: t('employee_col_upcoming_jobs'),
         sortable: false,
-        headerClass: 'text-right',
-        cellClass: 'text-right font-mono',
+        align: 'right',
     },
     { key: 'is_active', label: t('status'), sortable: true },
-    { key: 'joined_at', label: t('employee_joined_at'), sortable: true },
+    { key: 'joined_at', label: t('employee_joined_at'), sortable: true, hideBelow: 1440 },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

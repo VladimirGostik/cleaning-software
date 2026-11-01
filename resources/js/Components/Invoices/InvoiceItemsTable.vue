@@ -73,7 +73,7 @@ function lineTotal(index: number, row: InvoiceItemsTableRow): number {
                     {{ item.discount_percent > 0 ? `${item.discount_percent} %` : t('empty_dash') }}
                 </td>
                 <td v-if="props.isVatPayer" class="text-right">{{ item.vat_rate }} %</td>
-                <td class="text-right font-mono">{{ money(lineTotal(index, item), props.currency) }}</td>
+                <td class="text-right tabular-nums">{{ money(lineTotal(index, item), props.currency) }}</td>
             </tr>
         </tbody>
     </table>

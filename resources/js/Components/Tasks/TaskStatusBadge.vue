@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
+import type { StatusTone } from '@/Components/statusTone';
+import { KG_ICONS } from '@/icons/kegosIcons';
 import { taskStatusKey } from '@/utils/enums';
 
 const props = defineProps<{
@@ -9,15 +12,15 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const STYLE: Record<App.Enums.TaskStatusEnum, string> = {
-    open: 'badge-info',
-    done: 'badge-success',
-    cancelled: 'badge-ghost',
+const STATUS: Record<App.Enums.TaskStatusEnum, { tone: StatusTone; icon?: Component }> = {
+    open: { tone: 'planned' },
+    done: { tone: 'done' },
+    cancelled: { tone: 'neutral', icon: KG_ICONS.status.cancelled },
 };
 
-const badgeClass = computed(() => STYLE[props.status]);
+const entry = computed(() => STATUS[props.status]);
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="badgeClass">{{ t(taskStatusKey(status)) }}</span>
+    <StatusChip :tone="entry.tone" :icon="entry.icon" :label="t(taskStatusKey(props.status))" size="sm" />
 </template>

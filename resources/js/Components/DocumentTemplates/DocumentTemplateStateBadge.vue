@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { documentTemplateStateKey } from '@/utils/enums';
 
 const props = defineProps<{
@@ -8,10 +8,12 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-
-const toneClass = computed(() => (props.state === 'base_changed' ? 'badge-warning' : 'badge-outline'));
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="toneClass">{{ t(documentTemplateStateKey(state)) }}</span>
+    <StatusChip
+        :tone="props.state === 'base_changed' ? 'warning' : 'neutral'"
+        :label="t(documentTemplateStateKey(props.state))"
+        size="sm"
+    />
 </template>

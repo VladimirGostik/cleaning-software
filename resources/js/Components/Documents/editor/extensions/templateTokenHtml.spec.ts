@@ -100,7 +100,9 @@ describe('storedToReadonlyHtml', () => {
         const html = storedToReadonlyHtml('<p title="{{tenant.name}}">A {{tenant.name}}</p>', tokens);
 
         expect(html).toContain('title="{{tenant.name}}"');
-        expect(html).toContain('<span class="badge badge-info" data-template-token="tenant.name">Názov firmy</span>');
+        expect(html).toContain(
+            '<span class="kg-chip kg-chip--planned" data-template-token="tenant.name">Názov firmy</span>',
+        );
     });
 
     it('uses the key as label for an unknown token', () => {

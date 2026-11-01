@@ -24,7 +24,7 @@ const isSwitching = computed<boolean>(() => switchingTo.value === props.company.
             <h2 v-if="company.is_current" class="card-title items-center text-base">
                 <TenantColorDot :color="company.color" />
                 {{ company.name }}
-                <span class="badge badge-primary badge-sm">{{ t('dashboard_current_company') }}</span>
+                <span class="kg-chip kg-chip--planned kg-chip--sm">{{ t('dashboard_current_company') }}</span>
             </h2>
             <button
                 v-else
@@ -39,7 +39,7 @@ const isSwitching = computed<boolean>(() => switchingTo.value === props.company.
                 <ArrowsRightLeftIcon class="size-5 text-base-content/40" aria-hidden="true" />
                 <span v-if="isSwitching" class="loading loading-spinner loading-xs" />
             </button>
-            <span v-if="!company.supplier_complete" class="badge badge-warning badge-sm gap-1">
+            <span v-if="!company.supplier_complete" class="kg-chip kg-chip--warning kg-chip--sm gap-1">
                 <ExclamationTriangleIcon class="size-3" aria-hidden="true" />
                 {{ t('dashboard_supplier_incomplete') }}
             </span>

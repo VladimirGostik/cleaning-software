@@ -39,9 +39,9 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.templates.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.DocumentTemplates.DocumentTemplateListItemData>[] = [
-    { key: 'name', label: t('name'), sortable: true },
+    { key: 'name', label: t('name'), sortable: true, primary: true },
     { key: 'type', label: t('type'), sortable: true },
-    { key: 'scope', label: t('document_template_scope') },
+    { key: 'scope', label: t('document_template_scope'), hideBelow: 1440 },
     { key: 'is_active', label: t('status') },
     { key: 'updated_at', label: t('updated_at'), sortable: true },
 ];
@@ -122,7 +122,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 <template #cell-type="{ row }">
                     <div class="flex flex-wrap items-center gap-1">
                         <DocumentTypeBadge :type="row.type" />
-                        <span v-if="row.employment_type" class="badge badge-sm badge-ghost">{{
+                        <span v-if="row.employment_type" class="kg-chip kg-chip--neutral kg-chip--sm">{{
                             t(employmentTypeKey(row.employment_type))
                         }}</span>
                     </div>

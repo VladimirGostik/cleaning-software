@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
+import type { StatusTone } from '@/Components/statusTone';
+import { KG_ICONS } from '@/icons/kegosIcons';
 import { contractStatusKey } from '@/utils/enums';
 
 const props = defineProps<{
@@ -9,16 +12,16 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const BADGE_CLASS: Record<App.Enums.ContractStatusEnum, string> = {
-    draft: 'badge-ghost',
-    active: 'badge-success',
-    expired: 'badge-warning',
-    terminated: 'badge-error',
+const STATUS: Record<App.Enums.ContractStatusEnum, { tone: StatusTone; icon?: Component }> = {
+    draft: { tone: 'neutral', icon: KG_ICONS.status.draft },
+    active: { tone: 'done' },
+    expired: { tone: 'warning' },
+    terminated: { tone: 'danger' },
 };
 
-const badgeClass = computed(() => BADGE_CLASS[props.status]);
+const entry = computed(() => STATUS[props.status]);
 </script>
 
 <template>
-    <span class="badge badge-sm" :class="badgeClass">{{ t(contractStatusKey(status)) }}</span>
+    <StatusChip :tone="entry.tone" :icon="entry.icon" :label="t(contractStatusKey(props.status))" size="sm" />
 </template>

@@ -42,6 +42,16 @@ final class NavigationRegistryTest extends TestCase
         ], $childKeys);
     }
 
+    public function test_invokable_dashboard_is_the_first_top_level_item(): void
+    {
+        $admin = $this->actingAsTenantUser();
+
+        $navigation = app(NavigationRegistry::class)->forUser($admin);
+
+        $this->assertSame('dashboard', $navigation[0]->key);
+        $this->assertSame('/', $navigation[0]->href);
+    }
+
     public function test_user_without_view_permissions_does_not_see_restricted_children(): void
     {
         // 'Vedúca' template lacks ViewRoles / ViewAuditLogs / ViewMedia but keeps ViewEmployees,

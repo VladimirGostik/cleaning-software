@@ -51,12 +51,12 @@ const ui = reactive({
 });
 
 const columns: TableColumn<App.Data.Contracts.ContractListItemData>[] = [
-    { key: 'title', label: t('name'), sortable: true },
+    { key: 'title', label: t('name'), sortable: true, primary: true },
     { key: 'contractable_label', label: t('contract_contractable'), sortable: false },
-    { key: 'category', label: t('type'), sortable: true },
+    { key: 'category', label: t('type'), sortable: true, hideBelow: 1440 },
     { key: 'status', label: t('status'), sortable: true },
-    { key: 'term_type', label: t('contract_term_type'), sortable: false },
-    { key: 'valid_from', label: t('contract_valid_from'), sortable: true },
+    { key: 'term_type', label: t('contract_term_type'), sortable: false, hideBelow: 1440 },
+    { key: 'valid_from', label: t('contract_valid_from'), sortable: true, hideBelow: 1440 },
     { key: 'end_date', label: t('contract_end_date'), sortable: true },
 ];
 
@@ -147,7 +147,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
             <DataTable :columns="columns" :rows="contracts" :filters="filterDefinitions">
                 <template #cell-title="{ row }">
                     <Link :href="`/contracts/${row.id}`" class="link link-hover font-medium">{{ row.title }}</Link>
-                    <p v-if="row.number" class="font-mono text-xs text-base-content/60">{{ row.number }}</p>
+                    <p v-if="row.number" class="tabular-nums text-xs text-base-content/60">{{ row.number }}</p>
                 </template>
 
                 <template #cell-contractable_label="{ row }">

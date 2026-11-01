@@ -53,7 +53,9 @@ const customPropsJson = computed(() => {
                     <div class="py-2 flex justify-between">
                         <dt class="text-sm text-base-content/60">{{ t('mime_type') }}</dt>
                         <dd>
-                            <span v-if="media.mime_type" class="badge badge-ghost badge-sm">{{ media.mime_type }}</span>
+                            <span v-if="media.mime_type" class="kg-chip kg-chip--neutral kg-chip--sm">{{
+                                media.mime_type
+                            }}</span>
                             <span v-else class="text-base-content/40">—</span>
                         </dd>
                     </div>
@@ -64,7 +66,7 @@ const customPropsJson = computed(() => {
                     <div class="py-2 flex justify-between">
                         <dt class="text-sm text-base-content/60">{{ t('collection_name') }}</dt>
                         <dd>
-                            <span class="badge badge-outline badge-sm">{{ media.collection_name }}</span>
+                            <span class="kg-chip kg-chip--neutral kg-chip--sm">{{ media.collection_name }}</span>
                         </dd>
                     </div>
                     <div class="py-2 flex justify-between">

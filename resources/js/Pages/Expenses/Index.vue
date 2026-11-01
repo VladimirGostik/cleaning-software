@@ -47,7 +47,7 @@ const showEmptyState = computed(() => props.expenses.total === 0 && !hasActiveFi
 const columns: TableColumn<App.Data.Expenses.ExpenseListItemData>[] = [
     { key: 'date', label: t('expense_date'), sortable: true },
     { key: 'supplier_name', label: t('expense_supplier'), sortable: true },
-    { key: 'amount', label: t('expense_amount'), sortable: true },
+    { key: 'amount', label: t('expense_amount'), sortable: true, align: 'right' },
     { key: 'category', label: t('expense_category'), sortable: false },
     { key: 'status', label: t('status'), sortable: true },
     { key: 'source', label: t('expense_source'), sortable: false },

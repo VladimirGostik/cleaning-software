@@ -37,12 +37,12 @@ const hasActiveFilters = computed(() => Object.keys(readSpatieQuery().filters).l
 const showEmptyState = computed(() => props.clients.total === 0 && !hasActiveFilters.value);
 
 const columns: TableColumn<App.Data.Clients.ClientListItemData>[] = [
-    { key: 'name', label: t('name'), sortable: true },
-    { key: 'type', label: t('type'), sortable: true },
-    { key: 'ico', label: t('client_ico'), sortable: true },
-    { key: 'city', label: t('city'), sortable: true },
+    { key: 'name', label: t('name'), sortable: true, primary: true },
+    { key: 'type', label: t('type'), sortable: true, nowrap: true },
+    { key: 'ico', label: t('client_ico'), sortable: true, nowrap: true },
+    { key: 'city', label: t('city'), sortable: true, hideBelow: 1440 },
     { key: 'primary_contact_email', label: t('contact_is_primary'), sortable: false },
-    { key: 'objects_count', label: t('objects'), sortable: false },
+    { key: 'objects_count', label: t('objects'), sortable: false, align: 'right', nowrap: true },
 ];
 
 const filterDefinitions = computed<FilterConfig[]>(() => [

@@ -5,6 +5,10 @@ export interface TableColumn<TRow extends object = Record<string, unknown>> {
     label: string;
     sortable?: boolean;
     class?: string;
+    align?: 'left' | 'right';
+    primary?: boolean;
+    nowrap?: boolean;
+    hideBelow?: 1440 | 1600;
     headerClass?: string;
     cellClass?: string | ((row: TRow) => string | undefined);
     value?: (row: TRow) => unknown;

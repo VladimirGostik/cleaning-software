@@ -3,10 +3,9 @@ import { useI18n } from 'vue-i18n';
 import { readSpatieQuery } from './useSpatieTableQuery';
 import { parseFilterValue } from '@/Components/DataTable/filterOperators';
 
-export interface CalendarRange {
-    from: string;
-    to: string;
-}
+import { sameRange, type CalendarRange } from './calendarRange';
+
+export type { CalendarRange };
 
 // Calendar-relevant filters — a value that carries an operator prefix other than exact-match
 // ("!=", "<", "~", "between:" ...) is skipped: JobCalendarFilterData takes exact values only.
@@ -84,6 +83,11 @@ export function useJobCalendar() {
         }
     }
 
+    async function loadIfChanged(range: CalendarRange): Promise<void> {
+        if (sameRange(state.range, range)) return;
+        await load(range);
+    }
+
     async function reload(): Promise<void> {
         if (state.range) {
             await load(state.range);
@@ -92,5 +96,5 @@ export function useJobCalendar() {
 
     onBeforeUnmount(() => controller?.abort());
 
-    return { state, load, reload };
+    return { state, load, loadIfChanged, reload };
 }

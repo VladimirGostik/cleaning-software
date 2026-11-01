@@ -50,6 +50,13 @@ import ArrowDownward from '~icons/material-symbols/arrow-downward-rounded';
 import UnfoldMore from '~icons/material-symbols/unfold-more-rounded';
 import LinkRounded from '~icons/material-symbols/link-rounded';
 import ImageOutline from '~icons/material-symbols/image-outline-rounded';
+import EventRounded from '~icons/material-symbols/event-rounded';
+import TimelapseRounded from '~icons/material-symbols/timelapse-rounded';
+import CheckCircleRounded from '~icons/material-symbols/check-circle-rounded';
+import WarningRounded from '~icons/material-symbols/warning-rounded';
+import ErrorRounded from '~icons/material-symbols/error-rounded';
+import EditNoteRounded from '~icons/material-symbols/edit-note-rounded';
+import BlockRounded from '~icons/material-symbols/block';
 
 interface NavIcon {
     outline: Component;
@@ -82,6 +89,15 @@ export const NAV_ICONS: Record<App.Enums.NavIconEnum, NavIcon> = {
 };
 
 export const KG_ICONS = {
+    status: {
+        planned: EventRounded,
+        inProgress: TimelapseRounded,
+        done: CheckCircleRounded,
+        warning: WarningRounded,
+        danger: ErrorRounded,
+        draft: EditNoteRounded,
+        cancelled: BlockRounded,
+    },
     adminAction: {
         edit: EditOutline,
         delete: DeleteOutline,

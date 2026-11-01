@@ -14,7 +14,7 @@ const { t } = useI18n();
         <div class="card-body space-y-4">
             <h2 class="card-title text-base">
                 {{ t('work_breakdown_title') }}
-                <span v-if="props.breakdowns.length > 0" class="badge badge-ghost badge-sm">
+                <span v-if="props.breakdowns.length > 0" class="kg-chip kg-chip--neutral kg-chip--sm">
                     {{ props.breakdowns.length }}
                 </span>
             </h2>

@@ -128,7 +128,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
 <template>
     <div class="flex flex-col gap-4">
         <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
+            <table class="table w-full">
                 <thead>
                     <tr>
                         <th

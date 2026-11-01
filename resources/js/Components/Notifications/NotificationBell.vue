@@ -70,7 +70,11 @@ function markAllRead(): void {
         >
             <span class="indicator">
                 <BellIcon class="size-5" />
-                <span v-if="state.unreadCount > 0" class="indicator-item badge badge-error badge-xs" aria-hidden="true">
+                <span
+                    v-if="state.unreadCount > 0"
+                    class="indicator-item badge badge-xs border-0 bg-error text-error-content"
+                    aria-hidden="true"
+                >
                     {{ badgeText }}
                 </span>
             </span>

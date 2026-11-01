@@ -67,7 +67,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-event="{ value }">
-                    <span v-if="value" class="badge badge-ghost badge-sm">
+                    <span v-if="value" class="kg-chip kg-chip--neutral kg-chip--sm">
                         {{ value }}
                     </span>
                     <span v-else>-</span>

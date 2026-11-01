@@ -24,29 +24,29 @@ const { money } = useMoneyFormat();
     <dl class="space-y-2 text-sm">
         <div class="flex justify-between">
             <dt class="text-base-content/60">{{ t('invoice_pdf_subtotal') }}</dt>
-            <dd class="font-mono">{{ money(props.subtotal, props.currency) }}</dd>
+            <dd class="tabular-nums">{{ money(props.subtotal, props.currency) }}</dd>
         </div>
 
         <InvoiceVatRecap v-if="props.isVatPayer" :breakdown="props.vatBreakdown" :currency="props.currency" />
 
         <div v-if="props.roundingAmount !== 0" class="flex justify-between">
             <dt class="text-base-content/60">{{ t('invoice_pdf_rounding') }}</dt>
-            <dd class="font-mono">{{ money(props.roundingAmount, props.currency) }}</dd>
+            <dd class="tabular-nums">{{ money(props.roundingAmount, props.currency) }}</dd>
         </div>
 
         <div class="flex justify-between border-t border-base-300 pt-2 text-base font-bold">
             <dt>{{ t('invoice_pdf_total') }}</dt>
-            <dd class="font-mono">{{ money(props.total, props.currency) }}</dd>
+            <dd class="tabular-nums">{{ money(props.total, props.currency) }}</dd>
         </div>
 
         <template v-if="props.deposit > 0">
             <div class="flex justify-between">
                 <dt class="text-base-content/60">{{ t('invoice_pdf_deposit') }}</dt>
-                <dd class="font-mono">{{ money(props.deposit, props.currency) }}</dd>
+                <dd class="tabular-nums">{{ money(props.deposit, props.currency) }}</dd>
             </div>
             <div class="flex justify-between font-semibold">
                 <dt>{{ t('invoice_pdf_balance_due') }}</dt>
-                <dd class="font-mono">{{ money(props.balanceDue, props.currency) }}</dd>
+                <dd class="tabular-nums">{{ money(props.balanceDue, props.currency) }}</dd>
             </div>
         </template>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-rounded';
 import BuildingOfficeIcon from '~icons/material-symbols/corporate-fare-outline-rounded';
 import HomeIcon from '~icons/material-symbols/dashboard-outline-rounded';
@@ -13,13 +14,6 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const BADGE_CLASS: Record<App.Enums.ObjectTypeEnum, string> = {
-    office: 'badge-primary',
-    apartment: 'badge-secondary',
-    house: 'badge-accent',
-    common_areas: 'badge-info',
-};
-
 const ICON: Record<App.Enums.ObjectTypeEnum, object> = {
     office: BuildingOffice2Icon,
     apartment: BuildingOfficeIcon,
@@ -27,13 +21,9 @@ const ICON: Record<App.Enums.ObjectTypeEnum, object> = {
     common_areas: Squares2X2Icon,
 };
 
-const badgeClass = computed(() => BADGE_CLASS[props.type]);
 const icon = computed(() => ICON[props.type]);
 </script>
 
 <template>
-    <span class="badge badge-sm gap-1" :class="badgeClass">
-        <component :is="icon" class="size-3" />
-        {{ t(objectTypeKey(type)) }}
-    </span>
+    <StatusChip tone="neutral" :icon="icon" :label="t(objectTypeKey(props.type))" size="sm" />
 </template>

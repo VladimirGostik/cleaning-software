@@ -95,7 +95,7 @@ function logout() {
 
 function isActive(href: string): boolean {
     if (href === '/') {
-        return page.url === '/' || page.url === '';
+        return page.url.split('?')[0] === '/' || page.url === '';
     }
     return page.url.startsWith(href);
 }
@@ -168,7 +168,11 @@ function toastAlertClass(type: ToastMessage['type']): string {
                                     :class="{ active: isActive(item.href) }"
                                     class="flex items-center gap-2"
                                 >
-                                    <component :is="navIcon(item, isActive(item.href))" class="size-5" />
+                                    <component
+                                        :is="navIcon(item, isActive(item.href))"
+                                        class="size-5"
+                                        :class="isActive(item.href) ? 'text-primary-hover' : 'text-muted'"
+                                    />
                                     {{ translateLabel(item.label) }}
                                 </Link>
                             </li>
@@ -183,13 +187,22 @@ function toastAlertClass(type: ToastMessage['type']): string {
                                                 )
                                             "
                                             class="size-5"
+                                            :class="
+                                                item.children.some((c: NavigationItem) => isActive(c.href))
+                                                    ? 'text-primary-hover'
+                                                    : 'text-muted'
+                                            "
                                         />
                                         {{ translateLabel(item.label) }}
                                     </summary>
                                     <ul>
                                         <li v-for="child in item.children" :key="child.key">
                                             <Link :href="child.href" :class="{ active: isActive(child.href) }">
-                                                <component :is="navIcon(child, isActive(child.href))" class="size-5" />
+                                                <component
+                                                    :is="navIcon(child, isActive(child.href))"
+                                                    class="size-5"
+                                                    :class="isActive(child.href) ? 'text-primary-hover' : 'text-muted'"
+                                                />
                                                 {{ translateLabel(child.label) }}
                                             </Link>
                                         </li>

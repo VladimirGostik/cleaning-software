@@ -60,7 +60,7 @@ const isEmpty = computed<boolean>(() => sections.value.length === 0);
                         <h3 :id="`dashboard-alerts-${section.type}`" class="text-sm font-medium">
                             {{ section.label }}
                         </h3>
-                        <span class="badge badge-sm" :class="ALERT_TYPE_STYLE[section.type].badge">{{
+                        <span class="kg-chip kg-chip--sm" :class="`kg-chip--${ALERT_TYPE_STYLE[section.type].tone}`">{{
                             section.count
                         }}</span>
                     </div>

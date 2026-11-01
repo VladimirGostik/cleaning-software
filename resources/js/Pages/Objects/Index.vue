@@ -48,18 +48,23 @@ const showContactsColumn = computed(
 
 const columns = computed<TableColumn<App.Data.Objects.ObjectListItemData>[]>(() => {
     const definitions: TableColumn<App.Data.Objects.ObjectListItemData>[] = [
-        { key: 'name', label: t('name'), sortable: true },
+        { key: 'name', label: t('name'), sortable: true, primary: true },
         { key: 'type', label: t('type'), sortable: true },
         { key: 'client_name', label: t('client'), sortable: false },
-        { key: 'city', label: t('city'), sortable: true },
+        { key: 'city', label: t('city'), sortable: true, hideBelow: 1440 },
     ];
 
     if (showContactsColumn.value) {
-        definitions.push({ key: 'primary_contact_email', label: t('contact_is_primary'), sortable: false });
+        definitions.push({
+            key: 'primary_contact_email',
+            label: t('contact_is_primary'),
+            sortable: false,
+            hideBelow: 1600,
+        });
     }
 
     definitions.push(
-        { key: 'area_sqm', label: t('object_area_sqm'), sortable: false },
+        { key: 'area_sqm', label: t('object_area_sqm'), sortable: false, hideBelow: 1440 },
         { key: 'is_active', label: t('status'), sortable: true },
     );
 

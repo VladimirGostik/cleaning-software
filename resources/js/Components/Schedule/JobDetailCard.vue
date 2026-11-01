@@ -22,7 +22,7 @@ function slice5(value: string | null): string {
             <div class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div>
                     <p class="text-xs text-base-content/50">{{ t('date') }}</p>
-                    <p class="font-mono">{{ formatDate(props.job.scheduled_date) }}</p>
+                    <p class="tabular-nums">{{ formatDate(props.job.scheduled_date) }}</p>
                 </div>
 
                 <div>
@@ -70,7 +70,7 @@ function slice5(value: string | null): string {
                 </div>
 
                 <div v-if="props.job.is_invoiced">
-                    <span class="badge badge-success badge-sm">{{ t('schedule_invoiced') }}</span>
+                    <span class="kg-chip kg-chip--done kg-chip--sm">{{ t('schedule_invoiced') }}</span>
                 </div>
             </div>
         </div>

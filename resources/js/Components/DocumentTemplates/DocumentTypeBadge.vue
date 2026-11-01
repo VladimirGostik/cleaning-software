@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import StatusChip from '@/Components/StatusChip.vue';
 import { documentTypeKey } from '@/utils/enums';
 
-defineProps<{
+const props = defineProps<{
     type: App.Enums.DocumentTypeEnum;
 }>();
 
@@ -10,5 +11,5 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <span class="badge badge-sm badge-outline">{{ t(documentTypeKey(type)) }}</span>
+    <StatusChip tone="neutral" :label="t(documentTypeKey(props.type))" size="sm" />
 </template>

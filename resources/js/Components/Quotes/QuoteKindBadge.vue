@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
+import StatusChip from '@/Components/StatusChip.vue';
 import { quoteKindKey } from '@/utils/enums';
 
 const props = withDefaults(
@@ -12,18 +13,15 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+
+const missing = computed(() => props.kind === 'document' && !props.hasDocument);
+const label = computed(() =>
+    missing.value
+        ? `${t(quoteKindKey(props.kind))}: ${t('quote_document_missing_short')}`
+        : t(quoteKindKey(props.kind)),
+);
 </script>
 
 <template>
-    <span class="badge badge-sm badge-outline">
-        {{ t(quoteKindKey(props.kind)) }}
-        <ExclamationTriangleIcon
-            v-if="props.kind === 'document' && !props.hasDocument"
-            class="size-3 text-warning"
-            :title="t('quote_document_missing_short')"
-        />
-        <span v-if="props.kind === 'document' && !props.hasDocument" class="sr-only">
-            {{ t('quote_document_missing_short') }}
-        </span>
-    </span>
+    <StatusChip :tone="missing ? 'warning' : 'neutral'" :label="label" size="sm" />
 </template>
