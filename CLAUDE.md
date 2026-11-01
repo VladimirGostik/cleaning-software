@@ -151,7 +151,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - **Not built yet:** Claude web connectors and the Gmail flow need OAuth (Passport) and deployment; the `mcp` Bearer token works for local clients only.
 - **External prerequisites (not in the repo):**
   - Anthropic API key (`ANTHROPIC_API_KEY`, backend only).
-  - Firebase service account (`FIREBASE_CREDENTIALS`): project `kegos-clean`, local file `storage/app/private/firebase-credentials.json` (git-ignored), not set up for production yet.
+  - Firebase service account (`FIREBASE_CREDENTIALS`): project `kegos-clean`, local file `storage/app/private/firebase-credentials.json` (git-ignored); on Laravel Cloud the whole JSON sits in the variable, because the filesystem is ephemeral.
   - Apple Developer Program + APNs key: done 2026-11-01, key uploaded to Firebase; one test push reached an iPhone, the full flow from a real app notification and tapping it is not verified.
   - Domain and final `APP_ID` (open item, mobile repo).
 - **Task attachments (2026-11-01):** `/api/tasks/{task}/attachments` GET/POST and `/{attachment}` GET/DELETE (ability `mobile`). Direct multipart, one file per POST, no `/uploads` staging. 10 MB per file, 20 per task (`config/tasks.php`). PHP `upload_max_filesize=12M`, `post_max_size=14M` from `docker/php/uploads.ini`; a request over 14 MB gets 413. Throttle `task-attachments` 60/min. AI and MCP see only `attachments_count`.
