@@ -85,7 +85,7 @@ docker compose exec app php artisan app:grant-platform-admin <email>   # global 
 docker compose exec app php artisan app:encrypt-signed-pdfs --dry-run   # encrypt legacy plain signed PDFs; documents:sync-global-templates [--dry-run] [--force] pushes global template bodies to existing DBs; documents:verify-disk checks the documents disk end to end
 docker compose exec app pnpm test                         # vitest (236 tests, pure TS)
 docker compose exec app php artisan schedule:run          # trigger daily crons manually (MarkOverdueInvoices, GenerateRecurringInvoices, GenerateScheduledJobs, ExpireQuotes, CheckContractExpiry)
-# Schedule (Europe/Bratislava, production sleeps, so nothing more often than daily): everything 12:00, app:remind-tasks 19:00
+# Schedule (Slovak time all year, production sleeps, so nothing more often than daily): everything 12:00, app:remind-tasks 19:00. Cron holds both UTC hours because Cloud freezes cron in UTC at deploy; a `when` filter keeps the one matching local time
 pnpm api-types:export                                     # on the host (not in the container): copy generated TS types to the mobile repo (see "Mobile admin app and AI")
 # Browse Mailpit (queued invoices + notifications) at http://localhost:8026
 ```

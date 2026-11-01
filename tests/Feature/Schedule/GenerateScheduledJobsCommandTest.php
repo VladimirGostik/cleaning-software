@@ -100,6 +100,6 @@ final class GenerateScheduledJobsCommandTest extends TestCase
             ->filter(fn ($event) => str_contains($event->command ?? '', 'app:generate-scheduled-jobs'));
 
         $this->assertNotEmpty($matching);
-        $this->assertSame('0 12 * * *', $matching->sole()->expression);
+        $this->assertSame('0 10,11 * * *', $matching->sole()->expression);
     }
 }

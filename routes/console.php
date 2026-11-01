@@ -10,6 +10,7 @@ use App\Console\Commands\GenerateScheduledJobs;
 use App\Console\Commands\MarkOverdueInvoices;
 use App\Console\Commands\PurgeTemporaryUploadsCommand;
 use App\Console\Commands\RemindTasks;
+use Illuminate\Console\Scheduling\Event;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -18,14 +19,17 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-$timezone = 'Europe/Bratislava';
+// Laravel Cloud freezes cron in UTC at deploy, so a local-time event would miss its wake-up after a clock change.
+$atSlovakHour = static fn (Event $event, int $hour): Event => $event
+    ->cron(sprintf('0 %d,%d * * *', $hour - 2, $hour - 1))
+    ->when(static fn (): bool => now('Europe/Bratislava')->hour === $hour);
 
-Schedule::command(PurgeTemporaryUploadsCommand::class)->dailyAt('12:00')->timezone($timezone);
-Schedule::command(MarkOverdueInvoices::class)->dailyAt('12:00')->timezone($timezone);
-Schedule::command(GenerateRecurringInvoices::class)->dailyAt('12:00')->timezone($timezone);
-Schedule::command(ExpireQuotes::class)->dailyAt('12:00')->timezone($timezone);
-Schedule::command(CheckContractExpiry::class)->dailyAt('12:00')->timezone($timezone);
-Schedule::command(GenerateScheduledJobs::class)->dailyAt('12:00')->timezone($timezone);
-Schedule::command(ExpirePendingActions::class)->dailyAt('12:00')->timezone($timezone);
-Schedule::command('sanctum:prune-expired --hours=24')->dailyAt('12:00')->timezone($timezone);
-Schedule::command(RemindTasks::class)->dailyAt('19:00')->timezone($timezone)->withoutOverlapping();
+$atSlovakHour(Schedule::command(PurgeTemporaryUploadsCommand::class), 12);
+$atSlovakHour(Schedule::command(MarkOverdueInvoices::class), 12);
+$atSlovakHour(Schedule::command(GenerateRecurringInvoices::class), 12);
+$atSlovakHour(Schedule::command(ExpireQuotes::class), 12);
+$atSlovakHour(Schedule::command(CheckContractExpiry::class), 12);
+$atSlovakHour(Schedule::command(GenerateScheduledJobs::class), 12);
+$atSlovakHour(Schedule::command(ExpirePendingActions::class), 12);
+$atSlovakHour(Schedule::command('sanctum:prune-expired --hours=24'), 12);
+$atSlovakHour(Schedule::command(RemindTasks::class), 19)->withoutOverlapping();
