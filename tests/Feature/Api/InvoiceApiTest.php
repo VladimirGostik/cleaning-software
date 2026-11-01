@@ -61,6 +61,38 @@ final class InvoiceApiTest extends TestCase
         $this->assertNotContains($issued->id, (array) $ids);
     }
 
+    public function test_filters_by_search_over_number_and_customer(): void
+    {
+        $byNumber = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'number' => 'FA-7741', 'customer_name' => 'Zebra s.r.o.']);
+        $byCustomer = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'number' => 'FA-1000', 'customer_name' => 'Kvetinárstvo 7741']);
+        $other = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'number' => 'FA-2000', 'customer_name' => 'Iný odberateľ']);
+
+        $api = $this->apiAs($this->accountant, $this->alpha);
+
+        $ids = (array) $api->getJson('/api/invoices?filter[search]=7741')->assertOk()->json('data.*.id');
+        $this->assertEqualsCanonicalizing([$byNumber->id, $byCustomer->id], $ids);
+
+        $ids = (array) $api->getJson('/api/invoices?filter[search]=Iný')->assertOk()->json('data.*.id');
+        $this->assertSame([$other->id], $ids);
+    }
+
+    public function test_filters_by_issue_date_range(): void
+    {
+        $before = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'issue_date' => '2026-09-30']);
+        $first = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'issue_date' => '2026-10-01']);
+        $last = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'issue_date' => '2026-10-31']);
+        $after = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'issue_date' => '2026-11-01']);
+
+        $ids = (array) $this->apiAs($this->accountant, $this->alpha)
+            ->getJson('/api/invoices?filter[issue_date]=between:2026-10-01,2026-10-31')
+            ->assertOk()
+            ->json('data.*.id');
+
+        $this->assertEqualsCanonicalizing([$first->id, $last->id], $ids);
+        $this->assertNotContains($before->id, $ids);
+        $this->assertNotContains($after->id, $ids);
+    }
+
     public function test_shows_invoice_detail(): void
     {
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);
