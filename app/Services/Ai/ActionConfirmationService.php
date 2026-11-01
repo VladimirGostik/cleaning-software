@@ -104,10 +104,17 @@ final readonly class ActionConfirmationService
             'email' => $described['email'],
             'channel' => $channel,
             'status' => PendingActionStatusEnum::Pending,
-            'expires_at' => now()->addMinutes(config()->integer('ai.pending_action_ttl_minutes', 10)),
+            'expires_at' => now()->addMinutes($this->ttlMinutes($channel)),
         ]);
 
         return new PendingActionPreparedData(PendingActionData::fromModel($pending), $token);
+    }
+
+    private function ttlMinutes(ActionChannelEnum $channel): int
+    {
+        return $channel === ActionChannelEnum::TaskRun
+            ? config()->integer('ai.task_run.pending_action_ttl_minutes', 1440)
+            : config()->integer('ai.pending_action_ttl_minutes', 10);
     }
 
     public function resolveToken(User $user, string $token): PendingAction

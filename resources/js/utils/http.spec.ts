@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, getXsrfToken, postBlob, postJson } from './http';
+import { HttpError, getJson, getXsrfToken, postBlob, postJson } from './http';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -27,6 +27,25 @@ describe('getXsrfToken', () => {
         document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
 
         expect(getXsrfToken()).toBe('');
+    });
+});
+
+describe('getJson', () => {
+    it('requests JSON without a body and returns the payload', async () => {
+        fetchMock.mockResolvedValue(response('{"ok":true}', 200, { 'Content-Type': 'application/json' }));
+
+        await expect(getJson('/x')).resolves.toEqual({ ok: true });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe('/x');
+        expect(init?.method).toBeUndefined();
+        expect(init?.headers).toMatchObject({ Accept: 'application/json' });
+    });
+
+    it('throws HttpError with the status', async () => {
+        fetchMock.mockResolvedValue(response(null, 404, {}));
+
+        await expect(getJson('/x')).rejects.toMatchObject({ status: 404 });
     });
 });
 

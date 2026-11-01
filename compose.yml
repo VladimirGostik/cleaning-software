@@ -79,6 +79,7 @@ services:
             - vendor_data:/app/vendor
             - node_modules_data:/app/node_modules
         working_dir: /app
+        restart: unless-stopped
         environment:
             DB_CONNECTION: pgsql
             DB_HOST: postgres
@@ -100,6 +101,39 @@ services:
                 'sh',
                 '-c',
                 'while [ ! -f vendor/autoload.php ]; do sleep 1; done && php artisan queue:work --sleep=3 --tries=3 --max-time=3600',
+            ]
+
+    queue-ai:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        volumes:
+            - .:/app
+            - vendor_data:/app/vendor
+            - node_modules_data:/app/node_modules
+        working_dir: /app
+        restart: unless-stopped
+        environment:
+            DB_CONNECTION: pgsql
+            DB_HOST: postgres
+            DB_PORT: 5432
+            DB_DATABASE: cleanmaster_admin
+            DB_USERNAME: postgres
+            DB_PASSWORD: postgres
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            app:
+                condition: service_started
+        command:
+            [
+                'sh',
+                '-c',
+                'while [ ! -f vendor/autoload.php ]; do sleep 1; done && php artisan queue:work --queue=${AI_TASK_RUN_QUEUE:-ai} --sleep=3 --tries=1 --timeout=85 --max-time=3600',
             ]
 
     vite:

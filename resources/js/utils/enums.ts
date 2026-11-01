@@ -284,6 +284,10 @@ export function taskStatusKey(status: App.Enums.TaskStatusEnum): string {
     return `task_status_${status}`;
 }
 
+export function taskRunStatusKey(status: App.Enums.TaskRunStatusEnum): string {
+    return `task_run_status_${status}`;
+}
+
 export function taskPriorityKey(priority: App.Enums.TaskPriorityEnum): string {
     return `task_priority_${priority}`;
 }

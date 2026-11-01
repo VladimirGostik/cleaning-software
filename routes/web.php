@@ -33,7 +33,9 @@ use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ScheduledJobController;
 use App\Http\Controllers\TaskAttachmentController;
+use App\Http\Controllers\TaskCommentController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskRunController;
 use App\Http\Controllers\TemporaryUploadController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\UserController;
@@ -276,6 +278,11 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'show'])->name('tasks.attachments.show')->whereUuid(['task', 'attachment']);
     Route::delete('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('tasks.attachments.destroy')->whereUuid(['task', 'attachment']);
     Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:task-attachments')->name('tasks.attachments.store')->whereUuid('task');
+    Route::get('/tasks/{task}/thread', [TaskCommentController::class, 'thread'])->name('tasks.thread')->whereUuid('task');
+    Route::post('/tasks/{task}/comments', [TaskCommentController::class, 'store'])->middleware('throttle:task-comments')->name('tasks.comments.store')->whereUuid('task');
+    Route::delete('/tasks/{task}/comments/{comment}', [TaskCommentController::class, 'destroy'])->name('tasks.comments.destroy')->whereUuid(['task', 'comment']);
+    Route::get('/tasks/{task}/ai-run-status', [TaskRunController::class, 'status'])->name('tasks.ai-run-status')->whereUuid('task');
+    Route::post('/tasks/{task}/ai-runs', [TaskRunController::class, 'store'])->middleware('throttle:task-ai-runs')->name('tasks.ai-runs.store')->whereUuid('task');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::match(['PUT', 'PATCH'], '/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update')->whereUuid('task');

@@ -15,8 +15,10 @@ use App\Http\Controllers\Api\PendingActionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\TaskAttachmentController;
+use App\Http\Controllers\Api\TaskCommentController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TaskParseController;
+use App\Http\Controllers\Api\TaskRunController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +68,11 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:task-attachments')->name('api.tasks.attachments.store')->whereUuid('task');
     Route::get('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'show'])->name('api.tasks.attachments.show')->whereUuid(['task', 'attachment']);
     Route::delete('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('api.tasks.attachments.destroy')->whereUuid(['task', 'attachment']);
+    Route::get('/tasks/{task}/thread', [TaskCommentController::class, 'thread'])->name('api.tasks.thread')->whereUuid('task');
+    Route::post('/tasks/{task}/comments', [TaskCommentController::class, 'store'])->middleware('throttle:task-comments')->name('api.tasks.comments.store')->whereUuid('task');
+    Route::delete('/tasks/{task}/comments/{comment}', [TaskCommentController::class, 'destroy'])->name('api.tasks.comments.destroy')->whereUuid(['task', 'comment']);
+    Route::get('/tasks/{task}/ai-run-status', [TaskRunController::class, 'status'])->name('api.tasks.ai-run-status')->whereUuid('task');
+    Route::post('/tasks/{task}/ai-runs', [TaskRunController::class, 'store'])->middleware('throttle:task-ai-runs')->name('api.tasks.ai-runs.store')->whereUuid('task');
 
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('api.expenses.index');
     Route::get('/expenses/form-context', [ExpenseController::class, 'formContext'])->name('api.expenses.form-context');

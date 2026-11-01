@@ -11,4 +11,6 @@ export const NOTIFICATION_TYPE_STYLE: Record<App.Enums.NotificationTypeEnum, { t
     'quote.expired': { tone: 'danger', dot: 'bg-error' },
     'task.due': { tone: 'warning', dot: 'bg-warning' },
     'task.assigned': { tone: 'planned', dot: 'bg-primary' },
+    'task.commented': { tone: 'planned', dot: 'bg-primary' },
+    'task.ai_run': { tone: 'planned', dot: 'bg-primary' },
 };

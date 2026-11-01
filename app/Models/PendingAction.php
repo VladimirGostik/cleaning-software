@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $id
  * @property string $tenant_id
  * @property string $user_id
+ * @property string|null $task_run_id
  * @property PendingActionEnum $action
  * @property string $subject_type
  * @property string $subject_id
@@ -78,13 +79,13 @@ final class PendingAction extends Model
     }
 
     /**
-     * Assistant rows are always confirmed in the app (hard rule); MCP rows follow `ai.confirm_channels`, fail-closed to app-only.
+     * Assistant and task-run rows are always confirmed in the app (hard rule); MCP rows follow `ai.confirm_channels`, fail-closed to app-only.
      *
      * @return list<ConfirmationChannelEnum>
      */
     public function allowedConfirmationChannels(): array
     {
-        if ($this->channel === ActionChannelEnum::Assistant) {
+        if ($this->channel !== ActionChannelEnum::Mcp) {
             return [ConfirmationChannelEnum::App];
         }
 

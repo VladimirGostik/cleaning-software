@@ -199,15 +199,18 @@ export function useTaskAttachmentUpload(options: {
         }
     }
 
-    const removeBeforeListener = router.on('before', (event: { detail: { visit: { method: string; url: URL } } }) => {
-        const { method, url } = event.detail.visit;
+    const removeBeforeListener = router.on(
+        'before',
+        (event: { detail: { visit: { method: string; url: URL; async: boolean; only: string[] } } }) => {
+            const { method, url, async, only } = event.detail.visit;
 
-        if (!uploading.value || (method === 'post' && url.pathname === uploadPath)) {
-            return;
-        }
+            if (!uploading.value || (method === 'post' && url.pathname === uploadPath) || (async && only.length > 0)) {
+                return;
+            }
 
-        return window.confirm(t('task_attachment_leave_confirm'));
-    });
+            return window.confirm(t('task_attachment_leave_confirm'));
+        },
+    );
 
     function onBeforeUnload(event: BeforeUnloadEvent): void {
         if (uploading.value) {

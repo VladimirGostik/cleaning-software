@@ -8,6 +8,7 @@ import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import TaskAiRunBadge from '@/Components/Tasks/TaskAiRunBadge.vue';
 import TaskStatusBadge from '@/Components/Tasks/TaskStatusBadge.vue';
 import TaskPriorityBadge from '@/Components/Tasks/TaskPriorityBadge.vue';
 import TaskSubjectLink from '@/Components/Tasks/TaskSubjectLink.vue';
@@ -18,6 +19,7 @@ import { usePageProps } from '@/Composables/usePageProps';
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { readSpatieQuery } from '@/Composables/useSpatieTableQuery';
 import { formatDatetime } from '@/utils/date';
+import { isTaskRunListWorthy } from '@/utils/taskAi';
 import { TASK_PRIORITIES, TASK_STATUSES, taskPriorityKey, taskStatusKey } from '@/utils/enums';
 import type { Breadcrumb, Paginator } from '@/types';
 import type { FilterConfig, TableColumn } from '@/types/table';
@@ -143,7 +145,13 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-status="{ row }">
-                    <TaskStatusBadge :status="row.status" />
+                    <div class="flex flex-wrap items-center gap-1">
+                        <TaskStatusBadge :status="row.status" />
+                        <TaskAiRunBadge
+                            v-if="row.ai_run_status && isTaskRunListWorthy(row.ai_run_status)"
+                            :status="row.ai_run_status"
+                        />
+                    </div>
                 </template>
 
                 <template #cell-priority="{ row }">

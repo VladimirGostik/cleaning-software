@@ -37,6 +37,17 @@ return [
         'max_prepares_per_turn' => 5,
     ],
 
+    'task_run' => [
+        'queue' => env('AI_TASK_RUN_QUEUE', 'ai'),
+        'turn_seconds' => 45,
+        'step_seconds' => 25,
+        'pending_action_ttl_minutes' => 1440,
+        'stale_minutes' => 15,
+        'running_stale_seconds' => 120,
+        'context_comments' => 30,
+        'context_chars' => 12000,
+    ],
+
     'task_parse_max_chars' => 2000,
 
     'confirm_channels' => [

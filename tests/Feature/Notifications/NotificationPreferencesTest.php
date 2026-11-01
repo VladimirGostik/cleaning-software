@@ -22,7 +22,7 @@ final class NotificationPreferencesTest extends TestCase
 
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Settings/Notifications')
-            ->has('preferences.items', 10)
+            ->has('preferences.items', 12)
             ->where('preferences.items.2.type', 'invoice.overdue')
             ->where('preferences.items.2.mail', true)
             ->where('preferences.items.1.type', 'invoice.issued')

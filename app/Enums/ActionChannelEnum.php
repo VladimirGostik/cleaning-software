@@ -11,4 +11,5 @@ enum ActionChannelEnum: string
 {
     case Mcp = 'mcp';
     case Assistant = 'assistant';
+    case TaskRun = 'task_run';
 }
