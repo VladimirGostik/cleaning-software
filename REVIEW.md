@@ -16,12 +16,14 @@ Synced with `laravel-13-conventions/references/review-checks.md` §"Distilled ho
 8. `env()` only in `config/`; URLs via named route + `route()`.
 9. Eager-load accessed relations (`with` / `withCount`); no `Model::all()` in request paths.
 10. Events/jobs dispatched inside a transaction: `ShouldDispatchAfterCommit` / `->afterCommit()`.
+11. No comments that restate code — no prose docblocks, no `// Arrange` markers, no step narration; PHPDoc only for types PHP can't express (array shapes, generics). 1-line WHY only.
 
 **Per-project enforcement:**
 
 - **Auth profile:** rbac-full — Policies gate every action. Controllers use `#[Authorize($ability, $modelOrParam)]` attribute. Single authorization axis: RBAC permission only . Never use `role()` checks; always use `Can` component + `useAuthorization().allows(permission)`.
-- **Multi-tenancy:** row-level via `tenant_id` FK. Every domain model MUST have `tenant_id` UUID FK + `BelongsToTenant` trait + `TenantScope` global scope. **CRITICAL:** `setPermissionsTeamId($tenantId)` must be called before any role/permission lookup outside HTTP requests (jobs, console, seeders, tests).
+- **Multi-tenancy:** row-level via `tenant_id` FK. Every domain model MUST have `tenant_id` UUID FK + `BelongsToTenant` trait + `TenantScope` global scope (exceptions: global `Task` rows via `TaskScope`, nullable `notifications.tenant_id`, per-person `DeviceToken`). **CRITICAL:** `setPermissionsTeamId($tenantId)` must be called before any role/permission lookup outside HTTP requests (jobs, console, seeders, tests).
 - **TypeScript code generation:** `#[TypeScript]` attribute on all DTOs + Enums. `php artisan typescript:transform` generates `resources/js/types/generated.d.ts`. FE imports from there.
 - **Atomic transactions:** Multi-step operations (create owner, issue invoice, generate recurring invoice) wrapped in `DB::transaction` in Service (NEVER Controller). Events/jobs inside transaction must implement `ShouldDispatchAfterCommit`.
 - **Spatie Data DTO boundary:** Controllers accept DTO params with `#[Validation]` attributes. No inline `$request->validate()`. No FormRequest. No JsonResource.
 - **i18n via locale keys:** Every user-facing string via `__('<ns>.<key>')` from `lang/{sk,en,uk}/*.php`. Logs stay English.
+- **AI tool layer:** tools (`app/Mcp/Tools/*`) hold no business logic; they authorise through `Gate::forUser` inside `ToolContext` and delegate to services. `confirm_action` is MCP-only (never in the assistant toolbox, `AssistantToolbox::EXCLUDED`); `delete_global_task` is excluded there too. Irreversible actions go through `prepare_action` + confirmation, never a direct tool call.

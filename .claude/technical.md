@@ -1,5 +1,5 @@
 <!-- inogile:context-version=3 -->
-# Technical relationship map — cleaning-software @ rebuild (vue-skeleton fork)
+# Technical relationship map — cleaning-software @ main (vue-skeleton fork)
 
 ## Project type
 
@@ -7,7 +7,9 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 
 ## Stack snapshot
 
-**Backend:** Laravel 13.7 (PHP 8.5) + Inertia 3.0.6 (Vue 3 + TS + Tailwind 4 + DaisyUI 5) · Spatie Data 4.22 / Permission 7.4.1 (teams OFF, will enable teams=true, team_foreign_key=tenant_id on port) / Activitylog 5.0 (uuid morphs) / MediaLibrary 11.22 / QueryBuilder 7.2 / TypeScript-Transformer 3 · Sanctum 4.3.2 (Bearer API + uuidMorphs fix applied 2026-09-06) · Scribe 5.9 · Postgres 16 (compose) · PHPUnit 12 on Postgres `cleanmaster_admin_testing` (phpunit.xml force=true, init SQL docker/postgres/init-testing-db.sql) · 181 tests · Docker: `docker compose exec app php artisan …`
+**Backend:** Laravel 13.7 (PHP 8.5) + Inertia 3.0.6 (Vue 3 + TS + Tailwind 4 + DaisyUI 5) · Spatie Data 4.22 / Permission 7.4.1 (teams OFF, will enable teams=true, team_foreign_key=tenant_id on port) / Activitylog 5.0 (uuid morphs) / MediaLibrary 11.22 / QueryBuilder 7.2 / TypeScript-Transformer 3 · Sanctum 4.3.2 (Bearer API + uuidMorphs fix applied 2026-09-06) · Scribe 5.9 · Postgres 16 (compose) · PHPUnit 12 on Postgres `cleanmaster_admin_testing` (phpunit.xml force=true, init SQL docker/postgres/init-testing-db.sql) · 1726 tests / 7370 assertions at 884d0b5 (figures supplied by implementer, not re-run in the Phase 11 docs pass) · Docker: `docker compose exec app php artisan …`
+
+**Mobile + AI (Phase 11):** laravel/ai ^0.7.2 (Anthropic provider, `AI_MODEL` default `claude-sonnet-5-5`, `ANTHROPIC_API_KEY` backend only) · laravel/mcp ^0.7 (`/mcp` web server + `cleanmaster` local stdio server) · kreait/laravel-firebase ^7.2 (FCM via `FirebasePushSender`, `FIREBASE_CREDENTIALS`) · qpdf binary (`QpdfMerger`, bulk invoice PDF).
 
 **Frontend:** @inertiajs/vue3 ^3.0.3 + Vue ^3.5.33 + TS ^6 strict + Vite 8 + laravel-vite-plugin ^3 · NO Pinia (none today; will add for notifications/capabilities polling on port) · NO Ziggy (0 route() calls; all URLs string literals) · i18n = vue-i18n ^11 (legacy:false), messages bundled from resources/lang/{sk,en}/app.json + locale from Inertia prop (sk default, will add uk on port) · Theme: DaisyUI 5 themes:false + [data-theme='app-theme'] OKLCH token block in resources/css/app.css; Instrument Sans via bunny.net · Icons @heroicons/vue · Dates date-fns (utils/date.ts) · RichTextEditorInput @tiptap · ESLint 10 flat (no ref ban yet), Prettier, Lefthook pre-commit + pre-push vue-tsc. No FE test runner.
 
@@ -23,20 +25,20 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 - App\Services\RegistrationService (final readonly) — `createOwner(name, email, password, companyName, ico, ?TenantSupplierProfileData $supplier = null): User` → DB::transaction, User→Tenant (with supplier data if provided)→TenantInterface→TenantMembership→RoleTemplatesSeeder→Admin role assignment. `addTenant(User, AddTenantData): Tenant` → bootstrapTenant with null supplier (D1: redirect to settings.invoicing instead). `private bootstrapTenant(User, name, ico, color?, ?TenantSupplierProfileData $supplier = null): Tenant` — atomically seeds Tenant (supplier columns from DTO or defaults) + interface + membership + team-scoped role bundle.
 - App\Services\InvitationAcceptService — `resolve(token): TenantInvitation` (withoutGlobalScope), `accept(invitation, AcceptInvitationData, skipPasswordCheck?): User` — transaction: abort if non-acceptable (410), hash-check existing user (or create+verify new user), setPermissionsTeamId(invitation.tenant_id), create/reactivate membership, assign role, markAccepted, return user. **Critical:** role lookup happens inside the invitation's tenant context, not session tenant.
 - App\Services\RoleAssignmentGuard (final readonly) — `assertAssignable(User $actor, iterable<Role> $roles): void` — validates each role's permission set ⊆ actor's permissions; throws ValidationException if violated (privilege escalation guard for UserService::create/update).
-- App\Http\Middleware\TenantContextMiddleware — app middleware (appended after LocaleMiddleware, before HandleInertiaRequests). `handle` resolves tenantId per D5: X-Tenant-Id header (if uuid + active membership, else 403 `tenant_forbidden`) → session active_tenant_id → first active membership. If resolved: `app()->instance('current_tenant_id', $id)`, `setPermissionsTeamId($id)`, session bind. Unauth users pass through (no binding).
+- App\Http\Middleware\TenantContextMiddleware — app middleware (appended after LocaleMiddleware on web; **prepended before `SubstituteBindings` via `bootstrap/app.php` `prependToPriorityList`**, so route-model binding runs under the resolved tenant — security fix `6f08aa9`, absent on `main`). `handle` resolves tenantId per D5: X-Tenant-Id header (if uuid + active membership, else 403 `tenant_forbidden`) → session active_tenant_id → first active membership (**for a `mobile` token: first membership whose `TenantVisibility::mobileAccess` is true**). If resolved: `app()->instance('current_tenant_id', $id)`, `setPermissionsTeamId($id)`, session bind. **Phase 11:** `mobile` token in a resolved tenant without `access mobile app` → 403 `mobile_forbidden`. Unauth users pass through (no binding).
 - App\Http\Middleware\RequireActiveTenant — route middleware (`tenant.required`). Authenticated + no bound tenant → web: `Auth::logout()`, invalidate session, redirect login with error flash; API: 403 JSON `no_active_tenant`. Logout route still reachable (not gated).
-- App\Scopes\TenantScope — global scope on BelongsToTenant models. When `app()->bound('current_tenant_id')`: `where tenant_id = ?`; else unfiltered (D6: console/jobs/seeders run intentionally unbound).
+- App\Scopes\TenantScope — global scope on BelongsToTenant models. When `app()->bound('current_tenant_id')`: `where tenant_id = ?`; else unfiltered (D6: console/jobs/seeders run intentionally unbound). **Phase 11 exceptions to the BelongsToTenant invariant:** `Task` (own `TaskScope`, nullable `tenant_id`, see domain `tasks`), `Notification` (nullable `tenant_id` for system messages), `DeviceToken` (per person, no `tenant_id`, see domain `push`).
 - App\Concerns\BelongsToTenant — trait: `bootBelongsToTenant()` adds TenantScope + creating hook fills tenant_id from container; `tenant(): BelongsTo<Tenant,$this>`.
 
 **Satellites (BE):**
 - DTOs: Tenants/{AddTenantData (#[TypeScript]: full supplier profile fields + colour + copy_settings), TenantListItemData, TenantSupplierProfileData, TenantSwitchData (#[TypeScript]: redirect_to relative path optional, regex validator rejects absolute/proto URLs)}, Invitations/{AcceptInvitationData, InvitationAcceptPageData}, Auth/MeData, PermissionGroupData (grouped permission list for forms). TenantSupplierProfileData (#[TypeScript]): full supplier identity input (address_line, city, postal_code, country, dic, vat_number, is_vat_payer, contact_email, contact_phone, iban, swift_bic; name not included, handled by Tenant directly); two constants IBAN_PATTERN and SWIFT_BIC_PATTERN (regex, reused by InvoiceSettingsData for single-source-of-truth); `toTenantAttributes()` returns dict for Tenant::create; used by RegistrationService::createOwner + CreateOwner command + AddTenantData::toSupplierProfile(). AddTenantData: name, ico (required), dic/vat_number/is_vat_payer/address_line/city/postal_code/country/contact_email/contact_phone/iban/swift_bic (optional), colour (nullable TenantColorEnum), copy_settings (bool); `toSupplierProfile()` method converts to TenantSupplierProfileData. TenantSwitchData: optional redirect_to param for POST /tenants/{id}/switch (used to redirect after switch instead of dashboard default).
-- Enums: PermissionEnum (53 backed string cases, #[TypeScript]), TenantColorEnum (8 hex, #[TypeScript]), InvitationStatusEnum (pending/accepted/revoked/expired), InvitationAcceptStateEnum (4 states for FE: expired/wrong_user/existing_user/new_user), SupportedLanguage (now sk/en/uk with `getDefault()`, `getDisplayName()`, `isSupported()`).
+- Enums: PermissionEnum (61 backed string cases after Phase 11: +`AccessMobileApp`, +`ViewTasks`/`CreateTasks`/`EditTasks`/`DeleteTasks`/`ViewAllTasks`, +`ViewExpenses`/`ManageExpenses`; #[TypeScript]), TenantColorEnum (8 hex, #[TypeScript]), InvitationStatusEnum (pending/accepted/revoked/expired), InvitationAcceptStateEnum (4 states for FE: expired/wrong_user/existing_user/new_user), SupportedLanguage (now sk/en/uk with `getDefault()`, `getDisplayName()`, `isSupported()`).
 - Factories: TenantFactory (forOwner), TenantMembershipFactory (withProfile, inactive states), TenantInvitationFactory (accepted, expired, revoked states), TenantInterfaceFactory.
 - Seeders: PermissionSeeder (global catalogue from PermissionEnum), RoleTemplatesSeeder (per-tenant role bundles: Admin=all, Vedúca, Sekretárka, Účtovníčka, Interná upratovačka, Zákazník; `seedForTenant(Tenant)` idempotent, called post-bootstrap).
 - Policies: TenantPolicy::switchTo(User, Tenant) = active membership + active tenant. Deliberately no `create` (D4a exception: new tenant has no roles yet → circular RBAC).
 - Notifications: InvitationCreated (ShouldQueue, afterCommit, #[Tries(3)], mail-only, token + tenant_name + role_name in body).
 - Commands: CreateOwner (interactive prompts or flags: --name, --email, --password, --company, --ico + 11 optional supplier flags --address-line, --city, --postal-code, --country (default SK), --dic, --vat-number, --vat-payer (value-less), --contact-email, --contact-phone, --iban, --swift; validates via TenantSupplierProfileData::validateAndCreate before any DB write; calls RegistrationService::createOwner with built DTO).
-- Routes: POST /tenants (auth-only, no policy — D4a exception, documented, accepts AddTenantData), POST /tenants/{tenant}/switch (TenantPolicy, accepts TenantSwitchData with optional redirect_to param, redirects to $data->redirect_to ?? '/'), GET|POST /invitations/{token} (guest, throttle:invitation-accept on POST), GET /api/me (auth:sanctum, returns MeData with active tenant + permissions per team scope).
+- Routes: POST /tenants (auth-only, no policy — D4a exception, documented, accepts AddTenantData), POST /tenants/{tenant}/switch (TenantPolicy, accepts TenantSwitchData with optional redirect_to param, redirects to $data->redirect_to ?? '/'), GET|POST /invitations/{token} (guest, throttle:invitation-accept on POST), GET /api/me (in the `/api` group, see Cross-cutting "Mobile API surface"; returns MeData with active tenant + permissions per team scope).
 - Middleware: TenantContextMiddleware (app-level, D5 resolution), RequireActiveTenant (route `tenant.required`), plus bootstrap/app.php registers aliases.
 
 **FE Satellites (apply via FE agent plan phase-2-tenancy-fe.md):**
@@ -77,7 +79,7 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 - App\Services\UserService (final readonly, ctor DatabaseManager, PermissionRegistrar, RoleAssignmentGuard): `create(CreateUserData, User $actor): User` — transaction, setPermissionsTeamId(current_tenant_id), look up or create User by email, membership create/reactivate (is_active from DTO), `$guard->assertAssignable($actor, roles)`, syncRoles in tenant scope, return fresh User. `update(User, UpdateUserData, User $actor): User` — name/email/locale on User, is_active on membership, roles guard + syncRoles in tenant scope. `delete(User): void` — syncRoles([]), syncPermissions([]), delete tenant membership (User row never hard-deleted in phase 2).
 - App\Services\RoleService: `const SYSTEM_ROLES = [RoleTemplatesSeeder::ADMIN_ROLE]` · `create(name, permissions): Role` (check uniqueness inTenant + not in SYSTEM_ROLES) · `update(Role, name, permissions)` · `delete(Role)` (block SYSTEM_ROLES + Spatie guard) · `getPermissionsGrouped(): list<PermissionGroupData>` (from PermissionEnum cases grouped by group(), each item has id/name/label per PermissionItemData).
 - App\Services\ProfileService::updateProfile(User, UpdateProfileData): User — name/email/locale on User, session('locale') + app()->setLocale(). Locale sync via app()->setLocale() (user.locale consumer on login via LocaleMiddleware).
-- App\Enums\PermissionEnum (#[TypeScript], backed string) — 53 cases, grouped into 15 groups (employees, roles, audit_logs, api_docs, media, billing; phases 3+ add clients, objects, quotes, contracts, schedule, invoices, recurring_invoices, notifications, contract_templates). Methods: label(), group(), groupLabel(), sharedKey() (Str::camel($value)), values(). Key list in Phase 2 plan §3.1.
+- App\Enums\PermissionEnum (#[TypeScript], backed string) — 61 cases (Phase 11 added `access mobile app` in group `mobile`, five `tasks` cases incl. breadth `view all tasks`, and `view expenses` / `manage expenses` in group `expenses`), grouped via `group()` (employees, roles, audit_logs, api_docs, media, billing, notifications, mobile, tasks, expenses; phases 3+ add clients, objects, quotes, contracts, schedule, invoices, recurring_invoices, contract_templates). Methods: label(), group(), groupLabel(), sharedKey() (Str::camel($value)), values(). Seeded: `RoleTemplatesSeeder` — Admin = all; Vedúca = `access mobile app` + tasks (incl. view all); Sekretárka and Účtovníčka = tasks create/view/edit (Účtovníčka also expenses view/manage); Interná upratovačka and Zákazník = none. Existing tenants receive the new permissions via migration `2026_11_01_000100`.
 
 **Satellites (FE):**
 - Composables: usePageProps() (ComputedRef<SharedProps>), useAuthorization() (allows(PermissionEnum)).
@@ -112,7 +114,7 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 - GET /users/autocomplete?q= → UserController@autocomplete → whereHas('memberships', current_tenant) + ilike search → UserAutocompleteItemData[]; private const AUTOCOMPLETE_MIN_CHARS=2.
 - GET /roles → RoleController@index (#[Authorize(PermissionEnum::ViewRoles->value)]) → QueryBuilder::for(Role::inTenant(current_tenant_id)) → Inertia render Roles/Index {roles: Paginator<RoleDetailData>}. POST /roles → @store(CreateRoleData) → RoleService::create → Roles/Form {role?: RoleDetailData, permissions: PermissionGroupData[]}.
 - GET /profile → Inertia render Profile/Show (reads usePageProps().value.auth.user). PUT /profile → ProfileService::updateProfile. PUT /profile/password → Hash::check + update inline in controller (web + API).
-- API mirror (Sanctum): GET /api/users → same member-only query; GET|PUT|DELETE /api/users/{user}, GET|PUT /api/profile, PUT /api/profile/password → same services, JSON UserListItemData (paginated).
+- API mirror (Sanctum): GET /api/users → same member-only query; GET|PUT|DELETE /api/users/{user}, GET|PUT /api/profile, PUT /api/profile/password → same services, JSON UserListItemData (paginated). **Phase 11:** these routes sit in the `/api` group that requires `ability:mobile` (a web or MCP token gets 403).
 
 **Depends on:** tenancy (TenantMembership, tenant_id FK, setPermissionsTeamId discipline), auth layer (#[Authorize], Spatie can() per team scope), App\Utils\AllowedFilter, Activitylog, i18n (PermissionEnum labels).
 
@@ -131,6 +133,7 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 
 **Core:**
 - No model/service; controllers call Auth::attempt + multi-guard checks. Web: AuthController::showLogin/login(LoginData, Request)/logout. API: Api\AuthController::login(LoginData, Request)/logout (Sanctum Bearer). Password reset: PasswordResetLinkController::create|store(PasswordResetLinkData), NewPasswordController::create|store(NewPasswordData). Middleware guest/auth/auth:sanctum.
+- **Phase 11 API tokens:** `POST /api/auth/login` (group: HandlePrecognitiveRequests + locale.api) issues `createToken('mobile', ['mobile'])` only when `TenantPermissionSnapshot::hasMobileAccess($user)` (permission `access mobile app` in some active tenant); otherwise `Auth::logout()` + 422 on `email` with `mobile_forbidden`. `POST /api/auth/logout` (auth:sanctum, locale.api) — no ability gate. MCP tokens are a separate kind: `ProfileMcpTokenController` → `McpTokenService::create` issues ability `['mcp']`, expiry 180 days, max 10 per user; `findOwnMcpToken` resolves only own tokens whose abilities are exactly `['mcp']` (a `mobile` token is not found there).
 - **Login guards (D4):** Auth::attempt(['email' => …, 'password' => …, 'is_active' => true], remember) so inactive users fail indistinguishably from bad credentials + audit fires Failed event; then `if (! $user->hasActiveMembership()) { Auth::logout(); throw ValidationException::withMessages(['email' => [__('app.no_active_tenant')]]); }` (indistinguishable from no membership, deliberate per D4). API login same guards. Failure indistinguishable from bad credentials (failure still fires Failed event for audit).
 - App\Listeners\LogAuthenticationActivity — handleLogin|handleLogout|handleFailed → activity()->log('login'|'logout'|'login_failed') with ip (get_client_ip()), user_agent, email (event may not have user for login_failed). Wired AppServiceProvider (3 events: Login, Logout, Failed only). No attempt limit (no rate limiting per gotcha 9; future hardening).
 - RequireActiveTenant middleware (route `tenant.required`) ensures every authenticated HTTP request has a bound tenant via TenantContextMiddleware (D4). Mid-session membership deactivation → next request logs out web user / returns 403 API (transparent to user).
@@ -164,7 +167,7 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 ### audit-logs — Activitylog viewer
 
 **Core:**
-- App\Models\Activity extends Spatie\Activitylog\Models\Activity (D2) — `final class`, booted() creating hook sets `tenant_id ??= app('current_tenant_id')` (nullable for login/logout before tenant bound). Columns: morph subject/causer (uuid), batch_uuid (nullable), **tenant_id (uuid nullable, new)**, created_at, etc. Methods: `scopeVisibleInTenant(Builder, $tenantId): Builder` (tenant_id = ? OR tenant_id IS NULL AND causer is member of tenant); `isVisibleInTenant($tenantId): bool` (same predicate, single row). Config activitylog.php activity_model → `App\Models\Activity`, clean_after_days 365.
+- App\Models\Activity extends Spatie\Activitylog\Models\Activity (D2) — `final class`, booted() creating hook sets `tenant_id ??= app('current_tenant_id')` (nullable for login/logout before tenant bound). **Phase 11:** non-persisted `public bool $keepNullTenant` makes the hook skip the fill, so activity on global task rows (Task.tenant_id NULL) stays tenant-less even while a tenant is bound. Columns: morph subject/causer (uuid), batch_uuid (nullable), **tenant_id (uuid nullable, new)**, created_at, etc. Methods: `scopeVisibleInTenant(Builder, $tenantId): Builder` (tenant_id = ? OR tenant_id IS NULL AND causer is member of tenant); `isVisibleInTenant($tenantId): bool` (same predicate, single row). Config activitylog.php activity_model → `App\Models\Activity`, clean_after_days 365.
 - No service — QueryBuilder inline in AuditLogController@index: filters search (description/log_name/causer name+email), subject_type, created_at (date); sorts -created_at, description, causer_name (leftJoin users as causer_user); per_page. Results via Activity::visibleInTenant(current_tenant_id).
 - ActivityPolicy (viewAny|view → `can('view audit logs')`) gated per-record via `isVisibleInTenant` + record-level check. Registered explicitly in AuthServiceProvider::$policies.
 - Writers: User/Role/TenantMembership LogsActivity (logOnlyDirty, dontLogEmptyChanges where applicable), LogAuthenticationActivity (3 events: login/logout/login_failed; tenant_id set iff authenticated user + bound tenant, else null).
@@ -240,8 +243,8 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 
 **Core:**
 - App\Http\Controllers\Api\MeController (invokable, `GET /api/me`, Sanctum auth) — #[Group('Auth')], #[Authenticated], #[Endpoint('Me', ...)], #[ResponseFromSpatieData(MeData::class, User::class)]. Returns current user's active tenant + permissions.
-- App\Data\Auth\MeData (#[TypeScript]) — userId: string, activeTenantId: string (non-null: route behind tenant.required), permissions: PermissionEnum[] (derived from $user->getAllPermissions() filtered to active tenant team scope via PermissionRegistrar::setPermissionsTeamId before query; FE converts to union for type-safe checks).
-- Middleware: appended to api group as `['auth:sanctum', 'tenant.context', 'tenant.required']` (D5 resolution, post-Sanctum).
+- App\Data\Auth\MeData (#[TypeScript]) — **Phase 11:** userId, name, email, locale (SupportedLanguage), activeTenantId: string (non-null: route behind tenant.required), permissions: PermissionEnum[] (derived from $user->getAllPermissions() filtered to active tenant team scope via PermissionRegistrar::setPermissionsTeamId before query; FE converts to union for type-safe checks), companies: list<MobileCompanyData> (tenant_id, name, color, mobile_access, permissions per company, built from `TenantPermissionSnapshot::for($user)` in MeController).
+- Middleware: `/api` group order `auth:sanctum` → `locale.api` → `user.active` → `ability:mobile` → `tenant.context` → `tenant.required` (routes/api.php; Phase 11 — previously `['auth:sanctum', 'tenant.context', 'tenant.required']`).
 - No policy gate (returns caller's own capabilities, documented in controller).
 
 **Flow:**
@@ -249,9 +252,189 @@ laravel-be + inertia-fe (phase 2 tenancy complete: multi-tenant row-level scopin
 
 **Depends on:** tenancy (active tenant resolution), identity (user permissions per team).
 
-**Depended on by:** mobile app phase 2 (capabilities polling every 60s, not yet consumer in phase 2 web).
+**Depended on by:** mobile app (repo `cleaning-software-app`; consumer of MeData.companies and permissions — consumer code not verified in this repo).
 
 **Keywords:** api, sanctum, bearer, me, capabilities, tenant context, permissions per team.
+
+### tasks — firm and global tasks, assignment, reminders (Phase 11, 2026-11-01)
+
+**Core:**
+- App\Models\Task — UUIDv7 (HasUuids), LogsActivity, SoftDeletes, `#[ScopedBy(TaskScope::class)]`. **Not** BelongsToTenant: `tenant_id` nullable; NULL = global task owned by `created_by_user_id`. Columns (migration 2026_11_01_000200): tenant_id FK nullable → tenants (restrictOnDelete), created_by_user_id FK → users (restrictOnDelete), assigned_membership_id FK nullable → tenant_memberships (restrictOnDelete), status (TaskStatusEnum open/done/cancelled, default open), priority, due_at, remind_at, reminded_at, completed_at, source (TaskSourceEnum manual/voice/assistant/mcp), taskable_type + taskable_id (polymorphic, no FK). Indexes (tenant_id, status, due_at), (tenant_id, assigned_membership_id), (taskable_type, taskable_id).
+- App\Scopes\TaskScope (fail-closed): bound tenant's rows OR the authenticated user's own global rows (`tenant_id IS NULL AND created_by_user_id = auth id`); neither bound → `1 = 0`.
+- `Task::unscopedForSystem()` — the single scope bypass (`withoutGlobalScope(TaskScope::class)`). Callers: `TaskService::findForSystem`, `TaskService::sendReminder`, `RemindTasks`. Listeners and the confirm path load via `findForSystem`.
+- Task::scopeVisibleTo(User) / isVisibleTo(User): global rows only for their creator; firm rows need `view tasks`; `view all tasks` widens to every firm row; otherwise created-by-me or assigned to my active membership. `isGlobal()` = `tenant_id === null`.
+- App\Services\TaskService (final) — paginate, listAcrossCompanies, formContext, detail, assertMayCreate, create, update, complete, reopen, assign, delete, findForSystem, unassignForMembership(membership, onlyOpen = true), sendReminder.
+- App\Policies\TaskPolicy — viewAny, viewAnyAcrossCompanies, view, create(?tenantId), assignIn, update, delete (second layer for global ownership).
+- Enums: TaskStatusEnum, TaskPriorityEnum (low/normal/high), TaskSourceEnum (manual/voice/assistant/mcp).
+- Events: TaskAssigned, TaskDue (both `ShouldDispatchAfterCommit`). Listeners NotifyTaskAssigned / NotifyTaskDue → TaskAssignedNotification / TaskDueNotification (extend TaskNotification → BaseTenantNotification, queued).
+
+**Satellites:**
+- DTOs in: TaskUpsertData, TaskAssignData, TaskParseData. Out: TaskListItemData, TaskDetailData, TaskFormContextData, TaskDraftData, TaskCanData, TaskSubjectData, TaskMemberOptionData.
+- Command: App\Console\Commands\RemindTasks (`app:remind-tasks`, hourly, withoutOverlapping): open tasks with `remind_at <= now` and `reminded_at IS NULL` → `sendReminder` (claims the row with `UPDATE ... reminded_at`, dispatches TaskDue only when the claim succeeds).
+- Controllers: web TaskController (`/tasks`); API Api\TaskController + Api\TaskParseController (`/api/tasks`, see assistant).
+- MCP tools: list_tasks, get_task, create_task, update_task, complete_task, assign_task, delete_global_task (excluded from the assistant toolbox).
+
+**Flow:**
+- Create: TaskUpsertData → TaskPolicy::create (tenant or global) → TaskService::create (created_by = actor; `assigned_membership_id` prohibited when tenant_id null — DTO rule) → LogsActivity.
+- Assign: TaskAssignData → membership must belong to the task's tenant → TaskService::assign → TaskAssigned (after commit) unless the actor assigns to self.
+- Reminder: `app:remind-tasks` → TaskService::sendReminder → TaskDue (after commit) → NotifyTaskDue → TaskDueNotification.
+- Membership removal: EmployeeService (deactivate) and UserService (`unassignForMembership(onlyOpen: true)` on deactivate, `onlyOpen: false` on delete) release assignments so the restrict FK does not block.
+- Routes web: GET /tasks, GET|DELETE /tasks/{task}, POST /tasks/{task}/complete|reopen; with the write permission group: POST /tasks, PUT|PATCH /tasks/{task}, POST /tasks/{task}/assign. API under `/api` (ability:mobile): GET|POST /tasks, GET /tasks/form-context, GET|PUT|PATCH|DELETE /tasks/{task}, POST /tasks/{task}/complete|reopen|assign, POST /tasks/parse.
+
+**Depends on:** identity (`view|create|edit|delete tasks`, `view all tasks`), tenancy (tenant_id NOT scoped by BelongsToTenant; memberships FK), notifications (TaskAssigned/TaskDue channels), audit (LogsActivity; Activity keepNullTenant), pending-actions (`delete_task` prepare; global tasks refused by ActionConfirmationService::describe).
+
+**Depended on by:** EmployeeService, UserService (unassign), ActionConfirmationService (`delete_task` via findForSystem), NotifyTaskAssigned, NotifyTaskDue, RemindTasks, MCP task tools, AssistantTurn (write map for create/update/complete/assign).
+
+**If you change Core, check:**
+- `Task::unscopedForSystem()` callers: TaskService (findForSystem, sendReminder), RemindTasks, DeleteGlobalTaskTool via findForSystem. Any new bypass is a review finding.
+- TaskScope / scopeVisibleTo / isVisibleTo: tests/Unit/Scopes/TaskScopeTest.php, tests/Feature/Tasks/TaskScopingTest.php, tests/Feature/Tasks/GlobalTaskTest.php.
+- TaskSourceEnum consumers: CreateTaskTool (`mcp`), assistant path (`assistant`), TaskParseService.
+- AssistantTurn::WRITES keys (create_task, update_task, complete_task, assign_task) — tool names must match.
+- TaskStatusEnum / `status` values: TaskService transitions, ListTasksTool filters, FE TaskStatusBadge.
+
+**Keywords (SK):** úloha, task, globálna úloha, global task, priorita, pripomienka, reminder, remind_at, assign, priradiť, TaskScope, unscopedForSystem, created_by_user_id, view all tasks.
+
+### expenses — expense ledger, receipts, bank CSV import, AI proposals (Phase 11, 2026-11-01)
+
+**Core:**
+- App\Models\Expense — UUIDv7, BelongsToTenant (tenant_id NOT NULL, restrictOnDelete), InteractsWithMedia (receipt), LogsActivity, SoftDeletes. Columns (migration 2026_11_01_000500): created_by_user_id FK → users (restrictOnDelete), status (ExpenseStatusEnum draft/confirmed, default draft), category (ExpenseCategoryEnum, 12 values), source (ExpenseSourceEnum manual/receipt/bank_csv/mcp), date, amount, currency, supplier_name, external_hash (partial unique per tenant `WHERE external_hash IS NOT NULL AND deleted_at IS NULL` — CSV dedupe).
+- App\Services\ExpenseService (final) — paginate, listAcrossCompanies, formContext, detail, assertMayCreate, create/update (take sessionId for receipt staging), confirm (draft → confirmed, ExpenseConfirmData), delete, attachReceipt, analyze, analysisContext. `analyze` returns an ExpenseDraftData proposal and persists nothing.
+- App\Services\ExpenseImportService — preview(UploadedFile) and import(BankCsvImportData). Row cap 100 (BankCsvImportData `Max(100)`); preview rows capped by `ai.csv_preview_max_rows` (100); AI categorisation in batches of `ai.categorize_batch` (50). Mapping per tenant in `tenant_interfaces.bank_csv_mapping` (migration 2026_11_01_000600).
+- App\Services\Expenses\BankStatementParser (+ ParsedStatement, StatementExtraction, StatementRow) — CSV parsing.
+- AI port: `AnalyzesExpenses` contract → `LaravelAiExpenseAnalyzer` (bound in AppServiceProvider).
+- App\Policies\ExpensePolicy — `view expenses` / `manage expenses`.
+- Enums: ExpenseStatusEnum, ExpenseCategoryEnum, ExpenseSourceEnum.
+
+**Satellites:**
+- DTOs in: ExpenseUpsertData, ExpenseConfirmData, ExpenseAnalyzeData, ExpenseReceiptUploadData (mime list from `config/expenses.php` `receipt.allowed_mimes`, max 10240 KB default), BankCsvImportData, BankCsvMappingData, ExpenseImportUploadData. Out: ExpenseListItemData, ExpenseDetailData, ExpenseFormContextData, ExpenseDraftData, ExpenseProposalData, ExpenseCategoryProposalData, ExpenseImportPreviewData, ExpenseImportRowData, ExpenseImportResultData, ExpenseRowData.
+- Controllers: web ExpenseController (`/expenses`, import page, receipt, analyze, import preview/store); API Api\ExpenseController (`/api/expenses`).
+- Storage: receipts are Media on `config('expenses.disk')` = env `DOCUMENTS_DISK` (default local).
+- Throttle `ai-analyze` (20/min) on analyze and import preview (both web and API).
+- MCP tools: list_expenses, create_expense, update_expense. Delete is prepare-only (`delete_expense` via pending-actions).
+
+**Flow:**
+- Receipt/text analyze: ExpenseAnalyzeData → AnalyzesExpenses (sync AI call, see Cross-cutting "Sync AI calls") → ExpenseDraftData proposal → user saves via store (draft) → confirm → confirmed.
+- Bank CSV: preview (AI-categorised rows, ≤ 100) → import (`external_hash` dedupe, existing hashes skipped) → ExpenseImportResultData.
+- MCP/assistant creates expenses with `source = mcp` (CreateExpenseTool) and drafts stay `draft` until confirmed.
+
+**Depends on:** tenancy (BelongsToTenant), identity (`view|manage expenses`), media (receipt storage), AI (AnalyzesExpenses binding, `ai.*` config), audit (LogsActivity).
+
+**Depended on by:** Api\ExpenseController, ExpenseController (web), CreateExpenseTool / UpdateExpenseTool / ListExpensesTool, ActionConfirmationService (`delete_expense`), AssistantTurn (create/update expense writes).
+
+**If you change Core, check:**
+- ExpenseStatusEnum / ExpenseSourceEnum consumers: ExpenseService::confirm, ExpenseImportService, ExpenseDetailData, FE ExpenseStatusBadge.
+- external_hash partial unique index (migration 2026_11_01_000500): ExpenseImportService dedupe, tests/Feature/Expenses/BankCsvImportTest.php.
+- ExpenseReceiptUploadData mime/size list ↔ config/expenses.php ↔ FE FileInput (`resources/js/Components/Forms/FileInput.vue`).
+
+**Keywords (SK):** výdavok, expense, účtenka, receipt, bankový výpis, CSV import, kategória, draft, confirm, potvrdiť, external_hash, AI analýza, Expense ledger.
+
+### pending-actions — two-step confirmation of irreversible actions (Phase 11, 2026-11-01)
+
+**Core:**
+- App\Models\PendingAction — UUIDv7, tenant_id FK (restrictOnDelete), user_id FK → users (restrictOnDelete), subject morph (subject_type + uuid subject_id, no FK), action (PendingActionEnum), payload (jsonb), payload_hash, token_hash (char 64, unique, nullable), subject_hash, preview, subject_label, customer, total, email, channel (ActionChannelEnum mcp/assistant), status (PendingActionStatusEnum pending/executed/cancelled/expired), expires_at, executed_at, confirmed_via (ConfirmationChannelEnum chat/app). Indexes (user_id, status, expires_at), (subject_type, subject_id).
+- App\Services\Ai\ActionConfirmationService (final readonly):
+  - `prepare(User, tenantId, PendingActionEnum, Model $subject, payload, ActionChannelEnum)` → PendingActionPreparedData. Checks subject class + tenant, `Gate::forUser($user)->authorize($action->ability(), $subject)` inside ToolContext, preconditions (cancellable / editable / signable), describes the action, stores payload_hash + subject_hash. Token (random 40 chars, sha256 stored) only for channel `mcp`.
+  - `resolveToken(User, token)` — sha256 lookup; must belong to the user, be pending and unexpired.
+  - `execute(User, PendingAction, ConfirmationChannelEnum)` — transaction + `lockForUpdate`; assertExecutable (owner, pending, not expired, channel in allowed list, mobile token needs `access mobile app`); subject re-resolved (Task via findForSystem, tenant-checked); subject fingerprint mismatch or deleted subject → `PendingActionSubjectChangedException`, row cancelled; Gate re-authorised; payload_hash mismatch → 422 `status`; then status Executed + perform().
+  - `cancel(User, PendingAction)`, `pendingFor(User, ?tenantIds)`, `expireStale()`.
+- App\Enums\PendingActionEnum (9 cases): issue_invoice, send_invoice, send_quote, sign_contract, cancel_invoice, delete_invoice_draft, delete_quote, delete_task, delete_expense. Methods: subjectClass(), ability() (issue / send / sign / cancel / delete).
+- Config `config/ai.php`:
+  - `confirm_channels` per action: issue_invoice, send_invoice, send_quote = chat + app; sign_contract, cancel_invoice, delete_invoice_draft, delete_quote, delete_task, delete_expense = app only. Missing key → app only.
+  - Rows prepared on the assistant channel are app-only regardless of config (PendingAction::allowedConfirmationChannels).
+  - `pending_action_ttl_minutes` = 10 (row expiry). Not the MCP token lifetime (180 days, auth auth-domain).
+- Policy: App\Policies\PendingActionPolicy — viewAny, view, confirm, cancel (owner-scoped).
+
+**Satellites:**
+- Exception: App\Exceptions\PendingActionSubjectChangedException.
+- DTOs: PendingActionData (out; `confirm_in_app_only` flag), PendingActionPreparedData (MCP only, see Gotchas), ActionResultData (out after confirm).
+- Controllers: web PendingActionController (`/pending-actions`, POST confirm/cancel, execute with `ConfirmationChannelEnum::App`); API Api\PendingActionController (`/api/pending-actions`, same).
+- MCP: `prepare_action` (PrepareActionTool) returns the preview + one-time token; `confirm_action` (ConfirmActionTool) executes with `ConfirmationChannelEnum::Chat`.
+- Command: `cleanup:pending-actions` (ExpirePendingActions, hourly) → `expireStale()`.
+- Audit: each prepare / confirm / cancel / error writes a ToolAudit record (`ToolAudit::record`).
+
+**Flow:**
+1. Caller (MCP client or assistant) calls `prepare_action` → ActionConfirmationService::prepare → PendingAction (pending, preview with the company name, TTL 10 min). Assistant receives the row as `pending_action`.
+2. Confirmation: MCP `confirm_action` with token (chat allowed only for issue/send actions); or app via web/API POST confirm (app channel, all actions).
+3. Execution runs inside a transaction and re-checks fingerprint, payload hash, owner, state and permission. Stale subject cancels the row.
+
+**Depends on:** tenancy (ToolContext binds tenant + team), identity (`access mobile app`, per-action Policy abilities), invoices / quotes / contracts / tasks / expenses services (perform()), audit (ToolAudit).
+
+**Depended on by:** PrepareActionTool, ConfirmActionTool, PendingActionController (web + API), AssistantTurn (pending id), ExpirePendingActions, PendingActionData (FE Components/Ai/PendingActionRow.vue, Pages/PendingActions/Index.vue).
+
+**If you change Core, check:**
+- PendingActionEnum::subjectClass() / ability() ↔ Policies (InvoicePolicy, QuotePolicy, ContractPolicy, TaskPolicy, ExpensePolicy) — a missing ability is an authorisation bug at prepare and at execute.
+- ActionConfirmationService::perform() match arms ↔ PendingActionEnum cases (LogicException on mismatch).
+- `config/ai.php` confirm_channels keys ↔ PendingActionEnum values.
+- fingerprint(): attributes + items (+ quote client name). Adding a column to Invoice/Quote/Contract changes the fingerprint automatically — check that existing pending rows are not expected to survive a deploy.
+- tests/Feature/Mcp/ActionConfirmationTest.php (hash, expiry, channel, subject change).
+
+**Keywords (SK):** potvrdenie, confirm_action, prepare_action, dvojkrok, two-step, pending action, token, expirácia, odoslať faktúru, vystaviť faktúru, storno, zmazať.
+
+### push — device tokens and FCM notifications (Phase 11, 2026-11-01)
+
+**Core:**
+- App\Models\DeviceToken — UUIDv7, **per person**: user_id FK → users (restrictOnDelete); no tenant_id. personal_access_token_id FK nullable → personal_access_tokens (cascadeOnDelete: revoking the Sanctum token drops the device row). token string(255) unique, platform (DevicePlatformEnum android/ios), app_version (32, nullable), last_seen_at. Migration 2026_11_01_000400.
+- App\Services\DeviceTokenService — register(User, DeviceRegisterData, ?patId), unregister(User, token), removeAllFor(User), removeAllIfNoActiveMembership(User), removeTokens(array), hasTokens(User), tokensFor(User).
+- App\Notifications\Channels\FcmChannel — invoked from BaseTenantNotification::via when `pushEnabledFor(user)`. Sends only if the user has tokens AND `TenantPermissionSnapshot::hasMobileAccess($user, notification tenant)`. Builds PushMessage (title, body, route, tenantId, notificationId, badge from NotificationService::badgeFor). Exceptions are swallowed on purpose (a retry after partial multicast failure would re-send).
+- App\Contracts\SendsPush → App\Services\Push\FirebasePushSender (AppServiceProvider binding). Multicast; returns unusable tokens (SenderIdMismatch deliberately excluded — wrong project credentials must not wipe tokens). **Skips quietly** with log `push.skipped` when `config('firebase.projects.{default}.credentials')` is empty.
+- App\Services\Push\PushRoute — allowlist of mobile routes: `/tasks|invoices|quotes|expenses/{uuid}` and `/pending-actions`; anything else → `/notifications`.
+
+**Satellites:**
+- DTOs: DeviceRegisterData (token ≤ 255, app_version ≤ 32), DeviceUnregisterData, PushMessage, PushRoute (static).
+- Controller: Api\DeviceController — POST /api/devices and DELETE /api/devices, inside `/api` (ability:mobile) and `throttle:devices` (10/min per user).
+- Config: config/firebase.php (default project env `FIREBASE_PROJECT`, default `app`; credentials env `FIREBASE_CREDENTIALS`).
+- Mobile side (not in this repo): FCM token on both platforms via `@capacitor-firebase/messaging` — TODO verify in `cleaning-software-app`.
+
+**Flow:**
+- Register: mobile app → POST /api/devices (token, platform, app_version) → DeviceTokenService::register, linked to the current Sanctum token.
+- Send: domain event → NotifyX listener → notification queued (BaseTenantNotification, Tries 3) → channels: TenantDatabaseChannel, optional mail, FcmChannel → FirebasePushSender → invalid tokens removed.
+- Cleanup: EmployeeService (deactivate) and UserService (membership removed) call `removeAllIfNoActiveMembership(user)`; logout / token revocation cascades the row.
+
+**Depends on:** notifications (BaseTenantNotification, NotificationService::badgeFor), tenancy (TenantPermissionSnapshot::hasMobileAccess), auth (personal_access_tokens FK), config firebase (credentials), kreait/laravel-firebase.
+
+**Depended on by:** FcmChannel, EmployeeService, UserService, Api\DeviceController.
+
+**If you change Core, check:**
+- PushRoute pattern ↔ mobile router paths (cross-repo; changing a route breaks deep links from pushes).
+- DeviceToken per-person rule ↔ Rule 6 exception (Cross-cutting "Global task and per-person exceptions").
+- tests/Feature/Push/{DeviceRegistrationTest,DeviceCleanupTest,PushDeliveryTest,FirebasePushSenderTest}.php.
+
+**Keywords (SK):** push, FCM, device token, zariadenie, notifikácia, APNs, Firebase, PushRoute, deep link, badge, skipped.
+
+### assistant — in-app AI assistant over the MCP tool layer (Phase 11, 2026-11-01)
+
+**Core:**
+- POST /api/assistant/messages (Api\AssistantController, `throttle:assistant` 30/min per user). Gate `actIn` on `Tenant` with `company_id` (403 when the token has no mobile access in that company). AssistantRequestData: company_id, messages (1..20, each ≤ 4000 chars, total ≤ 12000; last one from user).
+- App\Services\AssistantService::reply → `ChatsWithTools` contract → App\Services\Ai\LaravelAiAssistant (AppServiceProvider binding). AiUnavailableException → 422 `ai`.
+- LaravelAiAssistant: builds App\Ai\Agents\AssistantAgent (`#[MaxSteps(6)]` + `maxSteps()` from `ai.assistant.max_steps`; `#[MaxTokens(2048)]`), toolbox from App\Ai\Tools\AssistantToolbox::make(turn), history normalised (must start with user, roles alternate; client-sent "assistant" messages are not trusted as proof of effects), system instructions with the company list from `TenantPermissionSnapshot::forRequest`.
+- App\Services\Ai\AssistantTurn — 45 s turn budget (`ai.assistant.turn_seconds`); records write effects (created/updated ids on allowlisted paths) and pending action ids in call order (first returned as `pending_action`; more than one → extra "open pending actions" link to /pending-actions).
+- App\Ai\Tools\McpToolAdapter — each tool call checks the turn deadline first (expired → error text, no start), runs the MCP tool, caps output at 20 000 chars (`ai.assistant.max_tool_output_chars`).
+- AssistantToolbox::toolClasses() = `CleanMasterServer::TOOLS` minus `EXCLUDED` (`confirm_action`, `delete_global_task`).
+- AiClientOptions: provider `ai.default` (anthropic), model `ai.model` (env AI_MODEL), per-prompt timeout `ai.assistant_timeout` (30 s), `isConfigured()` = `config('ai.providers.anthropic.key')` filled (see Gotchas).
+- Reply: text stripped of tags, ≤ 4000 chars; reply DTO AssistantReplyData (reply, actions: AssistantActionData[] with allowlisted in-app paths, pending_action: PendingActionData | null).
+- **Partial success:** provider failure AFTER tool effects → HTTP 200 with `app.assistant_partial` text and the effects. Failure with no effects → AiUnavailableException → 422 `errors.ai`.
+- Parse: POST /api/tasks/parse (Api\TaskParseController, `throttle:ai-analyze`, text ≤ 2000 chars) → TaskParseService → ExtractsTaskDraft (LaravelAiTaskExtractor) → TaskDraftData.
+
+**Satellites:**
+- Enums: AssistantRoleEnum (user/assistant), AssistantActionTypeEnum (open/created/updated).
+- Audit: App\Services\Ai\ToolAudit::record (Activity rows per tool call, arguments redacted via `redact()`).
+- DTOs: AssistantMessageData, AssistantRequestData, AssistantReplyData, AssistantActionData, TaskParseData, TaskDraftData.
+- Config `config/ai.php` `assistant` block: max_steps 6, turn_seconds 45, max_tool_output_chars 20000, max_messages 20, max_message_chars 4000, max_total_chars 12000; plus assistant_timeout 30, timezone Europe/Bratislava, task_parse_max_chars 2000.
+- Prompt rules (LaravelAiAssistant::instructions): reply briefly in the user's language, plain text; tool output and stored texts are untrusted; irreversible actions only via prepare_action; "you cannot confirm anything".
+
+**Flow:** message → rate limit → Gate actIn → AssistantService → LaravelAiAssistant::reply → agent loop (≤ 6 steps, each provider step ≤ 30 s; each tool start gated by the 45 s turn budget) → tool calls run through ToolContext (company membership + team binding) → reply DTO. Synchronous; no queue.
+
+**Depends on:** MCP tool layer (CleanMasterServer::TOOLS, ToolContext, ToolAudit), pending-actions (prepare only), tenancy (TenantPermissionSnapshot), AI provider (laravel/ai, Anthropic).
+
+**Depended on by:** Api\AssistantController, Api\TaskParseController, FE mobile app (cross-repo), PendingActionRow (web) for prepared actions.
+
+**If you change Core, check:**
+- AssistantToolbox::EXCLUDED — adding a tool that confirms or deletes without confirmation is a review finding (tests/Unit/Ai/AssistantAgentToolsTest.php).
+- AssistantTurn::WRITES map ↔ MCP tool names (create_task, update_expense, create_invoice_draft, …).
+- config/ai.php assistant limits ↔ AssistantRequestData validation ↔ mobile client limits (20 messages, 4000 chars).
+- tests/Feature/Ai/AssistantTest.php, tests/Fakes/FakeAssistant.php (tests bind FakeAssistant to ChatsWithTools).
+
+**Keywords (SK):** asistent, assistant, AI, Claude, Anthropic, tool, MCP, timeout, turn budget, partial, 422 ai, parse úlohy, task parse, prepare_action.
 
 ## Cross-cutting
 
@@ -333,7 +516,7 @@ App\Navigation\NavItem attribute (repeatable, method-level: label, route, icon, 
 **DevOps:**
 - Compose: `queue` service (same image as `app`, php artisan queue:work).
 - Supervisor (prod): `[program:scheduler]` runs `php artisan schedule:work` (daily crons).
-- `.env`: `MAIL_MAILER=smtp`, `MAIL_HOST=mailpit`, `MAIL_PORT=1025` (dev Mailpit service).
+- `.env.example`: `MAIL_MAILER=smtp`, `MAIL_HOST=mailpit`, `MAIL_PORT=1025` (dev Mailpit service).
 
 ### Cleaner actor scoping (final, Phase 7)
 
@@ -351,7 +534,7 @@ App\Navigation\NavItem attribute (repeatable, method-level: label, route, icon, 
 ### Mail (Mailpit in dev, smtp) — Phase 4
 
 **Backend:**
-- `.env.example` + `.env`: `MAIL_MAILER=smtp`, `MAIL_HOST=mailpit`, `MAIL_PORT=1025`, `MAIL_SCHEME=null` (no TLS for Mailpit).
+- `.env.example`: `MAIL_MAILER=smtp`, `MAIL_HOST=mailpit`, `MAIL_PORT=1025`, `MAIL_SCHEME=null` (no TLS for Mailpit).
 - Notifications: `InvoiceIssued` queued, via('mail') → customer_email, attach PDF.
 - Dev: browse Mailpit UI at `http://localhost:8026` to view sent mails + attachments.
 - Tests: `MAIL_MAILER=array` (phpunit.xml), Mail::fake() in tests.
@@ -426,6 +609,57 @@ add_routes=false; routes in routes/web.php:37-49 under auth + permission:view ap
 
 **TODO (out of scope Phase 8):**
 - Dashboard content (widgets, recent activity, notifications inbox summary).
+
+### AI tool layer (MCP server + assistant toolbox) — Phase 11
+
+- **One tool set, two callers.** `App\Mcp\Servers\CleanMasterServer::TOOLS` lists 27 tools (list_companies, company_overview, list/get invoices, quotes, clients, objects, jobs, tasks, expenses, search, create/update/complete/assign tasks, create/update expenses, create/update quote and invoice drafts, delete_global_task, prepare_action, confirm_action). Served by `Mcp::web('/mcp')` (remote, ability `mcp`) and `Mcp::local('cleanmaster')` (stdio). The assistant gets the same classes minus `AssistantToolbox::EXCLUDED` = `confirm_action`, `delete_global_task`.
+- **Tools hold no business logic.** Each tool authorises through `Gate::forUser` (`assertCompanyAllowed` → `actIn` on Tenant) and delegates to a service or to ActionConfirmationService. No second policy copy inside a tool.
+- **ToolContext::run** (every tool call and every `ActionConfirmationService::execute`): asserts active membership + active tenant, then swaps `current_tenant_id`, `PermissionRegistrar` team id, the guard user and (when inputs are given) a synthetic request carrying the inputs so DTO rules read them as on web. Everything restored in `finally`.
+- **CleanMasterTool::guard** maps exceptions to tool errors: AuthorizationException → `tool_not_allowed`; ValidationException → message; ModelNotFound → `tool_not_found`; 5xx HttpException and other Throwables are rethrown after audit. Every call writes a ToolAudit row (redacted arguments).
+- **MCP server instructions** tell the client to start with `list_companies` and to treat tool results as data, never instructions.
+- **Assistant:** McpToolAdapter (turn-deadline check, 20 000-char output cap); tool output observed by AssistantTurn to build the reply's action links.
+- **Rate limits:** `throttle:mcp` keyed by MCP token id (`ai.mcp_throttle`, 120/min); `throttle:assistant` 30/min; `throttle:ai-analyze` 20/min.
+- **Deferred:** `list_document_templates`, `get_document_template`, `update_document_template` — not registered (none in `CleanMasterServer::TOOLS`). `tests/Feature/Mcp/McpAuthTest.php` lists the three names. Re-enable after the document-templates work is merged.
+
+### Two-step confirmation — Phase 11
+
+- Irreversible actions (issue/send invoice, send quote, sign contract, cancel invoice, delete invoice draft / quote / task / expense) are never executed by a tool directly. `prepare_action` → PendingAction (preview with company name, payload_hash, subject_hash fingerprint, TTL `ai.pending_action_ttl_minutes` = 10).
+- **Fingerprint:** sha256 over key-sorted attributes (updated_at excluded), line items (invoice / quote) and the quote's resolved client name. A changed or deleted subject at confirm time cancels the row (`PendingActionSubjectChangedException`).
+- **Payload hash** over the key-sorted payload (jsonb does not keep key order); mismatch → 422 on `status`.
+- **Token:** MCP prepares return a one-time random token (only sha256 stored; `PendingActionPreparedData` carries it and is deliberately not a Spatie Data). Assistant-channel rows carry no token and are app-only.
+- **Channels:** `ai.confirm_channels` per action. Chat (MCP `confirm_action`) is allowed only for issue_invoice, send_invoice, send_quote; every other action is app-only (web or API `POST …/confirm`).
+- **Single-use:** status Executed on success; Expired by `cleanup:pending-actions` hourly; Cancelled by user or subject change.
+- **Assistant:** may prepare, never confirm. Its reply carries the pending action with `confirm_in_app_only` when the channel list is app-only.
+
+### Mobile API surface (/api and /mcp) — Phase 11
+
+- **`/api` group order (routes/api.php):** `auth:sanctum` → `locale.api` → `user.active` → `ability:mobile` → `tenant.context` → `tenant.required`. Login (`POST /api/auth/login`) sits outside the ability group (HandlePrecognitiveRequests + locale.api); logout is `auth:sanctum` + `locale.api` only.
+- **Routes in the ability group:** /me, /dashboard, /notifications (bell, list, read-all, read), /invoices (+pdf), /quotes (+pdf), /devices (throttle `devices` 10/min), /assistant/messages (throttle `assistant`), /tasks (+parse under `ai-analyze`), /expenses (analyze + import preview under `ai-analyze`; import, store, show, update, delete, confirm, receipt), /pending-actions (list, confirm, cancel), /profile, /users.
+- **`/mcp` group order (routes/ai.php):** `auth:sanctum` → `locale.api` → `user.active` → `ability:mcp` → `throttle:mcp`. Tokens with only `mcp` ability; a `mobile` token is rejected.
+- **Tenant context before route binding:** `bootstrap/app.php` prepends TenantContextMiddleware before `SubstituteBindings`, so scoped route bindings (for example `/tasks/{task}` via TaskScope, `/pending-actions/{pendingAction}`) resolve under the caller's tenant. Security fix `6f08aa9`; `main` lacks it.
+- **Tenant selection:** `X-Tenant-Id` header (must be a membership the caller holds, else 403 `tenant_forbidden`) → session → first membership (filtered by mobile access for mobile tokens). Mobile token in a company without `access mobile app` → 403 `mobile_forbidden`.
+- **Errors:** validation → 422 with field keys (`errors.ai` when the provider is unavailable, `errors.status` for pending-action state, `errors.token` for bad MCP tokens); no active membership → 403 `no_active_tenant`.
+- Scribe docs cover the `Assistant` group and ResponseFromSpatieData shapes.
+
+### Global task and per-person exceptions (rule 6) — Phase 11
+
+Rule 6 (`BelongsToTenant` + `tenant_id NOT NULL` on every domain model) has three deliberate exceptions on this branch:
+- **Global tasks.** `tasks.tenant_id` is nullable; a NULL row is owned by `created_by_user_id` and is visible only to its creator. Isolation comes from `TaskScope` (fail-closed) plus the Policy as second layer. `Task::unscopedForSystem()` is the single bypass; queue and console loaders go through `TaskService::findForSystem`.
+- **Activity for global rows.** `Activity::$keepNullTenant` stops the creating hook from filling `tenant_id` while a tenant is bound, so audit rows of global tasks stay tenant-less (visible to their causer through `visibleInTenant`).
+- **Notifications.** `notifications.tenant_id` is nullable (migration 2026_11_01_000300) for system messages without a company. NotificationPolicy and bell scopes filter by recipient.
+- **DeviceToken** has no tenant_id: a device belongs to a person; tenant visibility is checked at send time (`hasMobileAccess`).
+
+### Sync AI calls (deviation) — Phase 11
+
+- Plan intent was to keep long work off the request. The shipped AI calls (assistant reply, expense analyze, bank CSV categorisation, task parse) run **synchronously inside the HTTP request**: no `ShouldQueue`, no `dispatch` in `app/Ai`, `app/Services/Ai`, `app/Services/Expenses` (grep-verified).
+- Bounds: `ai.assistant_timeout` 30 s per provider step; `ai.assistant.turn_seconds` 45 s gates the start of each tool call; `#[MaxSteps(6)]` caps steps (worst case ~6 × 30 s when a model keeps requesting tools); `ai.timeout` 30 s on the other AI calls; assistant provider failures without effects surface as 422 `errors.ai`.
+- Transport: `docker/nginx/default.conf` `fastcgi_read_timeout 300` (≥ 90 s required). A proxy in front of nginx must not cut earlier — TODO verify at deploy.
+
+### Mobile contract export (pnpm api-types:export) — Phase 11
+
+- `scripts/export-api-types.mjs` copies `resources/js/types/generated.d.ts` (produced by `php artisan typescript:transform` from `#[TypeScript]` DTOs and enums) to `../cleaning-software-app/src/types/api.generated.d.ts` by default, or to a path passed as argument; prepends a "do not edit" header. Fails when the mobile checkout is missing and no path is given.
+- The mobile repo is `git@github.com:VladimirGostik/cleaning-software-app.git` (not in this worktree).
+- DTOs that must not reach the mobile types (for example PendingActionPreparedData with the token) are plain classes, not `#[TypeScript]`.
 
 ## Layer contracts
 
@@ -879,6 +1113,17 @@ No queued jobs today (QUEUE_CONNECTION sync in tests). Only schedule PurgeTempor
 **DTO contract:**
 - `NotificationBellData (unread_count, recent: NotificationListItemData[])`
 - `NotificationListItemData (id, type: NotificationTypeEnum, title, body, url, read_at, created_at)` — timestamps ISO-8601, url can be null.
+
+### BE ↔ mobile API (JSON, Sanctum) — Phase 11
+
+- Responses built from Spatie Data (`toArray`); `MeData` carries `companies: list<MobileCompanyData>` (tenant_id, name, color, mobile_access, permissions).
+- Assistant reply: `AssistantReplyData` {reply, actions: AssistantActionData[] {type, label, url}, pending_action: PendingActionData|null}. Pending action: `PendingActionData` {id, action, status, preview, tenant_id, tenant_name, subject_label, customer, total, email, expires_at, confirm_in_app_only}. Confirm result: `ActionResultData` {action, subject_label, url, message}.
+- Push deep links: `PushRoute` allowlist (`/tasks/{uuid}`, `/invoices/{uuid}`, `/quotes/{uuid}`, `/expenses/{uuid}`, `/pending-actions`), else `/notifications`.
+- `GET /api/dashboard` (Api\DashboardController, `#[ResponseFromSpatieData(DashboardData::class)]`) returns the same `DashboardData` that DashboardService builds for the web dashboard.
+
+### BE ↔ FCM payload — Phase 11
+
+- `PushMessage` {title, body, route, tenantId, notificationId, badge}. Sent as multicast per user's device tokens; tokens reported unusable are deleted from `device_tokens`.
 
 ## Gotchas
 
@@ -1367,17 +1612,41 @@ Updated from phase 5:
 
 65. **Sidebar footer holds the user card, the full-width NotificationBell row (opens upward), the logout button and the language dropdown; `nav` is the only scroll region (`aside` is `h-screen`).** Logout: Moved from `:233-239` (old user card) to `:278+` (new footer section above language switcher). Footer wrapper carries border + padding; language dropdown sits below logout. On mobile, same footer-in-drawer is the logout surface (no navbar logout duplicate). `router.post('/logout')` unchanged (Inertia handles CSRF via meta, no form needed). Setting page route redirects here post-logout (session cleared).
 
+### Phase 11 additions (mobile admin, tasks, expenses, AI — 2026-11-01)
+
+1. **Pending-action TTL is 10 minutes, MCP token lifetime is 180 days.** Two separate mechanisms: `ai.pending_action_ttl_minutes` (row expiry) and `McpTokenService::LIFETIME_DAYS` = 180 (token). Do not conflate in docs or tests.
+2. **`PendingActionPreparedData` is a plain class**, not Spatie Data, so the one-time token never lands in `generated.d.ts`.
+3. **`config('ai.providers.anthropic.key')` comes from laravel/ai's merged defaults.** `config/ai.php` in this repo defines no `providers` key; `AiClientOptions::isConfigured()` reads the merged value. Verified 2026-11-01 in the container: `ANTHROPIC_API_KEY` set gives the key and `isConfigured()` true; unset gives null and false.
+4. **FirebasePushSender skips quietly** (log `push.skipped`) when `config('firebase.projects.app.credentials')` is empty. Push delivery is untested in any environment without `FIREBASE_CREDENTIALS`.
+5. **FcmChannel swallows send exceptions on purpose** (a retry would re-send to tokens that already got the push). Failures are visible only in logs.
+6. **Global task visibility is creator-only.** A global task is not visible to other members even with `view all tasks`; `scopeVisibleTo` and `isVisibleTo` both enforce this.
+7. **`Task::unscopedForSystem()` is the only scope bypass.** New code that needs cross-tenant task access goes through `TaskService::findForSystem` or the command path, never a raw `withoutGlobalScope`.
+8. **Assistant cannot confirm.** `confirm_action` and `delete_global_task` are excluded from `AssistantToolbox`; a prepared irreversible action returns `confirm_in_app_only` when the channel list has no chat.
+9. **Assistant partial success returns HTTP 200**, not an error: provider failure after tool effects returns the effects with `app.assistant_partial`. Failure before any effect returns 422 `errors.ai`.
+10. **`mobile` token in a company without `access mobile app` → 403 `mobile_forbidden`** from TenantContextMiddleware; at login the same check returns 422 on `email`.
+11. **Default tenant for mobile tokens** is the first membership whose mobile access is granted; a user with no mobile-capable company falls back to the first membership and then gets 403 at the middleware.
+12. **ToolContext restores the previous request, user, tenant and team id in `finally`.** Nested tool calls rely on this (ActionConfirmationService::execute runs inside ToolContext::run).
+13. **Expense `analyze` persists nothing**; a draft is saved only by `store`.
+14. **Deferred MCP tools** (`list_document_templates`, `get_document_template`, `update_document_template`) are intentionally absent. Do not add them before the document-templates merge.
+15. **Claude web connectors and the Gmail flow need OAuth (Passport) and a deployed host.** The MCP `mcp` Bearer token works for local clients only.
+
 ## Verification status
 
 **Last full scan:** 2026-09-06 (Phase 7; degraded — Laravel Boost MCP unavailable; used docker compose exec + direct psql / grep).
 
-**Last delta:** 2026-09-22 (Phase 10 schedule status flow: started_at column + JobService.start() method + three canBe* helpers + ScheduledJobPolicy/Controller actions for start/complete/unapprove + JobDetailData fields; InvoiceSettingsData.default_header_text/default_footer_text fields added for PDF customization; InvoiceSettingsTextsCard.vue component for settings UI; 1130 tests, 4173 assertions, all verified). Previous: 2026-09-20 Classic invoice PDF fidelity fix.
+**Last delta:** 2026-11-01 (Phase 11 mobile admin / AI / MCP backend, branch `feat/mobile-admin-api` vs base `cdeed4e`: tasks, expenses, pending actions, push, assistant, MCP tool layer, `/api` + `/mcp` group order, rule-6 exceptions, reconciled tenancy / identity / auth / audit-logs / api-me blocks). Method: Boost MCP unavailable in this run (`php` not on PATH), so routes from `routes/*.php`, schema from migrations, callsites from grep + Read. `vendor/` absent in the worktree. Previous: 2026-09-22 (Phase 10 schedule status flow: started_at column + JobService.start() method + three canBe* helpers + ScheduledJobPolicy/Controller actions for start/complete/unapprove + JobDetailData fields; InvoiceSettingsData.default_header_text/default_footer_text fields added for PDF customization; InvoiceSettingsTextsCard.vue component for settings UI; 1130 tests, 4173 assertions, all verified). Previous: 2026-09-20 Classic invoice PDF fidelity fix.
 
 **Certainty audit:**
 - All relationships verified by: live route:list (php artisan route:list), migration files + docker exec postgres psql, grep of every cited callsite + direct reads (git show d7cb13c — BE schedule/employees implementation commit).
 - Phase 7 employees verified: EmployeeService methods (paginate/create/update/deactivate), TenantMembership profile + LogsActivity, RoleAssignmentGuard on UserService, TenantMembershipPolicy instance checks, EmployeeController routes, InvitationCreated mail (new user), RoleAssignmentGuard 422 on escalation, EmployeeDetailData.can flags, UsersModule coexistence (nav order 15 settings vs 20 default).
 - Phase 7 schedule verified: WorkBreakdown/WorkBreakdownTask/ScheduledJob models exist, enums (TaskFrequencyEnum 8 values + recurrence helpers, JobStatusEnum 6 states + state matrix, JobTypeEnum 3 types), ScheduledJob::scopeVisibleTo + CleaningObject::scopeVisibleTo (any job reachability D3), JobService methods, ScheduledJobPolicy (rbac-full + scopeVisibleTo), ScheduledJobController routes + #[NavItem], GenerateWorkBreakdownFromSignedContract listener (sync), GenerateScheduledJobsJob (queued ShouldBeUnique, rolling 30d), GenerateScheduledJobsCommand (daily cron), config/scheduling.php (horizon_days), ScheduleDemoSeeder (contract → breakdown → jobs + cleaner assignment), FullCalendar v6.1.21 calendar component, useJobCalendar composable, TimeInput component, WorkBreakdownDetailData.tasks array on Objects/Show.
-- Open TODO verify:
+- Phase 11 TODO verify (open):
+  1. Real Anthropic call with a key: never run, no key exists yet.
+  2. `PushRoute` patterns match the mobile router paths — cross-repo, not checked here.
+  3. FCM token registration (`@capacitor-firebase/messaging`) and device deep links — mobile repo, not checked here.
+  4. Proxy in front of nginx keeps ≥ 90 s read timeout — `docker/nginx/default.conf` sets 300 s; outer proxy not in repo.
+  5. Test figures 1726 / 7370 at 884d0b5 are implementer-supplied, not re-run in this pass.
+- Open TODO verify (earlier phases):
   1. ~~AllowedFilter dead references~~ — PHPStan clear (baseline 190 2026-09-06, −4 stale).
   2. ~~Layouts/DataTable.vue + Composables/useFilters.ts~~ — 0 consumers; kept.
   3. Cross-field #[Validation] rules (quote clientless, contract term/end_date, employee role escalation) under Precognition-Validate-Only partial payloads — behavior verified in phase 7 tests (EmployeeRoleModalTest, EmployeeUpsertTest); known trade-off for partial-payload support (full-payload rules execute on submit, not blur).

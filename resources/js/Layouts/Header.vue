@@ -23,9 +23,9 @@ defineProps<{
         </div>
 
         <!-- Title + actions row -->
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold">{{ title }}</h1>
-            <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <h1 class="min-w-0 break-words text-2xl font-bold">{{ title }}</h1>
+            <div class="flex flex-wrap items-center gap-2">
                 <slot name="actions" />
             </div>
         </div>

@@ -1,15 +1,17 @@
 # CleanMaster
 
 Internal tool for the owner's cleaning companies (SK/CZ). Rebuilt on the canonical inogile `vue-skeleton`
-(branch `rebuild`); business modules are ported from branch `main` phase by phase per
+(rebuild merged into `main`); business modules are ported phase by phase per
 `.claude/plans/port-from-cleaning-software.md` (read ONLY when a parent passes it as `plan_path`).
+Phase 11 (mobile admin API, tasks, expenses, AI assistant, MCP, push) is on branch `feat/mobile-admin-api`.
 
 ## Stack
 - Backend: Laravel 13, PHP 8.5 (Docker: `docker compose exec app php artisan ...`)
 - Frontend: Inertia v3 + Vue 3 + TypeScript, Tailwind 4 + DaisyUI 5
 - DB: PostgreSQL 16 (compose service `postgres`), Redis 7
 - Mail: Mailpit (compose service `:8026`), SMTP in dev/test
-- Queue: Database driver, background `queue` service (prod: supervisor) for InvoiceIssued + GenerateRecurringInvoiceJob + GenerateScheduledJobsJob + 6 queued notifications (InvoiceOverdue, ContractExpired, ContractExpiring, QuoteSent, QuoteExpiring, QuoteExpired)
+- Queue: Database driver, background `queue` service (prod: supervisor) for InvoiceIssued + GenerateRecurringInvoiceJob + GenerateScheduledJobsJob + 6 queued notifications (InvoiceOverdue, ContractExpired, ContractExpiring, QuoteSent, QuoteExpiring, QuoteExpired) + TaskAssigned / TaskDue notifications (Phase 11)
+- AI + MCP (Phase 11): laravel/ai ^0.7.2 (Anthropic, `AI_MODEL`, `ANTHROPIC_API_KEY` backend only; AI calls run synchronously in the request, see "Mobile admin app and AI"), laravel/mcp ^0.7 (`/mcp` + local `cleanmaster` server), kreait/laravel-firebase ^7.2 (FCM push, `FIREBASE_CREDENTIALS`)
 - PDF/QR: spatie/laravel-pdf (chrome driver), chrome-php/chrome (pure-PHP DevTools), Alpine apk Chromium (arm64 native), pay-by-square + bacon QR code
 - Calendar: @fullcalendar/vue3 v6.1.21 (FullCalendar month/week view for schedule jobs)
 - Main packages: Spatie Data 4, Permission 7 (teams mode), Activitylog 5, MediaLibrary 11, QueryBuilder 7 + `App\Utils\AllowedFilter`,
@@ -74,6 +76,8 @@ docker compose exec app pnpm lint:js && docker compose exec app pnpm lint:pretti
 # Phase 4+ Queue + mail + schedule + notifications
 docker compose logs -f queue                              # watch background job worker
 docker compose exec app php artisan schedule:run          # trigger daily crons manually (MarkOverdueInvoices, GenerateRecurringInvoices, GenerateScheduledJobs, ExpireQuotes, CheckContractExpiry)
+# Phase 11 schedule: app:remind-tasks (hourly), cleanup:pending-actions (hourly), sanctum:prune-expired --hours=24 (daily)
+pnpm api-types:export                                     # on the host (not in the container): copy generated TS types to the mobile repo (see "Mobile admin app and AI")
 # Browse Mailpit (queued invoices + notifications) at http://localhost:8026
 ```
 
@@ -119,6 +123,25 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 
 **Phase 7 demo cleaner:** ScheduleDemoSeeder creates signed contract → work breakdown → 30-day jobs (September 2026 horizon). Cleaner account: `cleaner@example.com` / `password`, Interná upratovačka role (own-only scoping via absent "all" permissions), 3 assigned jobs (Planned status). Use this account to test schedule index/show, job assignment, calendar view, work-breakdown visibility, Objects access via job linkage (D3 reachability).
 
+## Mobile admin app and AI (Phase 11)
+
+- **Mobile app repo:** `git@github.com:VladimirGostik/cleaning-software-app.git` (separate checkout, expected at `../cleaning-software-app`). Types: `pnpm api-types:export` (script `scripts/export-api-types.mjs`) copies `resources/js/types/generated.d.ts` into it (default target `src/types/api.generated.d.ts`).
+- **API surface:** `routes/api.php`. `/api` group order: `auth:sanctum` → `locale.api` → `user.active` → `ability:mobile` → `tenant.context` → `tenant.required` (login and logout sit outside the ability group). Mobile tokens carry ability `mobile` and are issued only to users with `access mobile app` in some company.
+- **MCP:** `routes/ai.php`. `/mcp` group order: `auth:sanctum` → `locale.api` → `user.active` → `ability:mcp` → `throttle:mcp` (120/min per token). Tokens are personal (`mcp` ability, 180 days, max 10 per user, created in Profile).
+- **Tenant context before route binding:** `TenantContextMiddleware` runs before `SubstituteBindings` (`bootstrap/app.php`), so scoped bindings resolve under the caller's company (security fix `6f08aa9`, not on `main`).
+- **Tool layer:** 27 MCP tools (`CleanMasterServer::TOOLS`). The assistant gets 25: `confirm_action` and `delete_global_task` are excluded. Two-step confirmation: prepared actions expire after 10 minutes, carry a payload hash and a subject fingerprint, and a changed or deleted subject cancels them. Chat may confirm only issue/send actions; the rest only in the app.
+- **Assistant:** 45 s turn budget (gates the start of each tool call), 30 s per provider step, `MaxSteps(6)`, tool output capped at 20 000 chars, partial success returns HTTP 200. Worst case with a model that keeps requesting tools is about 6 × 30 s, so the proxy and PHP timeout must be at least 90 s (nginx here: `fastcgi_read_timeout 300`).
+- **Sync AI calls (deviation):** AI calls run inside the HTTP request, not in a queue (no `ShouldQueue` in `app/Ai` and `app/Services/Ai`). Accepted for the assistant's interactive latency; keep the timeouts above.
+- **Push design:** FCM token on both platforms via `@capacitor-firebase/messaging` (mobile repo; TODO verify there). `FirebasePushSender` skips quietly when credentials are not configured (`push.skipped` log).
+- **Deferred:** `list_document_templates`, `get_document_template`, `update_document_template` until the document-templates work is merged. Claude web connectors and the Gmail flow need OAuth (Passport) and deployment; the `mcp` Bearer token works for local clients only.
+- **External prerequisites (not in the repo):**
+  - Anthropic API key (`ANTHROPIC_API_KEY`, backend only).
+  - Firebase service account (`FIREBASE_CREDENTIALS`).
+  - Apple Developer Program membership + APNs key (iOS push).
+  - Domain and final `APP_ID` (open item, mobile repo).
+- **Laravel Cloud risks:** Chromium (PDF), `qpdf` binary (bulk invoice PDF), S3 documents disk (not verified against a real bucket).
+- **Configuration keys:** `.env.example` already lists `ANTHROPIC_API_KEY`, `AI_MODEL`, `FIREBASE_CREDENTIALS`, `DOCUMENTS_DISK`, `SCHEDULING_HORIZON_DAYS`. `config('ai.providers.anthropic.key')` resolves through laravel/ai's merged defaults (verified).
+
 ## Modules
 
 - auth (FE) — Pages/Auth/{Login,ForgotPassword,ResetPassword}.vue + Components/Auth/{AuthShell, AuthHero, AuthTextField, AuthPasswordField, AuthCheckboxField, AuthSubmitButton, AuthLanguageSwitcher}, brown/amber hero + white form panel, FormProvider + Precognition, string URLs.
@@ -154,7 +177,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - users (FE) — Pages/Users/{Index,Form}.vue, DataTable filters (tenant-scoped members), CheckboxGroup roles, allows(...) gating.
 - users (BE) — CRUD + autocomplete (tenant members only), QueryBuilder filters, UserPolicy, create-or-link by email, RoleAssignmentGuard escalation checks, TenantMembership pivot scope.
 - roles (FE) — Pages/Roles/{Index,Form}.vue, PermissionManager (now PermissionGroupData typed), system-role guard. AppLayout nav settings group order 40.
-- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (53 cases), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy. RoleController #[NavItem] group:settings order:40.
+- roles (BE) — CRUD per-tenant (Role::inTenant), PermissionEnum (61 cases after Phase 11), permission grouping by resource, SYSTEM_ROLES guard, RolePolicy. RoleController #[NavItem] group:settings order:40.
 - audit-logs (FE) — Pages/AuditLogs/{Index,Show}.vue, read-only DataTable + JSON diff. AppLayout nav settings group order 50.
 - audit-logs (BE) — read-only viewer over App\Models\Activity (Activity::visibleInTenant scope, tenant_id nullable for login events), filters + policy. AuditLogController #[NavItem] group:settings order:50.
 - media (FE) — Pages/Media/{Index,Show}.vue; FileUploadInput/RichTextEditorInput → POST|DELETE /uploads. AppLayout nav settings group order 60.
@@ -164,6 +187,15 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 - api-me (BE) — GET /api/me (Sanctum + tenant.required) returns MeData (userId, activeTenantId, permissions per team scope), reserved for mobile app phase 2.
 - api-docs (BE) — Scribe 5 at /docs (auth + view api docs), Spatie-Data-aware strategies, api/* only.
 - shell (FE) — Layouts/AppLayout.vue (dark sidebar + BrandMark, gradient, TenantSwitcher + AddTenantModal, colour override --color-primary, BE navigation, persistent via createInertiaApp layout resolver in app.ts, mobile drawer closes on router navigate), Layouts/Header.vue (breadcrumbs + title), Components/{BrandMark, DataTable/*, Forms/*, Auth/*, Tenants/*, Can, PermissionManager, SideDrawer, EmptyState}, ConfirmDeleteModal + useDeleteConfirm (+ confirmVariant prop phase 4), Composables/useDependentValidation (live validation of cross-field rules: Precognition only checks the field that changed and the client skips a field whose own value did not change, so a form declares its rule edges — `{ issue_date: ['due_date'] }` — and the dependents are touched + requested via `only` in the same request; wired into Invoice/Quote/Contract/Client/RecurringInvoice forms), types/index.d.ts (SharedProps collapse), vue-i18n, DaisyUI app-theme OKLCH tokens. Internal navigation via Inertia `<Link>` (no full-page load). Logout button moved from user card to sidebar footer (above language switcher, `router.post('/logout')`). Pages do not wrap `<AppLayout>` (layout is app-level, only Auth/* and Invitations/* pages render without it). Full-width main area + InvoiceSettingsForm width cap removed.
+- tasks (FE) — Pages/Tasks/{Index,Show}.vue, Components/Tasks/{TaskForm,TaskFormDrawer,TaskAssignPanel,TaskStatusBadge,TaskPriorityBadge,TaskSubjectLink}.vue, composable useTaskTransition.
+- tasks (BE) — Task model (firm + global rows, TaskScope, no BelongsToTenant), TaskService, TaskPolicy, TaskController (web) + Api\TaskController + Api\TaskParseController, TaskAssigned/TaskDue events (after commit), command app:remind-tasks. Permissions: view/create/edit/delete tasks, view all tasks.
+- expenses (FE) — Pages/Expenses/{Index,Show,Import}.vue, Components/Expenses/{ExpenseForm,ExpenseFormDrawer,ExpenseImportTable,ExpenseAnalyzePanel,ExpenseCategoryBadge,ExpenseStatusBadge,ExpenseProposalHint}.vue, composables useExpenseAnalyze / useExpenseImportPreview.
+- expenses (BE) — Expense model (BelongsToTenant, receipt media), ExpenseService, ExpenseImportService + Services/Expenses/BankStatementParser, ExpensePolicy, ExpenseController (web) + Api\ExpenseController. Permissions: view/manage expenses.
+- pending-actions (FE/BE) — Pages/PendingActions/Index.vue, Components/Ai/PendingActionRow.vue; PendingAction model, ActionConfirmationService (two-step confirmation), PendingActionPolicy, PendingActionController (web + API), command cleanup:pending-actions.
+- ai assistant (BE) — Api\AssistantController (POST /api/assistant/messages), AssistantService, LaravelAiAssistant, AssistantAgent, AssistantToolbox, AssistantTurn; config/ai.php. Cannot confirm anything.
+- mcp (BE) — CleanMasterServer (27 tools, `/mcp` web + local stdio `cleanmaster`), ToolContext, ToolAudit, App\Mcp\Tools/*, McpTokenService (personal `mcp` tokens: max 10, 180 days); profile UI Components/Profile/McpTokensCard.vue.
+- push (BE) — DeviceToken (per person), DeviceTokenService, Api\DeviceController, FcmChannel, FirebasePushSender (skips quietly without credentials), PushRoute (deep-link allowlist).
+- mobile-api (BE) — `/api` group (ability:mobile) and `/mcp` group, Api\* controllers (dashboard, invoices, quotes, notifications, profile, users, me), MeData.companies, ApiLocaleMiddleware. Route order in "Mobile admin app and AI".
 
 **Note:** Phases 1–9 complete (2026-09-07). Object contacts feature (2026-09-18): CleaningObject gains own contact persons (on-site správca/domovník/recepcia) via ObjectContact model + ContactCollectionSynchronizer shared service; contacts field-level gated by ViewAllObjects permission (fail-closed: cleaners see objects but no contacts); contacts soft-delete on client cascade, untouched on object deactivate. Phase 8: Notifications module (in-app centre, bell, mail prefs, 6 event listeners). Phase 9: Dashboard "Prehľad" (cross-company overview via permission-gated metric snapshots, no cache, per-currency invoice summary, 5-type alert dispatching + capping, clean switch UX with optional redirect_to param). Phase 10: Invoice signature snapshots (PDF footer with issuer name + contact info, supplier_signature_media_id FK snapshot on issue/cancel, preview inline, settings page card, new lang keys); default header/footer text fields added to TenantInterface. Schedule status flow completed: start (Planned → InProgress + started_at), complete (InProgress → Completed), unapprove (InProgress → Unapproved) — all three gated on EditSchedule, so the cleaner role still cannot drive transitions. Shell UX: persistent layout via Inertia default-layout resolver; internal nav via Link (no full-page reload); user card + bell + logout moved to sidebar footer; settings group (Roles/AuditLogs/Media orders 40/50/60); mobile drawer closes on navigate. Phase 10+ deferred: mobile portal (cleaner + supervisor), customer portal, analytics, integrations. All 9 implemented domains + object contacts: tenant-scoped (BelongsToTenant; notifications + dashboard scoped per tenant), policy-gated (RBAC-full), logged (LogsActivity), soft-deleted where appropriate (no soft-delete on WorkBreakdownTask, Notification, Dashboard, only cascade). Cleaner role (Interná upratovačka) has own-only scoping via absent "all" permissions + ScheduledJob::scopeVisibleTo / CleaningObject::scopeVisibleTo (D3 override: any assigned job reachability); contacts never visible to cleaners. 1130 tests total (4173 assertions).
 
@@ -171,6 +203,7 @@ Authorization: per-tenant (Spatie teams = tenant_id). Login requires is_active=t
 lint.tools: [pint, phpstan, vue-tsc, eslint, prettier]
 lint.runner: docker
 lint.asked: true
+lint.last_run: 884d0b5 (Phase 11 backend, implementer-supplied) — PHPStan clean, Pint clean, 1726 PHPUnit tests / 7370 assertions
 lint.notes: |
   - PHPStan at level max with phpstan-baseline.neon (67 entries / 169 errors, regenerated 2026-09-09). Run with `--memory-limit=1G` to avoid OOM.
   Baseline burn-down done for production code: nothing under `app/` or `database/` is suppressed any more — keep it that way, a new
@@ -198,15 +231,17 @@ Synced with `laravel-13-conventions/references/review-checks.md` §"Distilled ho
 8. `env()` only in `config/`; URLs via named route + `route()`.
 9. Eager-load accessed relations (`with` / `withCount`); no `Model::all()` in request paths.
 10. Events/jobs dispatched inside a transaction: `ShouldDispatchAfterCommit` / `->afterCommit()`.
+11. No comments that restate code — no prose docblocks, no `// Arrange` markers, no step narration; PHPDoc only for types PHP can't express (array shapes, generics). 1-line WHY only.
 
 **Per-project enforcement:**
 
 - **Auth profile:** rbac-full — Policies gate every action. Controllers use `#[Authorize($ability, $modelOrParam)]` attribute. Single authorization axis: RBAC permission only . Never use `role()` checks; always use `Can` component + `useAuthorization().allows(permission)`.
-- **Multi-tenancy:** row-level via `tenant_id` FK. Every domain model MUST have `tenant_id` UUID FK + `BelongsToTenant` trait + `TenantScope` global scope. **CRITICAL:** `setPermissionsTeamId($tenantId)` must be called before any role/permission lookup outside HTTP requests (jobs, console, seeders, tests).
+- **Multi-tenancy:** row-level via `tenant_id` FK. Every domain model MUST have `tenant_id` UUID FK + `BelongsToTenant` trait + `TenantScope` global scope (exceptions: global `Task` rows via `TaskScope`, nullable `notifications.tenant_id`, per-person `DeviceToken`). **CRITICAL:** `setPermissionsTeamId($tenantId)` must be called before any role/permission lookup outside HTTP requests (jobs, console, seeders, tests).
 - **TypeScript code generation:** `#[TypeScript]` attribute on all DTOs + Enums. `php artisan typescript:transform` generates `resources/js/types/generated.d.ts`. FE imports from there.
 - **Atomic transactions:** Multi-step operations (create owner, issue invoice, generate recurring invoice) wrapped in `DB::transaction` in Service (NEVER Controller). Events/jobs inside transaction must implement `ShouldDispatchAfterCommit`.
 - **Spatie Data DTO boundary:** Controllers accept DTO params with `#[Validation]` attributes. No inline `$request->validate()`. No FormRequest. No JsonResource.
 - **i18n via locale keys:** Every user-facing string via `__('<ns>.<key>')` from `lang/{sk,en,uk}/*.php`. Logs stay English.
+- **AI tool layer:** tools (`app/Mcp/Tools/*`) hold no business logic; they authorise through `Gate::forUser` inside `ToolContext` and delegate to services. `confirm_action` is MCP-only (never in the assistant toolbox, `AssistantToolbox::EXCLUDED`); `delete_global_task` is excluded there too. Irreversible actions go through `prepare_action` + confirmation, never a direct tool call.
 
 ## Rules for agents
 1. Hot context = these 3 files (CLAUDE.md, .claude/business.md, .claude/technical.md). Do not read anything else from `.claude/` by default.
@@ -214,4 +249,4 @@ Synced with `laravel-13-conventions/references/review-checks.md` §"Distilled ho
 3. On ambiguity STOP, NEVER guess. When porting from `main`, the source code on `main` is the spec — when it and business.md disagree, ask.
 4. Large features (`plan_size: file`) MUST have a plan approved by a human.
 5. **Skill load — architect-as-dirigent**: architect agents eager-load skills themselves in Step 0. Implementation agents (`be-agent`, `fe-agent`, `tester-agent`, `reviewer-agent`, `devops-agent`, `docs-agent`) load **only those skills** explicitly passed to them in the `## Skills (for executor)` section of the prompt.
-6. **Every domain model** obeys the multi-tenancy invariant (tenant = firma): `tenant_id` UUID FK + `BelongsToTenant` + per-tenant permission scope (Spatie teams). Non-negotiable once the tenancy phase lands.
+6. **Every domain model** obeys the multi-tenancy invariant (tenant = firma): `tenant_id` UUID FK + `BelongsToTenant` + per-tenant permission scope (Spatie teams). Non-negotiable once the tenancy phase lands. Phase 11 exceptions: global `Task` rows (`tenant_id` NULL, `TaskScope`, `Task::unscopedForSystem()` is the single bypass), `Activity.keepNullTenant` for global-task activity, nullable `notifications.tenant_id`, and `DeviceToken` (per person, no tenant).
