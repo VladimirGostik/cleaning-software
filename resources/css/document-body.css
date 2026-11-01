@@ -1,0 +1,79 @@
+.document-body {
+    font-family: 'Liberation Sans', 'DejaVu Sans', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    color: #1a1a1a;
+}
+
+.document-body p {
+    margin: 0 0 0.6em;
+}
+
+.document-body h1 {
+    font-size: 1.6em;
+    margin: 0.8em 0 0.4em;
+}
+
+.document-body h2 {
+    font-size: 1.3em;
+    margin: 0.8em 0 0.4em;
+}
+
+.document-body h3 {
+    font-size: 1.1em;
+    margin: 0.8em 0 0.4em;
+}
+
+.document-body ul,
+.document-body ol {
+    margin: 0 0 0.6em;
+    padding-left: 1.6em;
+}
+
+.document-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 0.6em;
+}
+
+.document-body table:not(:has(td[style*='border-top'])) {
+    width: calc(100% + 12pt) !important;
+    margin-inline: -6pt;
+}
+
+.document-body table:has(td[style*='border-top']) {
+    table-layout: fixed;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-top: 60px;
+}
+
+.document-body table:has(td[style*='border-top']) col {
+    min-width: 0 !important;
+}
+
+.document-body table:has(td[style*='border-top']) td:nth-child(1),
+.document-body table:has(td[style*='border-top']) td:nth-child(3) {
+    width: calc(50% - 6pt) !important;
+}
+
+.document-body table:has(td[style*='border-top']) td:nth-child(2) {
+    width: 12pt !important;
+    padding: 0 !important;
+}
+
+.document-body td,
+.document-body th {
+    vertical-align: top;
+    padding: 2pt 6pt;
+}
+
+.document-body td p,
+.document-body th p {
+    margin: 0;
+}
+
+.document-body mark {
+    background: #fff3a3;
+    color: inherit;
+}

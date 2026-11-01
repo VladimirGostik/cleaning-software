@@ -52,7 +52,7 @@ final class ClientUpdateTest extends TestCase
         $this->assertDatabaseHas('clients', ['id' => $client->id, 'name' => 'Updated Name Ltd']);
         $this->assertDatabaseHas('activity_log', [
             'subject_id' => $client->id,
-            'subject_type' => Client::class,
+            'subject_type' => (new Client)->getMorphClass(),
         ]);
     }
 

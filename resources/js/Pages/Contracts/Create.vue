@@ -7,6 +7,7 @@ import type { Breadcrumb } from '@/types';
 
 defineProps<{
     context: App.Data.Contracts.ContractFormContextData;
+    prefill: App.Data.Contracts.ContractCreatePrefillData;
 }>();
 
 const { t } = useI18n();
@@ -21,5 +22,5 @@ const breadcrumbs: Breadcrumb[] = [
 <template>
     <Header :title="t('contract_add')" :breadcrumbs="breadcrumbs" />
 
-    <ContractForm :context="context" />
+    <ContractForm :context="context" :prefill="prefill" />
 </template>

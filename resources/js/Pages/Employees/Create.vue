@@ -7,6 +7,7 @@ import type { Breadcrumb } from '@/types';
 
 defineProps<{
     context: App.Data.Employees.EmployeeFormContextData;
+    personal: App.Data.Employees.EmployeePersonalFormData | null;
 }>();
 
 const { t } = useI18n();
@@ -20,5 +21,5 @@ const breadcrumbs: Breadcrumb[] = [
 
 <template>
     <Header :title="t('employee_add')" :breadcrumbs="breadcrumbs" />
-    <EmployeeForm :context="context" />
+    <EmployeeForm :context="context" :personal="personal" />
 </template>

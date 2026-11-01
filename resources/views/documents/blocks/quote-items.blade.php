@@ -1,0 +1,5 @@
+<table style="width: 100%; border-collapse: collapse;"><thead><tr><th style="text-align: left; border-bottom: 1px solid #333333; padding-bottom: 4px;"><p>{{ $headers['description'] }}</p></th><th style="text-align: right; border-bottom: 1px solid #333333; padding-bottom: 4px;"><p>{{ $headers['quantity'] }}</p></th><th style="text-align: right; border-bottom: 1px solid #333333; padding-bottom: 4px;"><p>{{ $headers['unit_price'] }}</p></th><th style="text-align: right; border-bottom: 1px solid #333333; padding-bottom: 4px;"><p>{{ $headers['total'] }}</p></th></tr></thead><tbody>
+@foreach ($rows as $row)
+<tr><td style="padding-top: 4px; padding-bottom: 4px;"><p>{{ $row['description'] }}</p></td><td style="text-align: right; padding-top: 4px; padding-bottom: 4px;"><p>{{ $row['quantity'] }}</p></td><td style="text-align: right; padding-top: 4px; padding-bottom: 4px;"><p>{{ $row['unit_price'] }}</p></td><td style="text-align: right; padding-top: 4px; padding-bottom: 4px;"><p>{{ $row['total'] }}</p></td></tr>
+@endforeach
+</tbody></table>

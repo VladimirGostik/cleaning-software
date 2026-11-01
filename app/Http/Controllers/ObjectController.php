@@ -14,6 +14,7 @@ use App\Models\Client;
 use App\Models\User;
 use App\Models\WorkBreakdown;
 use App\Navigation\NavItem;
+use App\Services\ContractService;
 use App\Services\ObjectService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,10 @@ use Inertia\Response;
 
 final class ObjectController extends Controller
 {
-    public function __construct(private readonly ObjectService $objects) {}
+    public function __construct(
+        private readonly ObjectService $objects,
+        private readonly ContractService $contracts,
+    ) {}
 
     #[Authorize('viewAny', CleaningObject::class)]
     #[NavItem(label: 'app.objects', route: 'objects.index', icon: 'BuildingOffice2Icon', permission: PermissionEnum::ViewObjects->value, order: 31)]
@@ -62,6 +66,8 @@ final class ObjectController extends Controller
             'workBreakdowns' => $object->workBreakdowns
                 ->map(fn (WorkBreakdown $breakdown) => WorkBreakdownDetailData::fromModel($breakdown))
                 ->all(),
+            'contracts' => $this->contracts->listFor($object, $actor),
+            'canCreateContract' => $this->contracts->canCreateFor($object, $actor),
         ]);
     }
 

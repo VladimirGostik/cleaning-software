@@ -34,7 +34,7 @@ final class NavigationRegistryTest extends TestCase
             'users.index',
             'settings.invoicing',
             'settings.notifications',
-            'contract-templates.index',
+            'document-templates.index',
             'roles.index',
             'audit-logs.index',
             'media.index',

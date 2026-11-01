@@ -10,6 +10,9 @@ import EmployeeProfileCard from '@/Components/Employees/EmployeeProfileCard.vue'
 import EmployeeRoleCard from '@/Components/Employees/EmployeeRoleCard.vue';
 import EmployeeActionsCard from '@/Components/Employees/EmployeeActionsCard.vue';
 import EmployeeMetaCard from '@/Components/Employees/EmployeeMetaCard.vue';
+import EmployeePersonalCard from '@/Components/Employees/EmployeePersonalCard.vue';
+import EmployeeDocumentsCard from '@/Components/Employees/EmployeeDocumentsCard.vue';
+import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
 import EmployeeRoleModal from '@/Components/Employees/EmployeeRoleModal.vue';
 
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
@@ -18,6 +21,11 @@ import type { Breadcrumb } from '@/types';
 const props = defineProps<{
     employee: App.Data.Employees.EmployeeDetailData;
     roleOptions: App.Data.RoleListItemData[];
+    personal: App.Data.Employees.EmployeePersonalData | null;
+    documents: App.Data.Employees.EmployeeDocumentData[] | null;
+    documentConstraints: App.Data.Employees.EmployeeDocumentConstraintsData | null;
+    contracts: App.Data.Contracts.ContractListItemData[] | null;
+    canCreateContract: boolean;
 }>();
 
 const { t } = useI18n();
@@ -87,7 +95,20 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
         <div class="space-y-6">
             <EmployeeProfileCard :employee="employee" />
+            <EmployeePersonalCard v-if="personal" :personal="personal" />
             <EmployeeRoleCard :employee="employee" />
+            <EmployeeDocumentsCard
+                v-if="documents !== null"
+                :employee-id="employee.id"
+                :documents="documents"
+                :constraints="documentConstraints"
+                :can-manage="employee.can.manage_documents === true"
+            />
+            <RelatedContractsCard
+                :contracts="contracts"
+                :can-create="canCreateContract"
+                :create-href="`/contracts/create?contractable_type=tenant_membership&category=employment&contractable_id=${employee.id}`"
+            />
         </div>
 
         <div class="space-y-6">

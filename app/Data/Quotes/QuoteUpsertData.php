@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Data\Quotes;
 
 use App\Enums\CurrencyEnum;
+use App\Enums\DocumentTypeEnum;
 use App\Enums\QuoteKindEnum;
 use App\Models\Quote;
 use App\Rules\ObjectBelongsToClient;
 use App\Rules\OwnedTemporaryMedia;
 use App\Rules\TemporaryMediaConstraints;
+use App\Rules\UsableDocumentTemplate;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
+use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Data;
@@ -53,6 +56,12 @@ final class QuoteUpsertData extends Data
         public readonly ?string $number = null,
         #[Nullable]
         public readonly ?string $document_uuid = null,
+        #[Nullable]
+        public readonly ?string $document_template_id = null,
+        #[Nullable, Max(200000)]
+        public readonly ?string $document_body = null,
+        public readonly bool $document_show_header = true,
+        public readonly bool $document_show_footer = true,
         public readonly QuoteKindEnum $kind = QuoteKindEnum::Itemized,
         public readonly CurrencyEnum $currency = CurrencyEnum::EUR,
     ) {}
@@ -121,6 +130,16 @@ final class QuoteUpsertData extends Data
                 ],
                 ['prohibited'],
             ),
+            'document_template_id' => Rule::when(
+                $isDocument,
+                ['prohibited'],
+                [
+                    'nullable',
+                    'uuid',
+                    new UsableDocumentTemplate(DocumentTypeEnum::Quote),
+                ],
+            ),
+            'document_body' => Rule::when($isDocument, ['prohibited'], ['nullable', 'string', 'max:200000']),
             'currency' => ['required', Rule::enum(CurrencyEnum::class)],
         ];
     }

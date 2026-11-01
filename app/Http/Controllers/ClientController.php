@@ -13,6 +13,7 @@ use App\Models\Client;
 use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\ClientService;
+use App\Services\ContractService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -21,7 +22,10 @@ use Inertia\Response;
 
 final class ClientController extends Controller
 {
-    public function __construct(private readonly ClientService $clients) {}
+    public function __construct(
+        private readonly ClientService $clients,
+        private readonly ContractService $contracts,
+    ) {}
 
     #[Authorize('viewAny', Client::class)]
     #[NavItem(label: 'app.clients', route: 'clients.index', icon: 'UserGroupIcon', permission: PermissionEnum::ViewClients->value, order: 30)]
@@ -54,15 +58,17 @@ final class ClientController extends Controller
         return Inertia::render('Clients/Show', [
             'client' => ClientDetailData::fromModel($client),
             'objects' => $objects->map(fn (CleaningObject $object) => ObjectListItemData::fromModel($object, $includeContacts))->all(),
+            'contracts' => $this->contracts->listFor($client, $actor),
+            'canCreateContract' => $this->contracts->canCreateFor($client, $actor),
         ]);
     }
 
     #[Authorize('create', Client::class)]
     public function store(ClientUpsertData $data): RedirectResponse
     {
-        $this->clients->create($data);
+        $client = $this->clients->create($data);
 
-        return to_route('clients.index')->with('success', __('app.client_created'));
+        return to_route('clients.show', $client)->with('success', __('app.client_created'));
     }
 
     #[Authorize('update', 'client')]

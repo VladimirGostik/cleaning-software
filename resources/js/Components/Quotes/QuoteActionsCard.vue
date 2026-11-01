@@ -37,6 +37,7 @@ const isSent = computed(() => props.quote.status === 'sent');
 const isAccepted = computed(() => props.quote.status === 'accepted');
 const isItemized = computed(() => props.quote.kind === 'itemized');
 const canDownloadPdf = computed(() => isItemized.value || props.quote.document !== null);
+const hasMissingTokens = computed(() => (props.quote.text_document?.missing_tokens.length ?? 0) > 0);
 const canConvertContract = computed(() => props.quote.client_id !== null && props.quote.cleaning_object_id !== null);
 </script>
 
@@ -53,10 +54,20 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
             </Can>
 
             <Can v-if="isDraft && isItemized" permission="send quotes">
-                <button type="button" class="btn btn-sm btn-success w-full justify-start" @click="emit('send')">
-                    <PaperAirplaneIcon class="size-4" />
-                    {{ t('quote_action_send') }}
-                </button>
+                <div>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-success w-full justify-start"
+                        :disabled="hasMissingTokens"
+                        @click="emit('send')"
+                    >
+                        <PaperAirplaneIcon class="size-4" />
+                        {{ t('quote_action_send') }}
+                    </button>
+                    <p v-if="hasMissingTokens" class="mt-1 pl-1 text-xs text-warning">
+                        {{ t('quote_send_blocked_missing_tokens') }}
+                    </p>
+                </div>
             </Can>
 
             <Can v-if="isSent && isItemized" permission="approve quotes">

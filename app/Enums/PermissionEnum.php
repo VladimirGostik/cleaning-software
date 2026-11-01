@@ -16,6 +16,9 @@ enum PermissionEnum: string
     case EditEmployees = 'edit employees';
     case DeleteEmployees = 'delete employees';
     case AssignEmployees = 'assign employees';
+    case ViewEmployeePersonalData = 'view employee_personal_data';
+    case ViewEmployeeDocuments = 'view employee_documents';
+    case ManageEmployeeDocuments = 'manage employee_documents';
 
     // Platform — roles
     case ViewRoles = 'view roles';
@@ -59,10 +62,10 @@ enum PermissionEnum: string
     case DeleteContracts = 'delete contracts';
 
     // Contract templates
-    case ViewContractTemplates = 'view contract_templates';
-    case CreateContractTemplates = 'create contract_templates';
-    case EditContractTemplates = 'edit contract_templates';
-    case DeleteContractTemplates = 'delete contract_templates';
+    case ViewDocumentTemplates = 'view document_templates';
+    case CreateDocumentTemplates = 'create document_templates';
+    case EditDocumentTemplates = 'edit document_templates';
+    case DeleteDocumentTemplates = 'delete document_templates';
 
     // Schedule
     case ViewSchedule = 'view schedule';
@@ -98,7 +101,8 @@ enum PermissionEnum: string
     {
         return match ($this) {
             self::ViewEmployees, self::CreateEmployees, self::EditEmployees,
-            self::DeleteEmployees, self::AssignEmployees => 'employees',
+            self::DeleteEmployees, self::AssignEmployees, self::ViewEmployeePersonalData,
+            self::ViewEmployeeDocuments, self::ManageEmployeeDocuments => 'employees',
 
             self::ViewRoles, self::CreateRoles, self::EditRoles, self::DeleteRoles => 'roles',
 
@@ -117,8 +121,8 @@ enum PermissionEnum: string
             self::ViewContracts, self::CreateContracts, self::EditContracts,
             self::TerminateContracts, self::DeleteContracts => 'contracts',
 
-            self::ViewContractTemplates, self::CreateContractTemplates,
-            self::EditContractTemplates, self::DeleteContractTemplates => 'contract_templates',
+            self::ViewDocumentTemplates, self::CreateDocumentTemplates,
+            self::EditDocumentTemplates, self::DeleteDocumentTemplates => 'document_templates',
 
             self::ViewSchedule, self::CreateSchedule, self::EditSchedule,
             self::AssignCleaners, self::ViewAllSchedule => 'schedule',

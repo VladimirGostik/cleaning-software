@@ -9,6 +9,7 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\CurrencyEnum;
+use App\Enums\DocumentTypeEnum;
 use App\Enums\JobStatusEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
@@ -17,6 +18,7 @@ use App\Enums\TaskFrequencyEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\Document;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Role;
@@ -109,8 +111,16 @@ final class ScheduleDemoSeeder extends Seeder
             'term_type' => ContractTermTypeEnum::Indefinite,
             'title' => 'Zmluva o pravidelnom upratovaní — demo',
             'number' => null,
-            'body' => 'Zmluvné podmienky pravidelného upratovania.',
             'valid_from' => now()->subDays(7)->toDateString(),
+        ]);
+
+        Document::create([
+            'tenant_id' => $tenant->id,
+            'documentable_type' => $contract->getMorphClass(),
+            'documentable_id' => $contract->id,
+            'type' => DocumentTypeEnum::ServiceAgreement,
+            'title' => $contract->title,
+            'body' => '<p>Zmluvné podmienky pravidelného upratovania.</p>',
         ]);
 
         // Signs the contract — the `ContractSigned` listener generates the work breakdown

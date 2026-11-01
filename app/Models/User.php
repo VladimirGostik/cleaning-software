@@ -23,6 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property array<string, array{mail: bool}> $notification_preferences
+ * @property bool $is_platform_admin
  */
 #[Fillable(['name', 'email', 'password', 'locale', 'is_active', 'notification_preferences'])]
 #[Hidden(['password', 'remember_token'])]
@@ -40,6 +41,7 @@ final class User extends Authenticatable implements HasLocalePreference
      */
     protected $attributes = [
         'notification_preferences' => '{}',
+        'is_platform_admin' => false,
     ];
 
     protected function casts(): array
@@ -48,6 +50,7 @@ final class User extends Authenticatable implements HasLocalePreference
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_platform_admin' => 'boolean',
             'notification_preferences' => 'array',
         ];
     }

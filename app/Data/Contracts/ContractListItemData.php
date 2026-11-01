@@ -9,6 +9,8 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Models\Contract;
+use App\Models\User;
+use App\Services\Documents\ContractTextService;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -32,8 +34,10 @@ final class ContractListItemData extends Data
         public readonly bool $can_be_terminated,
     ) {}
 
-    public static function fromModel(Contract $contract): self
+    public static function fromModel(Contract $contract, ContractTextService $text, User $actor): self
     {
+        $canRead = $text->canReadText($contract, $actor);
+
         return new self(
             id: $contract->id,
             title: $contract->title,
@@ -46,8 +50,8 @@ final class ContractListItemData extends Data
             contractable_type: ContractableTypeEnum::from($contract->contractable_type),
             contractable_label: $contract->contractableLabel(),
             signed_at: $contract->signed_at?->toIso8601String(),
-            is_editable: $contract->isEditable(),
-            can_be_signed: $contract->canBeSigned(),
+            is_editable: $contract->isEditable() && $canRead,
+            can_be_signed: $contract->canBeSigned() && $canRead && $text->missingTokens($contract) === [],
             can_be_terminated: $contract->canBeTerminated(),
         );
     }

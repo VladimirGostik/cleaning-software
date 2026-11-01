@@ -20,13 +20,13 @@ enum ContractCategoryEnum: string
         return __('app.contract_category_'.$this->value);
     }
 
-    /** Expected `contractable_type` for this category, or null when either is allowed. */
-    public function expectedContractableType(): ?ContractableTypeEnum
+    /** @return list<ContractableTypeEnum> */
+    public function allowedContractableTypes(): array
     {
         return match ($this) {
-            self::Employment => ContractableTypeEnum::TenantMembership,
-            self::ServiceAgreement => ContractableTypeEnum::CleaningObject,
-            self::Nda, self::Gdpr, self::Other => null,
+            self::Employment => [ContractableTypeEnum::TenantMembership],
+            self::ServiceAgreement => [ContractableTypeEnum::CleaningObject, ContractableTypeEnum::Client],
+            self::Nda, self::Gdpr, self::Other => ContractableTypeEnum::cases(),
         };
     }
 }

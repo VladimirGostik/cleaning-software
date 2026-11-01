@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Concerns\HasUuids;
 use App\Enums\ContractCategoryEnum;
+use App\Enums\DocumentTypeEnum;
 use Database\Factories\TenantMembershipFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +31,12 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $last_name
  * @property string|null $phone
  * @property string|null $position
+ * @property Carbon|null $birth_date
+ * @property string|null $national_id
+ * @property string|null $street
+ * @property string|null $city
+ * @property string|null $postal_code
+ * @property string|null $company_ico
  * @property string $display_name
  * @property User|null $user
  * @property Tenant|null $tenant
@@ -36,7 +44,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Collection<int, ScheduledJob> $scheduledJobs
  * @property int|null $upcoming_jobs_count
  */
-#[Fillable(['user_id', 'tenant_id', 'is_active', 'joined_at', 'first_name', 'last_name', 'phone', 'position'])]
+#[Fillable(['user_id', 'tenant_id', 'is_active', 'joined_at', 'first_name', 'last_name', 'phone', 'position', 'birth_date', 'national_id', 'street', 'city', 'postal_code', 'company_ico'])]
+#[Hidden(['national_id'])]
 final class TenantMembership extends Model
 {
     /** @use HasFactory<TenantMembershipFactory> */
@@ -48,6 +57,8 @@ final class TenantMembership extends Model
         return [
             'is_active' => 'boolean',
             'joined_at' => 'datetime',
+            'birth_date' => 'date',
+            'national_id' => 'encrypted',
         ];
     }
 
@@ -69,6 +80,13 @@ final class TenantMembership extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return MorphMany<Document, $this> */
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(Document::class, 'documentable')
+            ->whereIn('type', array_map(static fn (DocumentTypeEnum $type): string => $type->value, DocumentTypeEnum::employeeFiles()));
     }
 
     /** @return HasMany<ScheduledJob, $this> */

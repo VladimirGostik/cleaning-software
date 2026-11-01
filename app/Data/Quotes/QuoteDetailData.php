@@ -13,6 +13,7 @@ use App\Models\Contract;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteItem;
+use App\Services\Documents\QuoteTextService;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -54,6 +55,7 @@ final class QuoteDetailData extends Data
         #[DataCollectionOf(VatBreakdownLineData::class)]
         public readonly array $vat_breakdown,
         public readonly ?MediaFileData $document,
+        public readonly ?QuoteTextDocumentData $text_document,
         /** @var QuoteInvoiceLinkData[] */
         #[DataCollectionOf(QuoteInvoiceLinkData::class)]
         public readonly array $invoices,
@@ -62,11 +64,11 @@ final class QuoteDetailData extends Data
         public readonly array $contracts,
     ) {}
 
-    public static function fromModel(Quote $quote): self
+    public static function fromModel(Quote $quote, QuoteTextService $text, bool $rawText = false): self
     {
-        $quote->loadMissing(['items', 'client', 'cleaningObject', 'media', 'invoices', 'contracts']);
+        $quote->loadMissing(['items', 'client', 'cleaningObject', 'document.media', 'document.template', 'invoices', 'contracts']);
 
-        $media = $quote->getFirstMedia('document');
+        $media = $quote->document?->getFirstMedia('file');
 
         return new self(
             id: $quote->id,
@@ -98,6 +100,7 @@ final class QuoteDetailData extends Data
             items: $quote->items->map(fn (QuoteItem $item) => QuoteItemData::fromModel($item))->all(),
             vat_breakdown: array_map(fn (array $l) => VatBreakdownLineData::from($l), $quote->vat_breakdown ?? []),
             document: $media !== null ? MediaFileData::fromMedia($media, route('quotes.pdf', $quote)) : null,
+            text_document: QuoteTextDocumentData::fromQuote($quote, $text, $rawText),
             invoices: $quote->invoices->map(fn (Invoice $invoice) => QuoteInvoiceLinkData::fromModel($invoice))->all(),
             contracts: $quote->contracts->map(fn (Contract $contract) => QuoteContractLinkData::fromModel($contract))->all(),
         );

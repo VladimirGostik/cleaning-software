@@ -45,7 +45,7 @@ final class QuoteListItemData extends Data
             total: $quote->total,
             issue_date: $quote->issue_date->toDateString(),
             valid_until: $quote->valid_until->toDateString(),
-            has_document: $quote->getMedia('document')->isNotEmpty(),
+            has_document: $quote->document?->getFirstMedia('file') !== null,
         );
     }
 }

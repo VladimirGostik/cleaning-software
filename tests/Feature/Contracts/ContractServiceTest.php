@@ -15,7 +15,7 @@ use App\Events\ContractSigned;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
-use App\Models\ContractTemplate;
+use App\Models\DocumentTemplate;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Services\ContractService;
@@ -40,8 +40,8 @@ final class ContractServiceTest extends TestCase
             'term_type' => ContractTermTypeEnum::Fixed->value,
             'contractable_type' => ContractableTypeEnum::CleaningObject->value,
             'contractable_id' => null,
-            'contract_template_id' => null,
-            'body' => 'Zmluva medzi {{tenant.name}} a {{client.name}} pre {{object.name}}, {{object.address}}. Platná od {{contract.valid_from}}.',
+            'document_template_id' => null,
+            'body' => '<p>Zmluva medzi {{tenant.name}} a {{client.name}} pre {{object.name}}, {{object.address}}. Platná od {{contract.valid_from}}.</p>',
             'valid_from' => now()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
             'notes' => null,
@@ -56,23 +56,23 @@ final class ContractServiceTest extends TestCase
     public function test_create_resolves_object_and_client_tokens(): void
     {
         $tenant = Tenant::factory()->create(['name' => 'CleanCo s.r.o.']);
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Acme s.r.o.']);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'name' => 'Kancelária', 'street' => 'Hlavná 1', 'city' => 'Bratislava', 'postal_code' => '811 01']);
 
-        $contract = app(ContractService::class)->create($this->upsertData(['contractable_id' => $object->id]));
+        $contract = app(ContractService::class)->create($this->upsertData(['contractable_id' => $object->id]), $actor);
 
-        $this->assertStringContainsString('CleanCo s.r.o.', $contract->body);
-        $this->assertStringContainsString('Acme s.r.o.', $contract->body);
-        $this->assertStringContainsString('Hlavná 1, 811 01 Bratislava', $contract->body);
-        $this->assertStringContainsString(now()->format('d.m.Y'), $contract->body);
+        $this->assertStringContainsString('CleanCo s.r.o.', $contract->document?->body);
+        $this->assertStringContainsString('Acme s.r.o.', $contract->document?->body);
+        $this->assertStringContainsString('Hlavná 1, 811 01 Bratislava', $contract->document?->body);
+        $this->assertStringContainsString(now()->format('d.m.Y'), $contract->document?->body);
         $this->assertSame(ContractStatusEnum::Draft, $contract->status);
     }
 
     public function test_create_employment_persists_child_with_tenant_id(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $membership = TenantMembership::factory()->create(['tenant_id' => $tenant->id]);
 
         $contract = app(ContractService::class)->create($this->upsertData([
@@ -80,7 +80,7 @@ final class ContractServiceTest extends TestCase
             'contractable_type' => ContractableTypeEnum::TenantMembership->value,
             'contractable_id' => $membership->id,
             'employment' => ['employment_type' => EmploymentContractTypeEnum::Dpp->value, 'weekly_hours' => 20],
-        ]));
+        ]), $actor);
 
         $this->assertDatabaseHas('employment_contracts', [
             'contract_id' => $contract->id,
@@ -92,7 +92,7 @@ final class ContractServiceTest extends TestCase
     public function test_create_fails_when_employment_category_targets_object(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(ValidationException::class);
@@ -100,13 +100,13 @@ final class ContractServiceTest extends TestCase
         app(ContractService::class)->create($this->upsertData([
             'category' => ContractCategoryEnum::Employment->value,
             'contractable_id' => $object->id,
-        ]));
+        ]), $actor);
     }
 
     public function test_create_fails_when_service_agreement_targets_membership(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $membership = TenantMembership::factory()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(ValidationException::class);
@@ -114,14 +114,14 @@ final class ContractServiceTest extends TestCase
         app(ContractService::class)->create($this->upsertData([
             'contractable_type' => ContractableTypeEnum::TenantMembership->value,
             'contractable_id' => $membership->id,
-        ]));
+        ]), $actor);
     }
 
     public function test_create_fails_for_cross_tenant_membership(): void
     {
         $tenant = Tenant::factory()->create();
         $other = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $foreignMembership = TenantMembership::factory()->create(['tenant_id' => $other->id]);
 
         $this->expectException(ModelNotFoundException::class);
@@ -130,25 +130,25 @@ final class ContractServiceTest extends TestCase
             'category' => ContractCategoryEnum::Employment->value,
             'contractable_type' => ContractableTypeEnum::TenantMembership->value,
             'contractable_id' => $foreignMembership->id,
-        ]));
+        ]), $actor);
     }
 
     public function test_create_keeps_soft_deleted_template_name_resolvable(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id]);
-        $template = ContractTemplate::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Šablóna A']);
+        $template = DocumentTemplate::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Šablóna A']);
 
         $contract = app(ContractService::class)->create($this->upsertData([
             'contractable_id' => $object->id,
-            'contract_template_id' => $template->id,
-        ]));
+            'document_template_id' => $template->id,
+        ]), $actor);
 
         $template->delete();
         $contract->refresh();
 
-        $this->assertSame('Šablóna A', $contract->contractTemplate?->name);
+        $this->assertSame('Šablóna A', $contract->documentTemplate?->name);
     }
 
     // -------------------------------------------------------------------------
@@ -158,41 +158,41 @@ final class ContractServiceTest extends TestCase
     public function test_update_re_resolves_tokens(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id]);
-        $contract = app(ContractService::class)->create($this->upsertData(['contractable_id' => $object->id, 'title' => 'Pôvodný názov']));
+        $contract = app(ContractService::class)->create($this->upsertData(['contractable_id' => $object->id, 'title' => 'Pôvodný názov']), $actor);
 
         $updated = app(ContractService::class)->update($contract, $this->upsertData([
             'contractable_id' => $object->id,
             'title' => 'Nový názov',
-            'body' => '{{contract.title}}',
-        ]));
+            'body' => '<p>{{contract.title}}</p>',
+        ]), $actor);
 
-        $this->assertSame('Nový názov', $updated->body);
+        $this->assertSame('<p>Nový názov</p>', $updated->document?->body);
     }
 
     public function test_update_fails_when_contract_not_editable(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(ValidationException::class);
 
-        app(ContractService::class)->update($contract, $this->upsertData(['contractable_id' => $contract->contractable_id]));
+        app(ContractService::class)->update($contract, $this->upsertData(['contractable_id' => $contract->contractable_id]), $actor);
     }
 
     public function test_update_removes_employment_child_when_category_changes_away(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $membership = TenantMembership::factory()->create(['tenant_id' => $tenant->id]);
         $contract = app(ContractService::class)->create($this->upsertData([
             'category' => ContractCategoryEnum::Employment->value,
             'contractable_type' => ContractableTypeEnum::TenantMembership->value,
             'contractable_id' => $membership->id,
             'employment' => ['employment_type' => EmploymentContractTypeEnum::Dpp->value],
-        ]));
+        ]), $actor);
         $this->assertDatabaseHas('employment_contracts', ['contract_id' => $contract->id]);
 
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id]);
@@ -201,7 +201,7 @@ final class ContractServiceTest extends TestCase
             'contractable_type' => ContractableTypeEnum::CleaningObject->value,
             'contractable_id' => $object->id,
             'employment' => null,
-        ]));
+        ]), $actor);
 
         $this->assertDatabaseMissing('employment_contracts', ['contract_id' => $contract->id]);
     }
@@ -214,7 +214,7 @@ final class ContractServiceTest extends TestCase
     {
         Event::fake([ContractSigned::class]);
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $contract = Contract::factory()->draft()->create(['tenant_id' => $tenant->id]);
 
         app(ContractService::class)->sign($contract);
@@ -228,7 +228,7 @@ final class ContractServiceTest extends TestCase
     public function test_signing_twice_fails(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(ValidationException::class);
@@ -239,7 +239,7 @@ final class ContractServiceTest extends TestCase
     public function test_terminate_active_contract_with_reason(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id]);
 
         app(ContractService::class)->terminate($contract, new ContractTerminateData(
@@ -255,7 +255,7 @@ final class ContractServiceTest extends TestCase
     public function test_terminate_draft_fails(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $contract = Contract::factory()->draft()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(ValidationException::class);
@@ -266,7 +266,7 @@ final class ContractServiceTest extends TestCase
     public function test_delete_draft_contract_soft_deletes(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $contract = Contract::factory()->draft()->create(['tenant_id' => $tenant->id]);
 
         app(ContractService::class)->delete($contract);
@@ -277,7 +277,7 @@ final class ContractServiceTest extends TestCase
     public function test_delete_active_contract_fails(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         $contract = Contract::factory()->active()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(ValidationException::class);
@@ -292,41 +292,41 @@ final class ContractServiceTest extends TestCase
     public function test_paginate_filters_by_status_category_and_contractable_type(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         Contract::factory()->draft()->create(['tenant_id' => $tenant->id, 'title' => 'Draft one']);
         Contract::factory()->active()->create(['tenant_id' => $tenant->id, 'title' => 'Active one']);
 
         $request = Request::create('/', 'GET', ['filter' => ['status' => 'active']]);
         app()->instance('request', $request);
-        $result = app(ContractService::class)->paginate($request);
+        $result = app(ContractService::class)->paginate($request, $actor);
         $this->assertSame(1, $result->total());
 
         $request = Request::create('/', 'GET', ['filter' => ['category' => 'service_agreement']]);
         app()->instance('request', $request);
-        $result = app(ContractService::class)->paginate($request);
+        $result = app(ContractService::class)->paginate($request, $actor);
         $this->assertSame(2, $result->total());
 
         $request = Request::create('/', 'GET', ['filter' => ['contractable_type' => 'cleaning_object']]);
         app()->instance('request', $request);
-        $result = app(ContractService::class)->paginate($request);
+        $result = app(ContractService::class)->paginate($request, $actor);
         $this->assertSame(2, $result->total());
     }
 
     public function test_paginate_search_matches_title_and_number(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
+        $actor = $this->actingAsTenantUser('Admin', $tenant);
         Contract::factory()->create(['tenant_id' => $tenant->id, 'title' => 'Zmluva Alfa', 'number' => 'Z-1']);
         Contract::factory()->create(['tenant_id' => $tenant->id, 'title' => 'Iná zmluva', 'number' => 'Z-2']);
 
         $request = Request::create('/', 'GET', ['filter' => ['search' => 'Alfa']]);
         app()->instance('request', $request);
-        $result = app(ContractService::class)->paginate($request);
+        $result = app(ContractService::class)->paginate($request, $actor);
         $this->assertSame(1, $result->total());
 
         $request = Request::create('/', 'GET', ['filter' => ['search' => 'Z-2']]);
         app()->instance('request', $request);
-        $result = app(ContractService::class)->paginate($request);
+        $result = app(ContractService::class)->paginate($request, $actor);
         $this->assertSame(1, $result->total());
     }
 }

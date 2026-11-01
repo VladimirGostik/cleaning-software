@@ -89,4 +89,5 @@ export interface SharedProps {
     navigation: App.Data.NavigationItemData[];
     tenant: SharedTenant;
     tenantColors: TenantColorOption[];
+    canCreateTenant: boolean;
 }

@@ -20,7 +20,7 @@ final class PermissionEnumTest extends TestCase
     public function test_shared_key_camel_cases_multi_word_permissions(): void
     {
         $this->assertSame('viewAllObjects', PermissionEnum::ViewAllObjects->sharedKey());
-        $this->assertSame('viewContractTemplates', PermissionEnum::ViewContractTemplates->sharedKey());
+        $this->assertSame('viewDocumentTemplates', PermissionEnum::ViewDocumentTemplates->sharedKey());
         $this->assertSame('viewApiDocs', PermissionEnum::ViewApiDocs->sharedKey());
     }
 

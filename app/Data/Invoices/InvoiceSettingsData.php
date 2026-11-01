@@ -89,6 +89,8 @@ final class InvoiceSettingsData extends Data
         public readonly ?string $invoice_mail_body = null,
         #[Nullable, Max(64)]
         public readonly ?string $peppol_participant_id = null,
+        #[Nullable, Max(255)]
+        public readonly ?string $representative_name = null,
     ) {}
 
     public static function fromTenant(Tenant $tenant): self
@@ -125,6 +127,7 @@ final class InvoiceSettingsData extends Data
             invoice_mail_subject: $interface?->invoice_mail_subject,
             invoice_mail_body: $interface?->invoice_mail_body,
             peppol_participant_id: $tenant->peppol_participant_id,
+            representative_name: $tenant->representative_name,
         );
     }
 

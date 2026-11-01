@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Data\Quotes;
 
-use Illuminate\Validation\Rule;
+use App\Enums\DocumentTypeEnum;
+use App\Rules\UsableDocumentTemplate;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Uuid;
@@ -17,7 +18,7 @@ final class QuoteConvertToContractData extends Data
 {
     public function __construct(
         #[Nullable, Uuid]
-        public readonly ?string $contract_template_id = null,
+        public readonly ?string $document_template_id = null,
     ) {}
 
     /**
@@ -29,13 +30,10 @@ final class QuoteConvertToContractData extends Data
         $tenantId = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
 
         return [
-            'contract_template_id' => [
+            'document_template_id' => [
                 'nullable',
                 'uuid',
-                Rule::exists('contract_templates', 'id')
-                    ->where('tenant_id', $tenantId)
-                    ->where('is_active', true)
-                    ->whereNull('deleted_at'),
+                new UsableDocumentTemplate(DocumentTypeEnum::ServiceAgreement),
             ],
         ];
     }

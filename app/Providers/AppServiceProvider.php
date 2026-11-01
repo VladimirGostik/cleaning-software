@@ -12,7 +12,9 @@ use App\Contracts\RendersQuotePdf;
 use App\Contracts\ResolvesSupplierSignature;
 use App\Contracts\SubmitsEInvoices;
 use App\Models\CleaningObject;
+use App\Models\Client;
 use App\Models\TenantMembership;
+use App\Models\User;
 use App\Services\Efa\NullEInvoiceAccessPoint;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
@@ -82,8 +84,10 @@ final class AppServiceProvider extends ServiceProvider
         Relation::morphMap([
             'tenant_membership' => TenantMembership::class,
             'cleaning_object' => CleaningObject::class,
+            'client' => Client::class,
         ]);
 
+        RateLimiter::for('document-preview', fn (Request $request) => Limit::perMinute(30)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
     }
 

@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Support;
+
+use App\Contracts\RendersContractPdf;
+use App\Models\Contract;
+
+final class FakeContractPdfRenderer implements RendersContractPdf
+{
+    public int $freshRenders = 0;
+
+    public function render(Contract $contract): string
+    {
+        $contract->loadMissing('document');
+        $stored = $contract->document?->getFirstMedia('pdf');
+
+        return $stored !== null ? (string) stream_get_contents($stored->stream()) : $this->renderFresh($contract);
+    }
+
+    public function renderFresh(Contract $contract): string
+    {
+        $this->freshRenders++;
+
+        return '%PDF-fake '.($contract->document?->body ?? '');
+    }
+}

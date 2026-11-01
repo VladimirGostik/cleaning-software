@@ -42,7 +42,7 @@ final class ClientPeppolIdTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
 
-        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '0245:12345678']))->assertRedirect(route('clients.index'));
+        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '0245:12345678']))->assertRedirectContains('/clients/');
 
         $client = Client::query()->where('ico', '12345678')->firstOrFail();
         $this->assertSame('0245:12345678', $client->peppol_participant_id);
@@ -87,7 +87,7 @@ final class ClientPeppolIdTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
 
-        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '1234:abc']))->assertRedirect(route('clients.index'));
+        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '1234:abc']))->assertRedirectContains('/clients/');
     }
 
     public function test_empty_scheme_list_accepts_any_four_digit_scheme(): void
@@ -96,7 +96,7 @@ final class ClientPeppolIdTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
 
-        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '7777:abc']))->assertRedirect(route('clients.index'));
+        $this->post(route('clients.store'), $this->payload(['peppol_participant_id' => '7777:abc']))->assertRedirectContains('/clients/');
     }
 
     public function test_user_without_edit_clients_permission_cannot_set_it(): void

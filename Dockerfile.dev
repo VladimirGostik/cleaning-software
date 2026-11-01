@@ -21,7 +21,7 @@ RUN install-php-extensions \
 # Chromium + fonts for spatie/laravel-pdf (chrome driver, chrome-php/chrome).
 # qpdf merges invoice PDFs for bulk download.
 RUN apk add --no-cache bash curl git nodejs npm \
-        chromium nss freetype harfbuzz ca-certificates ttf-dejavu font-noto qpdf \
+        chromium nss freetype harfbuzz ca-certificates ttf-dejavu ttf-liberation font-noto qpdf \
     && npm install -g pnpm@latest
 
 ENV CHROMIUM_PATH=/usr/bin/chromium-browser

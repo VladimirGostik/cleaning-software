@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Data\Tenants\TenantSupplierProfileData;
+use App\Models\User;
 use App\Services\RegistrationService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -88,6 +89,10 @@ final class CreateOwner extends Command
         }
 
         $user = $service->createOwner($name, $email, $password, $company, $ico, $supplier);
+
+        if (! User::query()->where('is_platform_admin', true)->exists()) {
+            $user->forceFill(['is_platform_admin' => true])->save();
+        }
 
         $this->info("Owner {$user->email} created successfully.");
 

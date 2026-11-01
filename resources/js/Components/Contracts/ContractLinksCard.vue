@@ -11,8 +11,14 @@ const { t } = useI18n();
 
 const isObjectParty = computed(() => props.contract.contractable_type === 'cleaning_object');
 
+const isClientParty = computed(() => props.contract.contractable_type === 'client');
+
 const hasLinks = computed(
-    () => props.contract.quote_id !== null || isObjectParty.value || props.contract.contract_template_name !== null,
+    () =>
+        props.contract.quote_id !== null ||
+        isObjectParty.value ||
+        isClientParty.value ||
+        props.contract.document_template_name !== null,
 );
 </script>
 
@@ -35,9 +41,16 @@ const hasLinks = computed(
                 </Link>
             </p>
 
-            <p v-if="props.contract.contract_template_name">
+            <p v-if="isClientParty">
+                <span class="text-base-content/60">{{ t('contract_link_client') }}:</span>
+                <Link :href="`/clients/${props.contract.contractable_id}`" class="link link-hover ml-1">
+                    {{ props.contract.contractable_label }}
+                </Link>
+            </p>
+
+            <p v-if="props.contract.document_template_name">
                 <span class="text-base-content/60">{{ t('contract_link_template') }}:</span>
-                <span class="ml-1">{{ props.contract.contract_template_name }}</span>
+                <span class="ml-1">{{ props.contract.document_template_name }}</span>
             </p>
         </div>
     </div>
