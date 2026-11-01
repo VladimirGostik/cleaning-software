@@ -18,12 +18,14 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command(PurgeTemporaryUploadsCommand::class)->daily();
-Schedule::command(MarkOverdueInvoices::class)->daily();
-Schedule::command(GenerateRecurringInvoices::class)->daily();
-Schedule::command(ExpireQuotes::class)->daily();
-Schedule::command(CheckContractExpiry::class)->daily();
-Schedule::command(GenerateScheduledJobs::class)->daily();
-Schedule::command(RemindTasks::class)->hourly()->withoutOverlapping();
-Schedule::command(ExpirePendingActions::class)->hourly();
-Schedule::command('sanctum:prune-expired --hours=24')->daily();
+$timezone = 'Europe/Bratislava';
+
+Schedule::command(PurgeTemporaryUploadsCommand::class)->dailyAt('12:00')->timezone($timezone);
+Schedule::command(MarkOverdueInvoices::class)->dailyAt('12:00')->timezone($timezone);
+Schedule::command(GenerateRecurringInvoices::class)->dailyAt('12:00')->timezone($timezone);
+Schedule::command(ExpireQuotes::class)->dailyAt('12:00')->timezone($timezone);
+Schedule::command(CheckContractExpiry::class)->dailyAt('12:00')->timezone($timezone);
+Schedule::command(GenerateScheduledJobs::class)->dailyAt('12:00')->timezone($timezone);
+Schedule::command(ExpirePendingActions::class)->dailyAt('12:00')->timezone($timezone);
+Schedule::command('sanctum:prune-expired --hours=24')->dailyAt('12:00')->timezone($timezone);
+Schedule::command(RemindTasks::class)->dailyAt('19:00')->timezone($timezone)->withoutOverlapping();

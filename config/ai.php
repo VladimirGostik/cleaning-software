@@ -9,7 +9,7 @@ return [
 
     'timeout' => 30,
 
-    'assistant_timeout' => 30,
+    'assistant_timeout' => 18,
 
     'csv_preview_max_rows' => 100,
 
@@ -24,7 +24,7 @@ return [
 
     'assistant' => [
         'max_steps' => 6,
-        'turn_seconds' => 45,
+        'turn_seconds' => 20,
         'max_tool_output_chars' => 20000,
         'max_messages' => 20,
         'max_message_chars' => 4000,

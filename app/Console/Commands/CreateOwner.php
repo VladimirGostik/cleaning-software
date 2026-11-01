@@ -61,7 +61,7 @@ final class CreateOwner extends Command
 
         $country = $this->option('country');
         if ($interactive) {
-            $country = text('Country (ISO 2)', default: $country ?? 'SK');
+            $country = text('Country (ISO 2)', default: is_string($country) ? $country : 'SK');
         }
 
         $supplierInput = [
@@ -88,7 +88,10 @@ final class CreateOwner extends Command
             return self::FAILURE;
         }
 
-        $user = $service->createOwner($name, $email, $password, $company, $ico, $supplier);
+        /** @var array{name: string, email: string, password: string, company: string, ico: string} $validated */
+        $validated = $validator->validated();
+
+        $user = $service->createOwner($validated['name'], $validated['email'], $validated['password'], $validated['company'], $validated['ico'], $supplier);
 
         if (! User::query()->where('is_platform_admin', true)->exists()) {
             $user->forceFill(['is_platform_admin' => true])->save();

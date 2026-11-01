@@ -1465,6 +1465,7 @@
     "pending_in_company": "Company: :company.",
     "assistant_partial": "Part of this was already done (see the actions below), but the assistant could not finish its answer. Do not repeat it; check the result in the app.",
     "assistant_unavailable": "The assistant is not available right now. Try again in a moment.",
+    "assistant_time_exceeded": "The request took too long. Try splitting it into smaller steps.",
     "assistant_time_budget": "The time budget for this request is used up; answer with what you already have and do not call more tools.",
     "assistant_output_truncated": "output truncated",
     "assistant_empty": "I could not put together an answer. Try rephrasing the question.",

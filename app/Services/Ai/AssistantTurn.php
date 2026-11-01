@@ -6,6 +6,7 @@ namespace App\Services\Ai;
 
 use App\Data\Ai\AssistantActionData;
 use App\Enums\AssistantActionTypeEnum;
+use App\Exceptions\AssistantTimeBudgetExceeded;
 use Illuminate\Support\Str;
 
 /**
@@ -33,6 +34,8 @@ final class AssistantTurn
 
     private bool $restricted = false;
 
+    private bool $deadlineAnnounced = false;
+
     private int $writeAttempts = 0;
 
     private int $prepareAttempts = 0;
@@ -49,9 +52,9 @@ final class AssistantTurn
     public function __construct(?float $budgetSeconds = null)
     {
         $this->nonce = bin2hex(random_bytes(8));
-        $configured = config('ai.assistant.turn_seconds', 45);
+        $configured = config('ai.assistant.turn_seconds', 20);
 
-        $this->deadline = microtime(true) + ($budgetSeconds ?? (is_numeric($configured) ? (float) $configured : 45.0));
+        $this->deadline = microtime(true) + ($budgetSeconds ?? (is_numeric($configured) ? (float) $configured : 20.0));
     }
 
     public function restrict(): void
@@ -100,6 +103,22 @@ final class AssistantTurn
     public function expired(): bool
     {
         return microtime(true) > $this->deadline;
+    }
+
+    /** The first call past the deadline tells the model to answer; any later one ends the turn, so it stays under the 60 s request limit. */
+    public function guardDeadline(): bool
+    {
+        if (! $this->expired()) {
+            return false;
+        }
+
+        if ($this->deadlineAnnounced) {
+            throw new AssistantTimeBudgetExceeded;
+        }
+
+        $this->deadlineAnnounced = true;
+
+        return true;
     }
 
     public function hasEffects(): bool

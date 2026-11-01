@@ -459,10 +459,24 @@ final class AssistantTest extends TestCase
         $this->assertStringContainsString(__('app.assistant_time_budget'), $this->toolResults($this->sentRequests()[1])[0]);
     }
 
-    public function test_the_per_step_provider_timeout_is_30_seconds(): void
+    public function test_a_model_that_keeps_calling_tools_past_the_deadline_ends_the_turn(): void
     {
-        $this->assertSame(30, config('ai.assistant_timeout'));
-        $this->assertSame(45, config('ai.assistant.turn_seconds'));
+        config(['ai.assistant.turn_seconds' => -1]);
+        $this->realProvider([
+            $this->toolTurn([['name' => 'create_task', 'input' => ['company_id' => $this->alpha->id, 'title' => 'Too late']]]),
+            $this->toolTurn([['name' => 'create_task', 'input' => ['company_id' => $this->alpha->id, 'title' => 'Still too late']]]),
+            $this->textTurn('Never sent.'),
+        ]);
+
+        $this->send()->assertOk()->assertJsonPath('reply', __('app.assistant_time_exceeded'))->assertJsonPath('actions', []);
+
+        $this->assertSame(0, Task::unscopedForSystem()->count());
+        $this->assertCount(2, $this->sentRequests());
+    }
+
+    public function test_the_time_limits_fit_the_60_second_request_limit_of_the_host(): void
+    {
+        $this->assertLessThanOrEqual(60, config()->integer('ai.assistant.turn_seconds') + 2 * config()->integer('ai.assistant_timeout'));
     }
 
     public function test_a_blank_answer_gets_a_fixed_fallback(): void

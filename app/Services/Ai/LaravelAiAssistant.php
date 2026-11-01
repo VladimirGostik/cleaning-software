@@ -11,6 +11,7 @@ use App\Data\Ai\AssistantMessageData;
 use App\Data\Ai\AssistantReplyData;
 use App\Data\Ai\AssistantRequestData;
 use App\Data\Ai\PendingActionData;
+use App\Exceptions\AssistantTimeBudgetExceeded;
 use App\Enums\ActionChannelEnum;
 use App\Enums\AssistantRoleEnum;
 use App\Exceptions\AiUnavailableException;
@@ -61,6 +62,8 @@ final readonly class LaravelAiAssistant implements ChatsWithTools
                 $this->options->model,
                 $this->options->assistantTimeout,
             );
+        } catch (AssistantTimeBudgetExceeded) {
+            return $this->replyFrom($turn, $user, __($turn->hasEffects() ? 'app.assistant_partial' : 'app.assistant_time_exceeded'));
         } catch (Throwable $exception) {
             Log::warning('ai.assistant_failed', ['exception' => $exception::class]);
 

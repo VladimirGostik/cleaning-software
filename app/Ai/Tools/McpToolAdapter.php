@@ -41,7 +41,7 @@ final readonly class McpToolAdapter implements Tool
 
     public function handle(Request $request): string
     {
-        if ($this->turn->expired()) {
+        if ($this->turn->guardDeadline()) {
             return 'Error: '.__('app.assistant_time_budget');
         }
 

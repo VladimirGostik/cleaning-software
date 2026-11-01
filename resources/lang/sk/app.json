@@ -1465,6 +1465,7 @@
     "pending_in_company": "Firma: :company.",
     "assistant_partial": "Časť úlohy sa už vykonala (pozrite akcie nižšie), ale asistent nedokončil odpoveď. Neopakujte ju, výsledok skontrolujte v aplikácii.",
     "assistant_unavailable": "Asistent momentálne nie je dostupný. Skúste to o chvíľu znova.",
+    "assistant_time_exceeded": "Požiadavka trvala príliš dlho. Skúste ju rozdeliť na menšie kroky.",
     "assistant_time_budget": "Časový limit tejto požiadavky sa vyčerpal; odpovedzte tým, čo už máte, a nevolajte ďalšie nástroje.",
     "assistant_output_truncated": "výstup skrátený",
     "assistant_empty": "Nepodarilo sa mi zostaviť odpoveď. Skúste otázku sformulovať inak.",

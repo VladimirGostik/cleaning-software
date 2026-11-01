@@ -1,0 +1,5 @@
+#!/bin/sh
+ROOT="$(dirname "$(readlink -f "$0")")/../.."
+export LD_LIBRARY_PATH="$ROOT/.cloud/sys/usr/lib/aarch64-linux-gnu:$ROOT/.cloud/sys/lib/aarch64-linux-gnu"
+export FONTCONFIG_FILE="$ROOT/docker/cloud/fonts.conf"
+exec "$ROOT/.cloud/chromium/chrome-headless-shell" "$@"

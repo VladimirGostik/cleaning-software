@@ -19,6 +19,6 @@ return [
         'max_ids' => 100,
         'pdf_max_ids' => 10,
         'merge_timeout_seconds' => 60,
-        'qpdf_binary' => 'qpdf',
+        'qpdf_binary' => env('QPDF_BINARY', 'qpdf'),
     ],
 ];
