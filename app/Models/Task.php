@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -159,6 +161,50 @@ final class Task extends Model implements HasMedia
     public function assignedMembership(): BelongsTo
     {
         return $this->belongsTo(TenantMembership::class, 'assigned_membership_id');
+    }
+
+    /** @return HasMany<TaskComment, $this> */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(TaskComment::class);
+    }
+
+    /**
+     * A personal task's run belongs to the company chosen when starting it, which need not be the bound one.
+     *
+     * @return HasMany<TaskRun, $this>
+     */
+    public function aiRuns(): HasMany
+    {
+        return $this->hasMany(TaskRun::class)->withoutGlobalScope(TenantScope::class);
+    }
+
+    /** @return HasOne<TaskRun, $this> */
+    public function latestAiRun(): HasOne
+    {
+        return $this->latestAiRunQuery();
+    }
+
+    /**
+     * What a list page needs: no `actions` payload.
+     *
+     * @return HasOne<TaskRun, $this>
+     */
+    public function latestAiRunStatus(): HasOne
+    {
+        return $this->latestAiRunQuery()->select(['task_runs.id', 'task_runs.task_id', 'task_runs.status', 'task_runs.started_by_user_id']);
+    }
+
+    /**
+     * Not `latestOfMany`: Postgres has no max(uuid), and the UUIDv7 id is the tie-break for runs created in the same second.
+     *
+     * @return HasOne<TaskRun, $this>
+     */
+    private function latestAiRunQuery(): HasOne
+    {
+        return $this->hasOne(TaskRun::class)
+            ->withoutGlobalScope(TenantScope::class)
+            ->whereRaw('task_runs.id = (select latest.id from task_runs latest where latest.task_id = task_runs.task_id order by latest.created_at desc, latest.id desc limit 1)');
     }
 
     /** @return MorphTo<Model, $this> */

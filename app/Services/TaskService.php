@@ -13,12 +13,14 @@ use App\Data\Tasks\TaskListItemData;
 use App\Data\Tasks\TaskMemberOptionData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Enums\PermissionEnum;
+use App\Enums\TaskRunStatusEnum;
 use App\Enums\TaskStatusEnum;
 use App\Events\TaskAssigned;
 use App\Events\TaskDue;
 use App\Models\Task;
 use App\Models\TenantMembership;
 use App\Models\User;
+use App\Policies\TaskPolicy;
 use App\Scopes\TenantScope;
 use App\Services\Dashboard\TenantVisibility;
 use App\Services\Tenancy\TenantPermissionSnapshot;
@@ -50,7 +52,9 @@ final readonly class TaskService
      */
     public function paginate(Request $request, User $actor): LengthAwarePaginator
     {
-        return $this->page(Task::query()->visibleTo($actor), $request);
+        $viewAll = [current_tenant_id() => $actor->can(PermissionEnum::ViewAllTasks->value)];
+
+        return $this->page(Task::query()->visibleTo($actor), $request, $actor, $viewAll);
     }
 
     /**
@@ -89,7 +93,13 @@ final readonly class TaskService
             });
         });
 
-        return $this->page($base, $request);
+        $viewAll = [];
+
+        foreach ($visibilities as $visibility) {
+            $viewAll[$visibility->tenant->id] = $visibility->tasksAll;
+        }
+
+        return $this->page($base, $request, $actor, $viewAll);
     }
 
     public function formContext(User $actor): TaskFormContextData
@@ -269,9 +279,9 @@ final readonly class TaskService
     }
 
     /** The only loader for queue and console contexts, where the scope would drop every global task. */
-    public function findForSystem(string $id): Task
+    public function findForSystem(string $id, bool $withTrashed = false): Task
     {
-        return Task::unscopedForSystem()->findOrFail($id);
+        return Task::unscopedForSystem()->when($withTrashed, fn (Builder $query) => $query->withTrashed())->findOrFail($id);
     }
 
     /** Membership deletion (`$onlyOpen = false`) must release every row for the restrict FK. */
@@ -302,9 +312,10 @@ final readonly class TaskService
 
     /**
      * @param  Builder<Task>  $base
+     * @param  array<string, bool>  $viewAllByTenant  Whether the viewer holds `view all tasks` per company, for the AI status audience.
      * @return LengthAwarePaginator<int, TaskListItemData>
      */
-    private function page(Builder $base, Request $request): LengthAwarePaginator
+    private function page(Builder $base, Request $request, User $actor, array $viewAllByTenant): LengthAwarePaginator
     {
         return QueryBuilder::for($base)
             ->allowedFilters(
@@ -335,10 +346,29 @@ final readonly class TaskService
             )
             ->allowedSorts('due_at', 'created_at', 'status', 'title')
             ->defaultSort('due_at', '-created_at')
-            ->with($this->listRelations())
+            ->with([...$this->listRelations(), 'latestAiRunStatus'])
             ->paginate($request->integer('per_page', 25))
             ->withQueryString()
-            ->through(fn (Task $task) => TaskListItemData::fromModel($task));
+            ->through(fn (Task $task) => TaskListItemData::fromModel($task, $this->aiRunStatus($task, $actor, $viewAllByTenant)));
+    }
+
+    /** @param  array<string, bool>  $viewAllByTenant */
+    private function aiRunStatus(Task $task, User $actor, array $viewAllByTenant): ?TaskRunStatusEnum
+    {
+        $run = $task->latestAiRunStatus;
+
+        if ($run === null) {
+            return null;
+        }
+
+        $audience = TaskPolicy::aiOutputAudienceIncludes(
+            $task->isGlobal(),
+            $task->created_by_user_id === $actor->id,
+            $task->tenant_id !== null && ($viewAllByTenant[$task->tenant_id] ?? false),
+            $run->started_by_user_id === $actor->id,
+        );
+
+        return $audience ? $run->status : null;
     }
 
     private function hydrate(Task $task): Task

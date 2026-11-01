@@ -890,4 +890,33 @@ final class ActionConfirmationTest extends TestCase
             $this->assertNull($row->token_hash);
         }
     }
+
+    public function test_a_task_run_action_has_no_token_lasts_a_day_and_is_confirmed_in_the_app_only(): void
+    {
+        $firm = Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create();
+
+        $prepared = app(ActionConfirmationService::class)->prepare($this->admin, $this->alpha->id, PendingActionEnum::DeleteTask, $firm, [], ActionChannelEnum::TaskRun);
+
+        $this->assertNull($prepared->token);
+        $pending = PendingAction::query()->findOrFail($prepared->pending_action->id);
+        $this->assertSame(ActionChannelEnum::TaskRun, $pending->channel);
+        $this->assertNull($pending->token_hash);
+        $this->assertEqualsWithDelta(now()->addDay()->timestamp, $pending->expires_at->timestamp, 5);
+        $this->assertSame([ConfirmationChannelEnum::App], $pending->allowedConfirmationChannels());
+        $this->assertTrue($this->callTool($this->token, 'confirm_action', ['token' => str_repeat('b', 40)])->isError);
+
+        $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $pending))->assertRedirect();
+        $this->assertNull(Task::unscopedForSystem()->find($firm->id));
+    }
+
+    public function test_mcp_and_assistant_rows_keep_their_ten_minute_window(): void
+    {
+        $firm = Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create();
+
+        foreach ([ActionChannelEnum::Mcp, ActionChannelEnum::Assistant] as $channel) {
+            $prepared = app(ActionConfirmationService::class)->prepare($this->admin, $this->alpha->id, PendingActionEnum::DeleteTask, $firm, [], $channel);
+            $row = PendingAction::query()->findOrFail($prepared->pending_action->id);
+            $this->assertEqualsWithDelta(now()->addMinutes(10)->timestamp, $row->expires_at->timestamp, 5, $channel->value);
+        }
+    }
 }

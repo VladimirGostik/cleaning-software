@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Data\Tasks;
 
 use App\Enums\TaskPriorityEnum;
+use App\Enums\TaskRunStatusEnum;
 use App\Enums\TaskStatusEnum;
 use App\Models\Task;
 use Spatie\LaravelData\Data;
@@ -25,10 +26,11 @@ final class TaskListItemData extends Data
         public readonly ?TaskSubjectData $subject,
         public readonly bool $is_global,
         public readonly string $created_at,
+        public readonly ?TaskRunStatusEnum $ai_run_status = null,
     ) {}
 
     /** Expects `tenant`, `assignedMembership.user` and `taskable` eager loaded. */
-    public static function fromModel(Task $task): self
+    public static function fromModel(Task $task, ?TaskRunStatusEnum $aiRunStatus = null): self
     {
         return new self(
             id: $task->id,
@@ -42,6 +44,7 @@ final class TaskListItemData extends Data
             subject: TaskSubjectData::fromTask($task),
             is_global: $task->isGlobal(),
             created_at: $task->created_at->toIso8601String(),
+            ai_run_status: $aiRunStatus,
         );
     }
 }

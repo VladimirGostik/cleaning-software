@@ -147,7 +147,8 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
             return $request->url() === 'https://api.anthropic.com/v1/messages'
                 && $request->hasHeader('x-api-key', 'test-key')
                 && $body['model'] === 'claude-sonnet-5-5'
-                && data_get($body, 'tool_choice.name') === 'output_structured_data'
+                && ! array_key_exists('tool_choice', $body)
+                && data_get($body, 'output_config.format.type') === 'json_schema'
                 && ($body['max_tokens'] ?? null) === 4096
                 && data_get($document, 'source.media_type') === 'application/pdf'
                 && data_get($document, 'source.data') === base64_encode('%PDF-1.4 data')

@@ -5,7 +5,7 @@ import { router } from '@inertiajs/vue3';
 import { useTaskAttachmentUpload } from './useTaskAttachmentUpload';
 
 const toastSuccess = vi.fn();
-type BeforeEvent = { detail: { visit: { method: string; url: URL } } };
+type BeforeEvent = { detail: { visit: { method: string; url: URL; async: boolean; only: string[] } } };
 let beforeListener: ((event: BeforeEvent) => boolean | void) | null = null;
 
 vi.mock('vue-i18n', () => ({
@@ -160,22 +160,52 @@ describe('useTaskAttachmentUpload', () => {
         expect(failed[0].error).toBe('task_attachment_limit_hint:{"max":20}');
     });
 
-    it('asks before another visit during upload but not for own upload visits', () => {
+    describe('leave guard during an upload', () => {
         const confirm = vi.fn(() => false);
-        vi.stubGlobal('confirm', confirm);
-        window.confirm = confirm;
-        const { api } = setup();
-        const visit = (method: string, path: string): BeforeEvent => ({
-            detail: { visit: { method, url: new URL(path, 'http://localhost') } },
+        const visit = (
+            method: string,
+            path: string,
+            extra: { async?: boolean; only?: string[] } = {},
+        ): BeforeEvent => ({
+            detail: { visit: { method, url: new URL(path, 'http://localhost'), async: false, only: [], ...extra } },
         });
 
-        expect(beforeListener!(visit('get', '/clients'))).toBeUndefined();
+        function uploadingApi() {
+            vi.stubGlobal('confirm', confirm);
+            window.confirm = confirm;
+            confirm.mockClear();
+            const { api } = setup();
+            api.add([pdf('a.pdf')]);
+        }
 
-        api.add([pdf('a.pdf')]);
+        it('does not ask without an upload', () => {
+            setup();
 
-        expect(beforeListener!(visit('post', '/tasks/t1/attachments'))).toBeUndefined();
-        expect(confirm).not.toHaveBeenCalled();
-        expect(beforeListener!(visit('get', '/clients'))).toBe(false);
-        expect(confirm).toHaveBeenCalledTimes(1);
+            expect(beforeListener!(visit('get', '/clients'))).toBeUndefined();
+        });
+
+        it('does not ask for its own upload visits', () => {
+            uploadingApi();
+
+            expect(beforeListener!(visit('post', '/tasks/t1/attachments'))).toBeUndefined();
+            expect(confirm).not.toHaveBeenCalled();
+        });
+
+        it('lets an async partial reload pass without asking', () => {
+            uploadingApi();
+
+            expect(
+                beforeListener!(visit('get', '/tasks/t1', { async: true, only: ['thread', 'flash'] })),
+            ).toBeUndefined();
+            expect(confirm).not.toHaveBeenCalled();
+        });
+
+        it('still asks for a sync navigation and a sync POST elsewhere', () => {
+            uploadingApi();
+
+            expect(beforeListener!(visit('get', '/clients'))).toBe(false);
+            expect(beforeListener!(visit('post', '/tasks/t1/comments', { only: ['thread', 'flash'] }))).toBe(false);
+            expect(confirm).toHaveBeenCalledTimes(2);
+        });
     });
 });

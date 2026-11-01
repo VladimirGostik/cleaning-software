@@ -1643,6 +1643,20 @@ readonly update: boolean,
 readonly delete: boolean,
 readonly assign: boolean,
 };
+export type TaskCommentData = {
+readonly id: string,
+readonly author_kind: App.Enums.TaskCommentAuthorEnum,
+readonly author_name: string,
+readonly body: string,
+readonly created_at: string,
+readonly is_mine: boolean,
+readonly can_delete: boolean,
+readonly answers_comment_id: string | null,
+};
+export type TaskCommentStoreData = {
+readonly body: string,
+readonly answers_comment_id: string | null,
+};
 export type TaskDetailData = {
 readonly id: string,
 readonly tenant_id: string | null,
@@ -1689,6 +1703,7 @@ readonly assignee_name: string | null,
 readonly subject: App.Data.Tasks.TaskSubjectData | null,
 readonly is_global: boolean,
 readonly created_at: string,
+readonly ai_run_status: App.Enums.TaskRunStatusEnum | null,
 };
 export type TaskMemberOptionData = {
 readonly id: string,
@@ -1698,11 +1713,50 @@ export type TaskParseData = {
 readonly text: string,
 readonly company_id: string | null,
 };
+export type TaskQuestionData = {
+readonly comment_id: string,
+readonly answered: boolean,
+readonly can_answer: boolean,
+};
+export type TaskRunCompanyData = {
+readonly id: string,
+readonly name: string,
+};
+export type TaskRunData = {
+readonly id: string,
+readonly status: App.Enums.TaskRunStatusEnum,
+readonly is_active: boolean,
+readonly closed_task: boolean,
+readonly started_by_name: string,
+readonly tenant_id: string,
+readonly tenant_name: string,
+readonly finished_at: string | null,
+readonly actions: App.Data.Ai.AssistantActionData[],
+};
+export type TaskRunStartData = {
+readonly company_id: string | null,
+};
+export type TaskRunStatusData = {
+readonly latest_run_id: string | null,
+readonly status: App.Enums.TaskRunStatusEnum | null,
+readonly is_active: boolean,
+};
 export type TaskSubjectData = {
 readonly type: string,
 readonly id: string,
 readonly label: string,
 readonly url: string | null,
+};
+export type TaskThreadData = {
+readonly comments: App.Data.Tasks.TaskCommentData[],
+readonly latest_run: App.Data.Tasks.TaskRunData | null,
+readonly question: App.Data.Tasks.TaskQuestionData | null,
+readonly pending_actions: App.Data.Ai.PendingActionData[],
+readonly ai_available: boolean,
+readonly can_comment: boolean,
+readonly can_start_run: boolean,
+readonly run_companies: App.Data.Tasks.TaskRunCompanyData[],
+readonly max_body_chars: number,
 };
 export type TaskUpsertData = {
 readonly title: string,
@@ -1767,7 +1821,7 @@ readonly redirect_to: string | null,
 }
 }
 namespace Enums {
-export type ActionChannelEnum = "mcp" | "assistant";
+export type ActionChannelEnum = "mcp" | "assistant" | "task_run";
 export type AssistantActionTypeEnum = "open" | "created" | "updated";
 export type AssistantRoleEnum = "user" | "assistant";
 export type BulkActionEnum = "pay" | "send" | "issue";
@@ -1798,13 +1852,13 @@ export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
 export type JobTypeEnum = "regular" | "one_off" | "special";
 export type NavIconEnum = "dashboard" | "buildings" | "team" | "clients" | "quotes" | "invoices" | "recurring_invoices" | "contracts" | "documents" | "schedule" | "tasks" | "expenses" | "notifications" | "notification_settings" | "pending_actions" | "users" | "roles" | "audit_logs" | "media" | "profile" | "invoice_settings" | "settings";
-export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned";
+export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned" | "task.commented" | "task.ai_run";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";
 export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense";
 export type PendingActionStatusEnum = "pending" | "executed" | "cancelled" | "expired";
-export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "view expenses" | "manage expenses";
+export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "view expenses" | "manage expenses";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type RecurringDefaultStateEnum = "draft" | "issued";
@@ -1812,8 +1866,11 @@ export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" 
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";
 export type RoundingModeEnum = "none" | "document" | "cash_005";
 export type SupportedLanguage = "sk" | "en" | "uk";
+export type TaskCommentAuthorEnum = "user" | "ai";
 export type TaskFrequencyEnum = "one_time" | "weekly_1x" | "weekly_2x" | "weekly_3x" | "biweekly" | "monthly" | "bimonthly" | "seasonal";
 export type TaskPriorityEnum = "low" | "normal" | "high";
+export type TaskRunOutcomeEnum = "done" | "question" | "cannot";
+export type TaskRunStatusEnum = "queued" | "running" | "done" | "needs_input" | "awaiting_confirmation" | "could_not_finish" | "blocked" | "failed";
 export type TaskSourceEnum = "manual" | "voice" | "assistant" | "mcp";
 export type TaskStatusEnum = "open" | "done" | "cancelled";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";

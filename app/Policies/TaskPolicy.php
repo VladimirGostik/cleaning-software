@@ -7,6 +7,7 @@ namespace App\Policies;
 use App\Enums\PermissionEnum;
 use App\Models\Media;
 use App\Models\Task;
+use App\Models\TaskComment;
 use App\Models\User;
 use App\Services\Dashboard\TenantVisibility;
 use App\Services\Tenancy\TenantPermissionSnapshot;
@@ -71,6 +72,56 @@ final class TaskPolicy
 
         return $taskVisible
             && ($attachment->getCustomProperty('uploaded_by_user_id') === $user->id || $user->can(PermissionEnum::DeleteTasks->value));
+    }
+
+    public function comment(User $user, Task $task): bool
+    {
+        return $task->isVisibleTo($user);
+    }
+
+    public function deleteComment(User $user, Task $task, TaskComment $comment): bool
+    {
+        return $this->mayDeleteComment($user, $task, $comment, $task->isVisibleTo($user));
+    }
+
+    public function mayDeleteComment(User $user, Task $task, TaskComment $comment, bool $taskVisible): bool
+    {
+        if ($task->isGlobal()) {
+            return $task->created_by_user_id === $user->id;
+        }
+
+        return $taskVisible && ($comment->user_id === $user->id || $user->can(PermissionEnum::DeleteTasks->value));
+    }
+
+    /** `$companyId` is the company a personal task runs in; a firm task always runs in its own. */
+    public function startAiRun(User $user, Task $task, ?string $companyId = null): bool
+    {
+        if (! $task->isGlobal()) {
+            return $task->isVisibleTo($user) && $user->can(PermissionEnum::RunTasksWithAi->value);
+        }
+
+        return $task->created_by_user_id === $user->id
+            && $companyId !== null
+            && $user->hasActiveMembership($companyId)
+            && $this->holds($user, PermissionEnum::RunTasksWithAi, $companyId);
+    }
+
+    public function viewAiOutput(User $user, Task $task, string $startedByUserId): bool
+    {
+        return $task->isVisibleTo($user)
+            && self::aiOutputAudienceIncludes($task->isGlobal(), $task->created_by_user_id === $user->id, $user->can(PermissionEnum::ViewAllTasks->value), $startedByUserId === $user->id);
+    }
+
+    public function seesAllAiOutput(User $user, Task $task): bool
+    {
+        return $task->isVisibleTo($user)
+            && self::aiOutputAudienceIncludes($task->isGlobal(), $task->created_by_user_id === $user->id, $user->can(PermissionEnum::ViewAllTasks->value), false);
+    }
+
+    /** For callers that already know the task is visible and hold the per-company breadth permission, such as list pages across companies. */
+    public static function aiOutputAudienceIncludes(bool $personalTask, bool $isCreator, bool $holdsViewAll, bool $isStarter): bool
+    {
+        return $personalTask ? $isCreator : ($holdsViewAll || $isStarter);
     }
 
     private function mayChange(User $user, Task $task, PermissionEnum $permission): bool

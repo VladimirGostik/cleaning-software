@@ -81,6 +81,20 @@ async function send(url: string, body: unknown, accept: string, signal?: AbortSi
     return response;
 }
 
+export async function getJson<T>(url: string, opts?: { signal?: AbortSignal }): Promise<T> {
+    const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        signal: opts?.signal,
+    });
+
+    if (!response.ok) {
+        throw await failureOf(response);
+    }
+
+    return (await response.json()) as T;
+}
+
 export async function postJson<T>(url: string, body: unknown, opts?: { signal?: AbortSignal }): Promise<T> {
     const response = await send(url, body, 'application/json', opts?.signal);
 

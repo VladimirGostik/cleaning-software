@@ -7,6 +7,16 @@ return [
 
     'model' => env('AI_MODEL', 'claude-sonnet-5-5'),
 
+    'providers' => [
+        'anthropic' => [
+            'driver' => 'anthropic',
+            'key' => env('ANTHROPIC_API_KEY'),
+            'url' => env('ANTHROPIC_URL', 'https://api.anthropic.com/v1'),
+            // Without this laravel/ai forces tool_choice for structured output, which the current models reject with a 400.
+            'anthropic_beta' => 'structured-outputs-2025-11-13',
+        ],
+    ],
+
     'timeout' => 30,
 
     'assistant_timeout' => 18,
@@ -35,6 +45,17 @@ return [
         'mcp_restriction_minutes' => 15,
         'max_writes_per_turn' => 10,
         'max_prepares_per_turn' => 5,
+    ],
+
+    'task_run' => [
+        'queue' => env('AI_TASK_RUN_QUEUE', 'ai'),
+        'turn_seconds' => 45,
+        'step_seconds' => 25,
+        'pending_action_ttl_minutes' => 1440,
+        'stale_minutes' => 15,
+        'running_stale_seconds' => 120,
+        'context_comments' => 30,
+        'context_chars' => 12000,
     ],
 
     'task_parse_max_chars' => 2000,

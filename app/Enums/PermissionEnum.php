@@ -102,6 +102,7 @@ enum PermissionEnum: string
     case DeleteTasks = 'delete tasks';
     /** Breadth modifier — requires ViewTasks. Without it the actor sees only tasks created by or assigned to her. */
     case ViewAllTasks = 'view all tasks';
+    case RunTasksWithAi = 'run tasks with ai';
 
     // Expenses
     case ViewExpenses = 'view expenses';
@@ -155,7 +156,7 @@ enum PermissionEnum: string
             self::AccessMobileApp => 'mobile',
 
             self::ViewTasks, self::CreateTasks, self::EditTasks,
-            self::DeleteTasks, self::ViewAllTasks => 'tasks',
+            self::DeleteTasks, self::ViewAllTasks, self::RunTasksWithAi => 'tasks',
 
             self::ViewExpenses, self::ManageExpenses => 'expenses',
         };

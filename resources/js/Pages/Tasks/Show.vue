@@ -13,11 +13,15 @@ import TaskSubjectLink from '@/Components/Tasks/TaskSubjectLink.vue';
 import TaskFormDrawer from '@/Components/Tasks/TaskFormDrawer.vue';
 import TaskAssignPanel from '@/Components/Tasks/TaskAssignPanel.vue';
 import TaskAttachmentsCard from '@/Components/Tasks/TaskAttachmentsCard.vue';
+import TaskAiCard from '@/Components/Tasks/TaskAiCard.vue';
+import TaskCommentsCard from '@/Components/Tasks/TaskCommentsCard.vue';
 
 import { useTaskAttachmentUpload } from '@/Composables/useTaskAttachmentUpload';
+import { useTaskAiRun } from '@/Composables/useTaskAiRun';
 import { useTaskTransition } from '@/Composables/useTaskTransition';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { formatDatetime } from '@/utils/date';
+import { shouldShowTaskAiCard } from '@/utils/taskAi';
 import type { Breadcrumb } from '@/types';
 
 const { t } = useI18n();
@@ -26,6 +30,7 @@ const props = defineProps<{
     task: App.Data.Tasks.TaskDetailData;
     attachments: App.Data.Tasks.TaskAttachmentListData;
     context: App.Data.Tasks.TaskFormContextData;
+    thread: App.Data.Tasks.TaskThreadData;
 }>();
 
 const breadcrumbs = computed<Breadcrumb[]>(() => [
@@ -47,6 +52,15 @@ const {
 } = useTaskAttachmentUpload({
     taskId: props.task.id,
     list: () => props.attachments,
+});
+const {
+    starting,
+    errors: aiErrors,
+    statusCheckFailed,
+    start,
+} = useTaskAiRun({
+    taskId: props.task.id,
+    thread: () => props.thread,
 });
 const processing = computed(() => processingId.value !== null || uploading.value);
 
@@ -121,6 +135,17 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 </div>
             </div>
 
+            <TaskAiCard
+                v-if="shouldShowTaskAiCard(thread)"
+                :thread="thread"
+                :is-global="task.is_global"
+                :uploading="uploading"
+                :starting="starting"
+                :errors="aiErrors"
+                :status-check-failed="statusCheckFailed"
+                @start="start"
+            />
+
             <TaskAttachmentsCard
                 :task-id="task.id"
                 :list="attachments"
@@ -129,6 +154,8 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 @add="add"
                 @dismiss="dismiss"
             />
+
+            <TaskCommentsCard :task-id="task.id" :thread="thread" :uploading="uploading" />
         </div>
 
         <div class="space-y-6">
