@@ -14,6 +14,7 @@ use App\Data\Quotes\QuoteUpsertData;
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractTermTypeEnum;
+use App\Enums\DocumentTypeEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
 use App\Enums\QuoteKindEnum;
@@ -21,13 +22,18 @@ use App\Enums\QuoteStatusEnum;
 use App\Enums\RoundingModeEnum;
 use App\Events\QuoteSent;
 use App\Models\Contract;
-use App\Models\ContractTemplate;
+use App\Models\Document;
+use App\Models\DocumentTemplate;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use App\Models\User;
+use App\Services\Documents\DocumentHtmlSanitizer;
+use App\Services\Documents\DocumentTemplateCatalogue;
+use App\Services\Documents\DocumentTemplateRenderer;
+use App\Services\Documents\QuoteTextService;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
 use Illuminate\Database\DatabaseManager;
@@ -45,6 +51,10 @@ final readonly class QuoteService
         private TemporaryUploadService $uploads,
         private DocumentTotalsCalculator $totals,
         private DatabaseManager $db,
+        private QuoteTextService $text,
+        private DocumentTemplateRenderer $renderer,
+        private DocumentHtmlSanitizer $sanitizer,
+        private DocumentTemplateCatalogue $catalogue,
     ) {}
 
     /**
@@ -80,7 +90,7 @@ final readonly class QuoteService
             )
             ->allowedSorts('number', 'status', 'kind', 'issue_date', 'valid_until', 'total', 'created_at')
             ->defaultSort('-created_at')
-            ->with(['client:id,name', 'cleaningObject:id,name', 'media'])
+            ->with(['client:id,name', 'cleaningObject:id,name', 'document.media'])
             ->paginate($request->integer('per_page', 25))
             ->withQueryString()
             ->through(fn (Quote $quote) => QuoteListItemData::fromModel($quote));
@@ -99,9 +109,9 @@ final readonly class QuoteService
             if ($data->kind === QuoteKindEnum::Itemized) {
                 $this->syncItems($quote, $data->items, $tenant->id, (bool) $tenant->is_vat_payer);
                 $quote->update($this->computeTotals($quote));
-            } elseif ($data->document_uuid !== null) {
-                $this->uploads->moveToModel($quote, 'document', $data->document_uuid, $actor, $sessionId);
             }
+
+            $this->syncDocument($quote, $data, $actor, $sessionId);
 
             return $quote->load('items');
         });
@@ -121,9 +131,9 @@ final readonly class QuoteService
             if ($data->kind === QuoteKindEnum::Itemized) {
                 $this->syncItems($quote, $data->items, $tenant->id, (bool) $quote->is_vat_payer);
                 $quote->update($this->computeTotals($quote));
-            } elseif ($data->document_uuid !== null) {
-                $this->uploads->moveToModel($quote, 'document', $data->document_uuid, $actor, $sessionId);
             }
+
+            $this->syncDocument($quote, $data, $actor, $sessionId);
 
             return $quote->load('items');
         });
@@ -133,11 +143,27 @@ final readonly class QuoteService
     {
         $this->guardLifecycleTransition($quote, QuoteStatusEnum::Sent);
 
-        $quote->update(['status' => QuoteStatusEnum::Sent, 'sent_at' => now()]);
+        $missing = $this->text->missingTokens($quote);
 
-        QuoteSent::dispatch($quote->tenant_id, $quote->id);
+        if ($missing !== []) {
+            throw ValidationException::withMessages([
+                'status' => [__('app.quote_unresolved_tokens', ['tokens' => implode(', ', $missing)])],
+            ]);
+        }
 
-        return $quote;
+        return $this->db->transaction(function () use ($quote): Quote {
+            $resolved = $this->text->resolvedBody($quote);
+
+            if ($resolved !== null) {
+                $quote->document?->update(['body' => $this->sanitizer->sanitize($resolved)]);
+            }
+
+            $quote->update(['status' => QuoteStatusEnum::Sent, 'sent_at' => now()]);
+
+            QuoteSent::dispatch($quote->tenant_id, $quote->id);
+
+            return $quote;
+        });
     }
 
     public function accept(Quote $quote): Quote
@@ -231,8 +257,10 @@ final readonly class QuoteService
                     ]);
                 }
             } else {
-                $quote->getFirstMedia('document')?->copy($newQuote, 'document');
+                $this->copyUploadedFile($quote, $newQuote);
             }
+
+            $this->copyTextDocument($quote, $newQuote);
 
             return $newQuote->load('items');
         });
@@ -245,6 +273,7 @@ final readonly class QuoteService
         }
 
         $this->db->transaction(function () use ($quote): void {
+            $quote->document?->delete();
             $quote->delete();
         });
     }
@@ -333,7 +362,7 @@ final readonly class QuoteService
         });
     }
 
-    public function convertToContract(Quote $quote, QuoteConvertToContractData $data): Contract
+    public function convertToContract(Quote $quote, QuoteConvertToContractData $data, User $actor): Contract
     {
         if ($quote->isDocument()) {
             throw ValidationException::withMessages(['status' => [__('app.quote_document_not_convertible')]]);
@@ -351,8 +380,8 @@ final readonly class QuoteService
             throw ValidationException::withMessages(['cleaning_object_id' => [__('app.quote_object_required_for_contract')]]);
         }
 
-        $template = $data->contract_template_id !== null
-            ? ContractTemplate::query()->findOrFail($data->contract_template_id)
+        $template = $data->document_template_id !== null
+            ? DocumentTemplate::query()->findOrFail($data->document_template_id)
             : null;
 
         $upsert = ContractUpsertData::from([
@@ -362,15 +391,117 @@ final readonly class QuoteService
             'term_type' => ContractTermTypeEnum::Indefinite->value,
             'contractable_type' => ContractableTypeEnum::CleaningObject->value,
             'contractable_id' => $quote->cleaning_object_id,
-            'contract_template_id' => $template?->id,
-            'body' => $template !== null ? $template->body : '{{quote.items}}',
+            'document_template_id' => $template?->id,
+            'body' => $template !== null ? $template->body : $this->catalogue->skeleton(DocumentTypeEnum::ServiceAgreement, true),
             'valid_from' => now()->toDateString(),
             'end_date' => null,
             'notes' => $quote->note,
             'employment' => null,
+            'show_header' => $template->show_header ?? true,
+            'show_footer' => $template->show_footer ?? true,
         ]);
 
-        return $this->contracts->create($upsert, $quote);
+        return $this->contracts->create($upsert, $actor, $quote);
+    }
+
+    private function syncDocument(Quote $quote, QuoteUpsertData $data, ?User $actor, string $sessionId): void
+    {
+        $quote->unsetRelation('document');
+
+        if ($data->kind === QuoteKindEnum::Document) {
+            if ($data->document_uuid !== null) {
+                $document = $this->quoteDocument($quote, null);
+                $this->uploads->moveToModel($document, 'file', $data->document_uuid, $actor, $sessionId);
+            }
+
+            return;
+        }
+
+        $body = $data->document_body;
+
+        if ($body === null && $data->document_template_id !== null) {
+            $body = DocumentTemplate::query()->find($data->document_template_id)?->body;
+        }
+
+        if ($body === null) {
+            $quote->document()->delete();
+
+            return;
+        }
+
+        $unknown = $this->renderer->violations(DocumentTypeEnum::Quote, $body);
+
+        if ($unknown !== []) {
+            throw ValidationException::withMessages([
+                'document_body' => [__('app.document_template_unknown_tokens', ['tokens' => implode(', ', $unknown)])],
+            ]);
+        }
+
+        $document = $this->quoteDocument($quote, $this->sanitizer->sanitize($body));
+        $document->update([
+            'document_template_id' => $data->document_template_id,
+            'title' => $quote->subject ?? $quote->number ?? __('app.quote_pdf_title'),
+            'show_header' => $data->document_show_header,
+            'show_footer' => $data->document_show_footer,
+        ]);
+    }
+
+    private function quoteDocument(Quote $quote, ?string $body): Document
+    {
+        $document = $quote->document()->first() ?? new Document([
+            'tenant_id' => $quote->tenant_id,
+            'documentable_type' => $quote->getMorphClass(),
+            'documentable_id' => $quote->id,
+            'type' => DocumentTypeEnum::Quote,
+            'title' => $quote->subject ?? $quote->number ?? __('app.quote_pdf_title'),
+        ]);
+
+        if ($body !== null) {
+            $document->body = $body;
+        }
+
+        $document->save();
+
+        return $document;
+    }
+
+    private function copyUploadedFile(Quote $source, Quote $target): void
+    {
+        $media = $source->document?->getFirstMedia('file');
+
+        if ($media === null) {
+            return;
+        }
+
+        $media->copy($this->quoteDocument($target, null), 'file');
+    }
+
+    private function copyTextDocument(Quote $source, Quote $target): void
+    {
+        if ($source->kind !== QuoteKindEnum::Itemized) {
+            return;
+        }
+
+        $document = $source->document;
+
+        if ($document === null || $document->body === null) {
+            return;
+        }
+
+        $body = $source->status === QuoteStatusEnum::Draft
+            ? $document->body
+            : ($document->document_template_id !== null ? DocumentTemplate::query()->find($document->document_template_id)?->body : null);
+
+        if ($body === null) {
+            return;
+        }
+
+        $copy = $this->quoteDocument($target, $body);
+        $copy->update([
+            'document_template_id' => $document->document_template_id,
+            'show_header' => $document->show_header,
+            'show_footer' => $document->show_footer,
+        ]);
     }
 
     private function guardLifecycleTransition(Quote $quote, QuoteStatusEnum $to): void

@@ -5,21 +5,33 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Contracts\RendersContractPdf;
+use App\Data\Contracts\ContractCreatePrefillData;
 use App\Data\Contracts\ContractDetailData;
 use App\Data\Contracts\ContractFormContextData;
+use App\Data\Contracts\ContractGenerateData;
 use App\Data\Contracts\ContractTerminateData;
 use App\Data\Contracts\ContractUpsertData;
 use App\Data\Contracts\MembershipOptionData;
-use App\Data\ContractTemplates\ContractTemplateOptionData;
+use App\Data\DocumentTemplates\DocumentTemplateOptionData;
 use App\Enums\ContractableTypeEnum;
+use App\Enums\ContractCategoryEnum;
+use App\Enums\DocumentTypeEnum;
+use App\Enums\EmploymentContractTypeEnum;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
+use App\Models\CleaningObject;
+use App\Models\Client;
 use App\Models\Contract;
-use App\Models\ContractTemplate;
+use App\Models\Tenant;
 use App\Models\TenantMembership;
+use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\ContractService;
-use App\Services\PlaceholderResolverService;
+use App\Services\Documents\ContractTextService;
+use App\Services\Documents\DocumentFrame;
+use App\Services\Documents\DocumentTemplateCatalogue;
+use App\Services\Documents\DocumentTemplateService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -35,7 +47,9 @@ final class ContractController extends Controller
 
     public function __construct(
         private readonly ContractService $contracts,
-        private readonly PlaceholderResolverService $placeholders,
+        private readonly ContractTextService $text,
+        private readonly DocumentTemplateService $templates,
+        private readonly DocumentTemplateCatalogue $catalogue,
     ) {}
 
     #[Authorize('viewAny', Contract::class)]
@@ -43,52 +57,76 @@ final class ContractController extends Controller
     public function index(Request $request): InertiaResponse
     {
         return Inertia::render('Contracts/Index', [
-            'contracts' => $this->contracts->paginate($request),
+            'contracts' => $this->contracts->paginate($request, $this->actor($request)),
             'filters' => $request->query(),
         ]);
     }
 
     #[Authorize('create', Contract::class)]
-    public function create(): InertiaResponse
+    public function create(Request $request): InertiaResponse
     {
+        $actor = $this->actor($request);
+
         return Inertia::render('Contracts/Create', [
-            'context' => $this->formContext(),
+            'context' => $this->formContext($actor),
+            'prefill' => $this->prefill($request, $actor),
         ]);
     }
 
     #[Authorize('create', Contract::class)]
-    public function store(ContractUpsertData $data): RedirectResponse
+    public function store(ContractUpsertData $data, Request $request): RedirectResponse
     {
-        $contract = $this->contracts->create($data);
+        $contract = $this->contracts->create($data, $this->actor($request));
 
         return to_route('contracts.show', $contract)->with('success', __('app.contract_created'));
     }
 
-    #[Authorize('view', 'contract')]
-    public function show(Contract $contract): InertiaResponse
+    #[Authorize('create', Contract::class)]
+    public function generate(ContractGenerateData $data, Request $request): JsonResponse
     {
+        return response()->json($this->contracts->generate($data, $this->actor($request))->toArray());
+    }
+
+    #[Authorize('create', Contract::class)]
+    public function generatePdf(ContractGenerateData $data, Request $request): Response
+    {
+        return response($this->contracts->generatePdf($data, $this->actor($request)), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="contract.pdf"',
+        ]);
+    }
+
+    #[Authorize('view', 'contract')]
+    public function show(Contract $contract, Request $request): InertiaResponse
+    {
+        Inertia::encryptHistory();
+
         return Inertia::render('Contracts/Show', [
-            'contract' => ContractDetailData::fromModel($contract),
+            'contract' => ContractDetailData::fromModel($contract, $this->text, $this->actor($request)),
         ]);
     }
 
     #[Authorize('update', 'contract')]
-    public function edit(Contract $contract): InertiaResponse
+    public function edit(Contract $contract, Request $request): InertiaResponse
     {
+        Inertia::encryptHistory();
+
         $keepObjectId = $contract->contractable_type === ContractableTypeEnum::CleaningObject->value
             ? $contract->contractable_id
             : null;
 
+        $actor = $this->actor($request);
+
         return Inertia::render('Contracts/Edit', [
-            'contract' => ContractDetailData::fromModel($contract),
-            'context' => $this->formContext($keepObjectId),
+            'contract' => ContractDetailData::fromModel($contract, $this->text, $actor),
+            'context' => $this->formContext($actor, $keepObjectId),
         ]);
     }
 
     #[Authorize('update', 'contract')]
-    public function update(ContractUpsertData $data, Contract $contract): RedirectResponse
+    public function update(ContractUpsertData $data, Contract $contract, Request $request): RedirectResponse
     {
-        $this->contracts->update($contract, $data);
+        $this->contracts->update($contract, $data, $this->actor($request));
 
         return to_route('contracts.show', $contract)->with('success', __('app.contract_updated'));
     }
@@ -134,30 +172,102 @@ final class ContractController extends Controller
         ]);
     }
 
-    private function formContext(?string $keepObjectId = null): ContractFormContextData
+    private function actor(Request $request): User
     {
-        $memberships = TenantMembership::query()
-            ->with('user:id,name,email')
-            ->where('tenant_id', current_tenant_id())
-            ->where('is_active', true)
-            ->get()
-            ->map(fn (TenantMembership $membership) => MembershipOptionData::fromModel($membership))
-            ->sortBy('label')
-            ->values()
-            ->all();
+        /** @var User $user */
+        $user = $request->user();
 
-        $templates = ContractTemplate::query()
-            ->active()
-            ->orderBy('name')
-            ->get()
-            ->map(fn (ContractTemplate $template) => ContractTemplateOptionData::fromModel($template))
-            ->all();
+        return $user;
+    }
+
+    private function formContext(User $actor, ?string $keepObjectId = null): ContractFormContextData
+    {
+        $memberships = [];
+
+        if ($actor->can(PermissionEnum::ViewEmployeePersonalData->value)) {
+            $memberships = TenantMembership::query()
+                ->with('user:id,name,email')
+                ->where('tenant_id', current_tenant_id())
+                ->where('is_active', true)
+                ->get()
+                ->map(fn (TenantMembership $membership) => MembershipOptionData::fromModel($membership))
+                ->sortBy('label')
+                ->values()
+                ->all();
+        }
+
+        $templates = [];
+
+        foreach (ContractCategoryEnum::cases() as $category) {
+            foreach ($this->templates->options(DocumentTypeEnum::fromCategory($category)) as $template) {
+                $templates[] = DocumentTemplateOptionData::fromModel($template);
+            }
+        }
+
+        $tenant = Tenant::query()->findOrFail(current_tenant_id());
 
         return new ContractFormContextData(
             objects: $this->objectOptions($keepObjectId),
+            clients: $this->clientOptions(),
             memberships: $memberships,
             templates: $templates,
-            tokens: $this->placeholders->catalog(),
+            tokens: $this->catalogue->catalog(),
+            letterhead: DocumentFrame::letterhead($tenant),
+            footer: DocumentFrame::footer($tenant),
         );
+    }
+
+    private function prefill(Request $request, User $actor): ContractCreatePrefillData
+    {
+        $type = ContractableTypeEnum::tryFrom($request->string('contractable_type')->toString());
+        $id = $request->string('contractable_id')->toString();
+        $label = null;
+
+        if ($type !== null && Str::isUuid($id)) {
+            $label = $this->subjectLabel($type, $id, $actor);
+        }
+
+        if ($label === null) {
+            $type = null;
+            $id = null;
+        }
+
+        $category = ContractCategoryEnum::tryFrom($request->string('category')->toString());
+
+        if ($category !== null && $type !== null && ! in_array($type, $category->allowedContractableTypes(), true)) {
+            $category = null;
+        }
+
+        $employmentType = $category === ContractCategoryEnum::Employment
+            ? EmploymentContractTypeEnum::tryFrom($request->string('employment_type')->toString())
+            : null;
+
+        $templateId = $request->string('document_template_id')->toString();
+        $validTemplate = null;
+
+        if ($category !== null && Str::isUuid($templateId)) {
+            $validTemplate = collect($this->templates->options(DocumentTypeEnum::fromCategory($category), $employmentType))
+                ->firstWhere('id', $templateId)?->id;
+        }
+
+        return new ContractCreatePrefillData(
+            contractable_type: $type,
+            contractable_id: $id,
+            contractable_label: $label,
+            category: $category,
+            employment_type: $employmentType,
+            document_template_id: $validTemplate,
+        );
+    }
+
+    private function subjectLabel(ContractableTypeEnum $type, string $id, User $actor): ?string
+    {
+        return match ($type) {
+            ContractableTypeEnum::CleaningObject => CleaningObject::query()->find($id)?->name,
+            ContractableTypeEnum::Client => Client::query()->find($id)?->name,
+            ContractableTypeEnum::TenantMembership => $actor->can(PermissionEnum::ViewEmployeePersonalData->value)
+                ? TenantMembership::query()->with('user:id,name,email')->where('tenant_id', current_tenant_id())->find($id)?->display_name
+                : null,
+        };
     }
 }

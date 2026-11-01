@@ -85,6 +85,210 @@ parameters:
 			path: tests/Feature/AuditLogs/AuditLogControllerTest.php
 
 		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with App\\Models\\CleaningObject will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Feature/Contracts/ClientContractTest.php
+
+		-
+			message: '#^Cannot access offset ''overview'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Feature/Contracts/ClientContractTest.php
+
+		-
+			message: '#^Cannot access offset ''props'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Feature/Contracts/ClientContractTest.php
+
+		-
+			message: '#^Cannot access property \$status on App\\Models\\Contract\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Contracts/ClientContractTest.php
+
+		-
+			message: '#^Offset ''expiring_30d'' on array\{active\: 1, expiring_30d\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: tests/Feature/Contracts/ClientContractTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with App\\Models\\Tenant will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\) with App\\Models\\User will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Cannot access property \$status on App\\Models\\Contract\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Contracts\\ContractFromSubjectTest\:\:payload\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Contracts\\ContractFromSubjectTest\:\:payload\(\) should return array\<string, mixed\> but returns array\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Parameter \#1 \$haystack of function substr_count expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 4
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringNotContainsString\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Contracts/ContractFromSubjectTest.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Migrations\\Migration\:\:down\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Contracts/ContractLegacyBodyMigrationTest.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Migrations\\Migration\:\:up\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Contracts/ContractLegacyBodyMigrationTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: tests/Feature/Contracts/ContractLegacyBodyMigrationTest.php
+
+		-
+			message: '#^Parameter \#1 \$contract of method App\\Services\\Documents\\ContractTextService\:\:displayBody\(\) expects App\\Models\\Contract, App\\Models\\Contract\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: tests/Feature/Contracts/ContractPdfTest.php
+
+		-
+			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 4
+			path: tests/Feature/Contracts/ContractServiceTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Services\\Pdf\\ContractPdfService\:\:\$freshRenders\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Contracts/SignedContractPdfTest.php
+
+		-
+			message: '#^Cannot access property \$document on App\\Models\\Contract\|null\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: tests/Feature/Contracts/SignedContractPdfTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: tests/Feature/Contracts/SignedContractPdfTest.php
+
+		-
+			message: '#^Parameter \#1 \$contract of method App\\Services\\Pdf\\ContractPdfService\:\:render\(\) expects App\\Models\\Contract, App\\Models\\Contract\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Contracts/SignedContractPdfTest.php
+
+		-
+			message: '#^Cannot access property \$name on App\\Models\\DocumentTemplate\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Documents/DocumentTemplateControllerTest.php
+
+		-
+			message: '#^Cannot access property \$body on App\\Models\\DocumentTemplate\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Documents/DocumentTemplateServiceTest.php
+
+		-
+			message: '#^Cannot call method state\(\) on App\\Models\\DocumentTemplate\|null\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: tests/Feature/Documents/DocumentTemplateServiceTest.php
+
+		-
+			message: '#^Parameter \#1 \$override of method App\\Services\\Documents\\DocumentTemplateService\:\:acknowledge\(\) expects App\\Models\\DocumentTemplate, App\\Models\\DocumentTemplate\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Feature/Documents/DocumentTemplateServiceTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: tests/Feature/Employees/EmployeeDocumentTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Employees\\EmployeeDocumentTest\:\:upload\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/Employees/EmployeeDocumentTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: tests/Feature/Employees/EmployeePersonalDataTest.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: tests/Feature/Employees/EmployeePersonalDataTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Employees\\EmployeePersonalDataTest\:\:updatePayload\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/Employees/EmployeePersonalDataTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Employees\\EmployeePersonalDataTest\:\:updatePayload\(\) should return array\<string, mixed\> but returns array\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Feature/Employees/EmployeePersonalDataTest.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Models\\TenantMembership\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: tests/Feature/Employees/EmployeePersonalDataTest.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Models\\TenantMembership\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: tests/Feature/Employees/EmployeePersonalDataTest.php
+
+		-
 			message: '#^Method Tests\\Feature\\Language\\TranslationParityTest\:\:load\(\) should return array\<string, mixed\> but returns mixed\.$#'
 			identifier: return.type
 			count: 1
@@ -113,6 +317,18 @@ parameters:
 			identifier: argument.templateType
 			count: 1
 			path: tests/Feature/Media/MediaControllerTest.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: tests/Feature/Quotes/QuoteTextDocumentTest.php
+
+		-
+			message: '#^Method Tests\\Feature\\Quotes\\QuoteTextDocumentTest\:\:payload\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Feature/Quotes/QuoteTextDocumentTest.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
@@ -395,6 +611,18 @@ parameters:
 			identifier: argument.templateType
 			count: 1
 			path: tests/Feature/Users/UserControllerTest.php
+
+		-
+			message: '#^Parameter \#1 \$stream of function stream_get_contents expects resource, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Support/FakeContractPdfRenderer.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>body" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: tests/Support/FakeContractPdfRenderer.php
 
 		-
 			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertTrue\(\) with true will always evaluate to true\.$#'

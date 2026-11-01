@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -25,7 +26,7 @@ use Spatie\Activitylog\Support\LogOptions;
 /**
  * @property string $id
  * @property string $tenant_id
- * @property string|null $contract_template_id
+ * @property string|null $document_template_id
  * @property string|null $quote_id
  * @property string $contractable_type
  * @property string $contractable_id
@@ -34,7 +35,6 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property ContractTermTypeEnum $term_type
  * @property string $title
  * @property string|null $number
- * @property string $body
  * @property Carbon $valid_from
  * @property Carbon|null $end_date
  * @property Carbon|null $signed_at
@@ -44,14 +44,14 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
- * @property ContractTemplate|null $contractTemplate
+ * @property Document|null $document
  * @property Quote|null $quote
- * @property CleaningObject|TenantMembership|Model $contractable
+ * @property CleaningObject|TenantMembership|Client|Model $contractable
  * @property EmploymentContract|null $employmentContract
  */
 #[Fillable([
-    'tenant_id', 'contract_template_id', 'quote_id', 'contractable_type', 'contractable_id',
-    'category', 'status', 'term_type', 'title', 'number', 'body',
+    'tenant_id', 'document_template_id', 'quote_id', 'contractable_type', 'contractable_id',
+    'category', 'status', 'term_type', 'title', 'number',
     'valid_from', 'end_date', 'signed_at', 'terminated_at', 'termination_reason', 'notes',
 ])]
 final class Contract extends Model
@@ -84,11 +84,17 @@ final class Contract extends Model
     /**
      * `withTrashed()` — a soft-deleted template must still resolve its name on existing contracts.
      *
-     * @return BelongsTo<ContractTemplate, $this>
+     * @return BelongsTo<DocumentTemplate, $this>
      */
-    public function contractTemplate(): BelongsTo
+    public function documentTemplate(): BelongsTo
     {
-        return $this->belongsTo(ContractTemplate::class)->withTrashed();
+        return $this->belongsTo(DocumentTemplate::class)->withTrashed();
+    }
+
+    /** @return MorphOne<Document, $this> */
+    public function document(): MorphOne
+    {
+        return $this->morphOne(Document::class, 'documentable');
     }
 
     /** @return BelongsTo<Quote, $this> */
@@ -140,6 +146,10 @@ final class Contract extends Model
             }
 
             return trim($name.' ('.($contractable->user->email ?? '').')');
+        }
+
+        if ($contractable instanceof Client) {
+            return $contractable->name;
         }
 
         return '';

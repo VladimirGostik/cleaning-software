@@ -5,22 +5,25 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Contracts\RendersQuotePdf;
-use App\Data\ContractTemplates\ContractTemplateOptionData;
+use App\Data\DocumentTemplates\DocumentTemplateOptionData;
 use App\Data\Quotes\QuoteAttachClientData;
 use App\Data\Quotes\QuoteConvertToContractData;
 use App\Data\Quotes\QuoteDetailData;
 use App\Data\Quotes\QuoteFormContextData;
+use App\Data\Quotes\QuoteTemplateOptionData;
 use App\Data\Quotes\QuoteUpsertData;
-use App\Enums\ContractCategoryEnum;
+use App\Enums\DocumentTypeEnum;
 use App\Enums\PermissionEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
-use App\Models\ContractTemplate;
+use App\Models\DocumentTemplate;
 use App\Models\Quote;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Navigation\NavItem;
+use App\Services\Documents\DocumentTemplateService;
+use App\Services\Documents\QuoteTextService;
 use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,7 +38,11 @@ final class QuoteController extends Controller
 {
     use ProvidesSubjectOptions;
 
-    public function __construct(private readonly QuoteService $quotes) {}
+    public function __construct(
+        private readonly QuoteService $quotes,
+        private readonly QuoteTextService $text,
+        private readonly DocumentTemplateService $templates,
+    ) {}
 
     #[Authorize('viewAny', Quote::class)]
     #[NavItem(label: 'app.quotes', route: 'quotes.index', icon: 'DocumentDuplicateIcon', permission: PermissionEnum::ViewQuotes->value, order: 35)]
@@ -56,7 +63,7 @@ final class QuoteController extends Controller
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
 
         return Inertia::render('Quotes/Create', [
-            'context' => QuoteFormContextData::fromTenant($tenant, $this->clientOptions(), $this->objectOptions()),
+            'context' => $this->formContext($tenant),
         ]);
     }
 
@@ -81,7 +88,7 @@ final class QuoteController extends Controller
             && $actor->can('convertToContract', $quote);
 
         return Inertia::render('Quotes/Show', [
-            'quote' => QuoteDetailData::fromModel($quote),
+            'quote' => QuoteDetailData::fromModel($quote, $this->text),
             'clients' => $isClientless ? $this->clientOptions() : null,
             'objects' => $isClientless ? $this->objectOptions() : null,
             'contractTemplates' => $canConvertToContract ? $this->contractTemplateOptions() : [],
@@ -94,12 +101,8 @@ final class QuoteController extends Controller
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
 
         return Inertia::render('Quotes/Edit', [
-            'quote' => QuoteDetailData::fromModel($quote),
-            'context' => QuoteFormContextData::fromTenant(
-                $tenant,
-                $this->clientOptions(),
-                $this->objectOptions($quote->cleaning_object_id),
-            ),
+            'quote' => QuoteDetailData::fromModel($quote, $this->text, rawText: true),
+            'context' => $this->formContext($tenant, $quote->cleaning_object_id),
         ]);
     }
 
@@ -168,18 +171,21 @@ final class QuoteController extends Controller
     }
 
     #[Authorize('convertToContract', 'quote')]
-    public function convertToContract(QuoteConvertToContractData $data, Quote $quote): RedirectResponse
+    public function convertToContract(QuoteConvertToContractData $data, Quote $quote, Request $request): RedirectResponse
     {
-        $contract = $this->quotes->convertToContract($quote, $data);
+        /** @var User $actor */
+        $actor = $request->user();
 
-        return to_route('contracts.show', $contract)->with('success', __('app.quote_converted_to_contract'));
+        $contract = $this->quotes->convertToContract($quote, $data, $actor);
+
+        return to_route('contracts.edit', $contract)->with('success', __('app.quote_converted_to_contract'));
     }
 
     #[Authorize('downloadPdf', 'quote')]
     public function pdf(Quote $quote, RendersQuotePdf $pdfService): Response
     {
         if ($quote->kind === QuoteKindEnum::Document) {
-            $media = $quote->getFirstMedia('document');
+            $media = $quote->document?->getFirstMedia('file');
 
             if ($media === null) {
                 abort(404);
@@ -210,15 +216,26 @@ final class QuoteController extends Controller
         ]);
     }
 
-    /** @return array<int, ContractTemplateOptionData> */
+    /** @return array<int, DocumentTemplateOptionData> */
     private function contractTemplateOptions(): array
     {
-        return ContractTemplate::query()
-            ->active()
-            ->where('category', ContractCategoryEnum::ServiceAgreement->value)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (ContractTemplate $template) => ContractTemplateOptionData::fromModel($template))
-            ->all();
+        return array_map(
+            fn (DocumentTemplate $template) => DocumentTemplateOptionData::fromModel($template),
+            $this->templates->options(DocumentTypeEnum::ServiceAgreement),
+        );
+    }
+
+    private function formContext(Tenant $tenant, ?string $keepObjectId = null): QuoteFormContextData
+    {
+        return QuoteFormContextData::fromTenant(
+            $tenant,
+            $this->clientOptions(),
+            $this->objectOptions($keepObjectId),
+            array_map(
+                fn (DocumentTemplate $template) => QuoteTemplateOptionData::fromModel($template),
+                $this->templates->options(DocumentTypeEnum::Quote),
+            ),
+            $this->text->tokens(),
+        );
     }
 }

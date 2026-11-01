@@ -16,7 +16,9 @@ use App\Contracts\ResolvesSupplierSignature;
 use App\Contracts\SendsPush;
 use App\Contracts\SubmitsEInvoices;
 use App\Models\CleaningObject;
+use App\Models\Client;
 use App\Models\TenantMembership;
+use App\Models\User;
 use App\Policies\PersonalAccessTokenPolicy;
 use App\Services\Ai\LaravelAiAssistant;
 use App\Services\Ai\LaravelAiExpenseAnalyzer;
@@ -99,6 +101,7 @@ final class AppServiceProvider extends ServiceProvider
         Relation::morphMap([
             'tenant_membership' => TenantMembership::class,
             'cleaning_object' => CleaningObject::class,
+            'client' => Client::class,
         ]);
 
         RateLimiter::for('devices', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
@@ -110,6 +113,7 @@ final class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(config()->integer('ai.mcp_throttle', 120))->by($tokenId !== null ? 'mcp-token:'.$tokenId : 'ip:'.get_client_ip());
         });
         RateLimiter::for('assistant', fn (Request $request) => Limit::perMinute(config()->integer('ai.throttle.assistant', 30))->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
+        RateLimiter::for('document-preview', fn (Request $request) => Limit::perMinute(30)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
     }
 

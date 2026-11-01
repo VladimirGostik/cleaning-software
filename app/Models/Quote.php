@@ -17,12 +17,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property string $id
@@ -54,6 +53,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property Collection<int, QuoteItem> $items
  * @property Collection<int, Invoice> $invoices
  * @property Collection<int, Contract> $contracts
+ * @property Document|null $document
  * @property Client|null $client
  * @property CleaningObject|null $cleaningObject
  */
@@ -84,10 +84,10 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'vat_breakdown',
     'note',
 ])]
-final class Quote extends Model implements HasMedia
+final class Quote extends Model
 {
     /** @use HasFactory<QuoteFactory> */
-    use BelongsToTenant, HasFactory, HasPdfFilename, HasUuids, InteractsWithMedia, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasPdfFilename, HasUuids, LogsActivity, SoftDeletes;
 
     /**
      * @return array<string, string>
@@ -110,15 +110,6 @@ final class Quote extends Model implements HasMedia
             'total' => 'decimal:2',
             'vat_breakdown' => 'array',
         ];
-    }
-
-    public function registerMediaCollections(): void
-    {
-        $disk = config('quotes.document.disk', 'local');
-
-        $this->addMediaCollection('document')
-            ->singleFile()
-            ->useDisk(is_string($disk) ? $disk : 'local');
     }
 
     public function getActivitylogOptions(): LogOptions
@@ -161,6 +152,12 @@ final class Quote extends Model implements HasMedia
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /** @return MorphOne<Document, $this> */
+    public function document(): MorphOne
+    {
+        return $this->morphOne(Document::class, 'documentable');
     }
 
     /**

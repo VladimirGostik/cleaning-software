@@ -20,9 +20,14 @@ final class TenantPolicy
     }
 
     /**
-     * No `create` ability — a brand-new tenant has no roles yet, so a permission
-     * check would be circular. `POST /tenants` is deliberately auth-only (D4a).
+     * A brand-new tenant has no roles yet, so a permission check would be circular;
+     * firm creation is gated by the platform-admin flag instead.
      */
+    public function create(User $user): bool
+    {
+        return $user->is_platform_admin;
+    }
+
     public function switchTo(User $user, Tenant $tenant): bool
     {
         return $user->hasActiveMembership($tenant->id) && $tenant->is_active;

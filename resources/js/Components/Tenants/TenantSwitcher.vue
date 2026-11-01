@@ -4,6 +4,7 @@ import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { ChevronUpDownIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import TenantColorDot from '@/Components/Tenants/TenantColorDot.vue';
+import { usePageProps } from '@/Composables/usePageProps';
 import type { SharedTenant } from '@/types';
 
 const props = defineProps<{ tenant: SharedTenant; compact?: boolean }>();
@@ -13,6 +14,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const pageProps = usePageProps();
 
 const switching = ref<string | null>(null);
 
@@ -62,13 +64,15 @@ function switchTo(id: string) {
                     <span v-if="switching === item.id" class="loading loading-spinner loading-xs ml-auto" />
                 </button>
             </li>
-            <li class="menu-title" aria-hidden="true"><hr class="border-base-300" /></li>
-            <li>
-                <button type="button" @click="emit('add-tenant')">
-                    <PlusIcon class="size-4" />
-                    {{ t('nav_add_tenant') }}
-                </button>
-            </li>
+            <template v-if="pageProps.canCreateTenant">
+                <li class="menu-title" aria-hidden="true"><hr class="border-base-300" /></li>
+                <li>
+                    <button type="button" @click="emit('add-tenant')">
+                        <PlusIcon class="size-4" />
+                        {{ t('nav_add_tenant') }}
+                    </button>
+                </li>
+            </template>
         </ul>
     </div>
 </template>

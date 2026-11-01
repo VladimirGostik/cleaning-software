@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Enums\PermissionEnum;
+use App\Models\Document;
 use App\Models\Media;
 use App\Models\User;
 
@@ -17,6 +18,8 @@ final class MediaPolicy
 
     public function view(User $user, Media $media): bool
     {
-        return $user->can(PermissionEnum::ViewMedia->value) && $media->tenant_id === app('current_tenant_id');
+        return $user->can(PermissionEnum::ViewMedia->value)
+            && $media->tenant_id === app('current_tenant_id')
+            && $media->model_type !== (new Document)->getMorphClass();
     }
 }

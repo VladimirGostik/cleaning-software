@@ -10,6 +10,7 @@ import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue';
 import ContractCategoryBadge from '@/Components/Contracts/ContractCategoryBadge.vue';
 import ContractTermBadge from '@/Components/Contracts/ContractTermBadge.vue';
+import StatusErrorAlert from '@/Components/StatusErrorAlert.vue';
 import ContractTerminateModal from '@/Components/Contracts/ContractTerminateModal.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -122,6 +123,8 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
             </Link>
         </template>
     </Header>
+
+    <StatusErrorAlert class="mb-4" />
 
     <EmptyState
         v-if="showEmptyState"

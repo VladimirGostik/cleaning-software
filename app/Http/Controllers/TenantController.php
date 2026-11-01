@@ -13,13 +13,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 
-/**
- * `store` is deliberately not policy-gated: a brand-new tenant has no roles yet,
- * so any permission check on tenant creation would be circular (D4a). Any
- * authenticated user may create a tenant they then own.
- */
 final class TenantController extends Controller
 {
+    #[Authorize('create', Tenant::class)]
     public function store(AddTenantData $data, Request $request, RegistrationService $service): RedirectResponse
     {
         /** @var User $user */

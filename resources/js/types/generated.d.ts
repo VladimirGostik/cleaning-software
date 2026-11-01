@@ -306,35 +306,15 @@ readonly contacts: App.Data.Clients.ClientContactData[],
 readonly peppol_participant_id: string | null,
 };
 }
-namespace ContractTemplates {
-export type ContractTemplateDetailData = {
-readonly id: string,
-readonly name: string,
-readonly category: App.Enums.ContractCategoryEnum,
-readonly body: string,
-readonly is_active: boolean,
-};
-export type ContractTemplateListItemData = {
-readonly id: string,
-readonly name: string,
-readonly category: App.Enums.ContractCategoryEnum,
-readonly is_active: boolean,
-readonly updated_at: string,
-};
-export type ContractTemplateOptionData = {
-readonly id: string,
-readonly name: string,
-readonly category: App.Enums.ContractCategoryEnum,
-readonly body: string,
-};
-export type ContractTemplateUpsertData = {
-readonly name: string,
-readonly category: App.Enums.ContractCategoryEnum,
-readonly body: string,
-readonly is_active: boolean,
-};
-}
 namespace Contracts {
+export type ContractCreatePrefillData = {
+readonly contractable_type: App.Enums.ContractableTypeEnum | null,
+readonly contractable_id: string | null,
+readonly contractable_label: string | null,
+readonly category: App.Enums.ContractCategoryEnum | null,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly document_template_id: string | null,
+};
 export type ContractDetailData = {
 readonly id: string,
 readonly title: string,
@@ -342,7 +322,13 @@ readonly number: string | null,
 readonly category: App.Enums.ContractCategoryEnum,
 readonly status: App.Enums.ContractStatusEnum,
 readonly term_type: App.Enums.ContractTermTypeEnum,
-readonly body: string,
+readonly body: string | null,
+readonly show_header: boolean,
+readonly show_footer: boolean,
+readonly letterhead: App.Data.Documents.DocumentLetterheadData,
+readonly footer: string[],
+readonly missing_tokens: string[],
+readonly tokens: App.Data.DocumentTemplates.DocumentTokenData[],
 readonly valid_from: string,
 readonly end_date: string | null,
 readonly signed_at: string | null,
@@ -352,8 +338,8 @@ readonly notes: string | null,
 readonly contractable_type: App.Enums.ContractableTypeEnum,
 readonly contractable_id: string,
 readonly contractable_label: string,
-readonly contract_template_id: string | null,
-readonly contract_template_name: string | null,
+readonly document_template_id: string | null,
+readonly document_template_name: string | null,
 readonly quote_id: string | null,
 readonly quote_number: string | null,
 readonly employment: App.Data.Contracts.EmploymentContractData | null,
@@ -363,9 +349,28 @@ readonly can_be_terminated: boolean,
 };
 export type ContractFormContextData = {
 readonly objects: App.Data.Objects.ObjectOptionData[],
+readonly clients: App.Data.Clients.ClientOptionData[],
 readonly memberships: App.Data.Contracts.MembershipOptionData[],
-readonly templates: App.Data.ContractTemplates.ContractTemplateOptionData[],
-readonly tokens: App.Data.Contracts.PlaceholderCatalogData,
+readonly templates: App.Data.DocumentTemplates.DocumentTemplateOptionData[],
+readonly tokens: App.Data.DocumentTemplates.DocumentTokenCatalogData,
+readonly letterhead: App.Data.Documents.DocumentLetterheadData,
+readonly footer: string[],
+};
+export type ContractGenerateData = {
+readonly category: App.Enums.ContractCategoryEnum,
+readonly term_type: App.Enums.ContractTermTypeEnum,
+readonly contractable_type: App.Enums.ContractableTypeEnum,
+readonly contractable_id: string,
+readonly valid_from: string,
+readonly document_template_id: string | null,
+readonly body: string | null,
+readonly title: string | null,
+readonly number: string | null,
+readonly end_date: string | null,
+readonly employment: App.Data.Contracts.EmploymentContractUpsertData | null,
+readonly quote_id: string | null,
+readonly show_header: boolean,
+readonly show_footer: boolean,
 };
 export type ContractListItemData = {
 readonly id: string,
@@ -394,12 +399,14 @@ readonly category: App.Enums.ContractCategoryEnum,
 readonly term_type: App.Enums.ContractTermTypeEnum,
 readonly contractable_type: App.Enums.ContractableTypeEnum,
 readonly contractable_id: string,
-readonly contract_template_id: string | null,
+readonly document_template_id: string | null,
 readonly body: string,
 readonly valid_from: string,
 readonly end_date: string | null,
 readonly notes: string | null,
 readonly employment: App.Data.Contracts.EmploymentContractUpsertData | null,
+readonly show_header: boolean,
+readonly show_footer: boolean,
 };
 export type EmploymentContractData = {
 readonly employment_type: App.Enums.EmploymentContractTypeEnum,
@@ -421,10 +428,6 @@ export type MembershipOptionData = {
 readonly id: string,
 readonly label: string,
 readonly is_active: boolean,
-};
-export type PlaceholderCatalogData = {
-readonly cleaning_object: App.Data.Contracts.PlaceholderTokenData[],
-readonly tenant_membership: App.Data.Contracts.PlaceholderTokenData[],
 };
 export type PlaceholderTokenData = {
 readonly token: string,
@@ -506,6 +509,94 @@ export type DeviceUnregisterData = {
 readonly token: string,
 };
 }
+namespace DocumentTemplates {
+export type DocumentTemplateCanData = {
+readonly update: boolean,
+readonly delete: boolean,
+readonly customize: boolean,
+readonly reset: boolean,
+readonly acknowledge: boolean,
+};
+export type DocumentTemplateEditData = {
+readonly id: string,
+readonly name: string,
+readonly type: App.Enums.DocumentTypeEnum,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly scope: App.Enums.DocumentTemplateScopeEnum,
+readonly state: App.Enums.DocumentTemplateStateEnum | null,
+readonly is_active: boolean,
+readonly body: string,
+readonly base_body: string | null,
+readonly previous_base_body: string | null,
+readonly show_header: boolean,
+readonly show_footer: boolean,
+readonly tokens: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly letterhead: App.Data.Documents.DocumentLetterheadData,
+readonly footer: string[],
+readonly can: App.Data.DocumentTemplates.DocumentTemplateCanData,
+};
+export type DocumentTemplateListItemData = {
+readonly id: string,
+readonly name: string,
+readonly type: App.Enums.DocumentTypeEnum,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly scope: App.Enums.DocumentTemplateScopeEnum,
+readonly state: App.Enums.DocumentTemplateStateEnum | null,
+readonly is_active: boolean,
+readonly updated_at: string,
+};
+export type DocumentTemplateOptionData = {
+readonly id: string,
+readonly name: string,
+readonly type: App.Enums.DocumentTypeEnum,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly scope: App.Enums.DocumentTemplateScopeEnum,
+};
+export type DocumentTemplatePreviewData = {
+readonly body: string,
+readonly type: App.Enums.DocumentTypeEnum,
+readonly show_header: boolean,
+readonly show_footer: boolean,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+};
+export type DocumentTemplateUpsertData = {
+readonly name: string,
+readonly type: App.Enums.DocumentTypeEnum,
+readonly body: string,
+readonly show_header: boolean,
+readonly show_footer: boolean,
+readonly is_active: boolean,
+readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+};
+export type DocumentTokenCatalogData = {
+readonly service_agreement: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly employment: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly nda: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly gdpr: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly other: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly quote: App.Data.DocumentTemplates.DocumentTokenData[],
+};
+export type DocumentTokenData = {
+readonly key: string,
+readonly label: string,
+readonly kind: App.Enums.DocumentTokenKindEnum,
+readonly group: App.Enums.DocumentTokenGroupEnum,
+};
+}
+namespace Documents {
+export type DocumentLetterheadData = {
+readonly name: string,
+readonly address: string | null,
+readonly ico: string | null,
+};
+export type DocumentRenderData = {
+readonly html: string,
+readonly missing_tokens: string[],
+readonly unknown_tokens: string[],
+readonly letterhead: App.Data.Documents.DocumentLetterheadData | null,
+readonly footer: string[],
+};
+}
 namespace Employees {
 export type EmployeeDetailData = {
 readonly id: string,
@@ -529,6 +620,26 @@ readonly other_tenants_count: number,
 readonly is_owner: boolean,
 readonly can: Record<string, boolean>,
 };
+export type EmployeeDocumentConstraintsData = {
+readonly allowed_mimes: string[],
+readonly max_size_kb: number,
+readonly types: App.Enums.DocumentTypeEnum[],
+};
+export type EmployeeDocumentData = {
+readonly id: string,
+readonly title: string,
+readonly type: App.Enums.DocumentTypeEnum,
+readonly file_name: string,
+readonly mime_type: string | null,
+readonly size: number,
+readonly created_at: string,
+readonly download_url: string,
+};
+export type EmployeeDocumentUploadData = {
+readonly type: App.Enums.DocumentTypeEnum,
+readonly file: File,
+readonly title: string | null,
+};
 export type EmployeeFormContextData = {
 readonly roles: App.Data.RoleListItemData[],
 readonly permission_groups: App.Data.PermissionGroupData[],
@@ -546,6 +657,22 @@ readonly upcoming_jobs_count: number,
 readonly is_active: boolean,
 readonly joined_at: string,
 };
+export type EmployeePersonalData = {
+readonly birth_date: string | null,
+readonly national_id_masked: string | null,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly company_ico: string | null,
+};
+export type EmployeePersonalFormData = {
+readonly birth_date: string | null,
+readonly national_id: string | null,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly company_ico: string | null,
+};
 export type EmployeeRoleData = {
 readonly role_name: string,
 };
@@ -558,6 +685,12 @@ readonly position: string | null,
 readonly role_name: string,
 readonly permissions: string[] | null,
 readonly employment: App.Data.Contracts.EmploymentContractUpsertData | null,
+readonly birth_date: string | null,
+readonly national_id: string | null,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly company_ico: string | null,
 };
 export type EmployeeUpdateData = {
 readonly first_name: string | null,
@@ -566,6 +699,12 @@ readonly phone: string | null,
 readonly position: string | null,
 readonly role_name: string,
 readonly permissions: string[] | null,
+readonly birth_date: string | null,
+readonly national_id: string | null,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly company_ico: string | null,
 };
 }
 namespace Expenses {
@@ -930,6 +1069,7 @@ readonly remove_signature: boolean,
 readonly invoice_mail_subject: string | null,
 readonly invoice_mail_body: string | null,
 readonly peppol_participant_id: string | null,
+readonly representative_name: string | null,
 };
 export type InvoiceSignatureConstraintsData = {
 readonly allowed_mimes: string[],
@@ -1137,7 +1277,7 @@ readonly number: string | null,
 readonly status: App.Enums.ContractStatusEnum,
 };
 export type QuoteConvertToContractData = {
-readonly contract_template_id: string | null,
+readonly document_template_id: string | null,
 };
 export type QuoteDetailData = {
 readonly id: string,
@@ -1169,6 +1309,7 @@ readonly customer_postal_code: string | null,
 readonly items: App.Data.Quotes.QuoteItemData[],
 readonly vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
 readonly document: App.Data.MediaFileData | null,
+readonly text_document: App.Data.Quotes.QuoteTextDocumentData | null,
 readonly invoices: App.Data.Quotes.QuoteInvoiceLinkData[],
 readonly contracts: App.Data.Quotes.QuoteContractLinkData[],
 };
@@ -1182,6 +1323,10 @@ readonly default_validity_days: number,
 readonly document_allowed_mimes: string[],
 readonly document_max_size_kb: number,
 readonly default_currency: App.Enums.CurrencyEnum,
+readonly templates: App.Data.Quotes.QuoteTemplateOptionData[],
+readonly tokens: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly letterhead: App.Data.Documents.DocumentLetterheadData,
+readonly footer: string[],
 };
 export type QuoteInvoiceLinkData = {
 readonly id: string,
@@ -1217,6 +1362,25 @@ readonly issue_date: string,
 readonly valid_until: string,
 readonly has_document: boolean,
 };
+export type QuoteTemplateOptionData = {
+readonly id: string,
+readonly name: string,
+readonly scope: App.Enums.DocumentTemplateScopeEnum,
+readonly body: string,
+};
+export type QuoteTextDocumentData = {
+readonly id: string,
+readonly document_template_id: string | null,
+readonly document_template_name: string | null,
+readonly body: string,
+readonly show_header: boolean,
+readonly show_footer: boolean,
+readonly is_frozen: boolean,
+readonly missing_tokens: string[],
+readonly tokens: App.Data.DocumentTemplates.DocumentTokenData[],
+readonly letterhead: App.Data.Documents.DocumentLetterheadData,
+readonly footer: string[],
+};
 export type QuoteUpsertData = {
 readonly client_id: string | null,
 readonly cleaning_object_id: string | null,
@@ -1232,6 +1396,10 @@ readonly customer_city: string | null,
 readonly customer_postal_code: string | null,
 readonly number: string | null,
 readonly document_uuid: string | null,
+readonly document_template_id: string | null,
+readonly document_body: string | null,
+readonly document_show_header: boolean,
+readonly document_show_footer: boolean,
 readonly kind: App.Enums.QuoteKindEnum,
 readonly currency: App.Enums.CurrencyEnum,
 };
@@ -1587,10 +1755,15 @@ export type ConfirmationChannelEnum = "chat" | "app";
 export type ContractCategoryEnum = "service_agreement" | "employment" | "nda" | "gdpr" | "other";
 export type ContractStatusEnum = "draft" | "active" | "expired" | "terminated";
 export type ContractTermTypeEnum = "fixed" | "indefinite";
-export type ContractableTypeEnum = "cleaning_object" | "tenant_membership";
+export type ContractableTypeEnum = "cleaning_object" | "tenant_membership" | "client";
 export type CurrencyEnum = "EUR" | "CZK" | "USD";
 export type DashboardAlertTypeEnum = "overdue_invoice" | "supplier_incomplete" | "unassigned_job" | "contract_expiring" | "quote_expiring";
 export type DevicePlatformEnum = "android" | "ios";
+export type DocumentTemplateScopeEnum = "global" | "override" | "firm";
+export type DocumentTemplateStateEnum = "base" | "customized" | "base_changed";
+export type DocumentTokenGroupEnum = "tenant" | "contract" | "client" | "object" | "employee" | "employment" | "customer" | "quote" | "conditions" | "blocks";
+export type DocumentTokenKindEnum = "text" | "optional" | "block" | "flag";
+export type DocumentTypeEnum = "service_agreement" | "employment" | "nda" | "gdpr" | "other" | "quote" | "employee_id_card" | "employee_passport" | "employee_residence_permit" | "employee_work_permit" | "employee_medical" | "employee_training" | "employee_other";
 export type EfaStatusEnum = "none" | "ready" | "generated" | "submitted" | "accepted" | "rejected" | "failed";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type ExpenseCategoryEnum = "fuel" | "materials" | "cleaning_supplies" | "equipment" | "services" | "rent" | "utilities" | "wages" | "insurance" | "fees" | "bank_charges" | "other";
@@ -1609,7 +1782,7 @@ export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense";
 export type PendingActionStatusEnum = "pending" | "executed" | "cancelled" | "expired";
-export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view contract_templates" | "create contract_templates" | "edit contract_templates" | "delete contract_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "view expenses" | "manage expenses";
+export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "view expenses" | "manage expenses";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type RecurringDefaultStateEnum = "draft" | "issued";

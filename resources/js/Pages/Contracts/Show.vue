@@ -8,11 +8,13 @@ import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue'
 import ContractCategoryBadge from '@/Components/Contracts/ContractCategoryBadge.vue';
 import ContractPartiesCard from '@/Components/Contracts/ContractPartiesCard.vue';
 import ContractTermCard from '@/Components/Contracts/ContractTermCard.vue';
-import ContractBodyPreview from '@/Components/Contracts/ContractBodyPreview.vue';
 import ContractEmploymentCard from '@/Components/Contracts/ContractEmploymentCard.vue';
 import ContractActionsCard from '@/Components/Contracts/ContractActionsCard.vue';
 import ContractLinksCard from '@/Components/Contracts/ContractLinksCard.vue';
 import ContractTerminateModal from '@/Components/Contracts/ContractTerminateModal.vue';
+import DocumentMissingTokens from '@/Components/Documents/DocumentMissingTokens.vue';
+import DocumentSheet from '@/Components/Documents/DocumentSheet.vue';
+import StatusErrorAlert from '@/Components/StatusErrorAlert.vue';
 
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { formatDate, formatDatetime } from '@/utils/date';
@@ -45,6 +47,16 @@ const showExpiringWarning = computed(
         daysToEnd.value !== null &&
         daysToEnd.value >= 0 &&
         daysToEnd.value <= 30,
+);
+
+const missingTokens = computed(() => {
+    const labels = new Map(props.contract.tokens.map((def) => [def.key, def.label]));
+
+    return props.contract.missing_tokens.map((key) => ({ key, label: labels.get(key) ?? key }));
+});
+
+const missingSummary = computed(() =>
+    t('document_missing_summary', { count: missingTokens.value.length }, missingTokens.value.length),
 );
 
 const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
@@ -80,8 +92,10 @@ const deleteConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
         <span>{{ t('contract_terminated_title') }}: {{ formatDatetime(contract.terminated_at) }}</span>
     </div>
 
+    <StatusErrorAlert class="mb-4" />
+
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-        <div class="space-y-6">
+        <div class="flex flex-col gap-6 [&>.card:last-child]:flex-1">
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-6">
                     <div>
@@ -93,13 +107,6 @@ const deleteConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
                         <h2 class="card-title text-base">{{ t('contract_section_term') }}</h2>
                         <ContractTermCard :contract="contract" />
                     </div>
-                </div>
-            </div>
-
-            <div class="card bg-base-100 shadow-sm">
-                <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('contract_section_body') }}</h2>
-                    <ContractBodyPreview :body="contract.body" />
                 </div>
             </div>
 
@@ -126,6 +133,32 @@ const deleteConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
                 @delete="deleteConfirm.openModal(contract)"
             />
             <ContractLinksCard :contract="contract" />
+        </div>
+    </div>
+
+    <div class="card bg-base-100 mt-6 shadow-sm">
+        <div class="card-body space-y-4">
+            <h2 class="card-title text-base">{{ t('contract_section_body') }}</h2>
+
+            <div v-if="contract.body === null" class="alert alert-warning" role="alert">
+                <span>{{ t('contract_text_no_access') }}</span>
+            </div>
+
+            <template v-else>
+                <template v-if="missingTokens.length > 0">
+                    <DocumentMissingTokens :tokens="missingTokens" :summary="missingSummary" />
+                    <p class="text-sm text-base-content/60">{{ t('contract_sign_blocked_missing') }}</p>
+                </template>
+
+                <div class="overflow-hidden rounded-box border border-base-300">
+                    <DocumentSheet
+                        :html="contract.body"
+                        :tokens="contract.tokens"
+                        :letterhead="contract.show_header ? contract.letterhead : null"
+                        :footer="contract.show_footer ? contract.footer : []"
+                    />
+                </div>
+            </template>
         </div>
     </div>
 

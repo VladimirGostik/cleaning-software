@@ -117,7 +117,7 @@ async function uploadImage(file: File): Promise<void> {
     uploadError.value = null;
 
     if (file.size > props.maxImageSizeKb * 1024) {
-        uploadError.value = t('app.file_too_large', { max: `${props.maxImageSizeKb} KB` });
+        uploadError.value = t('file_too_large', { max: `${props.maxImageSizeKb} KB` });
         return;
     }
 
@@ -145,7 +145,7 @@ async function uploadImage(file: File): Promise<void> {
         );
         editor.value?.commands.setContent(tagged, { emitUpdate: true });
     } catch {
-        uploadError.value = t('app.upload_failed');
+        uploadError.value = t('upload_failed');
     } finally {
         isUploading.value = false;
     }
@@ -166,7 +166,7 @@ function onFileInputChange(e: Event): void {
 function setLink(): void {
     if (!editor.value) return;
     const prev = editor.value.getAttributes('link').href as string | undefined;
-    const url = window.prompt(t('app.editor_link_url'), prev ?? 'https://');
+    const url = window.prompt(t('editor_link_url'), prev ?? 'https://');
     if (url === null) return;
     if (url === '') {
         editor.value.chain().focus().extendMarkRange('link').unsetLink().run();
@@ -187,7 +187,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('bold') }"
-                    :title="t('app.editor_bold')"
+                    :title="t('editor_bold')"
                     @click="editor?.chain().focus().toggleBold().run()"
                 >
                     <strong>B</strong>
@@ -196,7 +196,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs italic"
                     :class="{ 'btn-active': editor?.isActive('italic') }"
-                    :title="t('app.editor_italic')"
+                    :title="t('editor_italic')"
                     @click="editor?.chain().focus().toggleItalic().run()"
                 >
                     I
@@ -205,7 +205,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs line-through"
                     :class="{ 'btn-active': editor?.isActive('strike') }"
-                    :title="t('app.editor_strike')"
+                    :title="t('editor_strike')"
                     @click="editor?.chain().focus().toggleStrike().run()"
                 >
                     S
@@ -215,7 +215,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('heading', { level: 1 }) }"
-                    :title="t('app.editor_h1')"
+                    :title="t('editor_h1')"
                     @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
                 >
                     H1
@@ -224,7 +224,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('heading', { level: 2 }) }"
-                    :title="t('app.editor_h2')"
+                    :title="t('editor_h2')"
                     @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
                 >
                     H2
@@ -233,7 +233,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('heading', { level: 3 }) }"
-                    :title="t('app.editor_h3')"
+                    :title="t('editor_h3')"
                     @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
                 >
                     H3
@@ -243,7 +243,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('bulletList') }"
-                    :title="t('app.editor_bullet_list')"
+                    :title="t('editor_bullet_list')"
                     @click="editor?.chain().focus().toggleBulletList().run()"
                 >
                     •
@@ -252,7 +252,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('orderedList') }"
-                    :title="t('app.editor_ordered_list')"
+                    :title="t('editor_ordered_list')"
                     @click="editor?.chain().focus().toggleOrderedList().run()"
                 >
                     1.
@@ -261,7 +261,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('blockquote') }"
-                    :title="t('app.editor_blockquote')"
+                    :title="t('editor_blockquote')"
                     @click="editor?.chain().focus().toggleBlockquote().run()"
                 >
                     “”
@@ -270,7 +270,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('codeBlock') }"
-                    :title="t('app.editor_code_block')"
+                    :title="t('editor_code_block')"
                     @click="editor?.chain().focus().toggleCodeBlock().run()"
                 >
                     {}
@@ -280,7 +280,7 @@ function setLink(): void {
                     type="button"
                     class="btn btn-ghost btn-xs"
                     :class="{ 'btn-active': editor?.isActive('link') }"
-                    :title="t('app.editor_link')"
+                    :title="t('editor_link')"
                     @click="setLink"
                 >
                     🔗
@@ -288,7 +288,7 @@ function setLink(): void {
                 <button
                     type="button"
                     class="btn btn-ghost btn-xs"
-                    :title="t('app.editor_image')"
+                    :title="t('editor_image')"
                     :disabled="isUploading"
                     @click="onPickImage"
                 >
@@ -300,7 +300,7 @@ function setLink(): void {
                 <button
                     type="button"
                     class="btn btn-ghost btn-xs"
-                    :title="t('app.editor_undo')"
+                    :title="t('editor_undo')"
                     @click="editor?.chain().focus().undo().run()"
                 >
                     ↶
@@ -308,7 +308,7 @@ function setLink(): void {
                 <button
                     type="button"
                     class="btn btn-ghost btn-xs"
-                    :title="t('app.editor_redo')"
+                    :title="t('editor_redo')"
                     @click="editor?.chain().focus().redo().run()"
                 >
                     ↷

@@ -78,7 +78,7 @@ final class QuoteDocumentTest extends TestCase
         $this->post(route('quotes.store'), $this->documentPayload($uuid))->assertSessionDoesntHaveErrors();
 
         $quote = Quote::query()->sole();
-        $media = $quote->getFirstMedia('document');
+        $media = $quote->document?->getFirstMedia('file');
         $this->assertNotNull($media);
         $this->assertSame($this->documentDisk, $media->disk);
         $this->assertDatabaseCount('temporary_uploads', 0);
@@ -96,8 +96,8 @@ final class QuoteDocumentTest extends TestCase
         $this->put(route('quotes.update', $quote), $this->documentPayload($secondUuid))->assertSessionDoesntHaveErrors();
 
         $quote->refresh();
-        $this->assertCount(1, $quote->getMedia('document'));
-        $this->assertSame('second.pdf', $quote->getFirstMedia('document')?->file_name);
+        $this->assertCount(1, $quote->document?->getMedia('file') ?? []);
+        $this->assertSame('second.pdf', $quote->document?->getFirstMedia('file')?->file_name);
     }
 
     public function test_document_uuid_on_itemized_quote_fails_validation(): void
@@ -203,7 +203,7 @@ final class QuoteDocumentTest extends TestCase
 
         $duplicate = app(QuoteService::class)->duplicate($quote);
 
-        $this->assertCount(1, $duplicate->getMedia('document'));
+        $this->assertCount(1, $duplicate->document?->getMedia('file') ?? []);
     }
 
     public function test_soft_delete_keeps_document_file(): void
@@ -217,7 +217,7 @@ final class QuoteDocumentTest extends TestCase
         $this->delete(route('quotes.destroy', $quote));
 
         $trashed = Quote::withTrashed()->findOrFail($quote->id);
-        $this->assertNotNull($trashed->getFirstMedia('document'));
+        $this->assertNotNull($trashed->document()->withTrashed()->first()?->getFirstMedia('file'));
     }
 
     public function test_send_on_document_quote_fails(): void

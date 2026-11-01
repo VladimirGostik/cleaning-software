@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
@@ -7,8 +7,7 @@ import RadioGroup, { type RadioOption } from '@/Components/Forms/RadioGroup.vue'
 
 import {
     CONTRACT_CATEGORIES,
-    CONTRACT_CATEGORY_CONTRACTABLE,
-    CONTRACTABLE_TYPES,
+    CONTRACT_CATEGORY_CONTRACTABLE_TYPES,
     contractableTypeKey,
     contractCategoryKey,
     enumOptions,
@@ -18,8 +17,9 @@ const props = defineProps<{
     context: App.Data.Contracts.ContractFormContextData;
     contractableType: App.Enums.ContractableTypeEnum;
     category: App.Enums.ContractCategoryEnum;
+    employmentType: App.Enums.EmploymentContractTypeEnum | null;
     currentContractableId: string;
-    templateBodyKept: boolean;
+    lockedLabel: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -28,15 +28,49 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const categoryOptions = computed(() => enumOptions(CONTRACT_CATEGORIES, contractCategoryKey, t));
-const contractableTypeOptions = computed<RadioOption[]>(() => enumOptions(CONTRACTABLE_TYPES, contractableTypeKey, t));
+const categoryOptions = computed(() =>
+    enumOptions(
+        CONTRACT_CATEGORIES.filter(
+            (category) =>
+                props.lockedLabel === null ||
+                CONTRACT_CATEGORY_CONTRACTABLE_TYPES[category].includes(props.contractableType),
+        ),
+        contractCategoryKey,
+        t,
+    ),
+);
 
-const fixedContractableType = computed(() => CONTRACT_CATEGORY_CONTRACTABLE[props.category]);
+const availableTypes = computed(() =>
+    CONTRACT_CATEGORY_CONTRACTABLE_TYPES[props.category].filter(
+        (type) => type !== 'tenant_membership' || props.context.memberships.length > 0,
+    ),
+);
+
+watch(availableTypes, (types) => {
+    if (props.lockedLabel === null && types.length > 0 && !types.includes(props.contractableType)) {
+        emit('update:contractableType', types[0]);
+    }
+});
+
+const contractableTypeOptions = computed<RadioOption[]>(() =>
+    enumOptions(availableTypes.value, contractableTypeKey, t),
+);
+
+const hintKey = computed(() => {
+    if (availableTypes.value.length !== 1) return null;
+    const only = availableTypes.value[0];
+
+    return `contract_contractable_fixed_${only === 'cleaning_object' ? 'object' : only === 'client' ? 'client' : 'membership'}`;
+});
 
 const objectOptions = computed<SelectOption[]>(() =>
     props.context.objects
         .filter((o) => o.is_active || o.id === props.currentContractableId)
         .map((o) => ({ value: o.id, label: o.client_name ? `${o.client_name} — ${o.name}` : o.name })),
+);
+
+const clientOptions = computed<SelectOption[]>(() =>
+    props.context.clients.map((c) => ({ value: c.id, label: c.name })),
 );
 
 const membershipOptions = computed<SelectOption[]>(() =>
@@ -48,51 +82,75 @@ const membershipOptions = computed<SelectOption[]>(() =>
 const templateOptions = computed<SelectOption[]>(() => [
     { value: '', label: t('contract_no_template') },
     ...props.context.templates
-        .filter((tpl) => tpl.category === props.category)
+        .filter(
+            (tpl) =>
+                tpl.type === props.category &&
+                (props.category !== 'employment' ||
+                    tpl.employment_type === null ||
+                    tpl.employment_type === props.employmentType),
+        )
         .map((tpl) => ({ value: tpl.id, label: tpl.name })),
 ]);
+
+const noMembershipAccess = computed(() => props.category === 'employment' && props.context.memberships.length === 0);
+const noBreakdownHint = computed(() => props.category === 'service_agreement' && props.contractableType === 'client');
 </script>
 
 <template>
     <div class="space-y-4">
         <SelectInput field="category" :label="t('type')" :options="categoryOptions" required />
 
-        <p v-if="fixedContractableType === 'cleaning_object'" class="text-sm text-base-content/60">
-            {{ t('contract_contractable_fixed_object') }}
-        </p>
-        <p v-else-if="fixedContractableType === 'tenant_membership'" class="text-sm text-base-content/60">
-            {{ t('contract_contractable_fixed_membership') }}
-        </p>
-        <RadioGroup
-            v-else
-            :model-value="contractableType"
-            :label="t('contract_contractable_type')"
-            :options="contractableTypeOptions"
-            @update:model-value="emit('update:contractableType', $event as App.Enums.ContractableTypeEnum)"
-        />
-
-        <SelectInput
-            v-if="contractableType === 'cleaning_object'"
-            field="contractable_id"
-            :label="t('contract_contractable')"
-            :placeholder="t('contract_select_object')"
-            :options="objectOptions"
-            required
-        />
-        <SelectInput
-            v-else
-            field="contractable_id"
-            :label="t('contract_contractable')"
-            :placeholder="t('contract_select_membership')"
-            :options="membershipOptions"
-            required
-        />
-
-        <div>
-            <SelectInput field="contract_template_id" :label="t('contract_template')" :options="templateOptions" />
-            <p v-if="templateBodyKept" class="text-xs text-base-content/60">
-                {{ t('contract_template_body_kept') }}
+        <div v-if="lockedLabel !== null">
+            <p class="text-sm font-semibold text-base-content/70">{{ t('contract_contractable') }}</p>
+            <p class="font-medium">
+                <span class="text-base-content/60">{{ t(contractableTypeKey(contractableType)) }}:</span>
+                {{ lockedLabel }}
             </p>
         </div>
+
+        <template v-else>
+            <p v-if="hintKey" class="text-sm text-base-content/60">{{ t(hintKey) }}</p>
+            <RadioGroup
+                v-else-if="availableTypes.length > 1"
+                :model-value="contractableType"
+                :label="t('contract_contractable_type')"
+                :options="contractableTypeOptions"
+                @update:model-value="emit('update:contractableType', $event as App.Enums.ContractableTypeEnum)"
+            />
+
+            <p v-if="noMembershipAccess" class="alert alert-warning alert-soft text-sm" role="alert">
+                {{ t('contract_no_membership_access') }}
+            </p>
+            <template v-else>
+                <SelectInput
+                    v-if="contractableType === 'cleaning_object'"
+                    field="contractable_id"
+                    :label="t('contract_contractable')"
+                    :placeholder="t('contract_select_object')"
+                    :options="objectOptions"
+                    required
+                />
+                <SelectInput
+                    v-else-if="contractableType === 'client'"
+                    field="contractable_id"
+                    :label="t('contract_contractable')"
+                    :placeholder="t('contract_select_client')"
+                    :options="clientOptions"
+                    required
+                />
+                <SelectInput
+                    v-else
+                    field="contractable_id"
+                    :label="t('contract_contractable')"
+                    :placeholder="t('contract_select_membership')"
+                    :options="membershipOptions"
+                    required
+                />
+            </template>
+        </template>
+
+        <p v-if="noBreakdownHint" class="text-sm text-base-content/60">{{ t('contract_client_no_breakdown_hint') }}</p>
+
+        <SelectInput field="document_template_id" :label="t('contract_template')" :options="templateOptions" />
     </div>
 </template>

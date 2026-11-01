@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { addDays } from 'date-fns';
@@ -16,6 +16,8 @@ import QuoteKindSelector from './QuoteKindSelector.vue';
 import QuoteSubjectPicker, { type QuoteSubjectMode } from './QuoteSubjectPicker.vue';
 import QuoteDocumentUpload from './QuoteDocumentUpload.vue';
 import QuoteFormSummary from './QuoteFormSummary.vue';
+import QuoteTextDocumentCard from './QuoteTextDocumentCard.vue';
+import QuoteTextDocumentWorkspace from './QuoteTextDocumentWorkspace.vue';
 import InvoiceItemsEditor, { type ItemRow } from '@/Components/Invoices/InvoiceItemsEditor.vue';
 
 import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
@@ -23,6 +25,8 @@ import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
 import { CURRENCIES, currencyKey, enumOptions, TASK_FREQUENCIES, taskFrequencyKey } from '@/utils/enums';
 import { useDependentValidation } from '@/Composables/useDependentValidation';
+import { useQuoteTextDocument } from '@/Composables/useQuoteTextDocument';
+import { useAuthorization } from '@/Composables/useAuthorization';
 
 type QuoteItemRow = ItemRow & {
     id: string | null;
@@ -50,6 +54,10 @@ interface QuoteFormData {
     customer_city: string | null;
     customer_postal_code: string | null;
     document_uuid: string | null;
+    document_template_id: string | null;
+    document_body: string | null;
+    document_show_header: boolean;
+    document_show_footer: boolean;
 }
 
 const props = defineProps<{
@@ -58,6 +66,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { allows } = useAuthorization();
 
 const isEditing = computed(() => !!props.quote);
 
@@ -107,6 +116,10 @@ function initialData(): QuoteFormData {
             customer_city: isClientless ? quote.customer_city : null,
             customer_postal_code: isClientless ? quote.customer_postal_code : null,
             document_uuid: null,
+            document_template_id: quote.text_document?.document_template_id ?? null,
+            document_body: quote.text_document?.body ?? null,
+            document_show_header: quote.text_document?.show_header ?? true,
+            document_show_footer: quote.text_document?.show_footer ?? true,
         };
     }
 
@@ -129,6 +142,10 @@ function initialData(): QuoteFormData {
         customer_city: null,
         customer_postal_code: null,
         document_uuid: null,
+        document_template_id: null,
+        document_body: null,
+        document_show_header: true,
+        document_show_footer: true,
     };
 }
 
@@ -146,20 +163,54 @@ useDependentValidation(form, {
 });
 
 form.transform((data: QuoteFormData) => {
-    const { items, document_uuid, ...rest } = data;
+    const {
+        items,
+        document_uuid,
+        document_template_id,
+        document_body,
+        document_show_header,
+        document_show_footer,
+        ...rest
+    } = data;
 
     return {
         ...rest,
         subject: rest.subject || null,
         number: rest.number || null,
         note: rest.note || null,
-        ...(data.kind === 'document' ? { document_uuid } : { items }),
+        ...(data.kind === 'document'
+            ? { document_uuid }
+            : { items, document_template_id, document_body, document_show_header, document_show_footer }),
     };
 });
 
 const ui = reactive({
     subjectMode: initialMode(props.quote),
 });
+
+const textEditorOpen = ref(false);
+
+const templateOptions = computed<App.Data.Quotes.QuoteTemplateOptionData[]>(() => {
+    const saved = props.quote?.text_document;
+    const known = props.context.templates;
+
+    if (saved?.document_template_id && !known.some((template) => template.id === saved.document_template_id)) {
+        return [
+            ...known,
+            {
+                id: saved.document_template_id,
+                name: saved.document_template_name ?? t('quote_text_deleted_template'),
+                scope: 'firm',
+                body: saved.body,
+            },
+        ];
+    }
+
+    return known;
+});
+
+const textDocument = useQuoteTextDocument({ form, templates: () => templateOptions.value });
+const settingsUrl = computed(() => (allows('manage billing settings') ? '/settings/invoicing' : null));
 
 const totals = useInvoiceTotals(
     () => form.items,
@@ -180,6 +231,11 @@ const canSubmit = computed(() => !(isDocument.value && !isEditing.value && !form
 function setKind(kind: App.Enums.QuoteKindEnum): void {
     form.kind = kind;
     form.document_uuid = null;
+    form.document_template_id = null;
+    form.document_body = null;
+    form.document_show_header = true;
+    form.document_show_footer = true;
+    textDocument.cancelPick();
     form.items = kind === 'document' ? [] : [blankItem()];
 }
 
@@ -298,6 +354,24 @@ function submit(): void {
                     </div>
                 </div>
 
+                <QuoteTextDocumentCard
+                    v-if="!isDocument"
+                    v-model:show-header="form.document_show_header"
+                    v-model:show-footer="form.document_show_footer"
+                    :templates="templateOptions"
+                    :template-id="form.document_template_id"
+                    :has-body="form.document_body !== null"
+                    :is-edited="textDocument.isEdited.value"
+                    :frozen="quote?.text_document?.is_frozen ?? false"
+                    :pending-template-id="textDocument.pendingTemplateId.value"
+                    :disabled="form.processing"
+                    :error="form.errors.document_template_id ?? form.errors.document_body"
+                    @pick="textDocument.pickTemplate"
+                    @confirm-pick="textDocument.confirmPick"
+                    @cancel-pick="textDocument.cancelPick"
+                    @edit="textEditorOpen = true"
+                />
+
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">
                         <TextareaInput
@@ -333,5 +407,18 @@ function submit(): void {
                 />
             </div>
         </form>
+
+        <QuoteTextDocumentWorkspace
+            v-if="textEditorOpen && form.document_body !== null"
+            v-model:body="form.document_body"
+            v-model:show-header="form.document_show_header"
+            v-model:show-footer="form.document_show_footer"
+            :tokens="context.tokens"
+            :letterhead="context.letterhead"
+            :footer="context.footer"
+            :error="form.errors.document_body"
+            :settings-url="settingsUrl"
+            @close="textEditorOpen = false"
+        />
     </FormProvider>
 </template>

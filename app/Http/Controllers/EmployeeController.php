@@ -5,17 +5,23 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Employees\EmployeeDetailData;
+use App\Data\Employees\EmployeeDocumentConstraintsData;
+use App\Data\Employees\EmployeeDocumentData;
 use App\Data\Employees\EmployeeFormContextData;
+use App\Data\Employees\EmployeePersonalData;
+use App\Data\Employees\EmployeePersonalFormData;
 use App\Data\Employees\EmployeeRoleData;
 use App\Data\Employees\EmployeeStoreData;
 use App\Data\Employees\EmployeeUpdateData;
 use App\Data\RoleListItemData;
 use App\Enums\JobStatusEnum;
 use App\Enums\PermissionEnum;
+use App\Models\Document;
 use App\Models\Role;
 use App\Models\TenantMembership;
 use App\Models\User;
 use App\Navigation\NavItem;
+use App\Services\ContractService;
 use App\Services\EmployeeService;
 use App\Services\RoleService;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,6 +36,7 @@ final class EmployeeController extends Controller
     public function __construct(
         private readonly EmployeeService $employees,
         private readonly RoleService $roles,
+        private readonly ContractService $contracts,
     ) {}
 
     #[Authorize('viewAny', TenantMembership::class)]
@@ -46,10 +53,14 @@ final class EmployeeController extends Controller
     }
 
     #[Authorize('create', TenantMembership::class)]
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
         return Inertia::render('Employees/Create', [
             'context' => $this->formContext(),
+            'personal' => $actor->can(PermissionEnum::ViewEmployeePersonalData->value) ? EmployeePersonalFormData::blank() : null,
         ]);
     }
 
@@ -80,22 +91,55 @@ final class EmployeeController extends Controller
             'deactivate' => $actor->can('delete', $employee),
             'reactivate' => $actor->can('reactivate', $employee),
             'assign_role' => $actor->can('assignRole', $employee),
+            'manage_documents' => $actor->can('attach', [Document::class, $employee]),
         ];
+
+        $canViewDocuments = $actor->can(PermissionEnum::ViewEmployeeDocuments->value)
+            && $actor->can(PermissionEnum::ViewEmployees->value);
+
+        $documents = $canViewDocuments
+            ? $employee->documents()->with('media')->latest()->get()
+                ->map(fn (Document $document) => EmployeeDocumentData::fromModel($document, $employee->id))
+                ->all()
+            : null;
 
         return Inertia::render('Employees/Show', [
             'employee' => EmployeeDetailData::fromModel($employee, $can),
             'roleOptions' => $can['assign_role'] ? $this->roleOptions() : [],
+            'personal' => $actor->can(PermissionEnum::ViewEmployeePersonalData->value) ? EmployeePersonalData::fromModel($employee) : null,
+            'documents' => $documents,
+            'documentConstraints' => $can['manage_documents'] ? EmployeeDocumentConstraintsData::fromConfig() : null,
+            'contracts' => $this->contracts->listFor($employee, $actor),
+            'canCreateContract' => $this->contracts->canCreateFor($employee, $actor),
         ]);
     }
 
     #[Authorize('update', 'employee')]
-    public function edit(TenantMembership $employee): Response
+    public function edit(TenantMembership $employee, Request $request): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        Inertia::encryptHistory();
+
         $employee->load(['user', 'user.roles', 'employmentContracts.employmentContract', 'tenant']);
+
+        $personal = null;
+
+        if ($actor->can(PermissionEnum::ViewEmployeePersonalData->value)) {
+            $personal = EmployeePersonalFormData::fromModel($employee);
+
+            activity()
+                ->performedOn($employee)
+                ->causedBy($actor)
+                ->event('national_id_viewed')
+                ->log('national_id_viewed');
+        }
 
         return Inertia::render('Employees/Edit', [
             'employee' => EmployeeDetailData::fromModel($employee),
             'context' => $this->formContext(),
+            'personal' => $personal,
         ]);
     }
 

@@ -36,6 +36,7 @@ final readonly class InvoiceSettingsService
                 'iban' => $data->iban,
                 'swift_bic' => $data->swift_bic,
                 'registration_info' => $data->registration_info,
+                'representative_name' => $this->blankToNull($data->representative_name),
                 'peppol_participant_id' => $this->blankToNull($data->peppol_participant_id),
             ];
 

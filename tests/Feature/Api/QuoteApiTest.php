@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Api;
 
 use App\Contracts\RendersQuotePdf;
+use App\Enums\DocumentTypeEnum;
+use App\Models\Document;
 use App\Models\Quote;
 use App\Models\Tenant;
 use App\Models\User;
@@ -132,9 +134,15 @@ final class QuoteApiTest extends TestCase
         $quote = Quote::factory()->document()->create(['tenant_id' => $this->alpha->id]);
         $this->bindTenant($this->alpha);
         $file = UploadedFile::fake()->image('scan.png', 20, 20);
-        $quote->addMedia($file->getPathname())
+        $document = Document::factory()->create([
+            'tenant_id' => $this->alpha->id,
+            'documentable_type' => $quote->getMorphClass(),
+            'documentable_id' => $quote->id,
+            'type' => DocumentTypeEnum::Quote,
+        ]);
+        $document->addMedia($file->getPathname())
             ->usingFileName('scan.png')
-            ->toMediaCollection('document');
+            ->toMediaCollection('file');
         $this->consoleContext();
 
         $response = $this->apiAs($this->leader, $this->alpha)->get("/api/quotes/{$quote->id}/pdf");

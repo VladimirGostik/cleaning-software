@@ -13,7 +13,7 @@ use App\Enums\JobStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
-use App\Models\ContractTemplate;
+use App\Models\DocumentTemplate;
 use App\Models\ScheduledJob;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
@@ -177,17 +177,17 @@ final class EmployeeServiceTest extends TestCase
         $this->assertSame(EmploymentContractTypeEnum::Tpp, $contract->employmentContract->employment_type);
     }
 
-    public function test_create_with_employment_uses_first_active_employment_template_body(): void
+    public function test_create_with_employment_picks_the_template_matching_the_employment_type(): void
     {
         $tenant = Tenant::factory()->create();
         $actor = $this->actingAsTenantUser('Admin', $tenant);
-        $template = ContractTemplate::factory()->create([
+        $template = DocumentTemplate::factory()->employment(EmploymentContractTypeEnum::Dpp)->create([
             'tenant_id' => $tenant->id,
-            'category' => ContractCategoryEnum::Employment,
             'is_active' => true,
             'name' => 'AAA Template',
-            'body' => 'Pracovná zmluva pre {{employee.name}}.',
+            'body' => '<p>Pracovná zmluva pre {{employee.name}}.</p>',
         ]);
+        DocumentTemplate::factory()->employment(EmploymentContractTypeEnum::Tpp)->create(['tenant_id' => $tenant->id, 'name' => '000 Cudzia TPP']);
 
         $membership = app(EmployeeService::class)->create($this->storeData([
             'employment' => [
@@ -201,7 +201,7 @@ final class EmployeeServiceTest extends TestCase
         ]), $actor);
 
         $contract = Contract::where('contractable_id', $membership->id)->where('category', ContractCategoryEnum::Employment->value)->firstOrFail();
-        $this->assertSame($template->id, $contract->contract_template_id);
+        $this->assertSame($template->id, $contract->document_template_id);
     }
 
     public function test_create_throws_when_actor_grants_permission_they_do_not_have(): void

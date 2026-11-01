@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Data\Quotes;
 
 use App\Data\Clients\ClientOptionData;
+use App\Data\Documents\DocumentLetterheadData;
+use App\Data\DocumentTemplates\DocumentTokenData;
 use App\Data\Objects\ObjectOptionData;
 use App\Enums\CurrencyEnum;
 use App\Models\Tenant;
+use App\Services\Documents\DocumentFrame;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -31,13 +34,24 @@ final class QuoteFormContextData extends Data
         public readonly array $document_allowed_mimes,
         public readonly int $document_max_size_kb,
         public readonly CurrencyEnum $default_currency,
+        /** @var QuoteTemplateOptionData[] */
+        #[DataCollectionOf(QuoteTemplateOptionData::class)]
+        public readonly array $templates,
+        /** @var DocumentTokenData[] */
+        #[DataCollectionOf(DocumentTokenData::class)]
+        public readonly array $tokens,
+        public readonly DocumentLetterheadData $letterhead,
+        /** @var string[] */
+        public readonly array $footer,
     ) {}
 
     /**
      * @param  array<int, ClientOptionData>  $clients
      * @param  array<int, ObjectOptionData>  $objects
+     * @param  array<int, QuoteTemplateOptionData>  $templates
+     * @param  array<int, DocumentTokenData>  $tokens
      */
-    public static function fromTenant(Tenant $tenant, array $clients, array $objects): self
+    public static function fromTenant(Tenant $tenant, array $clients, array $objects, array $templates, array $tokens): self
     {
         /** @var array<int, float> $vatRateOptions */
         $vatRateOptions = array_map(
@@ -64,6 +78,10 @@ final class QuoteFormContextData extends Data
             document_allowed_mimes: $allowedMimes,
             document_max_size_kb: is_numeric($maxSizeKb) ? (int) $maxSizeKb : 10240,
             default_currency: $tenant->interface->default_currency ?? CurrencyEnum::EUR,
+            templates: $templates,
+            tokens: $tokens,
+            letterhead: DocumentFrame::letterhead($tenant),
+            footer: DocumentFrame::footer($tenant),
         );
     }
 }

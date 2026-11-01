@@ -5,28 +5,48 @@ declare(strict_types=1);
 namespace App\Services\Pdf;
 
 use App\Contracts\RendersContractPdf;
+use App\Enums\DocumentTypeEnum;
 use App\Models\Contract;
 use App\Models\Tenant;
-use App\Models\TenantMembership;
-use Spatie\LaravelPdf\Facades\Pdf;
+use App\Services\Documents\ContractTextService;
+use App\Services\Documents\DocumentPdfRenderer;
 
 final readonly class ContractPdfService implements RendersContractPdf
 {
-    /** Returns raw PDF bytes via the `chrome` driver. */
+    public function __construct(
+        private ContractTextService $text,
+        private DocumentPdfRenderer $pdf,
+    ) {}
+
     public function render(Contract $contract): string
     {
-        $contract->loadMissing(['employmentContract', 'contractable']);
+        $contract->loadMissing('document');
 
-        if ($contract->contractable instanceof TenantMembership) {
-            $contract->contractable->loadMissing('user');
+        $stored = $contract->document?->getFirstMedia('pdf');
+
+        if ($stored !== null) {
+            /** @var resource $stream */
+            $stream = $stored->stream();
+
+            return (string) stream_get_contents($stream);
         }
 
-        // Not `current_tenant_id()` — rendering must also work from queue/console callers with no bound tenant.
+        return $this->renderFresh($contract);
+    }
+
+    /** Not `current_tenant_id()` — rendering must also work from queue/console callers with no bound tenant. */
+    public function renderFresh(Contract $contract): string
+    {
+        $contract->loadMissing('document');
         $tenant = Tenant::withoutGlobalScopes()->findOrFail($contract->tenant_id);
 
-        return Pdf::view('pdf.contracts.default', ['contract' => $contract, 'tenant' => $tenant])
-            ->format('A4')
-            ->portrait()
-            ->generatePdfContent();
+        return $this->pdf->render(
+            $contract->title,
+            $this->text->displayBody($contract) ?? '',
+            $tenant,
+            $contract->document->type ?? DocumentTypeEnum::fromCategory($contract->category),
+            $contract->document->show_header ?? true,
+            $contract->document->show_footer ?? true,
+        );
     }
 }

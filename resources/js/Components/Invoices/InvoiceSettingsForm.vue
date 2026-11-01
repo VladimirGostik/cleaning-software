@@ -29,6 +29,7 @@ interface InvoiceSettingsFormData {
     city: string | null;
     postal_code: string | null;
     country: string;
+    representative_name: string | null;
     contact_email: string | null;
     contact_phone: string | null;
     peppol_participant_id: string | null;
@@ -85,6 +86,7 @@ form.transform((data: InvoiceSettingsFormData) => ({
     postal_code: data.postal_code || null,
     contact_email: data.contact_email || null,
     contact_phone: data.contact_phone || null,
+    representative_name: data.representative_name || null,
     peppol_participant_id: data.peppol_participant_id || null,
     iban: data.iban || null,
     swift_bic: data.swift_bic || null,

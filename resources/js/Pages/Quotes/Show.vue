@@ -11,6 +11,8 @@ import QuoteKindBadge from '@/Components/Quotes/QuoteKindBadge.vue';
 import QuoteRoughBadge from '@/Components/Quotes/QuoteRoughBadge.vue';
 import QuotePartiesBlock from '@/Components/Quotes/QuotePartiesBlock.vue';
 import QuoteMetaGrid from '@/Components/Quotes/QuoteMetaGrid.vue';
+import StatusErrorAlert from '@/Components/StatusErrorAlert.vue';
+import QuoteTextDocumentPanel from '@/Components/Quotes/QuoteTextDocumentPanel.vue';
 import QuoteDocumentPanel from '@/Components/Quotes/QuoteDocumentPanel.vue';
 import QuoteActionsCard from '@/Components/Quotes/QuoteActionsCard.vue';
 import QuoteLinksCard from '@/Components/Quotes/QuoteLinksCard.vue';
@@ -28,7 +30,7 @@ const props = defineProps<{
     quote: App.Data.Quotes.QuoteDetailData;
     clients: App.Data.Clients.ClientOptionData[] | null;
     objects: App.Data.Objects.ObjectOptionData[] | null;
-    contractTemplates: App.Data.ContractTemplates.ContractTemplateOptionData[];
+    contractTemplates: App.Data.DocumentTemplates.DocumentTemplateOptionData[];
 }>();
 
 const { t } = useI18n();
@@ -107,6 +109,8 @@ function duplicate(): void {
         </template>
     </Header>
 
+    <StatusErrorAlert class="mb-4" />
+
     <div v-if="isExpiredByDate" class="alert alert-warning mb-4">
         <span>{{ t('quote_expiry_warning', { date: formatDate(quote.valid_until) }) }}</span>
     </div>
@@ -170,6 +174,8 @@ function duplicate(): void {
             </Can>
         </div>
     </div>
+
+    <QuoteTextDocumentPanel v-if="quote.text_document" class="mt-6" :text-document="quote.text_document" />
 
     <ConfirmDeleteModal
         :is-open="sendConfirm.state.isOpen"

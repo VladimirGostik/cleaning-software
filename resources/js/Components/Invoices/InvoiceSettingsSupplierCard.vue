@@ -25,6 +25,16 @@ const { t } = useI18n();
                 <TextInput field="city" :label="t('city')" />
                 <TextInput field="postal_code" :label="t('postal_code')" />
                 <TextInput field="country" :label="t('country')" required />
+                <div :class="{ 'md:col-span-2': !compact }">
+                    <TextInput
+                        field="representative_name"
+                        maxlength="255"
+                        :label="t('invoice_settings_representative_name')"
+                    />
+                    <p class="mt-1 text-xs text-base-content/60">
+                        {{ t('invoice_settings_representative_name_hint') }}
+                    </p>
+                </div>
                 <TextInput field="contact_email" type="email" :label="t('invoice_settings_contact_email')" />
                 <TextInput field="contact_phone" type="tel" :label="t('invoice_settings_contact_phone')" />
                 <div :class="{ 'md:col-span-2': !compact }">

@@ -15,6 +15,7 @@ use App\Enums\JobStatusEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Models\CleaningObject;
+use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Invoice;
 use App\Models\Quote;
@@ -214,7 +215,7 @@ final readonly class DashboardAlertsQuery
             ->where('status', ContractStatusEnum::Active->value)
             ->where('term_type', ContractTermTypeEnum::Fixed->value)
             ->where('category', ContractCategoryEnum::ServiceAgreement->value)
-            ->where('contractable_type', ContractableTypeEnum::CleaningObject->value)
+            ->whereIn('contractable_type', [ContractableTypeEnum::CleaningObject->value, ContractableTypeEnum::Client->value])
             ->whereBetween('end_date', [$today->toDateString(), $windowEnd]);
 
         $count = (clone $base)->count();
@@ -224,6 +225,7 @@ final readonly class DashboardAlertsQuery
                 /** @var MorphTo<Model, Contract> $relation */
                 $relation->constrain([
                     CleaningObject::class => fn (Builder $q) => $q->withoutGlobalScope(TenantScope::class),
+                    Client::class => fn (Builder $q) => $q->withoutGlobalScope(TenantScope::class),
                 ]);
             }])
             ->orderBy('end_date')

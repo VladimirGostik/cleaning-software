@@ -50,7 +50,7 @@ final class ClientStoreTest extends TestCase
 
         $response = $this->post(route('clients.store'), $payload);
 
-        $response->assertRedirect(route('clients.index'));
+        $response->assertRedirectContains('/clients/');
 
         $this->assertDatabaseHas('clients', [
             'name' => 'Test Corp s.r.o.',
@@ -67,7 +67,7 @@ final class ClientStoreTest extends TestCase
 
         $this->assertDatabaseHas('activity_log', [
             'subject_id' => $client->id,
-            'subject_type' => Client::class,
+            'subject_type' => (new Client)->getMorphClass(),
         ]);
     }
 
@@ -93,7 +93,7 @@ final class ClientStoreTest extends TestCase
 
         $response = $this->post(route('clients.store'), $payload);
 
-        $response->assertRedirect(route('clients.index'));
+        $response->assertRedirectContains('/clients/');
         $this->assertDatabaseHas('clients', ['name' => 'Jana Nováková', 'type' => 'private']);
     }
 
@@ -195,7 +195,7 @@ final class ClientStoreTest extends TestCase
 
         $response = $this->post(route('clients.store'), $payload);
 
-        $response->assertRedirect(route('clients.index'));
+        $response->assertRedirectContains('/clients/');
         $this->assertDatabaseCount('clients', 2);
     }
 
@@ -236,7 +236,7 @@ final class ClientStoreTest extends TestCase
 
         $response = $this->post(route('clients.store'), $payload);
 
-        $response->assertRedirect(route('clients.index'));
+        $response->assertRedirectContains('/clients/');
         $this->assertDatabaseCount('clients', 2);
     }
 
@@ -263,7 +263,7 @@ final class ClientStoreTest extends TestCase
 
         $response = $this->post(route('clients.store'), $this->corporatePayload());
 
-        $response->assertRedirect(route('clients.index'));
+        $response->assertRedirectContains('/clients/');
     }
 
     public function test_accountant_cannot_create_403(): void
@@ -283,7 +283,7 @@ final class ClientStoreTest extends TestCase
 
         $response = $this->post(route('clients.store'), $payload);
 
-        $response->assertRedirect(route('clients.index'));
+        $response->assertRedirectContains('/clients/');
         $this->assertDatabaseHas('clients', [
             'ico' => '11111111',
             'country' => 'Slovensko',
@@ -300,7 +300,7 @@ final class ClientStoreTest extends TestCase
 
         $response = $this->post(route('clients.store'), $payload);
 
-        $response->assertRedirect(route('clients.index'));
+        $response->assertRedirectContains('/clients/');
         $this->assertDatabaseHas('clients', [
             'ico' => '22222222',
             'country' => 'SK',

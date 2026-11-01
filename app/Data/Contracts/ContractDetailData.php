@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace App\Data\Contracts;
 
+use App\Data\Documents\DocumentLetterheadData;
+use App\Data\DocumentTemplates\DocumentTokenData;
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Models\Contract;
+use App\Models\Tenant;
 use App\Models\TenantMembership;
+use App\Models\User;
+use App\Services\Documents\ContractTextService;
+use App\Services\Documents\DocumentFrame;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -23,7 +30,17 @@ final class ContractDetailData extends Data
         public readonly ContractCategoryEnum $category,
         public readonly ContractStatusEnum $status,
         public readonly ContractTermTypeEnum $term_type,
-        public readonly string $body,
+        public readonly ?string $body,
+        public readonly bool $show_header,
+        public readonly bool $show_footer,
+        public readonly DocumentLetterheadData $letterhead,
+        /** @var string[] */
+        public readonly array $footer,
+        /** @var string[] */
+        public readonly array $missing_tokens,
+        /** @var DocumentTokenData[] */
+        #[DataCollectionOf(DocumentTokenData::class)]
+        public readonly array $tokens,
         public readonly string $valid_from,
         public readonly ?string $end_date,
         public readonly ?string $signed_at,
@@ -33,8 +50,8 @@ final class ContractDetailData extends Data
         public readonly ContractableTypeEnum $contractable_type,
         public readonly string $contractable_id,
         public readonly string $contractable_label,
-        public readonly ?string $contract_template_id,
-        public readonly ?string $contract_template_name,
+        public readonly ?string $document_template_id,
+        public readonly ?string $document_template_name,
         public readonly ?string $quote_id,
         public readonly ?string $quote_number,
         public readonly ?EmploymentContractData $employment,
@@ -43,13 +60,18 @@ final class ContractDetailData extends Data
         public readonly bool $can_be_terminated,
     ) {}
 
-    public static function fromModel(Contract $contract): self
+    public static function fromModel(Contract $contract, ContractTextService $text, User $actor): self
     {
-        $contract->loadMissing(['employmentContract', 'contractTemplate', 'quote', 'contractable']);
+        $contract->loadMissing(['employmentContract', 'documentTemplate', 'quote', 'contractable', 'document']);
 
         if ($contract->contractable instanceof TenantMembership) {
             $contract->contractable->loadMissing('user');
         }
+
+        $tenant = Tenant::withoutGlobalScopes()->findOrFail($contract->tenant_id);
+        $canRead = $text->canReadText($contract, $actor);
+        $body = $canRead ? $text->displayBody($contract) : null;
+        $missing = $body !== null ? $text->missingTokens($contract) : [];
 
         return new self(
             id: $contract->id,
@@ -58,7 +80,13 @@ final class ContractDetailData extends Data
             category: $contract->category,
             status: $contract->status,
             term_type: $contract->term_type,
-            body: $contract->body,
+            body: $body,
+            show_header: $contract->document->show_header ?? true,
+            show_footer: $contract->document->show_footer ?? true,
+            letterhead: DocumentFrame::letterhead($tenant),
+            footer: DocumentFrame::footer($tenant),
+            missing_tokens: $missing,
+            tokens: $canRead ? $text->tokens($contract) : [],
             valid_from: $contract->valid_from->toDateString(),
             end_date: $contract->end_date?->toDateString(),
             signed_at: $contract->signed_at?->toIso8601String(),
@@ -68,15 +96,15 @@ final class ContractDetailData extends Data
             contractable_type: ContractableTypeEnum::from($contract->contractable_type),
             contractable_id: $contract->contractable_id,
             contractable_label: $contract->contractableLabel(),
-            contract_template_id: $contract->contract_template_id,
-            contract_template_name: $contract->contractTemplate?->name,
+            document_template_id: $contract->document_template_id,
+            document_template_name: $contract->documentTemplate?->name,
             quote_id: $contract->quote_id,
             quote_number: $contract->quote?->number,
             employment: $contract->employmentContract !== null
                 ? EmploymentContractData::fromModel($contract->employmentContract)
                 : null,
-            is_editable: $contract->isEditable(),
-            can_be_signed: $contract->canBeSigned(),
+            is_editable: $contract->isEditable() && $canRead,
+            can_be_signed: $contract->canBeSigned() && $canRead && $missing === [],
             can_be_terminated: $contract->canBeTerminated(),
         );
     }

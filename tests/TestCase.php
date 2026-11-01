@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Contracts\RendersContractPdf;
 use App\Enums\PermissionEnum;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -16,10 +17,18 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Testing\PendingCommand;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\FakeContractPdfRenderer;
 
 abstract class TestCase extends BaseTestCase
 {
     private bool $permissionsSeeded = false;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->app->singleton(RendersContractPdf::class, FakeContractPdfRenderer::class);
+    }
 
     /**
      * Creates (or reuses) a user + tenant, seeds the tenant's role templates, assigns

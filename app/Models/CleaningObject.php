@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -118,6 +119,12 @@ final class CleaningObject extends Model
     public function jobs(): HasMany
     {
         return $this->hasMany(ScheduledJob::class, 'cleaning_object_id');
+    }
+
+    /** @return MorphMany<Contract, $this> */
+    public function contracts(): MorphMany
+    {
+        return $this->morphMany(Contract::class, 'contractable');
     }
 
     /** @return HasMany<ObjectContact, $this> */

@@ -7,9 +7,9 @@ namespace App\Data\Contracts;
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractTermTypeEnum;
+use App\Rules\UsableDocumentTemplate;
 use Closure;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Attributes\Validation\Date;
 use Spatie\LaravelData\Attributes\Validation\Max;
@@ -37,8 +37,8 @@ final class ContractUpsertData extends Data
         #[Required, Uuid]
         public readonly string $contractable_id,
         #[Nullable, Uuid]
-        public readonly ?string $contract_template_id,
-        #[Required, Max(50000)]
+        public readonly ?string $document_template_id,
+        #[Required, Max(200000)]
         public readonly string $body,
         #[Required, Date]
         public readonly string $valid_from,
@@ -47,7 +47,29 @@ final class ContractUpsertData extends Data
         #[Nullable, Max(5000)]
         public readonly ?string $notes = null,
         public readonly ?EmploymentContractUpsertData $employment = null,
+        public readonly bool $show_header = true,
+        public readonly bool $show_footer = true,
     ) {}
+
+    public function terms(?string $quoteId = null): ContractGenerateData
+    {
+        return new ContractGenerateData(
+            category: $this->category,
+            term_type: $this->term_type,
+            contractable_type: $this->contractable_type,
+            contractable_id: $this->contractable_id,
+            valid_from: $this->valid_from,
+            document_template_id: $this->document_template_id,
+            body: $this->body,
+            title: $this->title,
+            number: $this->number,
+            end_date: $this->end_date,
+            employment: $this->employment,
+            quote_id: $quoteId,
+            show_header: $this->show_header,
+            show_footer: $this->show_footer,
+        );
+    }
 
     /**
      * @return array<string, mixed>
@@ -72,7 +94,7 @@ final class ContractUpsertData extends Data
                     $exists = DB::table($type->table())
                         ->where('id', $value)
                         ->where('tenant_id', $tenantId)
-                        ->when($type === ContractableTypeEnum::CleaningObject, fn ($q) => $q->whereNull('deleted_at'))
+                        ->when($type !== ContractableTypeEnum::TenantMembership, fn ($q) => $q->whereNull('deleted_at'))
                         ->exists();
 
                     if (! $exists) {
@@ -80,10 +102,10 @@ final class ContractUpsertData extends Data
                     }
                 },
             ],
-            'contract_template_id' => [
+            'document_template_id' => [
                 'nullable',
                 'uuid',
-                Rule::exists('contract_templates', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
+                new UsableDocumentTemplate,
             ],
             'end_date' => ['nullable', 'date', 'required_if:term_type,fixed', 'after_or_equal:valid_from'],
             'employment' => ['nullable', 'array', 'required_if:category,employment'],

@@ -264,7 +264,7 @@ final readonly class DashboardMetricsQuery
             ->withoutGlobalScope(TenantScope::class)
             ->whereIn('tenant_id', $ids)
             ->where('category', ContractCategoryEnum::ServiceAgreement->value)
-            ->where('contractable_type', ContractableTypeEnum::CleaningObject->value)
+            ->whereIn('contractable_type', [ContractableTypeEnum::CleaningObject->value, ContractableTypeEnum::Client->value])
             ->groupBy('tenant_id')
             ->selectRaw(
                 'tenant_id,'

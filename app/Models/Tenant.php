@@ -31,6 +31,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property string|null $swift_bic
  * @property string $invoice_number_format
  * @property string|null $registration_info
+ * @property string|null $representative_name
  * @property int|null $signature_media_id
  * @property string|null $address_line
  * @property string|null $city
@@ -56,6 +57,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'swift_bic',
     'invoice_number_format',
     'registration_info',
+    'representative_name',
     'signature_media_id',
     'address_line',
     'city',
@@ -95,7 +97,7 @@ final class Tenant extends Model implements HasMedia
             ->logOnly([
                 'owner_id', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer',
                 'vat_rate', 'iban', 'is_active',
-                'swift_bic', 'invoice_number_format', 'registration_info', 'signature_media_id',
+                'swift_bic', 'invoice_number_format', 'registration_info', 'representative_name', 'signature_media_id',
                 'address_line', 'city', 'postal_code', 'country', 'contact_email', 'contact_phone',
                 'peppol_participant_id',
             ])

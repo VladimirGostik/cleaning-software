@@ -13,11 +13,15 @@ final class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        if (User::where('email', 'admin@example.com')->exists()) {
+        $existing = User::where('email', 'admin@example.com')->first();
+
+        if ($existing !== null) {
+            $existing->forceFill(['is_platform_admin' => true])->save();
+
             return;
         }
 
-        app(RegistrationService::class)->createOwner(
+        $owner = app(RegistrationService::class)->createOwner(
             name: 'Admin',
             email: 'admin@example.com',
             password: 'password',
@@ -37,5 +41,7 @@ final class UserSeeder extends Seeder
                 swift_bic: 'TATRSKBX',
             ),
         );
+
+        $owner->forceFill(['is_platform_admin' => true])->save();
     }
 }

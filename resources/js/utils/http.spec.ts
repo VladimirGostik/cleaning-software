@@ -1,0 +1,95 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HttpError, getXsrfToken, postBlob, postJson } from './http';
+
+const fetchMock = vi.fn<typeof fetch>();
+
+function response(body: string | null, status: number, headers: Record<string, string>): Response {
+    return new Response(body, { status, headers });
+}
+
+beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock);
+    document.cookie = 'XSRF-TOKEN=abc%3D%3D; path=/';
+});
+
+afterEach(() => {
+    fetchMock.mockReset();
+    vi.unstubAllGlobals();
+    document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+});
+
+describe('getXsrfToken', () => {
+    it('reads and decodes the XSRF-TOKEN cookie', () => {
+        expect(getXsrfToken()).toBe('abc==');
+    });
+
+    it('returns an empty string without the cookie', () => {
+        document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+
+        expect(getXsrfToken()).toBe('');
+    });
+});
+
+describe('postJson', () => {
+    it('sends the XSRF header and JSON body and returns the parsed payload', async () => {
+        fetchMock.mockResolvedValue(response('{"ok":true}', 200, { 'Content-Type': 'application/json' }));
+
+        await expect(postJson('/x', { a: 1 })).resolves.toEqual({ ok: true });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe('/x');
+        expect(init?.method).toBe('POST');
+        expect(init?.body).toBe('{"a":1}');
+        expect(init?.headers).toMatchObject({ 'X-XSRF-TOKEN': 'abc==', Accept: 'application/json' });
+    });
+
+    it('maps a 422 body to message and errors', async () => {
+        fetchMock.mockResolvedValue(
+            response('{"message":"Bad","errors":{"body":["Too long"]}}', 422, { 'Content-Type': 'application/json' }),
+        );
+
+        const error = await postJson('/x', {}).catch((e: unknown) => e);
+
+        expect(error).toBeInstanceOf(HttpError);
+        expect(error).toMatchObject({ status: 422, serverMessage: 'Bad', errors: { body: ['Too long'] } });
+    });
+
+    it('exposes Retry-After on 429 and ignores a malformed errors bag', async () => {
+        fetchMock.mockResolvedValueOnce(response(null, 429, { 'Retry-After': '30' }));
+        fetchMock.mockResolvedValueOnce(
+            response('{"errors":{"body":"x"}}', 422, { 'Content-Type': 'application/json' }),
+        );
+
+        await expect(postJson('/x', {})).rejects.toMatchObject({ status: 429, retryAfterSeconds: 30 });
+        await expect(postJson('/x', {})).rejects.toMatchObject({ status: 422, errors: null });
+    });
+
+    it('keeps errors null for non-422 json bodies', async () => {
+        fetchMock.mockResolvedValue(
+            response('{"message":"Nope","errors":{"a":["b"]}}', 403, { 'Content-Type': 'application/json' }),
+        );
+
+        await expect(postJson('/x', {})).rejects.toMatchObject({ status: 403, serverMessage: 'Nope', errors: null });
+    });
+});
+
+describe('postBlob', () => {
+    it('asks json first and returns the pdf blob', async () => {
+        fetchMock.mockResolvedValue(response('%PDF', 200, { 'Content-Type': 'application/pdf' }));
+
+        const blob = await postBlob('/pdf', { body: 'x' });
+
+        expect(blob.size).toBe(4);
+        expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({
+            Accept: 'application/json, application/pdf;q=0.9',
+        });
+    });
+
+    it('throws HttpError for a non-pdf 200 and for non-2xx', async () => {
+        fetchMock.mockResolvedValueOnce(response('<html>', 200, { 'Content-Type': 'text/html' }));
+        fetchMock.mockResolvedValueOnce(response('{"message":"x"}', 500, { 'Content-Type': 'application/json' }));
+
+        await expect(postBlob('/pdf', {})).rejects.toBeInstanceOf(HttpError);
+        await expect(postBlob('/pdf', {})).rejects.toMatchObject({ status: 500, serverMessage: 'x' });
+    });
+});

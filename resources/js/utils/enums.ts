@@ -131,7 +131,11 @@ export const EMPLOYMENT_CONTRACT_TYPES: readonly App.Enums.EmploymentContractTyp
     'self_employed',
 ];
 
-export const CONTRACTABLE_TYPES: readonly App.Enums.ContractableTypeEnum[] = ['cleaning_object', 'tenant_membership'];
+export const CONTRACTABLE_TYPES: readonly App.Enums.ContractableTypeEnum[] = [
+    'cleaning_object',
+    'tenant_membership',
+    'client',
+];
 
 export function contractStatusKey(status: App.Enums.ContractStatusEnum): string {
     return `contract_status_${status}`;
@@ -153,17 +157,75 @@ export function contractableTypeKey(type: App.Enums.ContractableTypeEnum): strin
     return `contractable_type_${type}`;
 }
 
-// Mirrors ContractCategoryEnum::expectedContractableType() (BE) — null means either party type is allowed.
-export const CONTRACT_CATEGORY_CONTRACTABLE: Record<
+// Mirrors ContractCategoryEnum::allowedContractableTypes() (BE).
+export const CONTRACT_CATEGORY_CONTRACTABLE_TYPES: Record<
     App.Enums.ContractCategoryEnum,
-    App.Enums.ContractableTypeEnum | null
+    readonly App.Enums.ContractableTypeEnum[]
 > = {
-    service_agreement: 'cleaning_object',
-    employment: 'tenant_membership',
-    nda: null,
-    gdpr: null,
-    other: null,
+    service_agreement: ['cleaning_object', 'client'],
+    employment: ['tenant_membership'],
+    nda: CONTRACTABLE_TYPES,
+    gdpr: CONTRACTABLE_TYPES,
+    other: CONTRACTABLE_TYPES,
 };
+
+// Mirrors DocumentTypeEnum::templatable() (BE).
+export const TEMPLATABLE_DOCUMENT_TYPES: readonly App.Enums.DocumentTypeEnum[] = [
+    'service_agreement',
+    'employment',
+    'nda',
+    'gdpr',
+    'other',
+    'quote',
+];
+
+// Mirrors DocumentTypeEnum::employeeFiles() (BE).
+export const EMPLOYEE_FILE_TYPES: readonly App.Enums.DocumentTypeEnum[] = [
+    'employee_id_card',
+    'employee_passport',
+    'employee_residence_permit',
+    'employee_work_permit',
+    'employee_medical',
+    'employee_training',
+    'employee_other',
+];
+
+export const DOCUMENT_TOKEN_GROUPS: readonly App.Enums.DocumentTokenGroupEnum[] = [
+    'tenant',
+    'contract',
+    'client',
+    'object',
+    'employee',
+    'employment',
+    'customer',
+    'quote',
+    'conditions',
+    'blocks',
+];
+
+export const DOCUMENT_TEMPLATE_SCOPES: readonly App.Enums.DocumentTemplateScopeEnum[] = ['global', 'override', 'firm'];
+
+export const DOCUMENT_TEMPLATE_STATES: readonly App.Enums.DocumentTemplateStateEnum[] = [
+    'base',
+    'customized',
+    'base_changed',
+];
+
+export function documentTypeKey(type: App.Enums.DocumentTypeEnum): string {
+    return `document_type_${type}`;
+}
+
+export function documentTokenGroupKey(group: App.Enums.DocumentTokenGroupEnum): string {
+    return `document_token_group_${group}`;
+}
+
+export function documentTemplateScopeKey(scope: App.Enums.DocumentTemplateScopeEnum): string {
+    return `document_template_scope_${scope}`;
+}
+
+export function documentTemplateStateKey(state: App.Enums.DocumentTemplateStateEnum): string {
+    return `document_template_state_${state}`;
+}
 
 export const JOB_TYPES: readonly App.Enums.JobTypeEnum[] = ['regular', 'one_off', 'special'];
 

@@ -16,6 +16,7 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -23,8 +24,9 @@ final class TenantControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function withActiveMembership(User $user): Tenant
+    private function withActiveMembership(User $user, bool $platformAdmin = true): Tenant
     {
+        $user->forceFill(['is_platform_admin' => $platformAdmin])->save();
         $tenant = Tenant::factory()->forOwner($user)->create();
         TenantInterface::factory()->create(['tenant_id' => $tenant->id, 'color' => '#2563EB']);
         TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
@@ -57,6 +59,27 @@ final class TenantControllerTest extends TestCase
     }
 
     // ── store ─────────────────────────────────────────────────────────────────
+
+    public function test_store_is_forbidden_for_a_user_who_is_not_a_platform_admin(): void
+    {
+        $user = User::factory()->create();
+        $this->withActiveMembership($user, platformAdmin: false);
+
+        $this->actingAs($user)->post('/tenants', ['name' => 'New Co', 'ico' => '87654321'])->assertForbidden();
+
+        $this->assertDatabaseMissing('tenants', ['name' => 'New Co']);
+    }
+
+    public function test_can_create_tenant_shared_prop_follows_the_platform_admin_flag(): void
+    {
+        $admin = User::factory()->create();
+        $this->withActiveMembership($admin);
+        $member = User::factory()->create();
+        $this->withActiveMembership($member, platformAdmin: false);
+
+        $this->actingAs($admin)->get(route('dashboard'))->assertInertia(fn (AssertableInertia $page) => $page->where('canCreateTenant', true));
+        $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (AssertableInertia $page) => $page->where('canCreateTenant', false));
+    }
 
     public function test_store_creates_tenant_and_switches_active_session(): void
     {
@@ -135,6 +158,7 @@ final class TenantControllerTest extends TestCase
     public function test_store_with_copy_settings_and_no_source_color_is_null(): void
     {
         $user = User::factory()->create();
+        $user->forceFill(['is_platform_admin' => true])->save();
         $tenant = Tenant::factory()->forOwner($user)->create();
         TenantInterface::factory()->create(['tenant_id' => $tenant->id, 'color' => null]);
         TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);

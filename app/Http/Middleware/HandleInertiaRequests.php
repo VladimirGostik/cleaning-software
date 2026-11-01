@@ -8,6 +8,7 @@ use App\Data\Tenants\TenantListItemData;
 use App\Enums\PermissionEnum;
 use App\Enums\SupportedLanguage;
 use App\Enums\TenantColorEnum;
+use App\Models\Tenant;
 use App\Navigation\NavigationRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -68,6 +69,7 @@ final class HandleInertiaRequests extends Middleware
                     ->mapWithKeys(fn (PermissionEnum $p) => [$p->sharedKey() => $u->can($p->value)])
                     ->toArray();
             },
+            'canCreateTenant' => fn (): bool => $request->user()?->can('create', Tenant::class) ?? false,
             'locale' => fn () => app()->getLocale(),
             'languages' => fn () => SupportedLanguage::getForLanguageSwitcher(),
             'navigation' => fn () => $this->navigation->forUser($request->user()),

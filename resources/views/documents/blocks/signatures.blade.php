@@ -1,0 +1,1 @@
+<table style="width: 100%; border-collapse: collapse; margin-top: 60px;"><tbody><tr><td style="width: 45%; border-top: 1px solid #333333; padding: 4px 0 0 0;"><p>{{ $left }}</p></td><td style="width: 10%;"></td><td style="width: 45%; border-top: 1px solid #333333; padding: 4px 0 0 0;"><p>{{ $right }}</p></td></tr></tbody></table>

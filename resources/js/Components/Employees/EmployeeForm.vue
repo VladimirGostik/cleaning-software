@@ -9,6 +9,7 @@ import FormActions from '@/Components/Forms/FormActions.vue';
 import EmployeeProfileFields from './EmployeeProfileFields.vue';
 import EmployeeRoleFields from './EmployeeRoleFields.vue';
 import EmployeeEmploymentSection from './EmployeeEmploymentSection.vue';
+import EmployeePersonalFields from './EmployeePersonalFields.vue';
 import type { EmploymentFormData } from '@/Components/Contracts/EmploymentContractFields.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -22,17 +23,25 @@ interface EmployeeFormData {
     role_name: string;
     permissions: string[];
     employment: EmploymentFormData | null;
+    birth_date: string | null;
+    national_id: string | null;
+    street: string | null;
+    city: string | null;
+    postal_code: string | null;
+    company_ico: string | null;
 }
 
 const props = defineProps<{
     context: App.Data.Employees.EmployeeFormContextData;
     employee?: App.Data.Employees.EmployeeDetailData | null;
+    personal?: App.Data.Employees.EmployeePersonalFormData | null;
 }>();
 
 const { t } = useI18n();
 const { allows } = useAuthorization();
 
 const isEditing = computed(() => !!props.employee);
+const hasPersonalSection = computed(() => props.personal != null);
 
 function initialData(): EmployeeFormData {
     return {
@@ -44,6 +53,12 @@ function initialData(): EmployeeFormData {
         role_name: props.employee?.role_name ?? '',
         permissions: [...(props.employee?.permissions ?? [])],
         employment: null,
+        birth_date: props.personal?.birth_date ?? null,
+        national_id: props.personal?.national_id ?? null,
+        street: props.personal?.street ?? null,
+        city: props.personal?.city ?? null,
+        postal_code: props.personal?.postal_code ?? null,
+        company_ico: props.personal?.company_ico ?? null,
     };
 }
 
@@ -53,8 +68,26 @@ const form = useForm<EmployeeFormData>(
     initialData(),
 );
 
-form.transform((data: EmployeeFormData) =>
-    isEditing.value
+function personalPayload(data: EmployeeFormData): Partial<EmployeeFormData> {
+    if (!hasPersonalSection.value) return {};
+
+    return {
+        birth_date: data.birth_date || null,
+        national_id: data.national_id || null,
+        street: data.street || null,
+        city: data.city || null,
+        postal_code: data.postal_code || null,
+        company_ico: data.company_ico || null,
+    };
+}
+
+form.transform((data: EmployeeFormData) => ({
+    ...basePayload(data),
+    ...personalPayload(data),
+}));
+
+function basePayload(data: EmployeeFormData) {
+    return isEditing.value
         ? {
               first_name: data.first_name || null,
               last_name: data.last_name || null,
@@ -72,8 +105,8 @@ form.transform((data: EmployeeFormData) =>
               role_name: data.role_name,
               permissions: data.permissions,
               employment: data.employment,
-          },
-);
+          };
+}
 
 const grantableGroups = computed<App.Data.PermissionGroupData[]>(() =>
     props.context.permission_groups
@@ -111,6 +144,13 @@ function submit(): void {
                         :permissions-error="form.errors.permissions ?? null"
                         @update:permissions="updatePermissions"
                     />
+                </div>
+            </div>
+
+            <div v-if="hasPersonalSection" class="card bg-base-100 shadow-sm">
+                <div class="card-body space-y-4">
+                    <h2 class="card-title text-base">{{ t('employee_section_personal') }}</h2>
+                    <EmployeePersonalFields />
                 </div>
             </div>
 

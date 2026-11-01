@@ -9,6 +9,7 @@ import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
 import ObjectDetailCard from '@/Components/Objects/ObjectDetailCard.vue';
 import ObjectAccessCard from '@/Components/Objects/ObjectAccessCard.vue';
 import ObjectWorkBreakdownsCard from '@/Components/Objects/ObjectWorkBreakdownsCard.vue';
+import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
 import ContactsList from '@/Components/Contacts/ContactsList.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -22,6 +23,8 @@ const props = defineProps<{
     object: App.Data.Objects.ObjectDetailData;
     clients: App.Data.Clients.ClientOptionData[];
     workBreakdowns: App.Data.Schedule.WorkBreakdownDetailData[];
+    contracts: App.Data.Contracts.ContractListItemData[] | null;
+    canCreateContract: boolean;
 }>();
 
 const breadcrumbs: Breadcrumb[] = [
@@ -106,6 +109,12 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <p v-else class="text-base-content/60">{{ t('object_no_instructions') }}</p>
                 </div>
             </div>
+
+            <RelatedContractsCard
+                :contracts="contracts"
+                :can-create="canCreateContract"
+                :create-href="`/contracts/create?contractable_type=cleaning_object&contractable_id=${object.id}&category=service_agreement`"
+            />
 
             <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />
         </div>

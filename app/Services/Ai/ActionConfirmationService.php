@@ -15,6 +15,7 @@ use App\Enums\PendingActionStatusEnum;
 use App\Enums\PermissionEnum;
 use App\Exceptions\PendingActionSubjectChangedException;
 use App\Models\Contract;
+use App\Models\Document;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\PendingAction;
@@ -416,7 +417,7 @@ final readonly class ActionConfirmationService
 
     /**
      * Hashes every stored attribute (`updated_at` excluded: it has second precision, the content covers any real change)
-     * plus the line items, which live in their own table, and the quote's resolved client name.
+     * plus what lives outside the row: line items, the quote's resolved client name and the contract or quote text.
      */
     private function fingerprint(Model $subject): string
     {
@@ -426,7 +427,8 @@ final readonly class ActionConfirmationService
 
         $related = match (true) {
             $subject instanceof Invoice => ['items' => $this->itemsChecksum($subject->items())],
-            $subject instanceof Quote => ['items' => $this->itemsChecksum($subject->items()), 'client' => $subject->client()->value('name')],
+            $subject instanceof Quote => ['items' => $this->itemsChecksum($subject->items()), 'client' => $subject->client()->value('name'), 'document' => $this->documentChecksum($subject)],
+            $subject instanceof Contract => ['document' => $this->documentChecksum($subject)],
             default => [],
         };
 
@@ -448,6 +450,24 @@ final readonly class ActionConfirmationService
         }
 
         return hash('sha256', json_encode($rows, JSON_THROW_ON_ERROR));
+    }
+
+    // Hashes the decrypted body: the stored ciphertext differs on every save even when the text does not.
+    private function documentChecksum(Contract|Quote $subject): ?string
+    {
+        $document = $subject->document()->first();
+
+        if (! $document instanceof Document) {
+            return null;
+        }
+
+        return hash('sha256', json_encode([
+            $document->title,
+            $document->body,
+            $document->show_header,
+            $document->show_footer,
+            $document->getFirstMedia('file')?->uuid,
+        ], JSON_THROW_ON_ERROR));
     }
 
     private function userOr(?string $value, string $fallback): string

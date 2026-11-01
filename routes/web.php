@@ -7,10 +7,11 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContractController;
-use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\EInvoiceController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeDocumentController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceBulkController;
@@ -118,6 +119,9 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->whereUuid('employee');
     Route::post('/employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate')->whereUuid('employee');
     Route::post('/employees/{employee}/reactivate', [EmployeeController::class, 'reactivate'])->name('employees.reactivate')->whereUuid('employee');
+    Route::post('/employees/{employee}/documents', [EmployeeDocumentController::class, 'store'])->name('employees.documents.store')->whereUuid('employee');
+    Route::get('/employees/{employee}/documents/{document}/download', [EmployeeDocumentController::class, 'download'])->name('employees.documents.download')->whereUuid(['employee', 'document'])->scopeBindings();
+    Route::delete('/employees/{employee}/documents/{document}', [EmployeeDocumentController::class, 'destroy'])->name('employees.documents.destroy')->whereUuid(['employee', 'document'])->scopeBindings();
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
         Route::match(['PUT', 'PATCH'], '/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->whereUuid('employee');
@@ -169,14 +173,21 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::post('/quotes/{quote}/convert-to-contract', [QuoteController::class, 'convertToContract'])->name('quotes.convert-to-contract')->whereUuid('quote');
     });
 
-    Route::get('/contract-templates', [ContractTemplateController::class, 'index'])->name('contract-templates.index');
-    Route::get('/contract-templates/create', [ContractTemplateController::class, 'create'])->name('contract-templates.create');
-    Route::get('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'show'])->name('contract-templates.show')->whereUuid('contractTemplate');
-    Route::get('/contract-templates/{contractTemplate}/edit', [ContractTemplateController::class, 'edit'])->name('contract-templates.edit')->whereUuid('contractTemplate');
-    Route::delete('/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'destroy'])->name('contract-templates.destroy')->whereUuid('contractTemplate');
+    Route::get('/settings/document-templates', [DocumentTemplateController::class, 'index'])->name('document-templates.index');
+    Route::get('/settings/document-templates/create', [DocumentTemplateController::class, 'create'])->name('document-templates.create');
+    Route::get('/settings/document-templates/{documentTemplate}/edit', [DocumentTemplateController::class, 'edit'])->name('document-templates.edit')->whereUuid('documentTemplate');
+    Route::delete('/settings/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'destroy'])->name('document-templates.destroy')->whereUuid('documentTemplate');
+    Route::post('/settings/document-templates/{documentTemplate}/customize', [DocumentTemplateController::class, 'customize'])->name('document-templates.customize')->whereUuid('documentTemplate');
+    Route::post('/settings/document-templates/{documentTemplate}/reset', [DocumentTemplateController::class, 'reset'])->name('document-templates.reset')->whereUuid('documentTemplate');
+    Route::post('/settings/document-templates/{documentTemplate}/acknowledge', [DocumentTemplateController::class, 'acknowledge'])->name('document-templates.acknowledge')->whereUuid('documentTemplate');
+    Route::middleware(['throttle:document-preview'])->group(function (): void {
+        Route::post('/settings/document-templates/preview', [DocumentTemplateController::class, 'preview'])->name('document-templates.preview');
+        Route::post('/settings/document-templates/preview-pdf', [DocumentTemplateController::class, 'previewPdf'])->name('document-templates.preview-pdf');
+    });
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
-        Route::post('/contract-templates', [ContractTemplateController::class, 'store'])->name('contract-templates.store');
-        Route::match(['PUT', 'PATCH'], '/contract-templates/{contractTemplate}', [ContractTemplateController::class, 'update'])->name('contract-templates.update')->whereUuid('contractTemplate');
+        Route::post('/settings/document-templates', [DocumentTemplateController::class, 'store'])->name('document-templates.store');
+        Route::post('/settings/document-templates/global', [DocumentTemplateController::class, 'storeGlobal'])->name('document-templates.store-global');
+        Route::match(['PUT', 'PATCH'], '/settings/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'update'])->name('document-templates.update')->whereUuid('documentTemplate');
     });
 
     Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
@@ -188,6 +199,8 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf')->whereUuid('contract');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
+        Route::post('/contracts/generate', [ContractController::class, 'generate'])->name('contracts.generate')->middleware('throttle:document-preview');
+        Route::post('/contracts/generate-pdf', [ContractController::class, 'generatePdf'])->name('contracts.generate-pdf')->middleware('throttle:document-preview');
         Route::match(['PUT', 'PATCH'], '/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update')->whereUuid('contract');
         Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate')->whereUuid('contract');
     });

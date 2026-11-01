@@ -10,7 +10,7 @@ import FormActions from '@/Components/Forms/FormActions.vue';
 const props = defineProps<{
     open: boolean;
     quoteId: string;
-    templates: readonly App.Data.ContractTemplates.ContractTemplateOptionData[];
+    templates: readonly App.Data.DocumentTemplates.DocumentTemplateOptionData[];
 }>();
 
 const emit = defineEmits<{
@@ -20,14 +20,16 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const form = useForm('post', `/quotes/${props.quoteId}/convert-to-contract`, {
-    contract_template_id: '',
-}).transform((data: { contract_template_id: string }) => ({
-    contract_template_id: data.contract_template_id || null,
+    document_template_id: '',
+}).transform((data: { document_template_id: string }) => ({
+    document_template_id: data.document_template_id || null,
 }));
 
 const templateOptions = computed<SelectOption[]>(() => [
     { value: '', label: t('contract_no_template') },
-    ...props.templates.map((tpl) => ({ value: tpl.id, label: tpl.name })),
+    ...props.templates
+        .filter((tpl) => tpl.type === 'service_agreement')
+        .map((tpl) => ({ value: tpl.id, label: tpl.name })),
 ]);
 
 function submit(): void {
@@ -44,7 +46,7 @@ function submit(): void {
             <FormProvider :form="form">
                 <form novalidate class="mt-4" @submit.prevent="submit">
                     <SelectInput
-                        field="contract_template_id"
+                        field="document_template_id"
                         :label="t('quote_convert_contract_template')"
                         :options="templateOptions"
                     />

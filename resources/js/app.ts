@@ -5,6 +5,7 @@ import '../css/app.css';
 import { createApp, h, type DefineComponent, type Plugin } from 'vue';
 import { createInertiaApp, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { pluralRules } from '@/utils/pluralRules';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createI18n } from 'vue-i18n';
 
@@ -44,6 +45,7 @@ void createInertiaApp({
             locale,
             fallbackLocale: 'en',
             messages,
+            pluralRules,
         });
 
         router.on('navigate', (event: Event) => {

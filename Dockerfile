@@ -51,6 +51,7 @@ RUN apk add --no-cache \
     harfbuzz \
     ca-certificates \
     ttf-dejavu \
+    ttf-liberation \
     font-noto \
     && rm -rf /var/cache/apk/*
 

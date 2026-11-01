@@ -7,6 +7,7 @@ namespace Tests\Feature\Mcp;
 use App\Enums\ActionChannelEnum;
 use App\Enums\ConfirmationChannelEnum;
 use App\Enums\ContractStatusEnum;
+use App\Enums\DocumentTypeEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\PendingActionEnum;
 use App\Enums\PendingActionStatusEnum;
@@ -14,6 +15,7 @@ use App\Enums\QuoteStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\Document;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -403,9 +405,8 @@ final class ActionConfirmationTest extends TestCase
 
         $this->assertFalse($done->isError, $done->text);
         $this->assertNull(Task::unscopedForSystem()->find($global->id));
-        $row = $this->aiActivities()->last();
+        $row = $this->aiActivities()->firstWhere('description', 'tool.delete_global_task');
         $this->assertNotNull($row);
-        $this->assertSame('tool.delete_global_task', $row->description);
         $this->assertNull($row->tenant_id);
         $this->assertTrue(Arr::get($row->propertiesArray() ?? [], 'executed'));
         $this->assertSame(0, PendingAction::query()->count());
@@ -612,6 +613,84 @@ final class ActionConfirmationTest extends TestCase
 
         $this->assertTrue($this->callTool($this->token, 'confirm_action', ['token' => $token])->isError);
         $this->assertSame(InvoiceStatusEnum::Draft, $invoice->refresh()->status);
+    }
+
+    public function test_an_edited_contract_text_after_prepare_is_refused(): void
+    {
+        $contract = $this->draftContract();
+        $document = $this->textDocument($contract, 'Cena 100 EUR');
+        $pending = $this->prepare(PendingActionEnum::SignContract, $contract->id)['pending'];
+
+        $document->update(['body' => 'Cena 9999 EUR']);
+
+        $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $pending))
+            ->assertSessionHasErrors(['status' => __('app.pending_action_subject_changed')]);
+        $this->assertSame(ContractStatusEnum::Draft, $contract->refresh()->status);
+    }
+
+    public function test_an_edited_quote_text_after_prepare_is_refused(): void
+    {
+        $quote = Quote::factory()->create(['tenant_id' => $this->alpha->id]);
+        $document = $this->textDocument($quote, 'Pôvodný text');
+        $token = $this->prepare(PendingActionEnum::SendQuote, $quote->id)['token'];
+
+        $document->update(['body' => 'Podvrhnutý text']);
+
+        $result = $this->callTool($this->token, 'confirm_action', ['token' => $token]);
+
+        $this->assertTrue($result->isError);
+        $this->assertStringContainsString(__('app.pending_action_subject_changed'), $result->text);
+        $this->assertSame(QuoteStatusEnum::Draft, $quote->refresh()->status);
+    }
+
+    public function test_an_unchanged_text_resaved_with_a_new_ciphertext_still_confirms(): void
+    {
+        $quote = Quote::factory()->create(['tenant_id' => $this->alpha->id]);
+        $document = $this->textDocument($quote, 'Rovnaký text');
+        $token = $this->prepare(PendingActionEnum::SendQuote, $quote->id)['token'];
+
+        DB::table('documents')->where('id', $document->id)->update(['body' => encrypt('Rovnaký text', false)]);
+
+        $this->assertFalse($this->callTool($this->token, 'confirm_action', ['token' => $token])->isError);
+        $this->assertSame(QuoteStatusEnum::Sent, $quote->refresh()->status);
+    }
+
+    public function test_signing_a_contract_with_unresolved_tokens_fails_cleanly_and_stays_a_draft(): void
+    {
+        $contract = $this->draftContract();
+        $this->textDocument($contract, '<p>Cena {{contract.price}}</p>');
+        $pending = $this->prepare(PendingActionEnum::SignContract, $contract->id)['pending'];
+
+        $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $pending))
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(ContractStatusEnum::Draft, $contract->refresh()->status);
+    }
+
+    private function draftContract(): Contract
+    {
+        $object = CleaningObject::factory()->create(['tenant_id' => $this->alpha->id, 'client_id' => Client::factory()->create(['tenant_id' => $this->alpha->id])->id]);
+
+        return Contract::factory()->draft()->forObject($object)->create(['tenant_id' => $this->alpha->id]);
+    }
+
+    private function textDocument(Contract|Quote $subject, string $body): Document
+    {
+        $existing = $subject->document()->first();
+
+        if ($existing instanceof Document) {
+            $existing->update(['body' => $body]);
+
+            return $existing;
+        }
+
+        return Document::factory()->create([
+            'tenant_id' => $subject->tenant_id,
+            'documentable_type' => $subject->getMorphClass(),
+            'documentable_id' => $subject->id,
+            'type' => $subject instanceof Contract ? DocumentTypeEnum::Other : DocumentTypeEnum::Quote,
+            'body' => $body,
+        ]);
     }
 
     public function test_send_quote_refuses_a_swapped_recipient_and_delete_expense_a_changed_amount(): void

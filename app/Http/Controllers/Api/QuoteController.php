@@ -12,6 +12,7 @@ use App\Http\Controllers\QuoteController as WebQuoteController;
 use App\Models\Quote;
 use App\Models\User;
 use App\Scribe\Attributes\ResponseFromSpatieData;
+use App\Services\Documents\QuoteTextService;
 use App\Services\QuoteService;
 use App\Utils\PerPage;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +28,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[Authenticated]
 final class QuoteController extends Controller
 {
-    public function __construct(private readonly QuoteService $quotes) {}
+    public function __construct(private readonly QuoteService $quotes, private readonly QuoteTextService $text) {}
 
     #[Authorize('viewAny', Quote::class)]
     #[Endpoint('List quotes', 'Paginated quotes of the active company.')]
@@ -45,7 +46,7 @@ final class QuoteController extends Controller
     #[ResponseFromSpatieData(QuoteDetailData::class, User::class)]
     public function show(Quote $quote): JsonResponse
     {
-        return response()->json(QuoteDetailData::fromModel($quote));
+        return response()->json(QuoteDetailData::fromModel($quote, $this->text));
     }
 
     #[Authorize('downloadPdf', 'quote')]

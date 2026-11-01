@@ -10,7 +10,7 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Models\CleaningObject;
 use App\Models\Contract;
-use App\Models\ContractTemplate;
+use App\Models\DocumentTemplate;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,8 +35,8 @@ final class ContractControllerTest extends TestCase
             'term_type' => ContractTermTypeEnum::Fixed->value,
             'contractable_type' => ContractableTypeEnum::CleaningObject->value,
             'contractable_id' => $contractableId,
-            'contract_template_id' => null,
-            'body' => 'Zmluvné podmienky.',
+            'document_template_id' => null,
+            'body' => '<p>Zmluvné podmienky.</p>',
             'valid_from' => now()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
             'notes' => null,
@@ -99,8 +99,8 @@ final class ContractControllerTest extends TestCase
         CleaningObject::factory()->create(['tenant_id' => $tenant->id]);
         CleaningObject::factory()->inactive()->create(['tenant_id' => $tenant->id]);
         TenantMembership::factory()->create(['tenant_id' => $tenant->id]);
-        ContractTemplate::factory()->create(['tenant_id' => $tenant->id]);
-        ContractTemplate::factory()->inactive()->create(['tenant_id' => $tenant->id]);
+        DocumentTemplate::factory()->create(['tenant_id' => $tenant->id]);
+        DocumentTemplate::factory()->inactive()->create(['tenant_id' => $tenant->id]);
 
         $response = $this->get(route('contracts.create'));
 
@@ -169,11 +169,11 @@ final class ContractControllerTest extends TestCase
         $other = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id]);
-        $foreignTemplate = ContractTemplate::factory()->create(['tenant_id' => $other->id]);
+        $foreignTemplate = DocumentTemplate::factory()->create(['tenant_id' => $other->id]);
 
-        $response = $this->post(route('contracts.store'), $this->payload($object->id, ['contract_template_id' => $foreignTemplate->id]));
+        $response = $this->post(route('contracts.store'), $this->payload($object->id, ['document_template_id' => $foreignTemplate->id]));
 
-        $response->assertSessionHasErrors('contract_template_id');
+        $response->assertSessionHasErrors('document_template_id');
     }
 
     // -------------------------------------------------------------------------

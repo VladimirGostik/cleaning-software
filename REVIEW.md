@@ -8,7 +8,7 @@ Synced with `laravel-13-conventions/references/review-checks.md` §"Distilled ho
 
 1. Validation via Spatie Data attribute DTOs — no FormRequest, no `$request->validate()`, no JsonResource.
 2. UUIDv7 PKs (`HasUuids`) — never `$table->id()` / `bigIncrements`.
-3. Controllers thin — no business logic, no `DB::transaction` (service owns both); authorization per `## Auth profile`.
+3. Controllers thin — no business logic, no `DB::transaction` (service owns both). Every action authorizes through the model's Policy (L13 `#[Authorize]`, L10-12 `$this->authorize()`) in every auth profile; `role:` route groups are an extra outer layer, not a replacement.
 4. `Inertia::render` props: Data DTO / `::collect(...)` / scalar only — never bare array / Model / paginator without `->through(...)`.
 5. Every user-facing message via `__('<ns>.<key>')` from lang files (validation = auto-lookup, override only per-field via `messages()`); never literal strings. Logs stay English.
 6. Response DTOs minimal — no speculative fields without a named consumer.

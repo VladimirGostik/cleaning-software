@@ -8,8 +8,11 @@ use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
+use App\Enums\DocumentTypeEnum;
 use App\Models\CleaningObject;
+use App\Models\Client;
 use App\Models\Contract;
+use App\Models\Document;
 use App\Models\Quote;
 use App\Models\TenantMembership;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -41,9 +44,9 @@ final class ContractFactory extends Factory
             'category' => ContractCategoryEnum::ServiceAgreement,
             'status' => ContractStatusEnum::Draft,
             'term_type' => ContractTermTypeEnum::Fixed,
+            'document_body' => '<p>Zmluvné podmienky.</p>',
             'title' => 'Zmluva o vykonaní upratovacích prác',
             'number' => null,
-            'body' => 'Zmluvné podmienky.',
             'valid_from' => now()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
             'signed_at' => null,
@@ -51,6 +54,37 @@ final class ContractFactory extends Factory
             'termination_reason' => null,
             'notes' => null,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this
+            ->afterMaking(function (Contract $contract): void {
+                $contract->setRelation('pendingBody', $contract->getAttribute('document_body'));
+                $contract->offsetUnset('document_body');
+            })
+            ->afterCreating(function (Contract $contract): void {
+                $body = $contract->getRelation('pendingBody');
+                $contract->unsetRelation('pendingBody');
+
+                if ($contract->document()->exists()) {
+                    return;
+                }
+
+                Document::create([
+                    'tenant_id' => $contract->tenant_id,
+                    'documentable_type' => $contract->getMorphClass(),
+                    'documentable_id' => $contract->id,
+                    'type' => DocumentTypeEnum::fromCategory($contract->category),
+                    'title' => $contract->title,
+                    'body' => is_string($body) ? $body : '<p>Zmluvné podmienky.</p>',
+                ]);
+            });
+    }
+
+    public function withBody(string $html): static
+    {
+        return $this->state(fn () => ['document_body' => $html]);
     }
 
     public function draft(): static
@@ -116,6 +150,15 @@ final class ContractFactory extends Factory
             'contractable_type' => ContractableTypeEnum::TenantMembership->value,
             'contractable_id' => $membership instanceof TenantMembership ? $membership->id : $membership,
             'category' => ContractCategoryEnum::Employment,
+        ]);
+    }
+
+    public function forClient(Client $client): static
+    {
+        return $this->state(fn () => [
+            'contractable_type' => ContractableTypeEnum::Client->value,
+            'contractable_id' => $client->id,
+            'category' => ContractCategoryEnum::ServiceAgreement,
         ]);
     }
 

@@ -11,13 +11,18 @@ use App\Data\Employees\EmployeeUpdateData;
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractTermTypeEnum;
+use App\Enums\DocumentTypeEnum;
+use App\Enums\EmploymentContractTypeEnum;
 use App\Enums\JobStatusEnum;
+use App\Enums\PermissionEnum;
 use App\Enums\SupportedLanguage;
-use App\Models\ContractTemplate;
+use App\Models\DocumentTemplate;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
+use App\Services\Documents\DocumentTemplateCatalogue;
+use App\Services\Documents\DocumentTemplateService;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
 use Illuminate\Database\DatabaseManager;
@@ -37,6 +42,8 @@ final readonly class EmployeeService
         private JobService $jobs,
         private TaskService $tasks,
         private ContractService $contracts,
+        private DocumentTemplateService $templates,
+        private DocumentTemplateCatalogue $catalogue,
         private RegistrationService $registration,
         private DeviceTokenService $devices,
     ) {}
@@ -89,7 +96,9 @@ final readonly class EmployeeService
         $this->guard->assertAssignable($actor, [$role]);
         $this->guard->assertPermissionsGrantable($actor, $data->permissions ?? []);
 
-        return $this->db->transaction(function () use ($data, $role, $tenantId): TenantMembership {
+        $personal = $this->personalAttributes($data, $actor);
+
+        return $this->db->transaction(function () use ($data, $role, $tenantId, $personal, $actor): TenantMembership {
             $user = User::where('email', $data->email)->first();
             $isNew = $user === null;
 
@@ -119,6 +128,7 @@ final readonly class EmployeeService
                     'last_name' => $data->last_name,
                     'phone' => $data->phone,
                     'position' => $data->position,
+                    ...$personal,
                 ])->save();
             } else {
                 $membership = TenantMembership::create([
@@ -130,6 +140,7 @@ final readonly class EmployeeService
                     'last_name' => $data->last_name,
                     'phone' => $data->phone,
                     'position' => $data->position,
+                    ...$personal,
                 ]);
             }
 
@@ -139,11 +150,7 @@ final readonly class EmployeeService
             $user->syncPermissions($data->permissions ?? []);
 
             if ($data->employment !== null) {
-                $template = ContractTemplate::query()
-                    ->active()
-                    ->where('category', ContractCategoryEnum::Employment->value)
-                    ->orderBy('name')
-                    ->first();
+                $template = $this->employmentTemplate($data->employment->employment_type);
 
                 $this->contracts->create(ContractUpsertData::from([
                     'title' => $membership->display_name.' — '.__('app.employment_contract_default_title'),
@@ -152,13 +159,15 @@ final readonly class EmployeeService
                     'term_type' => ContractTermTypeEnum::Indefinite->value,
                     'contractable_type' => ContractableTypeEnum::TenantMembership->value,
                     'contractable_id' => $membership->id,
-                    'contract_template_id' => $template?->id,
-                    'body' => $template->body ?? '',
+                    'document_template_id' => $template?->id,
+                    'body' => $template->body ?? $this->catalogue->skeleton(DocumentTypeEnum::Employment),
                     'valid_from' => today()->toDateString(),
                     'end_date' => null,
                     'notes' => null,
                     'employment' => $data->employment,
-                ]));
+                    'show_header' => $template->show_header ?? true,
+                    'show_footer' => $template->show_footer ?? true,
+                ]), $actor);
             }
 
             if ($isNew) {
@@ -180,12 +189,15 @@ final readonly class EmployeeService
         $this->guard->assertAssignable($actor, [$role]);
         $this->guard->assertPermissionsGrantable($actor, $data->permissions ?? []);
 
-        return $this->db->transaction(function () use ($membership, $data, $role): TenantMembership {
+        $personal = $this->personalAttributes($data, $actor);
+
+        return $this->db->transaction(function () use ($membership, $data, $role, $personal): TenantMembership {
             $membership->update([
                 'first_name' => $data->first_name,
                 'last_name' => $data->last_name,
                 'phone' => $data->phone,
                 'position' => $data->position,
+                ...$personal,
             ]);
 
             $membership->loadMissing('user');
@@ -238,5 +250,40 @@ final readonly class EmployeeService
 
             return $membership->load(['user:id,name,email', 'user.roles', 'employmentContracts.employmentContract']);
         });
+    }
+
+    /** @return array<string, mixed> */
+    private function personalAttributes(EmployeeStoreData|EmployeeUpdateData $data, User $actor): array
+    {
+        if (! $actor->can(PermissionEnum::ViewEmployeePersonalData->value)) {
+            return [];
+        }
+
+        return [
+            'birth_date' => $data->birth_date,
+            'national_id' => $this->normalizeNationalId($data->national_id),
+            'street' => $data->street,
+            'city' => $data->city,
+            'postal_code' => $data->postal_code,
+            'company_ico' => $data->company_ico,
+        ];
+    }
+
+    private function normalizeNationalId(?string $nationalId): ?string
+    {
+        if ($nationalId === null || trim($nationalId) === '') {
+            return null;
+        }
+
+        $digits = preg_replace('/\D/', '', $nationalId) ?? '';
+
+        return substr($digits, 0, 6).'/'.substr($digits, 6);
+    }
+
+    private function employmentTemplate(EmploymentContractTypeEnum $employmentType): ?DocumentTemplate
+    {
+        $options = collect($this->templates->options(DocumentTypeEnum::Employment, $employmentType));
+
+        return $options->firstWhere('employment_type', $employmentType) ?? $options->first();
     }
 }

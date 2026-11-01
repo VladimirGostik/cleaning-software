@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Data\MediaDetailData;
 use App\Data\MediaIndexFilterData;
+use App\Models\Document;
 use App\Models\Media;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
@@ -22,7 +23,7 @@ final readonly class MediaService
     {
         $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';
 
-        return QueryBuilder::for(Media::inTenant(current_tenant_id()))
+        return QueryBuilder::for(Media::inTenant(current_tenant_id())->where('model_type', '!=', (new Document)->getMorphClass()))
             ->allowedFilters(
                 AllowedFilter::callbackClean('search', function (Builder $q, mixed $v) use ($op): void {
                     if (blank($v) || ! is_scalar($v)) {
