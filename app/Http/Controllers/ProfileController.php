@@ -59,7 +59,7 @@ final class ProfileController extends Controller
             ]);
         }
 
-        $user->update(['password' => $data->password]);
+        $this->profileService->changePassword($user, $data->password);
 
         return back()->with('success', __('app.password_changed'));
     }

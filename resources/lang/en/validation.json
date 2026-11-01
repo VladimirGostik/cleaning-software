@@ -155,6 +155,7 @@
     "attributes.file": "file",
     "attributes.access_code": "access code",
     "attributes.account_iban": "statement account IBAN",
+    "attributes.refresh_token": "refresh token",
     "attributes.address_line": "address",
     "attributes.ai_proposal": "AI proposal",
     "attributes.amount": "amount",

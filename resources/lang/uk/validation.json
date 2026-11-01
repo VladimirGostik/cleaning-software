@@ -155,6 +155,7 @@
     "attributes.file": "файл",
     "attributes.access_code": "код доступу",
     "attributes.account_iban": "IBAN рахунку виписки",
+    "attributes.refresh_token": "токен оновлення",
     "attributes.address_line": "адреса",
     "attributes.ai_proposal": "пропозиція ШІ",
     "attributes.amount": "сума",

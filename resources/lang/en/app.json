@@ -1944,5 +1944,6 @@
     "object_billing_hint": "When filled in, invoices for this object are issued to this entity, represented by the client. Empty address = the object's address.",
     "invoice_pdf_represented_by": "represented by",
     "invoice_subject_bills_to": "Buyer: {name} · represented by {client}",
-    "object_billing_name_required": "Fill in the billed entity when you enter other billing details."
+    "object_billing_name_required": "Fill in the billed entity when you enter other billing details.",
+    "session_invalid": "The session is no longer valid. Sign in again."
 }

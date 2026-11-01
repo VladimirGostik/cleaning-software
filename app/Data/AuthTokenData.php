@@ -13,13 +13,15 @@ final class AuthTokenData extends Data
 {
     public function __construct(
         public readonly string $token,
+        public readonly string $refresh_token,
         public readonly UserListItemData $user,
     ) {}
 
-    public static function make(User $user, string $token): self
+    public static function make(User $user, MobileTokenPairData $pair): self
     {
         return new self(
-            token: $token,
+            token: $pair->token,
+            refresh_token: $pair->refresh_token,
             user: UserListItemData::fromModel($user),
         );
     }
@@ -29,6 +31,7 @@ final class AuthTokenData extends Data
     {
         return new self(
             token: '1|example_sanctum_token_here',
+            refresh_token: '0199e0f0-0000-7000-8000-000000000000.example_refresh_secret',
             user: UserListItemData::fromModel($user),
         );
     }

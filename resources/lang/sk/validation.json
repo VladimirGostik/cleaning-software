@@ -155,6 +155,7 @@
     "attributes.file": "súbor",
     "attributes.access_code": "kód na vstup",
     "attributes.account_iban": "IBAN účtu výpisu",
+    "attributes.refresh_token": "obnovovací token",
     "attributes.address_line": "adresa",
     "attributes.ai_proposal": "návrh AI",
     "attributes.amount": "suma",

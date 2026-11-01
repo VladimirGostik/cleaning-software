@@ -23,7 +23,7 @@ final readonly class UserService
         private RoleAssignmentGuard $guard,
         private JobService $jobs,
         private TaskService $tasks,
-        private DeviceTokenService $devices,
+        private MobileSessionService $sessions,
         private RegistrationService $registration,
     ) {}
 
@@ -103,6 +103,7 @@ final readonly class UserService
                 $this->tasks->unassignForMembership($membership);
                 $this->jobs->unassignFutureForMembership($membership);
                 $this->registration->revokePendingInvitations($tenantId, $user->email);
+                $this->sessions->revokeAllIfNoActiveMembership($user);
             }
 
             $user->syncRoles($roles);
@@ -132,7 +133,7 @@ final readonly class UserService
                 $membership->delete();
             }
 
-            $this->devices->removeAllIfNoActiveMembership($user);
+            $this->sessions->revokeAllIfNoActiveMembership($user);
         });
     }
 }

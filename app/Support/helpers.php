@@ -8,9 +8,7 @@ use Carbon\CarbonInterface;
 if (! function_exists('get_client_ip')) {
     function get_client_ip(): string
     {
-        $request = request();
-
-        return $request->header('X-Real-IP') ?? $request->ip() ?? '';
+        return request()->ip() ?? '';
     }
 }
 

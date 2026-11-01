@@ -22,7 +22,7 @@ final readonly class EmployeeAccessService
         private RoleAssignmentGuard $guard,
         private RegistrationService $registration,
         private TaskService $tasks,
-        private DeviceTokenService $devices,
+        private MobileSessionService $sessions,
     ) {}
 
     public function grant(TenantMembership $membership, EmployeeAccessData $data, User $actor): TenantMembership
@@ -105,7 +105,7 @@ final readonly class EmployeeAccessService
 
             $this->registration->revokePendingInvitations($tenantId, $user->email);
             $this->tasks->unassignForMembership($membership);
-            $this->devices->removeAllIfNoActiveMembership($user);
+            $this->sessions->revokeAllIfNoActiveMembership($user);
 
             activity()
                 ->performedOn($membership)

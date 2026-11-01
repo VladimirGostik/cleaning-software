@@ -35,6 +35,7 @@ readonly created_at: string,
 };
 export type AuthTokenData = {
 readonly token: string,
+readonly refresh_token: string,
 readonly user: App.Data.UserListItemData,
 };
 export type ChangePasswordData = {
@@ -109,6 +110,10 @@ readonly model_url: string | null,
 readonly url: string,
 readonly created_at: string,
 };
+export type MobileTokenPairData = {
+readonly token: string,
+readonly refresh_token: string,
+};
 export type NavigationItemData = {
 readonly key: string,
 readonly label: string,
@@ -135,6 +140,9 @@ export type PermissionItemData = {
 readonly id: string,
 readonly name: App.Enums.PermissionEnum,
 readonly label: string,
+};
+export type RefreshTokenData = {
+readonly refresh_token: string,
 };
 export type RoleDetailData = {
 readonly id: string,
@@ -1898,6 +1906,7 @@ export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cance
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
 export type JobTypeEnum = "regular" | "one_off" | "special";
+export type MobileSessionRevokeReasonEnum = "logout" | "password_changed" | "password_reset" | "access_lost" | "reuse_detected" | "expired" | "membership_lost";
 export type NavIconEnum = "dashboard" | "buildings" | "team" | "clients" | "quotes" | "invoices" | "recurring_invoices" | "contracts" | "documents" | "schedule" | "tasks" | "expenses" | "notifications" | "notification_settings" | "pending_actions" | "users" | "roles" | "audit_logs" | "media" | "profile" | "invoice_settings" | "settings";
 export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned" | "task.commented" | "task.ai_run";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "common_areas";

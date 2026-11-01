@@ -7,24 +7,33 @@ namespace App\Services;
 use App\Data\Devices\DeviceRegisterData;
 use App\Models\DeviceToken;
 use App\Models\User;
+use Illuminate\Database\DatabaseManager;
 
 final readonly class DeviceTokenService
 {
-    public function register(User $user, DeviceRegisterData $data, ?int $personalAccessTokenId = null): void
+    public function __construct(private DatabaseManager $db) {}
+
+    public function register(User $user, DeviceRegisterData $data, ?string $mobileSessionId = null): void
     {
-        DeviceToken::query()->upsert(
-            [[
-                'id' => new DeviceToken()->newUniqueId(),
-                'user_id' => $user->id,
-                'personal_access_token_id' => $personalAccessTokenId,
-                'token' => $data->token,
-                'platform' => $data->platform->value,
-                'app_version' => $data->app_version,
-                'last_seen_at' => now(),
-            ]],
-            ['token'],
-            ['user_id', 'personal_access_token_id', 'platform', 'app_version', 'last_seen_at'],
-        );
+        $this->db->transaction(function () use ($user, $data, $mobileSessionId): void {
+            if ($mobileSessionId !== null) {
+                DeviceToken::query()->where('mobile_session_id', $mobileSessionId)->where('token', '!=', $data->token)->delete();
+            }
+
+            DeviceToken::query()->upsert(
+                [[
+                    'id' => new DeviceToken()->newUniqueId(),
+                    'user_id' => $user->id,
+                    'mobile_session_id' => $mobileSessionId,
+                    'token' => $data->token,
+                    'platform' => $data->platform->value,
+                    'app_version' => $data->app_version,
+                    'last_seen_at' => now(),
+                ]],
+                ['token'],
+                ['user_id', 'mobile_session_id', 'platform', 'app_version', 'last_seen_at'],
+            );
+        });
     }
 
     public function unregister(User $user, string $token): void
@@ -35,14 +44,6 @@ final readonly class DeviceTokenService
     public function removeAllFor(User $user): void
     {
         DeviceToken::query()->where('user_id', $user->id)->delete();
-    }
-
-    /** Drops a deactivated user's devices once no active membership is left to receive pushes for. */
-    public function removeAllIfNoActiveMembership(User $user): void
-    {
-        if (! $user->hasActiveMembership()) {
-            $this->removeAllFor($user);
-        }
     }
 
     /** @param list<string> $tokens */

@@ -38,10 +38,12 @@ final class AuthApiControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure([
             'token',
+            'refresh_token',
             'user' => ['id', 'name', 'email', 'is_active', 'locale', 'roles', 'created_at'],
         ]);
         $response->assertJsonPath('user.email', 'test@example.com');
         $this->assertDatabaseCount('personal_access_tokens', 1);
+        $this->assertDatabaseCount('mobile_sessions', 1);
     }
 
     public function test_login_with_wrong_password_returns_422(): void
@@ -56,6 +58,7 @@ final class AuthApiControllerTest extends TestCase
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['email']);
         $this->assertDatabaseCount('personal_access_tokens', 0);
+        $this->assertDatabaseCount('mobile_sessions', 0);
     }
 
     public function test_login_with_nonexistent_email_returns_422(): void
