@@ -40,7 +40,7 @@ function switchTo(id: string) {
             role="button"
             aria-haspopup="menu"
             :aria-label="t('tenant_switch')"
-            class="btn btn-sm btn-ghost text-neutral-content/70 hover:text-white hover:bg-white/5"
+            class="btn btn-sm btn-ghost text-base-content"
             :class="compact ? 'btn-square' : 'w-full justify-start gap-2'"
         >
             <TenantColorDot :color="props.tenant.active?.color ?? null" />
@@ -49,7 +49,7 @@ function switchTo(id: string) {
         </div>
         <ul
             tabindex="0"
-            class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-56 p-1"
+            class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-float z-50 w-56 p-1"
         >
             <li v-for="item in props.tenant.available" :key="item.id">
                 <button

@@ -92,7 +92,7 @@ onUnmounted(() => {
 <template>
     <Teleport to="body">
         <template v-if="open">
-            <div class="fixed inset-0 z-40 bg-neutral/40" aria-hidden="true" @click="close" />
+            <div class="fixed inset-0 z-40 bg-base-content/40" aria-hidden="true" @click="close" />
 
             <aside
                 ref="panel"

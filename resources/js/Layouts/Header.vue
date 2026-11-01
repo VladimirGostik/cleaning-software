@@ -9,25 +9,27 @@ defineProps<{
 </script>
 
 <template>
-    <div class="flex flex-col gap-2 mb-6">
-        <!-- Breadcrumbs -->
-        <div v-if="breadcrumbs && breadcrumbs.length > 0" class="breadcrumbs text-sm">
-            <ul>
-                <li v-for="(crumb, index) in breadcrumbs" :key="index">
-                    <Link v-if="crumb.url" :href="crumb.url">
-                        {{ crumb.label }}
-                    </Link>
-                    <span v-else>{{ crumb.label }}</span>
-                </li>
-            </ul>
-        </div>
+    <Teleport defer to="#page-header">
+        <div class="flex flex-col gap-1">
+            <div v-if="breadcrumbs && breadcrumbs.length > 0" class="breadcrumbs py-0 text-[13px] text-muted">
+                <ul>
+                    <li v-for="(crumb, index) in breadcrumbs" :key="index">
+                        <Link v-if="crumb.url" :href="crumb.url">
+                            {{ crumb.label }}
+                        </Link>
+                        <span v-else>{{ crumb.label }}</span>
+                    </li>
+                </ul>
+            </div>
 
-        <!-- Title + actions row -->
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <h1 class="min-w-0 break-words text-2xl font-bold">{{ title }}</h1>
-            <div class="flex flex-wrap items-center gap-2">
-                <slot name="actions" />
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h1 class="min-w-0 break-words text-[26px] font-semibold leading-tight tracking-[-0.02em]">
+                    {{ title }}
+                </h1>
+                <div class="flex flex-wrap items-center gap-2">
+                    <slot name="actions" />
+                </div>
             </div>
         </div>
-    </div>
+    </Teleport>
 </template>

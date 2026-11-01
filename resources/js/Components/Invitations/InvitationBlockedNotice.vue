@@ -22,13 +22,13 @@ function logout() {
 
 <template>
     <div>
-        <p v-if="props.state === 'expired'" class="text-sm text-slate-600">
+        <p v-if="props.state === 'expired'" class="text-sm text-muted">
             {{ t('invitation_expired') }}
         </p>
         <template v-else>
-            <p class="text-sm text-slate-600">
+            <p class="text-sm text-muted">
                 {{ t('invitation_wrong_user_block') }}
-                <span v-if="props.invitedEmail" class="font-medium text-slate-900">{{ props.invitedEmail }}</span>
+                <span v-if="props.invitedEmail" class="font-medium text-base-content">{{ props.invitedEmail }}</span>
             </p>
             <button
                 type="button"

@@ -105,6 +105,12 @@
     outline: 0;
 }
 
+.auth-input.auth-input-error,
+.auth-input.auth-input-error:focus {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px var(--color-danger-soft);
+}
+
 .auth-checkbox-checked {
     border-color: var(--color-primary);
     background-color: var(--color-primary);

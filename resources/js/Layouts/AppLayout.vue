@@ -2,11 +2,10 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { usePage, router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import BrandMark from '@/Components/BrandMark.vue';
+import BrandLogo from '@/Components/BrandLogo.vue';
 import TenantSwitcher from '@/Components/Tenants/TenantSwitcher.vue';
 import AddTenantModal from '@/Components/Tenants/AddTenantModal.vue';
 import { usePageProps } from '@/Composables/usePageProps';
-import { useTenantTheme } from '@/Composables/useTenantTheme';
 import { useAuthorization } from '@/Composables/useAuthorization';
 import NotificationBell from '@/Components/Notifications/NotificationBell.vue';
 
@@ -42,7 +41,6 @@ import type { ToastPayload } from '@/Composables/useToast';
 const { t } = useI18n();
 const page = usePage();
 const props = usePageProps();
-const { themeStyle } = useTenantTheme();
 const { allows } = useAuthorization();
 
 const auth = computed(() => props.value.auth);
@@ -156,13 +154,13 @@ function toastAlertClass(type: ToastMessage['type']): string {
 </script>
 
 <template>
-    <div class="drawer lg:drawer-open" data-theme="app-theme" :style="themeStyle">
+    <div class="drawer lg:drawer-open" data-theme="app-theme">
         <input id="app-drawer" v-model="drawerOpen" type="checkbox" class="drawer-toggle" />
 
         <!-- Page content -->
         <div class="drawer-content flex flex-col min-h-screen">
             <!-- Mobile top bar -->
-            <div class="navbar bg-base-100 shadow-sm lg:hidden sticky top-0 z-10">
+            <div class="navbar bg-base-100 border-b border-base-300 lg:hidden sticky top-0 z-10">
                 <div class="flex-none">
                     <label for="app-drawer" class="btn btn-square btn-ghost">
                         <svg
@@ -181,14 +179,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     </label>
                 </div>
                 <div class="flex-1">
-                    <Link href="/" class="flex items-center gap-2">
-                        <span
-                            class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary/80 to-primary text-white"
-                        >
-                            <BrandMark class="h-4 w-4" />
-                        </span>
-                        <span class="text-lg font-bold">{{ t('app_name') }}</span>
-                    </Link>
+                    <Link href="/" :aria-label="t('app_name')"><BrandLogo :size="24" /></Link>
                 </div>
                 <div v-if="tenant.available.length > 0" class="flex-none">
                     <TenantSwitcher :tenant="tenant" compact @add-tenant="isAddTenantOpen = true" />
@@ -198,7 +189,8 @@ function toastAlertClass(type: ToastMessage['type']): string {
                 </div>
             </div>
 
-            <!-- Main content -->
+            <div id="page-header" class="bg-base-200 px-7 pt-7 empty:hidden" />
+
             <main class="flex-1 p-7 bg-base-200">
                 <slot />
             </main>
@@ -207,17 +199,12 @@ function toastAlertClass(type: ToastMessage['type']): string {
         <!-- Sidebar -->
         <div class="drawer-side z-20">
             <label for="app-drawer" class="drawer-overlay" />
-            <aside class="w-64 h-screen overflow-hidden bg-neutral text-neutral-content flex flex-col">
+            <aside
+                class="w-64 h-screen overflow-hidden bg-base-100 border-r border-base-300 text-base-content flex flex-col"
+            >
                 <!-- Brand -->
                 <div class="px-4 pt-4 pb-5">
-                    <Link href="/" class="flex items-center gap-2 text-white hover:opacity-90 transition">
-                        <span
-                            class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary/80 to-primary shrink-0"
-                        >
-                            <BrandMark class="h-4 w-4" />
-                        </span>
-                        <span class="text-[16px] font-bold tracking-tight">{{ t('app_name') }}</span>
-                    </Link>
+                    <Link href="/" class="inline-block" :aria-label="t('app_name')"><BrandLogo :size="28" /></Link>
                 </div>
 
                 <div v-if="tenant.available.length > 0" class="px-3 pb-3">
@@ -226,7 +213,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
 
                 <!-- Navigation -->
                 <nav class="flex-1 overflow-y-auto p-3">
-                    <ul class="menu menu-sm gap-0.5 p-0">
+                    <ul class="menu menu-sm w-full gap-0.5 p-0">
                         <template v-for="item in navigation" :key="item.key">
                             <li v-if="item.children.length === 0">
                                 <Link
@@ -259,16 +246,16 @@ function toastAlertClass(type: ToastMessage['type']): string {
                 </nav>
 
                 <!-- Footer: identity + bell row, logout + language row -->
-                <div class="relative mt-auto space-y-2 border-t border-white/[0.06] p-3">
+                <div class="relative mt-auto space-y-2 border-t border-base-300 p-3">
                     <div v-if="auth.user" class="flex items-center gap-3">
                         <span
-                            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary text-xs font-bold text-primary-content"
+                            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-hover"
                         >
                             {{ auth.user.name.charAt(0).toUpperCase() }}
                         </span>
                         <div class="min-w-0 flex-1">
-                            <p class="truncate font-medium text-white">{{ auth.user.name }}</p>
-                            <p class="truncate text-xs text-white/60">{{ auth.user.email }}</p>
+                            <p class="truncate text-sm font-medium text-base-content">{{ auth.user.name }}</p>
+                            <p class="truncate text-xs text-muted">{{ auth.user.email }}</p>
                         </div>
                         <NotificationBell v-if="canViewNotifications" icon-only />
                     </div>
@@ -276,7 +263,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     <div class="flex items-center justify-between gap-2">
                         <button
                             type="button"
-                            class="btn btn-ghost btn-sm justify-start gap-2 text-white/80 hover:text-white hover:bg-white/5"
+                            class="btn btn-ghost btn-sm justify-start gap-2 text-base-content"
                             @click="logout"
                         >
                             <ArrowRightOnRectangleIcon class="size-4" />
@@ -287,14 +274,14 @@ function toastAlertClass(type: ToastMessage['type']): string {
                             <div
                                 tabindex="0"
                                 role="button"
-                                class="btn btn-ghost btn-sm justify-start gap-2 text-white/80 hover:text-white hover:bg-white/5"
+                                class="btn btn-ghost btn-sm justify-start gap-2 text-base-content"
                             >
                                 <GlobeAltIcon class="size-4" />
                                 <span>{{ locale.toUpperCase() }}</span>
                             </div>
                             <ul
                                 tabindex="0"
-                                class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-lg z-50 w-40 p-1"
+                                class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-float z-50 w-40 p-1"
                             >
                                 <li v-for="lang in languages" :key="lang.value">
                                     <a :href="`/language/${lang.value}`" :class="{ active: locale === lang.value }">
@@ -322,23 +309,22 @@ function toastAlertClass(type: ToastMessage['type']): string {
 
 <style scoped>
 nav .menu :is(a, summary) {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
-    border-radius: 6px;
-    padding: 7px 10px;
-    color: color-mix(in oklch, var(--color-neutral-content) 60%, transparent);
+    border-radius: var(--radius-field);
+    padding: 8px 10px;
+    color: var(--color-base-content);
     transition: all 0.12s;
 }
 nav .menu :is(a, summary):hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--color-neutral-content);
+    background: var(--color-base-200);
 }
 nav .menu a.active {
-    background: var(--color-primary);
-    color: var(--color-primary-content);
-    box-shadow: 0 1px 3px color-mix(in oklch, var(--color-primary) 35%, transparent);
+    background: var(--color-primary-soft);
+    color: var(--color-primary-hover);
+    box-shadow: none;
 }
 nav .menu a.active:hover {
-    background: color-mix(in oklch, var(--color-primary) 80%, black);
+    background: var(--color-primary-soft);
 }
 </style>

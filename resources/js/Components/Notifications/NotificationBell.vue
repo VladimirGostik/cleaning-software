@@ -59,13 +59,13 @@ function markAllRead(): void {
             role="button"
             aria-haspopup="menu"
             :aria-label="ariaLabel"
-            class="text-neutral-content/70 transition hover:text-white"
+            class="text-base-content transition"
             :class="
                 compact
-                    ? 'btn btn-sm btn-ghost btn-square hover:bg-white/5'
+                    ? 'btn btn-sm btn-ghost btn-square hover:bg-base-200'
                     : iconOnly
-                      ? 'relative flex size-9 items-center justify-center rounded-lg hover:bg-white/5'
-                      : 'btn btn-sm btn-ghost w-full justify-start gap-2 hover:bg-white/5'
+                      ? 'relative flex size-9 items-center justify-center rounded-lg hover:bg-base-200'
+                      : 'btn btn-sm btn-ghost w-full justify-start gap-2 hover:bg-base-200'
             "
         >
             <span class="indicator">
@@ -92,7 +92,7 @@ function markAllRead(): void {
         <div
             tabindex="0"
             role="menu"
-            class="dropdown-content min-w-0 rounded-box bg-base-100 p-0 text-base-content shadow-lg z-50"
+            class="dropdown-content min-w-0 rounded-box bg-base-100 p-0 text-base-content shadow-float z-50"
             :class="compact ? 'w-80' : iconOnly ? 'absolute inset-x-0 bottom-full mb-2 w-auto' : 'w-full max-w-full'"
         >
             <div class="flex min-w-0 items-center justify-between gap-2 px-3 py-2">

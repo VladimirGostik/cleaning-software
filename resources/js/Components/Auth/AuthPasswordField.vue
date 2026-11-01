@@ -36,14 +36,11 @@ function onNativeChange() {
 
 <template>
     <div class="flex flex-col gap-1.5">
-        <label :for="id" class="text-sm font-medium text-slate-700">
+        <label :for="id" class="text-sm font-medium text-base-content">
             {{ label }}
         </label>
         <div class="relative">
-            <LockClosedIcon
-                class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                aria-hidden="true"
-            />
+            <LockClosedIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
             <input
                 :id="id"
                 v-bind="$attrs"
@@ -53,14 +50,14 @@ function onNativeChange() {
                 :autocomplete="autocomplete"
                 :aria-invalid="resolvedError ? 'true' : undefined"
                 :aria-describedby="resolvedError ? `${id}-error` : undefined"
-                class="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition auth-input"
-                :class="{ 'border-red-400 focus:border-red-400 focus:ring-red-100': resolvedError }"
+                class="w-full rounded-field border border-border-strong bg-white py-2.5 min-h-11 pl-9 pr-10 text-sm text-base-content placeholder:text-muted outline-none transition auth-input"
+                :class="{ 'auth-input-error': resolvedError }"
                 @input="onInput"
                 @change="onNativeChange"
             />
             <button
                 type="button"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-base-content"
                 :aria-label="showPassword ? t('auth_hide_password') : t('auth_show_password')"
                 :aria-pressed="showPassword"
                 @click="showPassword = !showPassword"
@@ -69,7 +66,7 @@ function onNativeChange() {
                 <EyeIcon v-else class="h-4 w-4" />
             </button>
         </div>
-        <p v-if="resolvedError" :id="`${id}-error`" class="text-xs text-red-500">
+        <p v-if="resolvedError" :id="`${id}-error`" class="text-xs text-error">
             {{ resolvedError }}
         </p>
     </div>

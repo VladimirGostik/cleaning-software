@@ -18,12 +18,7 @@ const isSwitching = computed<boolean>(() => switchingTo.value === props.company.
 </script>
 
 <template>
-    <article
-        class="card border border-base-300 border-t-4 bg-base-100 shadow-sm"
-        :class="{ 'border-t-primary': company.color === null }"
-        :style="company.color ? { borderTopColor: company.color } : undefined"
-        :aria-busy="isSwitching"
-    >
+    <article class="card bg-base-100" :aria-busy="isSwitching">
         <div class="card-body pb-2">
             <h2 v-if="company.is_current" class="card-title items-center text-base">
                 <TenantColorDot :color="company.color" />

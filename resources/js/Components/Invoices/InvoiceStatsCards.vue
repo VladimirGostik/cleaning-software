@@ -20,17 +20,13 @@ const cards = [
 
 <template>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div
-            v-for="card in cards"
-            :key="card.key"
-            class="card border border-base-300 border-b-2 border-b-primary bg-base-100 shadow-sm"
-        >
+        <div v-for="card in cards" :key="card.key" class="card bg-base-100">
             <div class="card-body">
                 <div class="flex items-center justify-between">
                     <p class="text-sm text-base-content/60">{{ t(card.label) }}</p>
                     <component :is="card.icon" class="size-5 text-base-content/40" />
                 </div>
-                <p class="text-2xl font-bold" :class="card.error ? 'text-error' : 'text-primary'">
+                <p class="text-2xl font-semibold tabular-nums" :class="card.error ? 'text-error' : 'text-base-content'">
                     {{ money(props.stats[card.key].amount, props.stats.currency) }}
                 </p>
                 <p class="text-xs text-base-content/50">

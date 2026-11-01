@@ -41,7 +41,7 @@ const isEmpty = computed<boolean>(() => sections.value.length === 0);
 </script>
 
 <template>
-    <aside class="card border border-base-300 bg-base-100 shadow-sm" aria-labelledby="dashboard-alerts-title">
+    <aside class="card bg-base-100" aria-labelledby="dashboard-alerts-title">
         <div class="card-body gap-4">
             <h2 id="dashboard-alerts-title" class="card-title text-base">{{ t('dashboard_alerts_title') }}</h2>
             <EmptyState
