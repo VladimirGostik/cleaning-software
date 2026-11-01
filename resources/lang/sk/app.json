@@ -1913,5 +1913,6 @@
     "object_billing_hint": "Ak je vyplnený, faktúry za tento objekt sa vystavujú na tento subjekt v zastúpení klienta. Prázdna adresa = adresa objektu.",
     "invoice_pdf_represented_by": "v zastúpení",
     "invoice_subject_bills_to": "Odberateľ: {name} · v zastúpení {client}",
-    "object_billing_name_required": "Vyplňte fakturovaný subjekt, keď zadávate ďalšie fakturačné údaje."
+    "object_billing_name_required": "Vyplňte fakturovaný subjekt, keď zadávate ďalšie fakturačné údaje.",
+    "session_invalid": "Relácia už nie je platná. Prihláste sa znova."
 }

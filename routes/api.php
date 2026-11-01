@@ -23,8 +23,13 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware([HandlePrecognitiveRequests::class, 'locale.api'])->group(function (): void {
+Route::middleware([HandlePrecognitiveRequests::class, 'locale.api', 'throttle:mobile-login'])->group(function (): void {
     Route::post('/auth/login', [AuthController::class, 'login']);
+});
+
+Route::middleware(['locale.api', 'throttle:mobile-token'])->group(function (): void {
+    Route::post('/auth/refresh', [AuthController::class, 'refresh'])->name('api.auth.refresh');
+    Route::post('/auth/revoke', [AuthController::class, 'revoke'])->name('api.auth.revoke');
 });
 
 Route::middleware(['auth:sanctum', 'locale.api'])->group(function (): void {

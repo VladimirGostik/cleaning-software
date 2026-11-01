@@ -46,7 +46,7 @@ final readonly class EmployeeService
         private DocumentTemplateService $templates,
         private DocumentTemplateCatalogue $catalogue,
         private RegistrationService $registration,
-        private DeviceTokenService $devices,
+        private MobileSessionService $sessions,
         private EmployeeAccessService $access,
     ) {}
 
@@ -229,7 +229,7 @@ final readonly class EmployeeService
 
             if ($membership->user !== null) {
                 $this->registration->revokePendingInvitations($membership->tenant_id, $membership->user->email);
-                $this->devices->removeAllIfNoActiveMembership($membership->user);
+                $this->sessions->revokeAllIfNoActiveMembership($membership->user);
             }
 
             return $this->jobs->unassignFutureForMembership($membership);

@@ -63,11 +63,11 @@ final class TokenAbilityTest extends TestCase
         $this->withToken($token)->getJson('/api/me')->assertOk();
     }
 
-    public function test_every_api_route_except_login_and_logout_requires_the_mobile_ability(): void
+    public function test_every_api_route_except_the_auth_entry_points_requires_the_mobile_ability(): void
     {
         $routes = collect(Route::getRoutes()->getRoutes())
             ->filter(fn (LaravelRoute $route): bool => str_starts_with($route->uri(), 'api/'))
-            ->reject(fn (LaravelRoute $route): bool => in_array($route->uri(), ['api/auth/login', 'api/auth/logout'], true));
+            ->reject(fn (LaravelRoute $route): bool => in_array($route->uri(), ['api/auth/login', 'api/auth/logout', 'api/auth/refresh', 'api/auth/revoke'], true));
 
         $this->assertNotEmpty($routes);
 

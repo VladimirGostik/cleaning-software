@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 use ReflectionClass;
 use Spatie\LaravelData\Contracts\BaseData;
@@ -120,6 +121,11 @@ final class AppServiceProvider extends ServiceProvider
         RateLimiter::for('task-attachments', fn (Request $request) => Limit::perMinute(60)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('task-comments', fn (Request $request) => Limit::perMinute(30)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('task-ai-runs', fn (Request $request) => Limit::perMinute(10)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
+        RateLimiter::for('mobile-token', fn (Request $request) => Limit::perMinute(30)->by('ip:'.get_client_ip()));
+        RateLimiter::for('mobile-login', fn (Request $request): array => [
+            Limit::perMinute(10)->by('ip:'.get_client_ip()),
+            Limit::perMinute(5)->by('email:'.Str::lower($request->string('email')->toString()).'|ip:'.get_client_ip()),
+        ]);
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
     }
 

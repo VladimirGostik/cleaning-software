@@ -9,6 +9,7 @@ use App\Data\Devices\DeviceUnregisterData;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DeviceTokenService;
+use App\Services\MobileSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Knuckles\Scribe\Attributes\Authenticated;
@@ -21,7 +22,10 @@ use Knuckles\Scribe\Attributes\Response;
 #[Authenticated]
 final class DeviceController extends Controller
 {
-    public function __construct(private readonly DeviceTokenService $devices) {}
+    public function __construct(
+        private readonly DeviceTokenService $devices,
+        private readonly MobileSessionService $sessions,
+    ) {}
 
     #[Endpoint('Register device', 'Upserts an FCM registration token for the caller; a token seen on another account is re-homed.')]
     #[Response(null, 204, 'Registered')]
@@ -30,9 +34,7 @@ final class DeviceController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $tokenId = $user->currentAccessToken()->getKey();
-
-        $this->devices->register($user, $data, is_numeric($tokenId) && (int) $tokenId > 0 ? (int) $tokenId : null);
+        $this->devices->register($user, $data, $this->sessions->currentFor($user)?->id);
 
         return response()->json(null, 204);
     }

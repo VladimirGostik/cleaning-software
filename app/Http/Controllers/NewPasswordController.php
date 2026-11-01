@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\NewPasswordData;
+use App\Enums\MobileSessionRevokeReasonEnum;
 use App\Models\User;
+use App\Services\MobileSessionService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +19,8 @@ use Inertia\Response;
 
 final class NewPasswordController extends Controller
 {
+    public function __construct(private readonly MobileSessionService $sessions) {}
+
     public function create(Request $request): Response
     {
         return Inertia::render('Auth/ResetPassword', [
@@ -35,6 +39,8 @@ final class NewPasswordController extends Controller
                     'password' => Hash::make($data->password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                $this->sessions->revokeAllFor($user, MobileSessionRevokeReasonEnum::PasswordReset);
 
                 event(new PasswordReset($user));
             },

@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Push;
 
 use App\Enums\DevicePlatformEnum;
+use App\Enums\MobileSessionRevokeReasonEnum;
 use App\Models\DeviceToken;
+use App\Models\MobileSession;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\MobileSessionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesTaskFixtures;
 use Tests\TestCase;
@@ -146,29 +149,47 @@ final class DeviceRegistrationTest extends TestCase
         $this->assertSame('/api/devices', parse_url(route('api.devices.destroy'), PHP_URL_PATH));
     }
 
-    public function test_register_stores_the_sanctum_token_and_revoking_it_drops_the_device(): void
+    public function test_register_binds_the_device_to_the_login_session_and_revoking_the_session_drops_it(): void
     {
-        $this->asMobile();
+        $login = $this->postJson('/api/auth/login', ['email' => $this->user->email, 'password' => 'password'])->assertOk();
+        $accessToken = $login->json('token');
+        $this->assertIsString($accessToken);
+        $this->app['session.store']->flush();
+        $this->app['auth']->shouldUse('web');
+        $this->app['auth']->forgetGuards();
+        $this->flushHeaders();
+        $this->withToken($accessToken)->postJson(route('api.devices.store'), ['token' => 'bound', 'platform' => 'ios'])->assertNoContent();
 
-        $this->postJson(route('api.devices.store'), ['token' => 'bound', 'platform' => 'ios'])->assertNoContent();
+        $session = MobileSession::query()->sole();
+        $this->assertSame($session->id, DeviceToken::query()->sole()->mobile_session_id);
 
-        $device = DeviceToken::query()->firstOrFail();
-        $this->assertSame($this->user->tokens()->firstOrFail()->id, $device->personal_access_token_id);
-
-        $this->user->tokens()->delete();
+        app(MobileSessionService::class)->revoke($session, MobileSessionRevokeReasonEnum::Logout);
 
         $this->assertSame(0, DeviceToken::query()->count());
     }
 
-    public function test_logout_drops_the_device_bound_to_the_token(): void
+    public function test_a_raw_token_without_a_session_registers_a_device_with_no_session(): void
     {
         $this->asMobile();
-        $this->postJson(route('api.devices.store'), ['token' => 'bound', 'platform' => 'ios'])->assertNoContent();
+
+        $this->postJson(route('api.devices.store'), ['token' => 'raw', 'platform' => 'ios'])->assertNoContent();
+
+        $this->assertNull(DeviceToken::query()->sole()->mobile_session_id);
+    }
+
+    public function test_bearer_logout_drops_the_device_bound_to_the_session(): void
+    {
+        $session = MobileSession::factory()->for($this->user)->create();
+        $this->consoleContext();
+        $plain = $this->user->createToken('mobile', ['mobile']);
+        $session->update(['personal_access_token_id' => $plain->accessToken->getKey()]);
+        $this->withToken($plain->plainTextToken)->postJson(route('api.devices.store'), ['token' => 'bound', 'platform' => 'ios'])->assertNoContent();
         $this->assertSame(1, DeviceToken::query()->count());
 
         $this->app['auth']->forgetGuards();
         $this->postJson('/api/auth/logout')->assertNoContent();
 
         $this->assertSame(0, DeviceToken::query()->count());
+        $this->assertSame(0, MobileSession::query()->count());
     }
 }

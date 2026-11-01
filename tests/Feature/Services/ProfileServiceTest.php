@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Services;
 
 use App\Data\UpdateProfileData;
+use App\Models\MobileSession;
 use App\Models\User;
 use App\Services\ProfileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 final class ProfileServiceTest extends TestCase
@@ -66,5 +68,41 @@ final class ProfileServiceTest extends TestCase
 
         $this->assertInstanceOf(User::class, $result);
         $this->assertEquals('After', $result->name);
+    }
+
+    public function test_change_password_updates_the_hash(): void
+    {
+        $user = User::factory()->create();
+
+        $this->service->changePassword($user, 'brand-new-pass');
+
+        $this->assertTrue(Hash::check('brand-new-pass', $user->fresh()->password ?? ''));
+    }
+
+    public function test_change_password_without_a_current_session_revokes_every_session(): void
+    {
+        $user = User::factory()->create();
+        MobileSession::factory()->count(2)->for($user)->create();
+        $bystander = MobileSession::factory()->create();
+
+        $this->service->changePassword($user, 'brand-new-pass');
+
+        $this->assertSame(0, MobileSession::query()->where('user_id', $user->id)->count());
+        $this->assertTrue(MobileSession::query()->whereKey($bystander->id)->exists());
+    }
+
+    public function test_change_password_keeps_the_session_behind_the_current_token(): void
+    {
+        $user = User::factory()->create();
+        $keep = MobileSession::factory()->for($user)->create();
+        $drop = MobileSession::factory()->for($user)->create();
+        $token = $user->createToken('mobile', ['mobile']);
+        $keep->update(['personal_access_token_id' => $token->accessToken->getKey()]);
+        $user->withAccessToken($token->accessToken);
+
+        $this->service->changePassword($user, 'brand-new-pass');
+
+        $this->assertTrue(MobileSession::query()->whereKey($keep->id)->exists());
+        $this->assertFalse(MobileSession::query()->whereKey($drop->id)->exists());
     }
 }

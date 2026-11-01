@@ -69,7 +69,7 @@ final class ProfileController extends Controller
             ]);
         }
 
-        $user->update(['password' => $data->password]);
+        $this->profileService->changePassword($user, $data->password);
 
         return response()->json(null, 204);
     }
