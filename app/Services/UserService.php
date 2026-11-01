@@ -24,6 +24,7 @@ final readonly class UserService
         private JobService $jobs,
         private TaskService $tasks,
         private DeviceTokenService $devices,
+        private RegistrationService $registration,
     ) {}
 
     public function create(CreateUserData $data, User $actor): User
@@ -101,6 +102,7 @@ final readonly class UserService
             if ($membership !== null && ! $data->is_active) {
                 $this->tasks->unassignForMembership($membership);
                 $this->jobs->unassignFutureForMembership($membership);
+                $this->registration->revokePendingInvitations($tenantId, $user->email);
             }
 
             $user->syncRoles($roles);
@@ -126,6 +128,7 @@ final readonly class UserService
             if ($membership !== null) {
                 $this->tasks->unassignForMembership($membership, onlyOpen: false);
                 $this->jobs->unassignFutureForMembership($membership);
+                $this->registration->revokePendingInvitations($tenantId, $user->email);
                 $membership->delete();
             }
 

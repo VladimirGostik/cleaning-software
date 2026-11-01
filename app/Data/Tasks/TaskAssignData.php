@@ -30,7 +30,8 @@ final class TaskAssignData extends Data
             'assigned_membership_id' => [
                 Rule::exists('tenant_memberships', 'id')
                     ->where('tenant_id', $tenantId)
-                    ->where('is_active', true),
+                    ->where('is_active', true)
+                    ->whereNotNull('user_id'),
             ],
         ];
     }

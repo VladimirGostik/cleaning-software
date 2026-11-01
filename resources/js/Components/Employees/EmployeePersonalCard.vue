@@ -31,14 +31,9 @@ const address = computed(() => {
                     <p class="tabular-nums">{{ personal.national_id_masked ?? t('empty_dash') }}</p>
                 </div>
 
-                <div>
+                <div class="sm:col-span-2">
                     <p class="text-xs text-base-content/50">{{ t('address') }}</p>
                     <p>{{ address || t('empty_dash') }}</p>
-                </div>
-
-                <div>
-                    <p class="text-xs text-base-content/50">{{ t('employee_company_ico') }}</p>
-                    <p>{{ personal.company_ico ?? t('empty_dash') }}</p>
                 </div>
             </div>
         </div>

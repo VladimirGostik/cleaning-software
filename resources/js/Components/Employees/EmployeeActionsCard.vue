@@ -4,6 +4,9 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
 import ArrowsRightLeftIcon from '~icons/material-symbols/swap-horiz-outline-rounded';
+import KeyIcon from '~icons/material-symbols/key-outline-rounded';
+import KeyOffIcon from '~icons/material-symbols/key-off-outline-rounded';
+import ResendIcon from '~icons/material-symbols/forward-to-inbox-outline-rounded';
 import NoSymbolIcon from '~icons/material-symbols/block-outline-rounded';
 import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
 
@@ -13,17 +16,33 @@ const props = defineProps<{
     canDeactivate: boolean;
     canReactivate: boolean;
     canAssignRole: boolean;
+    canGrantAccess: boolean;
+    canRevokeAccess: boolean;
+    canResendInvitation: boolean;
+    resending?: boolean;
 }>();
 
 const emit = defineEmits<{
     deactivate: [];
     reactivate: [];
     changeRole: [];
+    grantAccess: [];
+    revokeAccess: [];
+    resendInvitation: [];
 }>();
 
 const { t } = useI18n();
 
-const hasActions = computed(() => props.canUpdate || props.canDeactivate || props.canReactivate || props.canAssignRole);
+const hasActions = computed(
+    () =>
+        props.canUpdate ||
+        props.canDeactivate ||
+        props.canReactivate ||
+        props.canAssignRole ||
+        props.canGrantAccess ||
+        props.canRevokeAccess ||
+        props.canResendInvitation,
+);
 </script>
 
 <template>
@@ -49,6 +68,27 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
             </button>
 
             <button
+                v-if="props.canGrantAccess"
+                type="button"
+                class="btn btn-sm btn-primary w-full justify-start"
+                @click="emit('grantAccess')"
+            >
+                <KeyIcon class="size-5" />
+                {{ t('employee_access_grant') }}
+            </button>
+
+            <button
+                v-if="props.canResendInvitation"
+                type="button"
+                class="btn btn-sm btn-neutral w-full justify-start"
+                :disabled="props.resending"
+                @click="emit('resendInvitation')"
+            >
+                <ResendIcon class="size-5" />
+                {{ t('employee_access_resend') }}
+            </button>
+
+            <button
                 v-if="props.canReactivate"
                 type="button"
                 class="btn btn-sm btn-primary w-full justify-start"
@@ -56,6 +96,16 @@ const hasActions = computed(() => props.canUpdate || props.canDeactivate || prop
             >
                 <ArrowPathIcon class="size-5" />
                 {{ t('employee_reactivate') }}
+            </button>
+
+            <button
+                v-if="props.canRevokeAccess"
+                type="button"
+                class="btn btn-sm btn-error w-full justify-start"
+                @click="emit('revokeAccess')"
+            >
+                <KeyOffIcon class="size-5" />
+                {{ t('employee_access_revoke') }}
             </button>
 
             <button

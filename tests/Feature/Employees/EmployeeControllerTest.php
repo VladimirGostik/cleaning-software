@@ -22,6 +22,10 @@ final class EmployeeControllerTest extends TestCase
     private function storePayload(array $overrides = []): array
     {
         return array_merge([
+            'has_app_access' => true,
+            'employee_type' => 'brigade',
+            'company_ico' => null,
+            'company_name' => null,
             'email' => 'controllertest@example.com',
             'first_name' => 'Meno',
             'last_name' => 'Priezvisko',
@@ -143,6 +147,10 @@ final class EmployeeControllerTest extends TestCase
             'position' => null,
             'role_name' => 'Interná upratovačka',
             'permissions' => [],
+            'employee_type' => null,
+            'contact_email' => null,
+            'company_ico' => null,
+            'company_name' => null,
         ]);
 
         $response->assertRedirect();

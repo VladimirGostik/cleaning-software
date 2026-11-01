@@ -56,6 +56,7 @@ final readonly class DocumentTemplateCatalogue
             'employee.phone' => [Kind::Optional, Group::Employee],
             'employee.position' => [Kind::Optional, Group::Employee],
             'employee.ico' => [Kind::Optional, Group::Employee],
+            'employee.company_name' => [Kind::Optional, Group::Employee],
             'employment.type' => [Kind::Text, Group::Employment],
             'employment.position' => [Kind::Optional, Group::Employment],
             'employment.hourly_rate' => [Kind::Optional, Group::Employment],

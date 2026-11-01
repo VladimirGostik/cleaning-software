@@ -284,7 +284,7 @@ final class UserApiControllerTest extends TestCase
 
     public function test_destroy_removes_membership_but_keeps_user_row(): void
     {
-        $actor = $this->userWithPermission('delete employees');
+        $actor = $this->userWithPermission('delete employees', 'manage employee_access');
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create();
         $this->addMember($tenant, $target);
@@ -310,7 +310,7 @@ final class UserApiControllerTest extends TestCase
 
     public function test_destroy_is_forbidden_when_deleting_self(): void
     {
-        $actor = $this->userWithPermission('delete employees');
+        $actor = $this->userWithPermission('delete employees', 'manage employee_access');
         $this->actingAsMobile($actor);
 
         $response = $this->deleteJson("/api/users/{$actor->id}");
@@ -321,7 +321,7 @@ final class UserApiControllerTest extends TestCase
 
     public function test_destroy_returns_404_for_nonexistent_user(): void
     {
-        $actor = $this->userWithPermission('delete employees');
+        $actor = $this->userWithPermission('delete employees', 'manage employee_access');
         $this->actingAsMobile($actor);
 
         $response = $this->deleteJson('/api/users/00000000-0000-0000-0000-000000000000');

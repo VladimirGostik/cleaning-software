@@ -2,9 +2,11 @@
 import { useI18n } from 'vue-i18n';
 import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import EmploymentContractFields, { type EmploymentFormData } from '@/Components/Contracts/EmploymentContractFields.vue';
+import { employmentTypeForEmployeeType } from '@/utils/enums';
 
 const props = defineProps<{
     employment: EmploymentFormData | null;
+    employeeType: App.Enums.EmployeeTypeEnum | null;
     errors: Record<string, string | undefined>;
     disabled?: boolean;
 }>();
@@ -17,7 +19,7 @@ const { t } = useI18n();
 
 function blankEmployment(): EmploymentFormData {
     return {
-        employment_type: 'dpp',
+        employment_type: props.employeeType ? employmentTypeForEmployeeType(props.employeeType) : 'dpp',
         position: null,
         hourly_rate: null,
         monthly_salary: null,

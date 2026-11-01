@@ -120,6 +120,7 @@ final readonly class TaskService
         $byTenant = TenantMembership::query()
             ->whereIn('tenant_id', $assignableIds)
             ->where('is_active', true)
+            ->whereNotNull('user_id')
             ->with('user:id,name,email')
             ->get()
             ->groupBy('tenant_id');

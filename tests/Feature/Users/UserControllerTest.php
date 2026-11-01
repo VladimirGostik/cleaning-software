@@ -103,7 +103,7 @@ final class UserControllerTest extends TestCase
 
     public function test_create_is_accessible_with_create_users_permission(): void
     {
-        $user = $this->userWithPermission('create employees');
+        $user = $this->userWithPermission('create employees', 'manage employee_access');
 
         $response = $this->withoutVite()->actingAs($user)->get('/users/create');
 
@@ -125,7 +125,7 @@ final class UserControllerTest extends TestCase
 
     public function test_store_creates_user_and_redirects_with_success(): void
     {
-        $user = $this->userWithPermission('create employees');
+        $user = $this->userWithPermission('create employees', 'manage employee_access');
         $role = $this->roleInTenant((string) app('current_tenant_id'));
 
         $response = $this->actingAs($user)->post('/users', [
@@ -161,7 +161,7 @@ final class UserControllerTest extends TestCase
 
     public function test_store_with_missing_name_returns_validation_error(): void
     {
-        $user = $this->userWithPermission('create employees');
+        $user = $this->userWithPermission('create employees', 'manage employee_access');
         $role = $this->roleInTenant((string) app('current_tenant_id'));
 
         $response = $this->actingAs($user)->post('/users', [
@@ -178,7 +178,7 @@ final class UserControllerTest extends TestCase
     public function test_store_with_existing_email_links_account_without_password(): void
     {
         $existing = User::factory()->create(['email' => 'taken@example.com']);
-        $user = $this->userWithPermission('create employees');
+        $user = $this->userWithPermission('create employees', 'manage employee_access');
         $role = $this->roleInTenant((string) app('current_tenant_id'));
 
         $response = $this->actingAs($user)->post('/users', [
@@ -196,7 +196,7 @@ final class UserControllerTest extends TestCase
 
     public function test_store_with_already_active_member_returns_validation_error(): void
     {
-        $user = $this->userWithPermission('create employees');
+        $user = $this->userWithPermission('create employees', 'manage employee_access');
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $existing = User::factory()->create(['email' => 'member@example.com']);
         $this->addMember($tenant, $existing);
@@ -213,7 +213,7 @@ final class UserControllerTest extends TestCase
 
     public function test_store_with_mismatched_passwords_returns_validation_error(): void
     {
-        $user = $this->userWithPermission('create employees');
+        $user = $this->userWithPermission('create employees', 'manage employee_access');
         $role = $this->roleInTenant((string) app('current_tenant_id'));
 
         $response = $this->actingAs($user)->post('/users', [
@@ -325,7 +325,7 @@ final class UserControllerTest extends TestCase
 
     public function test_destroy_removes_membership_but_keeps_user_row(): void
     {
-        $user = $this->userWithPermission('delete employees');
+        $user = $this->userWithPermission('delete employees', 'manage employee_access');
         $tenant = Tenant::find((string) app('current_tenant_id'));
         $target = User::factory()->create();
         $this->addMember($tenant, $target);
@@ -352,7 +352,7 @@ final class UserControllerTest extends TestCase
 
     public function test_destroy_is_forbidden_when_deleting_self(): void
     {
-        $user = $this->userWithPermission('delete employees');
+        $user = $this->userWithPermission('delete employees', 'manage employee_access');
 
         $response = $this->actingAs($user)->delete("/users/{$user->id}");
 

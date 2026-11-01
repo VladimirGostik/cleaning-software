@@ -22,5 +22,6 @@ final class EmployeeFormContextData extends Data
         public readonly array $roles,
         #[DataCollectionOf(PermissionGroupData::class)]
         public readonly array $permission_groups,
+        public readonly bool $can_manage_access,
     ) {}
 }

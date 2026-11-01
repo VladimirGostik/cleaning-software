@@ -213,4 +213,17 @@ final class TaskApiTest extends TestCase
 
         $this->getJson('/api/tasks')->assertUnauthorized();
     }
+
+    public function test_editing_a_closed_task_keeps_its_stored_assignee_even_after_that_person_lost_their_login(): void
+    {
+        $leaver = $this->member($this->alpha, 'Vedúca');
+        $membership = $this->membershipOf($leaver, $this->alpha);
+        $task = Task::factory()->assignedTo($membership)->createdBy($this->user)->done()->create();
+        $membership->forceFill(['user_id' => null])->save();
+
+        $this->apiAs($this->user, $this->alpha)
+            ->putJson('/api/tasks/'.$task->id, ['title' => 'Edited', 'priority' => 'high', 'assigned_membership_id' => $membership->id])
+            ->assertOk()
+            ->assertJsonPath('title', 'Edited');
+    }
 }

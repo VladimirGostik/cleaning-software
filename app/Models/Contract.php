@@ -139,13 +139,9 @@ final class Contract extends Model
         }
 
         if ($contractable instanceof TenantMembership) {
-            $name = trim(($contractable->first_name ?? '').' '.($contractable->last_name ?? ''));
+            $email = $contractable->display_email;
 
-            if ($name === '') {
-                $name = $contractable->user->name ?? '';
-            }
-
-            return trim($name.' ('.($contractable->user->email ?? '').')');
+            return $email === null || $email === '' ? $contractable->display_name : $contractable->display_name.' ('.$email.')';
         }
 
         if ($contractable instanceof Client) {

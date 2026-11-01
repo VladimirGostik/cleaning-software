@@ -10,6 +10,7 @@ use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\EInvoiceController;
+use App\Http\Controllers\EmployeeAccessController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeDocumentController;
 use App\Http\Controllers\ExpenseController;
@@ -122,6 +123,8 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->whereUuid('employee');
     Route::post('/employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate')->whereUuid('employee');
     Route::post('/employees/{employee}/reactivate', [EmployeeController::class, 'reactivate'])->name('employees.reactivate')->whereUuid('employee');
+    Route::delete('/employees/{employee}/access', [EmployeeAccessController::class, 'destroy'])->name('employees.access.destroy')->whereUuid('employee');
+    Route::post('/employees/{employee}/access/invitation', [EmployeeAccessController::class, 'invitation'])->name('employees.access.invitation')->whereUuid('employee');
     Route::post('/employees/{employee}/documents', [EmployeeDocumentController::class, 'store'])->name('employees.documents.store')->whereUuid('employee');
     Route::get('/employees/{employee}/documents/{document}/download', [EmployeeDocumentController::class, 'download'])->name('employees.documents.download')->whereUuid(['employee', 'document'])->scopeBindings();
     Route::delete('/employees/{employee}/documents/{document}', [EmployeeDocumentController::class, 'destroy'])->name('employees.documents.destroy')->whereUuid(['employee', 'document'])->scopeBindings();
@@ -129,6 +132,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
         Route::match(['PUT', 'PATCH'], '/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->whereUuid('employee');
         Route::post('/employees/{employee}/role', [EmployeeController::class, 'role'])->name('employees.role')->whereUuid('employee');
+        Route::post('/employees/{employee}/access', [EmployeeAccessController::class, 'store'])->name('employees.access.store')->whereUuid('employee');
     });
 
     Route::get('/users', [UserController::class, 'index'])->name('users.index');

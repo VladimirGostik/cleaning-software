@@ -198,6 +198,7 @@ final readonly class DocumentContextBuilder
             'employee.phone' => '+421 900 222 222',
             'employee.position' => 'Upratovačka',
             'employee.ico' => '11223344',
+            'employee.company_name' => 'Ukážka s.r.o.',
             'employment.type' => $employmentLabel,
             'employment.position' => 'Upratovačka',
             'employment.hourly_rate' => '6,50 EUR',
@@ -297,13 +298,14 @@ final readonly class DocumentContextBuilder
     {
         return [
             'employee.name' => $employee->display_name,
-            'employee.email' => $employee->user->email ?? null,
+            'employee.email' => $employee->display_email,
             'employee.birth_date' => $employee->birth_date?->format(Formats::DATE),
             'employee.national_id' => $employee->national_id,
             'employee.address' => $this->address($employee->street, $employee->postal_code, $employee->city),
             'employee.phone' => $employee->phone,
             'employee.position' => $employee->position,
             'employee.ico' => $employee->company_ico,
+            'employee.company_name' => $employee->company_name,
         ];
     }
 
@@ -340,7 +342,11 @@ final readonly class DocumentContextBuilder
         $party = [];
 
         if ($employee !== null) {
-            $party = [['text' => $employee->display_name, 'bold' => true], ...$this->lines([$employee->user->email ?? null])];
+            $party = [['text' => $employee->display_name, 'bold' => true], ...$this->lines([
+                $employee->company_name,
+                $employee->company_ico !== null ? 'IČO: '.$employee->company_ico : null,
+                $employee->display_email,
+            ])];
         } elseif ($client !== null) {
             $party = [['text' => $client->name, 'bold' => true]];
 

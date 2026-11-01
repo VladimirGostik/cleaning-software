@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Concerns\HasUuids;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\DocumentTypeEnum;
+use App\Enums\EmployeeTypeEnum;
 use Database\Factories\TenantMembershipFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -24,13 +25,17 @@ use Spatie\Activitylog\Support\LogOptions;
 /**
  * @property string $id
  * @property string $tenant_id
- * @property string $user_id
+ * @property string|null $user_id
  * @property bool $is_active
  * @property Carbon $joined_at
  * @property string|null $first_name
  * @property string|null $last_name
  * @property string|null $phone
  * @property string|null $position
+ * @property EmployeeTypeEnum|null $employee_type
+ * @property string|null $contact_email
+ * @property string|null $company_name
+ * @property string|null $display_email
  * @property Carbon|null $birth_date
  * @property string|null $national_id
  * @property string|null $street
@@ -44,7 +49,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Collection<int, ScheduledJob> $scheduledJobs
  * @property int|null $upcoming_jobs_count
  */
-#[Fillable(['user_id', 'tenant_id', 'is_active', 'joined_at', 'first_name', 'last_name', 'phone', 'position', 'birth_date', 'national_id', 'street', 'city', 'postal_code', 'company_ico'])]
+#[Fillable(['user_id', 'tenant_id', 'is_active', 'joined_at', 'first_name', 'last_name', 'phone', 'position', 'employee_type', 'contact_email', 'company_name', 'birth_date', 'national_id', 'street', 'city', 'postal_code', 'company_ico'])]
 #[Hidden(['national_id'])]
 final class TenantMembership extends Model
 {
@@ -56,6 +61,7 @@ final class TenantMembership extends Model
     {
         return [
             'is_active' => 'boolean',
+            'employee_type' => EmployeeTypeEnum::class,
             'joined_at' => 'datetime',
             'birth_date' => 'date',
             'national_id' => 'encrypted',
@@ -65,7 +71,7 @@ final class TenantMembership extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['is_active', 'position', 'first_name', 'last_name'])
+            ->logOnly(['is_active', 'position', 'first_name', 'last_name', 'user_id', 'employee_type'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
@@ -100,6 +106,22 @@ final class TenantMembership extends Model
     {
         return $this->morphMany(Contract::class, 'contractable')
             ->where('category', ContractCategoryEnum::Employment->value);
+    }
+
+    public function hasAppAccess(): bool
+    {
+        return $this->user_id !== null;
+    }
+
+    public function isInvitationPending(): bool
+    {
+        return $this->hasAppAccess() && $this->user !== null && $this->user->password === null;
+    }
+
+    /** @return Attribute<string|null, never> */
+    protected function displayEmail(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->user->email ?? $this->contact_email);
     }
 
     /** @return Attribute<string, never> */

@@ -51,6 +51,22 @@ final class RoleTemplatesSeederTest extends TestCase
         $this->assertSame(count(PermissionEnum::cases()), $admin->permissions()->count());
     }
 
+    public function test_only_admin_holds_manage_employee_access(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        RoleTemplatesSeeder::seedForTenant($tenant);
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+        $holders = Role::inTenant($tenant->id)->get()
+            ->filter(fn (Role $role): bool => $role->hasPermissionTo(PermissionEnum::ManageEmployeeAccess->value))
+            ->map(fn (Role $role): string => $role->name)
+            ->values()
+            ->all();
+
+        $this->assertSame([RoleTemplatesSeeder::ADMIN_ROLE], $holders);
+    }
+
     public function test_each_non_admin_bundle_matches_exactly(): void
     {
         $tenant = Tenant::factory()->create();

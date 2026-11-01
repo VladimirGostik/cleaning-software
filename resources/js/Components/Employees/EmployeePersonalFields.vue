@@ -27,13 +27,10 @@ function updateBirthDate(value: string | null): void {
             <p class="text-xs text-base-content/60">{{ t('employee_national_id_hint') }}</p>
         </div>
 
-        <TextInput field="street" maxlength="255" :label="t('street')" />
+        <div class="md:col-span-2">
+            <TextInput field="street" maxlength="255" :label="t('street')" />
+        </div>
         <TextInput field="city" maxlength="100" :label="t('city')" />
         <TextInput field="postal_code" maxlength="20" :label="t('postal_code')" />
-
-        <div>
-            <TextInput field="company_ico" maxlength="20" :label="t('employee_company_ico')" />
-            <p class="text-xs text-base-content/60">{{ t('employee_company_ico_hint') }}</p>
-        </div>
     </div>
 </template>

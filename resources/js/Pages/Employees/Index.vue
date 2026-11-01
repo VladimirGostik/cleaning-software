@@ -12,7 +12,8 @@ import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { readSpatieQuery } from '@/Composables/useSpatieTableQuery';
-import { employmentTypeKey } from '@/utils/enums';
+import EmployeeAccessBadge from '@/Components/Employees/EmployeeAccessBadge.vue';
+import { EMPLOYEE_TYPES, employeeTypeKey } from '@/utils/enums';
 import { formatDate } from '@/utils/date';
 import type { Breadcrumb, Paginator } from '@/types';
 import type { FilterConfig, TableColumn } from '@/types/table';
@@ -38,7 +39,7 @@ const columns: TableColumn<App.Data.Employees.EmployeeListItemData>[] = [
     { key: 'email', label: t('email'), sortable: false, hideBelow: 1600 },
     { key: 'role_name', label: t('employee_role'), sortable: false },
     { key: 'position', label: t('position'), sortable: false, hideBelow: 1440 },
-    { key: 'employment_type', label: t('type'), sortable: false },
+    { key: 'employee_type', label: t('type'), sortable: false },
     {
         key: 'upcoming_jobs_count',
         label: t('employee_col_upcoming_jobs'),
@@ -58,6 +59,25 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         placeholder: t('select_role'),
         defaultOperator: '=',
         options: props.filterOptions.roles.map((r) => ({ value: r.name, label: r.name })),
+    },
+    {
+        property: 'employee_type',
+        label: t('type'),
+        type: 'select',
+        defaultOperator: '=',
+        operators: ['='],
+        options: EMPLOYEE_TYPES.map((v) => ({ value: v, label: t(employeeTypeKey(v)) })),
+    },
+    {
+        property: 'has_access',
+        label: t('employee_section_access'),
+        type: 'select',
+        defaultOperator: '=',
+        operators: ['='],
+        options: [
+            { value: '1', label: t('employee_access_active') },
+            { value: '0', label: t('employee_access_none') },
+        ],
     },
     { property: 'is_active', label: t('status'), type: 'boolean', defaultOperator: '=' },
     {
@@ -100,16 +120,28 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     }}</Link>
                 </template>
 
+                <template #cell-email="{ row }">
+                    {{ row.email ?? t('empty_dash') }}
+                </template>
+
                 <template #cell-role_name="{ row }">
-                    {{ row.role_name ?? t('empty_dash') }}
+                    <EmployeeAccessBadge v-if="!row.has_access" :has-access="false" :invitation-pending="false" />
+                    <template v-else>
+                        {{ row.role_name ?? t('empty_dash') }}
+                        <EmployeeAccessBadge
+                            v-if="row.invitation_pending"
+                            :has-access="true"
+                            :invitation-pending="true"
+                        />
+                    </template>
                 </template>
 
                 <template #cell-position="{ row }">
                     {{ row.position ?? t('empty_dash') }}
                 </template>
 
-                <template #cell-employment_type="{ row }">
-                    {{ row.employment_type ? t(employmentTypeKey(row.employment_type)) : t('empty_dash') }}
+                <template #cell-employee_type="{ row }">
+                    {{ row.employee_type ? t(employeeTypeKey(row.employee_type)) : t('empty_dash') }}
                 </template>
 
                 <template #cell-is_active="{ row }">

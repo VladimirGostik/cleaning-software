@@ -51,7 +51,45 @@ final class TenantMembershipPolicy
 
     public function assignRole(User $user, TenantMembership $membership): bool
     {
-        return $user->can(PermissionEnum::AssignEmployees->value) && $this->sameTenant($membership);
+        return $user->can(PermissionEnum::AssignEmployees->value)
+            && $this->sameTenant($membership)
+            && $membership->hasAppAccess();
+    }
+
+    public function manageAccess(User $user): bool
+    {
+        return $user->can(PermissionEnum::ManageEmployeeAccess->value);
+    }
+
+    public function grantAccess(User $user, TenantMembership $membership): bool
+    {
+        return $this->manageAccess($user)
+            && $this->sameTenant($membership)
+            && $membership->is_active
+            && ! $membership->hasAppAccess();
+    }
+
+    public function revokeAccess(User $user, TenantMembership $membership): bool
+    {
+        if (! $this->manageAccess($user) || ! $this->sameTenant($membership) || ! $membership->hasAppAccess()) {
+            return false;
+        }
+
+        if ($membership->user_id === $user->id) {
+            return false;
+        }
+
+        return $membership->user_id !== $this->ownerId($membership);
+    }
+
+    public function resendInvitation(User $user, TenantMembership $membership): bool
+    {
+        $membership->loadMissing('user');
+
+        return $this->manageAccess($user)
+            && $this->sameTenant($membership)
+            && $membership->is_active
+            && $membership->isInvitationPending();
     }
 
     private function sameTenant(TenantMembership $membership): bool

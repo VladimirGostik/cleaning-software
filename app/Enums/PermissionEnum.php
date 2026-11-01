@@ -19,6 +19,7 @@ enum PermissionEnum: string
     case ViewEmployeePersonalData = 'view employee_personal_data';
     case ViewEmployeeDocuments = 'view employee_documents';
     case ManageEmployeeDocuments = 'manage employee_documents';
+    case ManageEmployeeAccess = 'manage employee_access';
 
     // Platform — roles
     case ViewRoles = 'view roles';
@@ -118,7 +119,7 @@ enum PermissionEnum: string
         return match ($this) {
             self::ViewEmployees, self::CreateEmployees, self::EditEmployees,
             self::DeleteEmployees, self::AssignEmployees, self::ViewEmployeePersonalData,
-            self::ViewEmployeeDocuments, self::ManageEmployeeDocuments => 'employees',
+            self::ViewEmployeeDocuments, self::ManageEmployeeDocuments, self::ManageEmployeeAccess => 'employees',
 
             self::ViewRoles, self::CreateRoles, self::EditRoles, self::DeleteRoles => 'roles',
 

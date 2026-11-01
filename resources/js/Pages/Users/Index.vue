@@ -89,7 +89,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('users')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create employees')" href="/users/create" class="btn btn-secondary btn-sm">
+            <Link
+                v-if="allows('create employees') && allows('manage employee_access')"
+                href="/users/create"
+                class="btn btn-secondary btn-sm"
+            >
                 {{ t('create') }}
             </Link>
         </template>
@@ -102,7 +106,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 :rows="users"
                 :filters="filterDefinitions"
                 :can-edit="allows('edit employees')"
-                :can-delete="allows('delete employees')"
+                :can-delete="allows('delete employees') && allows('manage employee_access')"
                 :edit-url="(row: App.Data.UserListItemData) => `/users/${row.id}/edit`"
                 :delete-url="(row: App.Data.UserListItemData) => `/users/${row.id}`"
             >

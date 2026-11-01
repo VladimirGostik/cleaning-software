@@ -17,7 +17,6 @@ final class EmployeePersonalFormData extends Data
         public readonly ?string $street,
         public readonly ?string $city,
         public readonly ?string $postal_code,
-        public readonly ?string $company_ico,
     ) {}
 
     public static function fromModel(TenantMembership $membership): self
@@ -28,12 +27,11 @@ final class EmployeePersonalFormData extends Data
             street: $membership->street,
             city: $membership->city,
             postal_code: $membership->postal_code,
-            company_ico: $membership->company_ico,
         );
     }
 
     public static function blank(): self
     {
-        return new self(null, null, null, null, null, null);
+        return new self(null, null, null, null, null);
     }
 }

@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -89,10 +90,13 @@ final class EmployeeController extends Controller
 
         $can = [
             'update' => $actor->can('update', $employee),
-            'deactivate' => $actor->can('delete', $employee),
-            'reactivate' => $actor->can('reactivate', $employee),
+            'deactivate' => $employee->is_active && $actor->can('delete', $employee),
+            'reactivate' => ! $employee->is_active && $actor->can('reactivate', $employee),
             'assign_role' => $actor->can('assignRole', $employee),
             'manage_documents' => $actor->can('attach', [Document::class, $employee]),
+            'grant_access' => $actor->can('grantAccess', $employee),
+            'revoke_access' => $actor->can('revokeAccess', $employee),
+            'resend_invitation' => $actor->can('resendInvitation', $employee),
         ];
 
         $canViewDocuments = $actor->can(PermissionEnum::ViewEmployeeDocuments->value)
@@ -106,7 +110,7 @@ final class EmployeeController extends Controller
 
         return Inertia::render('Employees/Show', [
             'employee' => EmployeeDetailData::fromModel($employee, $can),
-            'roleOptions' => $can['assign_role'] ? $this->roleOptions() : [],
+            'roleOptions' => ($can['assign_role'] || $can['grant_access']) ? $this->roleOptions() : [],
             'personal' => $actor->can(PermissionEnum::ViewEmployeePersonalData->value) ? EmployeePersonalData::fromModel($employee) : null,
             'documents' => $documents,
             'documentConstraints' => $can['manage_documents'] ? EmployeeDocumentConstraintsData::fromConfig() : null,
@@ -202,6 +206,7 @@ final class EmployeeController extends Controller
         return new EmployeeFormContextData(
             roles: $this->roleOptions(),
             permission_groups: $this->roles->getPermissionsGrouped(),
+            can_manage_access: Gate::allows('manageAccess', TenantMembership::class),
         );
     }
 }

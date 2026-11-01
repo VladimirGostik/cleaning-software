@@ -1,35 +1,22 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
 import FormProvider from '@/Components/Forms/FormProvider.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
 
+import EmployeeTypeFields from './EmployeeTypeFields.vue';
 import EmployeeProfileFields from './EmployeeProfileFields.vue';
-import EmployeeRoleFields from './EmployeeRoleFields.vue';
+import EmployeeAccessSection from './EmployeeAccessSection.vue';
 import EmployeeEmploymentSection from './EmployeeEmploymentSection.vue';
 import EmployeePersonalFields from './EmployeePersonalFields.vue';
-import type { EmploymentFormData } from '@/Components/Contracts/EmploymentContractFields.vue';
+import { employeeStorePayload, employeeUpdatePayload, type EmployeeFormData } from './employeePayload';
 
+import { cancelPendingValidation } from '@/Composables/cancelPendingValidation';
 import { useAuthorization } from '@/Composables/useAuthorization';
-
-interface EmployeeFormData {
-    email: string;
-    first_name: string | null;
-    last_name: string | null;
-    phone: string | null;
-    position: string | null;
-    role_name: string;
-    permissions: string[];
-    employment: EmploymentFormData | null;
-    birth_date: string | null;
-    national_id: string | null;
-    street: string | null;
-    city: string | null;
-    postal_code: string | null;
-    company_ico: string | null;
-}
+import { useDependentValidation } from '@/Composables/useDependentValidation';
+import { employmentTypeForEmployeeType } from '@/utils/enums';
 
 const props = defineProps<{
     context: App.Data.Employees.EmployeeFormContextData;
@@ -45,7 +32,10 @@ const hasPersonalSection = computed(() => props.personal != null);
 
 function initialData(): EmployeeFormData {
     return {
+        has_app_access: false,
+        employee_type: props.employee?.employee_type ?? null,
         email: props.employee?.email ?? '',
+        contact_email: props.employee?.contact_email ?? null,
         first_name: props.employee?.first_name ?? null,
         last_name: props.employee?.last_name ?? null,
         phone: props.employee?.phone ?? null,
@@ -53,12 +43,13 @@ function initialData(): EmployeeFormData {
         role_name: props.employee?.role_name ?? '',
         permissions: [...(props.employee?.permissions ?? [])],
         employment: null,
+        company_ico: props.employee?.company_ico ?? null,
+        company_name: props.employee?.company_name ?? null,
         birth_date: props.personal?.birth_date ?? null,
         national_id: props.personal?.national_id ?? null,
         street: props.personal?.street ?? null,
         city: props.personal?.city ?? null,
         postal_code: props.personal?.postal_code ?? null,
-        company_ico: props.personal?.company_ico ?? null,
     };
 }
 
@@ -68,45 +59,23 @@ const form = useForm<EmployeeFormData>(
     initialData(),
 );
 
-function personalPayload(data: EmployeeFormData): Partial<EmployeeFormData> {
-    if (!hasPersonalSection.value) return {};
+form.transform((data: EmployeeFormData) =>
+    isEditing.value
+        ? employeeUpdatePayload(data, hasPersonalSection.value)
+        : employeeStorePayload(data, hasPersonalSection.value),
+);
 
-    return {
-        birth_date: data.birth_date || null,
-        national_id: data.national_id || null,
-        street: data.street || null,
-        city: data.city || null,
-        postal_code: data.postal_code || null,
-        company_ico: data.company_ico || null,
-    };
-}
+useDependentValidation(form, {
+    has_app_access: ['email', 'role_name', 'first_name', 'last_name'],
+    employee_type: ['company_ico'],
+});
 
-form.transform((data: EmployeeFormData) => ({
-    ...basePayload(data),
-    ...personalPayload(data),
-}));
-
-function basePayload(data: EmployeeFormData) {
-    return isEditing.value
-        ? {
-              first_name: data.first_name || null,
-              last_name: data.last_name || null,
-              phone: data.phone || null,
-              position: data.position || null,
-              role_name: data.role_name,
-              permissions: data.permissions,
-          }
-        : {
-              email: data.email,
-              first_name: data.first_name || null,
-              last_name: data.last_name || null,
-              phone: data.phone || null,
-              position: data.position || null,
-              role_name: data.role_name,
-              permissions: data.permissions,
-              employment: data.employment,
-          };
-}
+const hasLogin = computed(() => (isEditing.value ? props.employee!.has_access : form.has_app_access));
+const canManageAccess = computed(() => props.context.can_manage_access);
+const emailField = computed<'email' | 'contact_email'>(() =>
+    isEditing.value && !props.employee!.has_access ? 'contact_email' : 'email',
+);
+const emailLocked = computed(() => isEditing.value && props.employee!.has_access);
 
 const grantableGroups = computed<App.Data.PermissionGroupData[]>(() =>
     props.context.permission_groups
@@ -119,9 +88,18 @@ function updatePermissions(value: string[]): void {
     form.validate('permissions');
 }
 
+function updateEmployeeType(type: App.Enums.EmployeeTypeEnum): void {
+    if (form.employment) {
+        form.employment = { ...form.employment, employment_type: employmentTypeForEmployeeType(type) };
+    }
+}
+
 function submit(): void {
+    cancelPendingValidation(form);
     form.submit();
 }
+
+onBeforeUnmount(() => cancelPendingValidation(form));
 </script>
 
 <template>
@@ -129,19 +107,38 @@ function submit(): void {
         <form novalidate class="space-y-6" @submit.prevent="submit">
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('employee_section_profile') }}</h2>
-                    <EmployeeProfileFields :is-editing="isEditing" />
+                    <h2 class="card-title text-base">{{ t('employee_section_type') }}</h2>
+                    <EmployeeTypeFields
+                        :required="!isEditing"
+                        :self-employed="form.employee_type === 'self_employed'"
+                        @update:employee-type="updateEmployeeType"
+                    />
                 </div>
             </div>
 
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('employee_section_role') }}</h2>
-                    <EmployeeRoleFields
+                    <h2 class="card-title text-base">{{ t('employee_section_profile') }}</h2>
+                    <EmployeeProfileFields
+                        :email-field="emailField"
+                        :email-is-login="hasLogin"
+                        :email-locked="emailLocked"
+                        :names-required="!hasLogin"
+                    />
+                </div>
+            </div>
+
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body space-y-4">
+                    <h2 class="card-title text-base">{{ t('employee_section_access') }}</h2>
+                    <EmployeeAccessSection
+                        :employee="employee ?? null"
+                        :can-manage="canManageAccess"
+                        :show-role-fields="hasLogin"
                         :roles="context.roles"
                         :permission-groups="grantableGroups"
                         :permissions="form.permissions"
-                        :permissions-error="form.errors.permissions ?? null"
+                        :permissions-error="form.errors.permissions ?? form.errors.roles ?? null"
                         @update:permissions="updatePermissions"
                     />
                 </div>
@@ -159,6 +156,7 @@ function submit(): void {
                     <h2 class="card-title text-base">{{ t('employee_section_employment') }}</h2>
                     <EmployeeEmploymentSection
                         :employment="form.employment"
+                        :employee-type="form.employee_type"
                         :errors="form.errors"
                         :disabled="form.processing"
                         @update:employment="form.employment = $event"

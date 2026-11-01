@@ -10,6 +10,7 @@ use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\EmploymentContractTypeEnum;
 use App\Enums\JobStatusEnum;
+use App\Enums\PermissionEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Contract;
@@ -34,6 +35,10 @@ final class EmployeeServiceTest extends TestCase
     private function storeData(array $overrides = []): EmployeeStoreData
     {
         return EmployeeStoreData::from(array_merge([
+            'has_app_access' => true,
+            'employee_type' => 'brigade',
+            'company_ico' => null,
+            'company_name' => null,
             'email' => 'newcleaner@example.com',
             'first_name' => 'Nová',
             'last_name' => 'Upratovačka',
@@ -208,6 +213,7 @@ final class EmployeeServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $actor = $this->actingAsTenantUser('Sekretárka', $tenant);
+        $actor->givePermissionTo(PermissionEnum::ManageEmployeeAccess->value);
 
         $this->expectException(ValidationException::class);
 
@@ -223,6 +229,7 @@ final class EmployeeServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $actor = $this->actingAsTenantUser('Interná upratovačka', $tenant);
+        $actor->givePermissionTo(PermissionEnum::ManageEmployeeAccess->value);
 
         $this->expectException(ValidationException::class);
 
@@ -240,6 +247,10 @@ final class EmployeeServiceTest extends TestCase
         $this->assertNotEmpty($user->getDirectPermissions());
 
         app(EmployeeService::class)->update($membership, EmployeeUpdateData::from([
+            'employee_type' => null,
+            'contact_email' => null,
+            'company_ico' => null,
+            'company_name' => null,
             'first_name' => 'Nová',
             'last_name' => 'Upratovačka',
             'phone' => null,
@@ -258,6 +269,10 @@ final class EmployeeServiceTest extends TestCase
         $membership = app(EmployeeService::class)->create($this->storeData(), $actor);
 
         $updated = app(EmployeeService::class)->update($membership, EmployeeUpdateData::from([
+            'employee_type' => null,
+            'contact_email' => null,
+            'company_ico' => null,
+            'company_name' => null,
             'first_name' => 'Zmenené',
             'last_name' => 'Meno',
             'phone' => '0900123456',

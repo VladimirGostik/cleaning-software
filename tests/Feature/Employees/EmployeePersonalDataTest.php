@@ -40,7 +40,10 @@ final class EmployeePersonalDataTest extends TestCase
             'street' => 'Hlavná 1',
             'city' => 'Bratislava',
             'postal_code' => '811 01',
+            'employee_type' => null,
+            'contact_email' => null,
             'company_ico' => null,
+            'company_name' => null,
         ], $overrides);
     }
 

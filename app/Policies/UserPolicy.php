@@ -23,7 +23,8 @@ final class UserPolicy
 
     public function create(User $user): bool
     {
-        return $user->can(PermissionEnum::CreateEmployees->value);
+        return $user->can(PermissionEnum::CreateEmployees->value)
+            && $user->can(PermissionEnum::ManageEmployeeAccess->value);
     }
 
     public function update(User $user, User $model): bool
@@ -36,7 +37,11 @@ final class UserPolicy
     {
         $tenantId = current_tenant_id();
 
-        if (! $user->can(PermissionEnum::DeleteEmployees->value) || ! $model->isMemberOf($tenantId)) {
+        if (
+            ! $user->can(PermissionEnum::DeleteEmployees->value)
+            || ! $user->can(PermissionEnum::ManageEmployeeAccess->value)
+            || ! $model->isMemberOf($tenantId)
+        ) {
             return false;
         }
 

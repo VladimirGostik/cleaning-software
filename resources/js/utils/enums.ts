@@ -147,6 +147,22 @@ export function employmentTypeKey(type: App.Enums.EmploymentContractTypeEnum): s
     return `employment_type_${type}`;
 }
 
+export const EMPLOYEE_TYPES: readonly App.Enums.EmployeeTypeEnum[] = ['brigade', 'tpp', 'self_employed'];
+
+export function employeeTypeKey(type: App.Enums.EmployeeTypeEnum): string {
+    return `employee_type_${type}`;
+}
+
+const EMPLOYMENT_TYPE_BY_EMPLOYEE_TYPE: Record<App.Enums.EmployeeTypeEnum, App.Enums.EmploymentContractTypeEnum> = {
+    brigade: 'dpp',
+    tpp: 'tpp',
+    self_employed: 'self_employed',
+};
+
+export function employmentTypeForEmployeeType(type: App.Enums.EmployeeTypeEnum): App.Enums.EmploymentContractTypeEnum {
+    return EMPLOYMENT_TYPE_BY_EMPLOYEE_TYPE[type];
+}
+
 export function contractableTypeKey(type: App.Enums.ContractableTypeEnum): string {
     return `contractable_type_${type}`;
 }

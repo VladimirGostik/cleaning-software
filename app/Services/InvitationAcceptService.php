@@ -97,7 +97,9 @@ final readonly class InvitationAcceptService
             /** @var Role $role */
             $role = Role::inTenant($invitation->tenant_id)->where('name', $invitation->role_name)->firstOrFail();
 
-            $user->assignRole($role);
+            if (! $user->roles()->exists()) {
+                $user->assignRole($role);
+            }
 
             $invitation->markAccepted();
 

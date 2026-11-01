@@ -72,6 +72,7 @@ final readonly class TaskParseService
         return array_values(TenantMembership::query()
             ->where('tenant_id', $visibility->tenant->id)
             ->where('is_active', true)
+            ->whereNotNull('user_id')
             ->with('user:id,name,email')
             ->get()
             ->all());

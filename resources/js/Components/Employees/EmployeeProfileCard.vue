@@ -8,7 +8,9 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const showUserName = computed(() => props.employee.user_name !== props.employee.display_name);
+const showUserName = computed(
+    () => props.employee.has_access && props.employee.user_name !== props.employee.display_name,
+);
 </script>
 
 <template>
@@ -19,7 +21,7 @@ const showUserName = computed(() => props.employee.user_name !== props.employee.
             <div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
                     <p class="text-xs text-base-content/50">{{ t('email') }}</p>
-                    <p>{{ props.employee.email }}</p>
+                    <p>{{ props.employee.email ?? t('empty_dash') }}</p>
                 </div>
 
                 <div>

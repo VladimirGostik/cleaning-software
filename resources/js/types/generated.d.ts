@@ -599,15 +599,22 @@ readonly footer: string[],
 };
 }
 namespace Employees {
+export type EmployeeAccessData = {
+readonly email: string,
+readonly role_name: string,
+readonly permissions: string[] | null,
+};
 export type EmployeeDetailData = {
 readonly id: string,
-readonly user_id: string,
+readonly user_id: string | null,
 readonly display_name: string,
-readonly email: string,
+readonly email: string | null,
 readonly phone: string | null,
 readonly position: string | null,
 readonly role_name: string | null,
-readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly employee_type: App.Enums.EmployeeTypeEnum | null,
+readonly has_access: boolean,
+readonly invitation_pending: boolean,
 readonly upcoming_jobs_count: number,
 readonly is_active: boolean,
 readonly joined_at: string,
@@ -619,6 +626,9 @@ readonly employment_contract_id: string | null,
 readonly employment_contract: App.Data.Contracts.EmploymentContractData | null,
 readonly other_tenants_count: number,
 readonly is_owner: boolean,
+readonly company_ico: string | null,
+readonly company_name: string | null,
+readonly contact_email: string | null,
 readonly can: Record<string, boolean>,
 };
 export type EmployeeDocumentConstraintsData = {
@@ -644,16 +654,19 @@ readonly title: string | null,
 export type EmployeeFormContextData = {
 readonly roles: App.Data.RoleListItemData[],
 readonly permission_groups: App.Data.PermissionGroupData[],
+readonly can_manage_access: boolean,
 };
 export type EmployeeListItemData = {
 readonly id: string,
-readonly user_id: string,
+readonly user_id: string | null,
 readonly display_name: string,
-readonly email: string,
+readonly email: string | null,
 readonly phone: string | null,
 readonly position: string | null,
 readonly role_name: string | null,
-readonly employment_type: App.Enums.EmploymentContractTypeEnum | null,
+readonly employee_type: App.Enums.EmployeeTypeEnum | null,
+readonly has_access: boolean,
+readonly invitation_pending: boolean,
 readonly upcoming_jobs_count: number,
 readonly is_active: boolean,
 readonly joined_at: string,
@@ -664,7 +677,6 @@ readonly national_id_masked: string | null,
 readonly street: string | null,
 readonly city: string | null,
 readonly postal_code: string | null,
-readonly company_ico: string | null,
 };
 export type EmployeePersonalFormData = {
 readonly birth_date: string | null,
@@ -672,18 +684,21 @@ readonly national_id: string | null,
 readonly street: string | null,
 readonly city: string | null,
 readonly postal_code: string | null,
-readonly company_ico: string | null,
 };
 export type EmployeeRoleData = {
 readonly role_name: string,
 };
 export type EmployeeStoreData = {
-readonly email: string,
+readonly has_app_access: boolean,
+readonly employee_type: App.Enums.EmployeeTypeEnum,
+readonly email: string | null,
 readonly first_name: string | null,
 readonly last_name: string | null,
 readonly phone: string | null,
 readonly position: string | null,
-readonly role_name: string,
+readonly role_name: string | null,
+readonly company_ico: string | null,
+readonly company_name: string | null,
 readonly permissions: string[] | null,
 readonly employment: App.Data.Contracts.EmploymentContractUpsertData | null,
 readonly birth_date: string | null,
@@ -691,21 +706,23 @@ readonly national_id: string | null,
 readonly street: string | null,
 readonly city: string | null,
 readonly postal_code: string | null,
-readonly company_ico: string | null,
 };
 export type EmployeeUpdateData = {
+readonly employee_type: App.Enums.EmployeeTypeEnum | null,
+readonly contact_email: string | null,
 readonly first_name: string | null,
 readonly last_name: string | null,
 readonly phone: string | null,
 readonly position: string | null,
-readonly role_name: string,
+readonly role_name: string | null,
+readonly company_ico: string | null,
+readonly company_name: string | null,
 readonly permissions: string[] | null,
 readonly birth_date: string | null,
 readonly national_id: string | null,
 readonly street: string | null,
 readonly city: string | null,
 readonly postal_code: string | null,
-readonly company_ico: string | null,
 };
 }
 namespace Expenses {
@@ -1841,6 +1858,7 @@ export type DocumentTokenGroupEnum = "tenant" | "contract" | "client" | "object"
 export type DocumentTokenKindEnum = "text" | "optional" | "block" | "flag";
 export type DocumentTypeEnum = "service_agreement" | "employment" | "nda" | "gdpr" | "other" | "quote" | "employee_id_card" | "employee_passport" | "employee_residence_permit" | "employee_work_permit" | "employee_medical" | "employee_training" | "employee_other";
 export type EfaStatusEnum = "none" | "ready" | "generated" | "submitted" | "accepted" | "rejected" | "failed";
+export type EmployeeTypeEnum = "brigade" | "tpp" | "self_employed";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type ExpenseCategoryEnum = "fuel" | "materials" | "cleaning_supplies" | "equipment" | "services" | "rent" | "utilities" | "wages" | "insurance" | "fees" | "bank_charges" | "other";
 export type ExpenseSourceEnum = "manual" | "receipt" | "bank_csv" | "mcp";
@@ -1858,7 +1876,7 @@ export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense";
 export type PendingActionStatusEnum = "pending" | "executed" | "cancelled" | "expired";
-export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "view expenses" | "manage expenses";
+export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "manage employee_access" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "view expenses" | "manage expenses";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type RecurringDefaultStateEnum = "draft" | "issued";

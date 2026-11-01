@@ -7,7 +7,9 @@ import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';
 import EmployeeProfileCard from '@/Components/Employees/EmployeeProfileCard.vue';
-import EmployeeRoleCard from '@/Components/Employees/EmployeeRoleCard.vue';
+import EmployeeAccessCard from '@/Components/Employees/EmployeeAccessCard.vue';
+import EmployeeEmploymentCard from '@/Components/Employees/EmployeeEmploymentCard.vue';
+import EmployeeAccessModal from '@/Components/Employees/EmployeeAccessModal.vue';
 import EmployeeActionsCard from '@/Components/Employees/EmployeeActionsCard.vue';
 import EmployeeMetaCard from '@/Components/Employees/EmployeeMetaCard.vue';
 import EmployeePersonalCard from '@/Components/Employees/EmployeePersonalCard.vue';
@@ -15,6 +17,7 @@ import EmployeeDocumentsCard from '@/Components/Employees/EmployeeDocumentsCard.
 import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
 import EmployeeRoleModal from '@/Components/Employees/EmployeeRoleModal.vue';
 
+import { employeeTypeKey, employmentTypeForEmployeeType } from '@/utils/enums';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import type { Breadcrumb } from '@/types';
 
@@ -41,8 +44,32 @@ const canDeactivate = computed(() => props.employee.can.deactivate);
 const canReactivate = computed(() => props.employee.can.reactivate);
 const canAssignRole = computed(() => props.employee.can.assign_role);
 
-const ui = reactive({ roleOpen: false });
+const canGrantAccess = computed(() => props.employee.can.grant_access === true);
+const canRevokeAccess = computed(() => props.employee.can.revoke_access === true);
+const canResendInvitation = computed(() => props.employee.can.resend_invitation === true);
+
+const ui = reactive({ roleOpen: false, accessOpen: false });
 const reactivating = ref(false);
+const resending = ref(false);
+
+const createContractHref = computed(() => {
+    const base = `/contracts/create?contractable_type=tenant_membership&category=employment&contractable_id=${props.employee.id}`;
+    return props.employee.employee_type
+        ? `${base}&employment_type=${employmentTypeForEmployeeType(props.employee.employee_type)}`
+        : base;
+});
+
+function resend(): void {
+    router.post(`/employees/${props.employee.id}/access/invitation`, undefined, {
+        preserveScroll: true,
+        onStart: () => {
+            resending.value = true;
+        },
+        onFinish: () => {
+            resending.value = false;
+        },
+    });
+}
 
 function reactivate(): void {
     router.post(`/employees/${props.employee.id}/reactivate`, undefined, {
@@ -55,6 +82,13 @@ function reactivate(): void {
         },
     });
 }
+
+const revokeConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData>({
+    method: 'delete',
+    resolveUrl: (e) => `/employees/${e.id}/access`,
+    getTitle: () => t('employee_access_revoke'),
+    getDescription: (e) => t('employee_access_revoke_confirm', { name: e.display_name }),
+});
 
 const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData>({
     method: 'post',
@@ -74,6 +108,9 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
     <Header :title="employee.display_name" :breadcrumbs="breadcrumbs">
         <template #actions>
             <ObjectStatusBadge :is-active="employee.is_active" />
+            <span v-if="employee.employee_type" class="kg-chip kg-chip--neutral kg-chip--sm">
+                {{ t(employeeTypeKey(employee.employee_type)) }}
+            </span>
             <span v-if="employee.role_name" class="kg-chip kg-chip--neutral kg-chip--sm">{{ employee.role_name }}</span>
         </template>
     </Header>
@@ -95,8 +132,9 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div class="space-y-6">
             <EmployeeProfileCard :employee="employee" />
+            <EmployeeEmploymentCard :employee="employee" />
+            <EmployeeAccessCard :employee="employee" />
             <EmployeePersonalCard v-if="personal" :personal="personal" />
-            <EmployeeRoleCard :employee="employee" />
             <EmployeeDocumentsCard
                 v-if="documents !== null"
                 :employee-id="employee.id"
@@ -107,7 +145,7 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
             <RelatedContractsCard
                 :contracts="contracts"
                 :can-create="canCreateContract"
-                :create-href="`/contracts/create?contractable_type=tenant_membership&category=employment&contractable_id=${employee.id}`"
+                :create-href="createContractHref"
             />
         </div>
 
@@ -118,9 +156,16 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
                 :can-deactivate="canDeactivate"
                 :can-reactivate="canReactivate"
                 :can-assign-role="canAssignRole"
+                :can-grant-access="canGrantAccess"
+                :can-revoke-access="canRevokeAccess"
+                :can-resend-invitation="canResendInvitation"
+                :resending="resending"
                 @deactivate="deactivateConfirm.openModal(employee)"
                 @reactivate="reactivate"
                 @change-role="ui.roleOpen = true"
+                @grant-access="ui.accessOpen = true"
+                @revoke-access="revokeConfirm.openModal(employee)"
+                @resend-invitation="resend"
             />
             <EmployeeMetaCard :employee="employee" />
         </div>
@@ -134,6 +179,24 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
         :confirm-label="t('employee_deactivate')"
         @cancel="deactivateConfirm.closeModal"
         @confirm="deactivateConfirm.confirmDelete"
+    />
+
+    <ConfirmDeleteModal
+        :is-open="revokeConfirm.state.isOpen"
+        :title="revokeConfirm.getModalTitle()"
+        :description="revokeConfirm.getModalDescription()"
+        confirm-variant="warning"
+        :confirm-label="t('employee_access_revoke')"
+        @cancel="revokeConfirm.closeModal"
+        @confirm="revokeConfirm.confirmDelete"
+    />
+
+    <EmployeeAccessModal
+        v-if="ui.accessOpen"
+        :employee-id="employee.id"
+        :contact-email="employee.contact_email"
+        :roles="roleOptions"
+        @close="ui.accessOpen = false"
     />
 
     <EmployeeRoleModal

@@ -145,24 +145,37 @@ final readonly class RegistrationService
 
     public function createInvitation(Tenant $tenant, User $inviter, string $email, string $roleName): TenantInvitation
     {
+        $this->revokePendingInvitations($tenant->id, $email);
+
         /** @var TenantInvitation $invitation */
-        $invitation = TenantInvitation::withoutGlobalScope(TenantScope::class)->firstOrCreate(
-            [
-                'tenant_id' => $tenant->id,
-                'email' => $email,
-                'status' => InvitationStatusEnum::Pending->value,
-            ],
-            [
-                'invited_by_user_id' => $inviter->id,
-                'role_name' => $roleName,
-                'token' => Str::random(64),
-                'expires_at' => now()->addDays(7),
-            ],
-        );
+        $invitation = TenantInvitation::withoutGlobalScope(TenantScope::class)->create([
+            'tenant_id' => $tenant->id,
+            'email' => $email,
+            'status' => InvitationStatusEnum::Pending->value,
+            'invited_by_user_id' => $inviter->id,
+            'role_name' => $roleName,
+            'token' => Str::random(64),
+            'expires_at' => now()->addDays(7),
+        ]);
 
         Notification::route('mail', $email)
             ->notify(new InvitationCreated($invitation->token, $tenant->name, $roleName));
 
         return $invitation;
+    }
+
+    public function revokePendingInvitations(string $tenantId, string $email): int
+    {
+        $pending = TenantInvitation::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $tenantId)
+            ->where('email', $email)
+            ->where('status', InvitationStatusEnum::Pending->value)
+            ->get();
+
+        foreach ($pending as $invitation) {
+            $invitation->forceFill(['status' => InvitationStatusEnum::Revoked])->save();
+        }
+
+        return $pending->count();
     }
 }

@@ -78,11 +78,14 @@ final class TaskUpsertData extends Data
             ? $payload['tenant_id']
             : (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
         $isGlobal = $tenantId === null || $tenantId === '';
+        $assignee = Rule::exists('tenant_memberships', 'id')->where('tenant_id', $tenantId)->where('is_active', true);
+
+        if (! (request()->route('task') instanceof Task)) {
+            $assignee->whereNotNull('user_id');
+        }
 
         return [
-            'assigned_membership_id' => $isGlobal
-                ? ['prohibited']
-                : [Rule::exists('tenant_memberships', 'id')->where('tenant_id', $tenantId)->where('is_active', true)],
+            'assigned_membership_id' => $isGlobal ? ['prohibited'] : [$assignee],
             'taskable_type' => [Rule::in(array_keys(Task::TASKABLE_TYPES)), 'required_with:taskable_id'],
             'taskable_id' => ['required_with:taskable_type'],
         ];

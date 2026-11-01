@@ -42,6 +42,11 @@ final class TenantMembershipFactory extends Factory
         ]);
     }
 
+    public function withoutUser(): static
+    {
+        return $this->state(['user_id' => null]);
+    }
+
     public function inactive(): static
     {
         return $this->state([

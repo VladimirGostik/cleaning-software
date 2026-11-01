@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Contracts\ContractUpsertData;
+use App\Data\Employees\EmployeeAccessData;
 use App\Data\Employees\EmployeeListItemData;
 use App\Data\Employees\EmployeeStoreData;
 use App\Data\Employees\EmployeeUpdateData;
@@ -12,13 +13,12 @@ use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\DocumentTypeEnum;
+use App\Enums\EmployeeTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
 use App\Enums\JobStatusEnum;
 use App\Enums\PermissionEnum;
-use App\Enums\SupportedLanguage;
 use App\Models\DocumentTemplate;
 use App\Models\Role;
-use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
 use App\Services\Documents\DocumentTemplateCatalogue;
@@ -29,6 +29,7 @@ use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -46,6 +47,7 @@ final readonly class EmployeeService
         private DocumentTemplateCatalogue $catalogue,
         private RegistrationService $registration,
         private DeviceTokenService $devices,
+        private EmployeeAccessService $access,
     ) {}
 
     /**
@@ -68,16 +70,27 @@ final readonly class EmployeeService
                     $query->where(function (Builder $q) use ($like, $operator): void {
                         $q->where('first_name', $operator, $like)
                             ->orWhere('last_name', $operator, $like)
+                            ->orWhere('contact_email', $operator, $like)
                             ->orWhereHas('user', fn (Builder $u) => $u->where('name', $operator, $like)->orWhere('email', $operator, $like));
                     });
                 }),
                 AllowedFilter::relationExact('role', 'user.roles', 'name'),
+                AllowedFilter::exact('employee_type'),
+                AllowedFilter::callback('has_access', function (Builder $query, mixed $value): void {
+                    $flag = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+                    if ($flag === true) {
+                        $query->whereNotNull('user_id');
+                    } elseif ($flag === false) {
+                        $query->whereNull('user_id');
+                    }
+                }),
                 AllowedFilter::dynamic('is_active')->boolean(),
                 AllowedFilter::dynamic('joined_at')->date(),
             )
             ->allowedSorts('joined_at', 'last_name', 'is_active')
             ->defaultSort('-joined_at')
-            ->with(['user:id,name,email', 'user.roles', 'employmentContracts.employmentContract'])
+            ->with(['user:id,name,email,password', 'user.roles'])
             ->withCount(['scheduledJobs as upcoming_jobs_count' => fn (Builder $q) => $q
                 ->whereDate('scheduled_date', '>=', today())
                 ->where('status', JobStatusEnum::Planned)])
@@ -88,66 +101,58 @@ final readonly class EmployeeService
 
     public function create(EmployeeStoreData $data, User $actor): TenantMembership
     {
+        if ($data->has_app_access) {
+            Gate::forUser($actor)->authorize('manageAccess', TenantMembership::class);
+        }
+
         $tenantId = current_tenant_id();
         $this->registrar->setPermissionsTeamId($tenantId);
 
-        /** @var Role $role */
-        $role = Role::inTenant($tenantId)->where('name', $data->role_name)->with('permissions')->firstOrFail();
-        $this->guard->assertAssignable($actor, [$role]);
-        $this->guard->assertPermissionsGrantable($actor, $data->permissions ?? []);
+        $attributes = [
+            'first_name' => $data->first_name,
+            'last_name' => $data->last_name,
+            'phone' => $data->phone,
+            'position' => $data->position,
+            'employee_type' => $data->employee_type,
+            ...$this->personalAttributes($data, $actor),
+            ...$this->companyAttributes($data->employee_type, $data->company_ico, $data->company_name),
+        ];
 
-        $personal = $this->personalAttributes($data, $actor);
+        return $this->db->transaction(function () use ($data, $actor, $tenantId, $attributes): TenantMembership {
+            $membership = null;
 
-        return $this->db->transaction(function () use ($data, $role, $tenantId, $personal, $actor): TenantMembership {
-            $user = User::where('email', $data->email)->first();
-            $isNew = $user === null;
+            if ($data->has_app_access) {
+                $user = User::query()->where('email', $data->email)->first();
+                $membership = $user === null ? null : TenantMembership::query()
+                    ->where('user_id', $user->id)
+                    ->where('tenant_id', $tenantId)
+                    ->first();
 
-            if ($user === null) {
-                $user = User::create([
-                    'name' => trim(($data->first_name ?? '').' '.($data->last_name ?? '')) ?: $data->email,
-                    'email' => $data->email,
-                    'password' => null,
-                    'locale' => SupportedLanguage::getDefault()->value,
-                    'is_active' => true,
-                ]);
-            }
-
-            $membership = TenantMembership::query()
-                ->where('user_id', $user->id)
-                ->where('tenant_id', $tenantId)
-                ->first();
-
-            if ($membership !== null && $membership->is_active) {
-                throw ValidationException::withMessages(['email' => [__('app.already_member')]]);
+                if ($membership !== null && $membership->is_active) {
+                    throw ValidationException::withMessages(['email' => [__('app.already_member')]]);
+                }
             }
 
             if ($membership !== null) {
-                $membership->forceFill([
-                    'is_active' => true,
-                    'first_name' => $data->first_name,
-                    'last_name' => $data->last_name,
-                    'phone' => $data->phone,
-                    'position' => $data->position,
-                    ...$personal,
-                ])->save();
+                $membership->forceFill(['is_active' => true, ...$attributes])->save();
             } else {
                 $membership = TenantMembership::create([
-                    'user_id' => $user->id,
+                    'user_id' => null,
                     'tenant_id' => $tenantId,
                     'is_active' => true,
                     'joined_at' => now(),
-                    'first_name' => $data->first_name,
-                    'last_name' => $data->last_name,
-                    'phone' => $data->phone,
-                    'position' => $data->position,
-                    ...$personal,
+                    'contact_email' => $data->has_app_access ? null : $data->email,
+                    ...$attributes,
                 ]);
             }
 
-            $membership->setRelation('user', $user);
-
-            $user->syncRoles([$role]);
-            $user->syncPermissions($data->permissions ?? []);
+            if ($data->has_app_access) {
+                $this->access->grant($membership, new EmployeeAccessData(
+                    email: (string) $data->email,
+                    role_name: (string) $data->role_name,
+                    permissions: $data->permissions,
+                ), $actor);
+            }
 
             if ($data->employment !== null) {
                 $template = $this->employmentTemplate($data->employment->employment_type);
@@ -170,12 +175,7 @@ final readonly class EmployeeService
                 ]), $actor);
             }
 
-            if ($isNew) {
-                $tenant = Tenant::query()->findOrFail($tenantId);
-                $this->registration->createInvitation($tenant, $user, $data->email, $data->role_name);
-            }
-
-            return $membership->load(['user:id,name,email', 'user.roles', 'employmentContracts.employmentContract']);
+            return $membership->load(['user:id,name,email,password', 'user.roles', 'employmentContracts.employmentContract']);
         });
     }
 
@@ -184,29 +184,38 @@ final readonly class EmployeeService
         $tenantId = current_tenant_id();
         $this->registrar->setPermissionsTeamId($tenantId);
 
-        /** @var Role $role */
-        $role = Role::inTenant($tenantId)->where('name', $data->role_name)->with('permissions')->firstOrFail();
-        $this->guard->assertAssignable($actor, [$role]);
-        $this->guard->assertPermissionsGrantable($actor, $data->permissions ?? []);
+        $role = null;
 
-        $personal = $this->personalAttributes($data, $actor);
+        if ($membership->hasAppAccess()) {
+            /** @var Role $role */
+            $role = Role::inTenant($tenantId)->where('name', $data->role_name)->with('permissions')->firstOrFail();
+            $this->guard->assertAssignable($actor, [$role]);
+            $this->guard->assertPermissionsGrantable($actor, $data->permissions ?? []);
+        }
 
-        return $this->db->transaction(function () use ($membership, $data, $role, $personal): TenantMembership {
-            $membership->update([
-                'first_name' => $data->first_name,
-                'last_name' => $data->last_name,
-                'phone' => $data->phone,
-                'position' => $data->position,
-                ...$personal,
-            ]);
+        $attributes = [
+            'first_name' => $data->first_name,
+            'last_name' => $data->last_name,
+            'phone' => $data->phone,
+            'position' => $data->position,
+            ...($data->employee_type === null ? [] : ['employee_type' => $data->employee_type]),
+            ...($membership->hasAppAccess() ? [] : ['contact_email' => $data->contact_email]),
+            ...$this->personalAttributes($data, $actor),
+            ...$this->companyAttributes($data->employee_type, $data->company_ico, $data->company_name),
+        ];
 
-            $membership->loadMissing('user');
-            /** @var User $membershipUser */
-            $membershipUser = $membership->user;
-            $membershipUser->syncRoles([$role]);
-            $membershipUser->syncPermissions($data->permissions ?? []);
+        return $this->db->transaction(function () use ($membership, $data, $role, $attributes): TenantMembership {
+            $membership->update($attributes);
 
-            return $membership->load(['user:id,name,email', 'user.roles', 'employmentContracts.employmentContract']);
+            if ($role !== null) {
+                $membership->loadMissing('user');
+                /** @var User $membershipUser */
+                $membershipUser = $membership->user;
+                $membershipUser->syncRoles([$role]);
+                $membershipUser->syncPermissions($data->permissions ?? []);
+            }
+
+            return $membership->load(['user:id,name,email,password', 'user.roles', 'employmentContracts.employmentContract']);
         });
     }
 
@@ -219,6 +228,7 @@ final readonly class EmployeeService
             $membership->loadMissing('user');
 
             if ($membership->user !== null) {
+                $this->registration->revokePendingInvitations($membership->tenant_id, $membership->user->email);
                 $this->devices->removeAllIfNoActiveMembership($membership->user);
             }
 
@@ -248,7 +258,7 @@ final readonly class EmployeeService
             $membershipUser = $membership->user;
             $membershipUser->syncRoles([$role]);
 
-            return $membership->load(['user:id,name,email', 'user.roles', 'employmentContracts.employmentContract']);
+            return $membership->load(['user:id,name,email,password', 'user.roles', 'employmentContracts.employmentContract']);
         });
     }
 
@@ -265,8 +275,17 @@ final readonly class EmployeeService
             'street' => $data->street,
             'city' => $data->city,
             'postal_code' => $data->postal_code,
-            'company_ico' => $data->company_ico,
         ];
+    }
+
+    /** @return array<string, string|null> */
+    private function companyAttributes(?EmployeeTypeEnum $type, ?string $ico, ?string $name): array
+    {
+        return match ($type) {
+            EmployeeTypeEnum::SelfEmployed => ['company_ico' => $ico, 'company_name' => $name],
+            EmployeeTypeEnum::Brigade, EmployeeTypeEnum::Tpp => ['company_ico' => null, 'company_name' => null],
+            null => [],
+        };
     }
 
     private function normalizeNationalId(?string $nationalId): ?string

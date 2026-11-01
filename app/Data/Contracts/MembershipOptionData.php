@@ -19,15 +19,11 @@ final class MembershipOptionData extends Data
 
     public static function fromModel(TenantMembership $membership): self
     {
-        $name = trim(($membership->first_name ?? '').' '.($membership->last_name ?? ''));
-
-        if ($name === '') {
-            $name = $membership->user->name ?? '';
-        }
+        $email = $membership->display_email;
 
         return new self(
             id: $membership->id,
-            label: trim($name.' ('.($membership->user->email ?? '').')'),
+            label: $email === null || $email === '' ? $membership->display_name : $membership->display_name.' ('.$email.')',
             is_active: $membership->is_active,
         );
     }
