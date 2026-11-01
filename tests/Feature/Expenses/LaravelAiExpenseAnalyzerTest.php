@@ -61,7 +61,6 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
         $this->assertSame('anthropic', $options->provider);
         $this->assertSame(30, $options->timeout);
         $this->assertSame(18, $options->assistantTimeout);
-        $this->assertSame(100, config('ai.csv_preview_max_rows'));
         $this->assertSame(50, config('ai.categorize_batch'));
     }
 
@@ -85,7 +84,6 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
 
         foreach ([
             fn () => $analyzer->analyzeReceipt('%PDF', 'application/pdf', $this->context()),
-            fn () => $analyzer->mapBankCsv(['a'], [['b']]),
             fn () => $analyzer->categorize([new ExpenseRowData(2, '1.00', 'x', null)], $this->context()),
         ] as $call) {
             try {
@@ -111,7 +109,7 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
         $this->assertUnavailable(fn () => $analyzer->analyzeText('x', $this->context()));
 
         Http::fake(['api.anthropic.com/*' => Http::response(['type' => 'error', 'error' => ['type' => 'rate_limit_error', 'message' => 'slow']], 429)]);
-        $this->assertUnavailable(fn () => $analyzer->mapBankCsv(['a'], [['b']]));
+        $this->assertUnavailable(fn () => $analyzer->categorize([new ExpenseRowData(0, '5.00', 'Shell', null)], $this->context()));
     }
 
     private function assertUnavailable(callable $call): void
@@ -162,10 +160,9 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
         $analyzer = app(LaravelAiExpenseAnalyzer::class);
 
         $analyzer->analyzeText('x', $this->context());
-        $analyzer->mapBankCsv(['Dátum', 'Suma'], [['01.10.2026', '-5,00']]);
         $analyzer->categorize([new ExpenseRowData(0, '5.00', 'Shell', null)], $this->context());
 
-        Http::assertSentCount(3);
+        Http::assertSentCount(2);
         Http::assertSent(function (Request $request): bool {
             $this->assertSchemaIsAccepted(data_get($request->data(), 'output_config.format.schema'));
 
@@ -211,20 +208,6 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
         $this->assertNull($draft->proposal->category);
         $this->assertNull($draft->amount);
         $this->assertSame(0.0, $draft->proposal->confidence);
-    }
-
-    public function test_bank_csv_mapping_and_categorisation_are_mapped(): void
-    {
-        $this->fakeProvider([
-            'date_column' => 'Dátum', 'date_format' => 'd.m.Y', 'amount_column' => 'Suma', 'counterparty_column' => 'Príjemca',
-            'note_column' => null, 'reference_column' => 'VS', 'decimal_separator' => ',',
-        ]);
-
-        $mapping = app(LaravelAiExpenseAnalyzer::class)->mapBankCsv(['Dátum', 'Suma'], [['01.10.2026', '-5,00']]);
-
-        $this->assertSame('Suma', $mapping->amount_column);
-        $this->assertNull($mapping->note_column);
-        $this->assertSame(',', $mapping->decimal_separator);
     }
 
     public function test_categorisation_ignores_malformed_items(): void

@@ -9,7 +9,9 @@ return [
         'allowed_mimes' => ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
     ],
 
-    'csv' => [
-        'max_size_kb' => 1024,
+    'statement' => [
+        'max_size_kb' => 5120,
+        'max_rows' => 2000,
+        'max_new_rows' => 100,
     ],
 ];

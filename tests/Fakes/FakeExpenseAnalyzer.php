@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Fakes;
 
 use App\Contracts\Ai\AnalyzesExpenses;
-use App\Data\Expenses\BankCsvMappingData;
 use App\Data\Expenses\ExpenseAnalysisContextData;
 use App\Data\Expenses\ExpenseCategoryProposalData;
 use App\Data\Expenses\ExpenseDraftData;
@@ -20,11 +19,7 @@ final class FakeExpenseAnalyzer implements AnalyzesExpenses
 {
     public ExpenseDraftData $draft;
 
-    public BankCsvMappingData $mapping;
-
     public bool $unavailable = false;
-
-    public int $mapCalls = 0;
 
     /** @var list<int> */
     public array $categorizeBatches = [];
@@ -49,17 +44,6 @@ final class FakeExpenseAnalyzer implements AnalyzesExpenses
             description: 'Fuel',
             proposal: new ExpenseProposalData(ExpenseCategoryEnum::Fuel, null, 0.92, 'Fuel station receipt'),
         );
-
-        $this->mapping = new BankCsvMappingData(
-            delimiter: ';',
-            date_column: 'Dátum',
-            date_format: 'd.m.Y',
-            amount_column: 'Suma',
-            counterparty_column: 'Príjemca',
-            note_column: 'Poznámka',
-            reference_column: 'VS',
-            decimal_separator: ',',
-        );
     }
 
     public function analyzeReceipt(string $bytes, string $mime, ExpenseAnalysisContextData $ctx): ExpenseDraftData
@@ -78,14 +62,6 @@ final class FakeExpenseAnalyzer implements AnalyzesExpenses
         $this->contexts[] = $ctx;
 
         return $this->draft;
-    }
-
-    public function mapBankCsv(array $headerRow, array $sampleRows): BankCsvMappingData
-    {
-        $this->guard();
-        $this->mapCalls++;
-
-        return $this->mapping;
     }
 
     public function categorize(array $rows, ExpenseAnalysisContextData $ctx): array

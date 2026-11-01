@@ -12,6 +12,6 @@ final readonly class StatementRow
         public string $amount,
         public ?string $counterparty,
         public ?string $note,
-        public ?string $reference,
+        public string $reference,
     ) {}
 }

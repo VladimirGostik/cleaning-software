@@ -137,7 +137,7 @@ final class ExpenseCrudTest extends TestCase
             'bad date' => [['date' => '2026-13-40'], 'date'],
             'unknown currency' => [['currency' => 'GBP'], 'currency'],
             'unknown category' => [['category' => 'luxury'], 'category'],
-            'forged source' => [['source' => 'bank_csv'], 'source'],
+            'forged source' => [['source' => 'bank_statement'], 'source'],
         ];
     }
 

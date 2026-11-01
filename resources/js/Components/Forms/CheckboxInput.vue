@@ -11,6 +11,7 @@ const props = defineProps<{
     label: string;
     error?: string | null;
     disabled?: boolean;
+    labelClass?: string;
 }>();
 
 const emit = defineEmits<{
@@ -47,7 +48,7 @@ function onNativeChange(event: Event) {
             :aria-invalid="resolvedError ? 'true' : undefined"
             @change="onNativeChange"
         />
-        <span class="text-sm">{{ label }}</span>
+        <span class="text-sm" :class="labelClass">{{ label }}</span>
         <p v-if="resolvedError" class="text-error text-sm">
             {{ resolvedError }}
         </p>

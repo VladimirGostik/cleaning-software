@@ -11,7 +11,7 @@ enum ExpenseSourceEnum: string
 {
     case Manual = 'manual';
     case Receipt = 'receipt';
-    case BankCsv = 'bank_csv';
+    case BankStatement = 'bank_statement';
     case Mcp = 'mcp';
 
     public function label(): string

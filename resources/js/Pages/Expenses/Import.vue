@@ -1,102 +1,97 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
-import FileInput from '@/Components/Forms/FileInput.vue';
+import EmptyState from '@/Components/EmptyState.vue';
+import ExpenseImportAccountAlert from '@/Components/Expenses/ExpenseImportAccountAlert.vue';
+import ExpenseImportResultCard from '@/Components/Expenses/ExpenseImportResultCard.vue';
+import ExpenseImportSummary from '@/Components/Expenses/ExpenseImportSummary.vue';
 import ExpenseImportTable from '@/Components/Expenses/ExpenseImportTable.vue';
-
-import { useExpenseImportPreview } from '@/Composables/useExpenseImportPreview';
+import ExpenseImportUploadForm from '@/Components/Expenses/ExpenseImportUploadForm.vue';
+import { useExpenseImport } from '@/Composables/useExpenseImport';
 import type { Breadcrumb } from '@/types';
 
 defineProps<{
     context: App.Data.Expenses.ExpenseFormContextData;
+    result: App.Data.Expenses.ExpenseImportResultData | null;
 }>();
 
 const { t } = useI18n();
-const { preview, loading, error, load } = useExpenseImportPreview();
+const flow = useExpenseImport();
 
 const breadcrumbs: Breadcrumb[] = [
     { label: t('dashboard'), url: '/' },
     { label: t('expenses'), url: '/expenses' },
     { label: t('expense_import') },
 ];
-
-const file = ref<File | null>(null);
-const rows = ref<App.Data.Expenses.ExpenseImportRowData[]>([]);
-const submitting = ref(false);
-const submitErrors = ref<string[]>([]);
-
-const selectedCount = computed(() => rows.value.filter((r) => r.include).length);
-
-async function runPreview(): Promise<void> {
-    if (!file.value) return;
-    await load(file.value);
-    rows.value = (preview.value?.rows ?? []).map((r) => ({ ...r }));
-}
-
-function submit(): void {
-    if (!preview.value) return;
-
-    router.post(
-        '/expenses/import',
-        { mapping: { ...preview.value.mapping }, rows: rows.value.map((r) => ({ ...r })) },
-        {
-            onStart: () => {
-                submitting.value = true;
-                submitErrors.value = [];
-            },
-            onFinish: () => (submitting.value = false),
-            onError: (errors: Record<string, string>) => {
-                submitErrors.value = Object.values(errors);
-            },
-        },
-    );
-}
 </script>
 
 <template>
     <Header :title="t('expense_import')" :breadcrumbs="breadcrumbs" />
 
-    <div class="card bg-base-100 shadow-sm">
+    <ExpenseImportResultCard v-if="result" :result="result" />
+
+    <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body space-y-4">
-            <form novalidate class="flex items-end gap-2" @submit.prevent="runPreview">
-                <div class="flex-1">
-                    <FileInput
-                        :label="t('expense_import_file')"
-                        accept=".csv,text/csv,text/plain"
-                        :error="error"
-                        @update:model-value="file = $event"
+            <ExpenseImportUploadForm
+                :loading="flow.loading.value"
+                :disabled="flow.submitting.value"
+                :error="flow.error.value"
+                @preview="flow.load"
+                @change="flow.clear"
+            />
+
+            <template v-if="flow.preview.value">
+                <ExpenseImportAccountAlert
+                    v-if="flow.preview.value.account_check.status !== 'matched'"
+                    :check="flow.preview.value.account_check"
+                />
+
+                <template v-else>
+                    <ExpenseImportSummary
+                        :iban="flow.preview.value.account_check.statement_iban"
+                        :total="flow.totalMovements.value"
+                        :counts="flow.counts.value"
+                        :skipped-credit="flow.preview.value.skipped_credit_rows"
+                        :skipped-other="flow.preview.value.skipped_other_rows"
+                        :all-imported="flow.allAlreadyImported.value"
                     />
-                </div>
-                <button type="submit" class="btn btn-primary btn-sm" :disabled="loading || !file">
-                    <span v-if="loading" class="loading loading-spinner loading-xs" />
-                    {{ t('expense_import_preview') }}
-                </button>
-            </form>
 
-            <template v-if="preview">
-                <p v-if="preview.skipped_credit_rows > 0" class="text-sm text-base-content/60">
-                    {{ t('expense_import_skipped_credit') }}: {{ preview.skipped_credit_rows }}
-                </p>
+                    <EmptyState
+                        v-if="flow.rows.value.length === 0"
+                        :title="t('expense_import_no_expenses_title')"
+                        :description="t('expense_import_no_expenses_description')"
+                    />
 
-                <ExpenseImportTable :rows="rows" />
+                    <template v-else>
+                        <ExpenseImportTable
+                            :rows="flow.rows.value"
+                            :disabled="flow.submitting.value"
+                            @include="flow.setInclude"
+                            @category="flow.setCategory"
+                        />
 
-                <ul v-if="submitErrors.length > 0" class="text-sm text-error">
-                    <li v-for="message in submitErrors" :key="message">{{ message }}</li>
-                </ul>
+                        <ul v-if="flow.submitErrors.value.length > 0" role="alert" class="text-sm text-error">
+                            <li v-for="message in flow.submitErrors.value" :key="message">{{ message }}</li>
+                        </ul>
 
-                <div class="flex justify-end">
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        :disabled="submitting || selectedCount === 0"
-                        @click="submit"
-                    >
-                        <span v-if="submitting" class="loading loading-spinner loading-xs" />
-                        {{ t('expense_import_submit') }} ({{ selectedCount }})
-                    </button>
-                </div>
+                        <div class="flex justify-end">
+                            <Link v-if="flow.allAlreadyImported.value" href="/expenses" class="btn btn-neutral">
+                                {{ t('expense_import_back_to_expenses') }}
+                            </Link>
+                            <button
+                                v-else
+                                type="button"
+                                class="btn btn-secondary"
+                                :disabled="flow.submitting.value || flow.selectedCount.value === 0"
+                                @click="flow.submit"
+                            >
+                                <span v-if="flow.submitting.value" class="loading loading-spinner loading-xs" />
+                                {{ t('expense_import_submit') }} ({{ flow.selectedCount.value }})
+                            </button>
+                        </div>
+                    </template>
+                </template>
             </template>
         </div>
     </div>

@@ -26,8 +26,8 @@ use App\Models\User;
 use App\Scopes\TenantScope;
 use App\Services\Ai\Guard\PromptGuard;
 use App\Services\Dashboard\TenantVisibility;
-use App\Services\Expenses\BankStatementParser;
 use App\Services\Tenancy\TenantPermissionSnapshot;
+use App\Support\SafeText;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
 use App\Utils\PerPage;
@@ -47,7 +47,6 @@ final readonly class ExpenseService
         private TenantPermissionSnapshot $snapshot,
         private TemporaryUploadService $uploads,
         private AnalyzesExpenses $analyzer,
-        private BankStatementParser $parser,
         private PromptGuard $promptGuard,
     ) {}
 
@@ -296,7 +295,7 @@ final readonly class ExpenseService
             'amount' => $data->amount,
             'currency' => $data->currency,
             'vat_amount' => $data->vat_amount,
-            'supplier_name' => $this->parser->cleanText($data->supplier_name, 200, false),
+            'supplier_name' => SafeText::clean($data->supplier_name, 200, false),
             'description' => $data->description,
             'category' => $data->category,
         ];
@@ -346,13 +345,13 @@ final readonly class ExpenseService
             amount: $amount !== null && (float) $amount > 0 ? $amount : null,
             currency: $draft->currency,
             vat_amount: $this->decimal($draft->vat_amount),
-            supplier_name: $this->parser->cleanText($draft->supplier_name, 200),
-            description: $this->parser->cleanText($draft->description, 500),
+            supplier_name: SafeText::clean($draft->supplier_name, 200),
+            description: SafeText::clean($draft->description, 500),
             proposal: new ExpenseProposalData(
                 category: $proposal->category,
                 tenant_id: in_array($proposal->tenant_id, $eligible, true) ? $proposal->tenant_id : null,
                 confidence: max(0.0, min(1.0, $proposal->confidence)),
-                reason: $this->parser->cleanText($proposal->reason, 500),
+                reason: SafeText::clean($proposal->reason, 500),
             ),
         );
     }

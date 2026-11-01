@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Ai;
 
 use App\Contracts\Ai\AnalyzesExpenses;
-use App\Data\Expenses\BankCsvMappingData;
 use App\Data\Expenses\ExpenseAnalysisContextData;
 use App\Data\Expenses\ExpenseCategoryProposalData;
 use App\Data\Expenses\ExpenseCompanyContextData;
@@ -54,40 +53,6 @@ final readonly class LaravelAiExpenseAnalyzer implements AnalyzesExpenses
             "Extract the expense from this text:\n".json_encode($text, JSON_UNESCAPED_UNICODE).$this->companiesBlock($ctx),
             $this->draftSchema(...),
         ));
-    }
-
-    public function mapBankCsv(array $headerRow, array $sampleRows): BankCsvMappingData
-    {
-        $payload = json_encode(['header' => $headerRow, 'sample_rows' => $sampleRows], JSON_UNESCAPED_UNICODE);
-
-        $result = $this->run(
-            'You map the columns of a Slovak or Czech bank statement CSV export. '.self::DATA_RULE.' Column names must be copied exactly from the header. Debits (outgoing payments) are negative amounts in a single amount column. If the statement has separate debit and credit columns, set debit_column (and credit_column) and leave amount_column null.',
-            'Map this statement: '.$payload,
-            fn (JsonSchema $schema): array => [
-                'date_column' => $schema->string()->required(),
-                'date_format' => $schema->string()->required()->description('PHP date format of the date column, e.g. d.m.Y or Y-m-d'),
-                'amount_column' => $schema->string()->required()->nullable(),
-                'debit_column' => $schema->string()->required()->nullable(),
-                'credit_column' => $schema->string()->required()->nullable(),
-                'counterparty_column' => $schema->string()->required()->nullable(),
-                'note_column' => $schema->string()->required()->nullable(),
-                'reference_column' => $schema->string()->required()->nullable(),
-                'decimal_separator' => $schema->string()->enum([',', '.'])->required(),
-            ],
-        );
-
-        return new BankCsvMappingData(
-            delimiter: ';',
-            date_column: $this->string($result['date_column'] ?? null) ?? '',
-            date_format: $this->string($result['date_format'] ?? null) ?? 'Y-m-d',
-            amount_column: $this->string($result['amount_column'] ?? null),
-            counterparty_column: $this->string($result['counterparty_column'] ?? null),
-            note_column: $this->string($result['note_column'] ?? null),
-            reference_column: $this->string($result['reference_column'] ?? null),
-            decimal_separator: ($result['decimal_separator'] ?? ',') === '.' ? '.' : ',',
-            debit_column: $this->string($result['debit_column'] ?? null),
-            credit_column: $this->string($result['credit_column'] ?? null),
-        );
     }
 
     public function categorize(array $rows, ExpenseAnalysisContextData $ctx): array

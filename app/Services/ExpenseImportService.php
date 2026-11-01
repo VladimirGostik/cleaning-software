@@ -5,117 +5,173 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\Ai\AnalyzesExpenses;
-use App\Data\Expenses\BankCsvImportData;
-use App\Data\Expenses\BankCsvMappingData;
 use App\Data\Expenses\ExpenseAnalysisContextData;
 use App\Data\Expenses\ExpenseCategoryProposalData;
 use App\Data\Expenses\ExpenseCompanyContextData;
+use App\Data\Expenses\ExpenseImportAccountCheckData;
+use App\Data\Expenses\ExpenseImportData;
 use App\Data\Expenses\ExpenseImportPreviewData;
 use App\Data\Expenses\ExpenseImportResultData;
 use App\Data\Expenses\ExpenseImportRowData;
+use App\Data\Expenses\ExpenseImportRowInputData;
 use App\Data\Expenses\ExpenseRowData;
+use App\Enums\CurrencyEnum;
+use App\Enums\ExpenseImportAccountStatusEnum;
+use App\Enums\ExpenseImportRowStateEnum;
 use App\Enums\ExpenseSourceEnum;
 use App\Enums\ExpenseStatusEnum;
 use App\Exceptions\AiUnavailableException;
 use App\Models\Expense;
 use App\Models\Tenant;
-use App\Models\TenantInterface;
 use App\Models\User;
 use App\Services\Ai\Guard\PromptGuard;
-use App\Services\Expenses\BankStatementParser;
-use App\Services\Expenses\ParsedStatement;
+use App\Services\Expenses\CamtStatementParser;
 use App\Services\Expenses\StatementRow;
+use App\Services\Tenancy\TenantPermissionSnapshot;
+use App\Support\SafeText;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 final readonly class ExpenseImportService
 {
+    private const int MATCH_WINDOW_DAYS = 3;
+
+    private const int MAX_ATTEMPTS = 3;
+
     public function __construct(
         private DatabaseManager $db,
         private AnalyzesExpenses $analyzer,
-        private BankStatementParser $parser,
+        private CamtStatementParser $parser,
         private PromptGuard $promptGuard,
+        private TenantPermissionSnapshot $snapshot,
     ) {}
 
-    public function preview(UploadedFile $file): ExpenseImportPreviewData
+    public function preview(UploadedFile $file, User $actor): ExpenseImportPreviewData
     {
-        $table = $this->parser->parse($file->getContent());
-        $mapping = $this->resolveMapping($table);
-        $extraction = $this->parser->extract($table, $mapping);
+        $statement = $this->parser->parse($file->getContent());
+        $check = $this->accountCheck($statement->iban, $actor);
 
-        if ($extraction->debitRows === [] && $extraction->skippedCreditRows > 0) {
-            throw ValidationException::withMessages(['file' => [__('app.csv_no_debit_rows')]]);
+        if ($check->status !== ExpenseImportAccountStatusEnum::Matched) {
+            return new ExpenseImportPreviewData($check, [], $statement->skippedCreditRows, $statement->skippedOtherRows);
         }
 
-        if (count($extraction->debitRows) > $this->maxRows()) {
-            throw ValidationException::withMessages(['file' => [__('app.csv_too_many_rows', ['max' => $this->maxRows()])]]);
+        $rows = $statement->debitRows;
+        $keys = array_map(fn (StatementRow $row): string => $this->parser->entryKey($statement->iban, $row->reference), $rows);
+        [$live, $trashed] = $this->knownExpenses($keys);
+
+        $unmatched = [];
+        $importable = 0;
+
+        foreach ($rows as $position => $row) {
+            if (isset($live[$keys[$position]])) {
+                continue;
+            }
+
+            $importable++;
+
+            if (! isset($trashed[$keys[$position]])) {
+                $unmatched[] = $row;
+            }
         }
 
-        $hashes = $this->parser->hashes($extraction->debitRows);
-        $known = $this->knownHashes($hashes);
-        $proposals = $this->proposals($extraction->debitRows, $hashes, $known);
+        $max = config()->integer('expenses.statement.max_new_rows');
 
-        $rows = [];
+        if ($importable > $max) {
+            throw ValidationException::withMessages(['file' => [__('app.expense_import_too_many_rows', ['max' => $max])]]);
+        }
 
-        foreach ($extraction->debitRows as $position => $row) {
-            $duplicate = isset($known[$hashes[$position]]);
+        $matches = $this->possibleMatches($unmatched, $keys);
+        $fresh = array_values(array_filter($unmatched, static fn (StatementRow $row): bool => ! isset($matches[$row->reference])));
+        $proposals = $this->proposals($fresh);
+
+        $data = [];
+
+        foreach ($rows as $position => $row) {
+            $key = $keys[$position];
+            $state = match (true) {
+                isset($live[$key]) => ExpenseImportRowStateEnum::AlreadyImported,
+                isset($trashed[$key]) => ExpenseImportRowStateEnum::PreviouslyDeleted,
+                isset($matches[$row->reference]) => ExpenseImportRowStateEnum::PossibleMatch,
+                default => ExpenseImportRowStateEnum::New,
+            };
             $proposal = $proposals[$row->row] ?? null;
 
-            $rows[] = new ExpenseImportRowData(
-                row: $row->row,
+            $data[] = new ExpenseImportRowData(
+                reference: $row->reference,
                 date: $row->date,
                 amount: $row->amount,
                 counterparty: $row->counterparty,
                 note: $row->note,
-                reference: $row->reference,
                 proposed_category: $proposal?->category,
                 confidence: $proposal->confidence ?? 0.0,
-                duplicate: $duplicate,
-                include: ! $duplicate,
+                state: $state,
+                existing_expense_id: $live[$key] ?? $matches[$row->reference] ?? null,
+                include: $state === ExpenseImportRowStateEnum::New,
             );
         }
 
-        return new ExpenseImportPreviewData($mapping, $rows, $extraction->skippedCreditRows);
+        return new ExpenseImportPreviewData($check, $data, $statement->skippedCreditRows, $statement->skippedOtherRows);
     }
 
-    public function import(BankCsvImportData $data, User $actor): ExpenseImportResultData
+    public function import(ExpenseImportData $data, User $actor): ExpenseImportResultData
     {
-        $rows = array_map($this->cleaned(...), $data->rows);
+        $iban = CamtStatementParser::normalizeIban($data->account_iban);
+        $firmIban = Tenant::query()->findOrFail(current_tenant_id())->iban;
 
-        try {
-            $result = $this->persist($rows, $actor);
-        } catch (UniqueConstraintViolationException) {
-            $result = $this->persist($rows, $actor);
+        if ($firmIban === null || CamtStatementParser::normalizeIban($firmIban) !== $iban) {
+            throw ValidationException::withMessages(['account_iban' => [__('app.expense_import_account_mismatch')]]);
         }
 
-        TenantInterface::query()->updateOrCreate(
-            ['tenant_id' => current_tenant_id()],
-            ['bank_csv_mapping' => $data->mapping->toArray()],
-        );
+        $keys = array_map(fn (ExpenseImportRowInputData $row): string => $this->parser->entryKey($iban, $row->reference), $data->rows);
 
-        return $result;
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                return $this->persist($data->rows, $keys, $actor);
+            } catch (UniqueConstraintViolationException $e) {
+                if ($attempt >= self::MAX_ATTEMPTS) {
+                    throw $e;
+                }
+            }
+        }
     }
 
-    /** @param  list<ExpenseImportRowData>  $rows */
-    private function persist(array $rows, User $actor): ExpenseImportResultData
+    /**
+     * @param  list<ExpenseImportRowInputData>  $rows
+     * @param  list<string>  $keys
+     */
+    private function persist(array $rows, array $keys, User $actor): ExpenseImportResultData
     {
-        // Ordinals count repeats within the posted rows, so a client must post the whole preview and flag exclusions via `include`.
-        $hashes = $this->parser->hashes($rows);
+        return $this->db->transaction(function () use ($rows, $keys, $actor): ExpenseImportResultData {
+            [$live] = $this->knownExpenses($keys);
 
-        return $this->db->transaction(function () use ($rows, $hashes, $actor): ExpenseImportResultData {
-            $known = $this->knownHashes($hashes);
+            $max = config()->integer('expenses.statement.max_new_rows');
+
+            if (count($rows) - count($live) > $max) {
+                throw ValidationException::withMessages(['rows' => [__('app.expense_import_too_many_rows', ['max' => $max])]]);
+            }
+
             $created = 0;
-            $skipped = 0;
+            $imported = 0;
+            $excluded = 0;
 
-            foreach ($rows as $position => $row) {
-                if (! $row->include) {
+            $ordered = $keys;
+            asort($ordered, SORT_STRING);
+
+            foreach (array_keys($ordered) as $position) {
+                $row = $rows[$position];
+
+                if (isset($live[$keys[$position]])) {
+                    $imported++;
+
                     continue;
                 }
 
-                if (isset($known[$hashes[$position]])) {
-                    $skipped++;
+                if (! $row->include) {
+                    $excluded++;
 
                     continue;
                 }
@@ -125,12 +181,13 @@ final readonly class ExpenseImportService
                     'created_by_user_id' => $actor->id,
                     'status' => ExpenseStatusEnum::Draft,
                     'date' => $row->date,
-                    'amount' => $row->amount,
-                    'supplier_name' => $row->counterparty,
-                    'description' => $row->note,
+                    'amount' => number_format((float) $row->amount, 2, '.', ''),
+                    'currency' => CurrencyEnum::EUR,
+                    'supplier_name' => SafeText::clean($row->counterparty, 200),
+                    'description' => SafeText::clean($row->note, 500),
                     'bank_reference' => $row->reference,
-                    'source' => ExpenseSourceEnum::BankCsv,
-                    'external_hash' => $hashes[$position],
+                    'source' => ExpenseSourceEnum::BankStatement,
+                    'external_hash' => $keys[$position],
                     'ai_proposal' => $row->proposed_category === null ? null : [
                         'category' => $row->proposed_category->value,
                         'tenant_id' => current_tenant_id(),
@@ -142,94 +199,139 @@ final readonly class ExpenseImportService
                 $created++;
             }
 
-            return new ExpenseImportResultData($created, $skipped);
+            return new ExpenseImportResultData($created, $imported, $excluded);
         });
     }
 
-    private function cleaned(ExpenseImportRowData $row): ExpenseImportRowData
+    private function accountCheck(string $iban, User $actor): ExpenseImportAccountCheckData
     {
-        return new ExpenseImportRowData(
-            row: $row->row,
-            date: $row->date,
-            amount: number_format((float) $row->amount, 2, '.', ''),
-            counterparty: $this->parser->cleanText($row->counterparty, 200),
-            note: $this->parser->cleanText($row->note, 500),
-            reference: $this->parser->cleanText($row->reference, 100),
-            proposed_category: $row->proposed_category,
-            confidence: $row->confidence,
-            duplicate: $row->duplicate,
-            include: $row->include,
-        );
-    }
+        $active = Tenant::query()->findOrFail(current_tenant_id());
 
-    private function resolveMapping(ParsedStatement $table): BankCsvMappingData
-    {
-        $interface = TenantInterface::query()->where('tenant_id', current_tenant_id())->first();
-        $stored = $interface?->bank_csv_mapping;
+        if ($this->sameIban($active->iban, $iban)) {
+            return new ExpenseImportAccountCheckData(ExpenseImportAccountStatusEnum::Matched, $iban);
+        }
 
-        if ($stored !== null) {
-            $mapping = $this->validMapping($stored);
-
-            if ($mapping !== null && $this->parser->fits($table, $mapping)) {
-                return $mapping;
+        foreach ($this->snapshot->forRequest($actor) as $visibility) {
+            if ($visibility->manageExpenses && $visibility->tenant->is_active && $this->sameIban($visibility->tenant->iban, $iban)) {
+                return new ExpenseImportAccountCheckData(
+                    ExpenseImportAccountStatusEnum::OtherCompany,
+                    $iban,
+                    $visibility->tenant->id,
+                    $visibility->tenant->name,
+                );
             }
         }
 
-        try {
-            $proposed = $this->analyzer->mapBankCsv($table->header, $this->sampleRows($table));
-        } catch (AiUnavailableException) {
-            throw ValidationException::withMessages(['file' => [__('app.ai_unavailable')]]);
-        }
+        $status = trim((string) $active->iban) === ''
+            ? ExpenseImportAccountStatusEnum::CompanyIbanMissing
+            : ExpenseImportAccountStatusEnum::UnknownAccount;
 
-        $mapping = $this->validMapping([...$proposed->toArray(), 'delimiter' => $table->delimiter]);
-
-        if ($mapping === null || ! $this->parser->fits($table, $mapping)) {
-            throw ValidationException::withMessages(['file' => [__('app.csv_mapping_failed')]]);
-        }
-
-        return $mapping;
+        return new ExpenseImportAccountCheckData($status, $iban);
     }
 
-    /** @param  array<mixed>  $payload */
-    private function validMapping(array $payload): ?BankCsvMappingData
+    private function sameIban(?string $firmIban, string $statementIban): bool
     {
-        try {
-            return BankCsvMappingData::validateAndCreate($payload);
-        } catch (ValidationException) {
-            return null;
-        }
-    }
-
-    /** @return list<list<string>> */
-    private function sampleRows(ParsedStatement $table): array
-    {
-        return array_map(
-            fn (array $cells): array => array_map(fn (string $cell): string => $this->promptGuard->scan($cell)->flagged ? '' : mb_substr($cell, 0, 80), $cells),
-            array_slice($table->records, 0, 3),
-        );
+        return $firmIban !== null && CamtStatementParser::normalizeIban($firmIban) === $statementIban;
     }
 
     /**
-     * Duplicates are not sent to the provider; a provider failure only drops the suggestions.
+     * @param  list<string>  $keys
+     * @return array{0: array<string, string>, 1: array<string, true>}
+     */
+    private function knownExpenses(array $keys): array
+    {
+        $live = [];
+        $trashed = [];
+
+        foreach (array_chunk($keys, 1000) as $chunk) {
+            $found = Expense::query()->withTrashed()->whereIn('external_hash', $chunk)->get(['id', 'external_hash', 'deleted_at']);
+
+            foreach ($found as $expense) {
+                if ($expense->external_hash === null) {
+                    continue;
+                }
+
+                if ($expense->deleted_at === null) {
+                    $live[$expense->external_hash] = $expense->id;
+                } else {
+                    $trashed[$expense->external_hash] = true;
+                }
+            }
+        }
+
+        return [$live, $trashed];
+    }
+
+    /**
+     * @param  list<StatementRow>  $rows
+     * @param  list<string>  $fileKeys
+     * @return array<string, string>
+     */
+    private function possibleMatches(array $rows, array $fileKeys): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        $dates = array_map(static fn (StatementRow $row): string => $row->date, $rows);
+        $from = Carbon::parse(min($dates))->subDays(self::MATCH_WINDOW_DAYS)->toDateString();
+        $to = Carbon::parse(max($dates))->addDays(self::MATCH_WINDOW_DAYS)->toDateString();
+
+        $candidates = Expense::query()
+            ->where('currency', CurrencyEnum::EUR->value)
+            ->whereBetween('date', [$from, $to])
+            ->whereIn('amount', array_values(array_unique(array_map(static fn (StatementRow $row): string => $row->amount, $rows))))
+            ->where(static function (Builder $query) use ($fileKeys): void {
+                $query->whereNull('external_hash')->orWhereNotIn('external_hash', $fileKeys);
+            })
+            ->get(['id', 'date', 'amount', 'created_at']);
+
+        $matches = [];
+
+        foreach ($rows as $row) {
+            $best = null;
+            $bestDistance = 0;
+
+            foreach ($candidates as $candidate) {
+                if ($candidate->amount !== $row->amount) {
+                    continue;
+                }
+
+                $distance = (int) abs(Carbon::parse($row->date)->diffInDays($candidate->date, false));
+
+                if ($distance > self::MATCH_WINDOW_DAYS) {
+                    continue;
+                }
+
+                if ($best === null || $distance < $bestDistance || ($distance === $bestDistance && $candidate->created_at->lt($best->created_at))) {
+                    $best = $candidate;
+                    $bestDistance = $distance;
+                }
+            }
+
+            if ($best !== null) {
+                $matches[$row->reference] = $best->id;
+            }
+        }
+
+        return $matches;
+    }
+
+    /**
+     * Rows that look like injection are shown but never sent to the provider; a provider failure only drops the suggestions.
      *
      * @param  list<StatementRow>  $rows
-     * @param  list<string>  $hashes
-     * @param  array<string, true>  $known
      * @return array<int, ExpenseCategoryProposalData>
      */
-    private function proposals(array $rows, array $hashes, array $known): array
+    private function proposals(array $rows): array
     {
         $pending = [];
 
-        foreach ($rows as $position => $row) {
-            if (isset($known[$hashes[$position]])) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $verdict = $this->promptGuard->scan(trim($row->counterparty."\n".$row->note));
 
             if ($verdict->flagged) {
-                $this->promptGuard->record(null, 'bank_csv_row', current_tenant_id(), null, $verdict);
+                $this->promptGuard->record(null, 'bank_statement_row', current_tenant_id(), null, $verdict);
 
                 continue;
             }
@@ -260,27 +362,5 @@ final readonly class ExpenseImportService
             companies: [new ExpenseCompanyContextData($tenant->id, $tenant->name, $tenant->ico, $tenant->iban)],
             today: now()->toDateString(),
         );
-    }
-
-    /**
-     * @param  list<string>  $hashes
-     * @return array<string, true>
-     */
-    private function knownHashes(array $hashes): array
-    {
-        $known = [];
-
-        foreach (Expense::query()->whereIn('external_hash', $hashes)->pluck('external_hash') as $hash) {
-            if (is_string($hash)) {
-                $known[$hash] = true;
-            }
-        }
-
-        return $known;
-    }
-
-    private function maxRows(): int
-    {
-        return config()->integer('ai.csv_preview_max_rows', 100);
     }
 }

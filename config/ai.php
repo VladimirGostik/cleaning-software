@@ -21,8 +21,6 @@ return [
 
     'assistant_timeout' => 18,
 
-    'csv_preview_max_rows' => 100,
-
     'categorize_batch' => 50,
 
     'throttle' => [

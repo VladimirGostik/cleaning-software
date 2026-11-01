@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Data\Expenses\BankCsvImportData;
 use App\Data\Expenses\ExpenseAnalyzeData;
 use App\Data\Expenses\ExpenseConfirmData;
+use App\Data\Expenses\ExpenseImportData;
+use App\Data\Expenses\ExpenseImportResultData;
 use App\Data\Expenses\ExpenseImportUploadData;
 use App\Data\Expenses\ExpenseReceiptUploadData;
 use App\Data\Expenses\ExpenseUpsertData;
@@ -53,8 +54,11 @@ final class ExpenseController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
+        $flashed = $request->session()->get('result');
+
         return Inertia::render('Expenses/Import', [
             'context' => $this->expenses->formContext($actor),
+            'result' => is_array($flashed) ? ExpenseImportResultData::from($flashed) : null,
         ]);
     }
 
@@ -68,21 +72,21 @@ final class ExpenseController extends Controller
     }
 
     #[Authorize('import', Expense::class)]
-    public function importPreview(ExpenseImportUploadData $data): JsonResponse
-    {
-        return response()->json($this->imports->preview($data->file));
-    }
-
-    #[Authorize('import', Expense::class)]
-    public function import(BankCsvImportData $data, Request $request): RedirectResponse
+    public function importPreview(ExpenseImportUploadData $data, Request $request): JsonResponse
     {
         /** @var User $actor */
         $actor = $request->user();
 
-        $result = $this->imports->import($data, $actor);
+        return response()->json($this->imports->preview($data->file, $actor));
+    }
 
-        return to_route('expenses.index', ['filter' => ['status' => 'draft']])
-            ->with('success', __('app.expense_import_done', ['created' => $result->created, 'skipped' => $result->skipped_duplicates]));
+    #[Authorize('import', Expense::class)]
+    public function import(ExpenseImportData $data, Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return to_route('expenses.import')->with('result', $this->imports->import($data, $actor)->toArray());
     }
 
     #[Authorize('create', Expense::class)]

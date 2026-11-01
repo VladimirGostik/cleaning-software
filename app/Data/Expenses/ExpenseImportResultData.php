@@ -12,6 +12,7 @@ final class ExpenseImportResultData extends Data
 {
     public function __construct(
         public readonly int $created,
-        public readonly int $skipped_duplicates,
+        public readonly int $already_imported,
+        public readonly int $excluded,
     ) {}
 }

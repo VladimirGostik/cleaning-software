@@ -325,7 +325,7 @@ export const EXPENSE_CATEGORIES: readonly App.Enums.ExpenseCategoryEnum[] = [
 
 export const EXPENSE_STATUSES: readonly App.Enums.ExpenseStatusEnum[] = ['draft', 'confirmed'];
 
-export const EXPENSE_SOURCES: readonly App.Enums.ExpenseSourceEnum[] = ['manual', 'receipt', 'bank_csv', 'mcp'];
+export const EXPENSE_SOURCES: readonly App.Enums.ExpenseSourceEnum[] = ['manual', 'receipt', 'bank_statement', 'mcp'];
 
 export function expenseCategoryKey(category: App.Enums.ExpenseCategoryEnum): string {
     return `expense_category_${category}`;

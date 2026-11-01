@@ -78,9 +78,7 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::get('/expenses/form-context', [ExpenseController::class, 'formContext'])->name('api.expenses.form-context');
     Route::middleware('throttle:ai-analyze')->group(function (): void {
         Route::post('/expenses/analyze', [ExpenseController::class, 'analyze'])->name('api.expenses.analyze');
-        Route::post('/expenses/import/preview', [ExpenseController::class, 'importPreview'])->name('api.expenses.import.preview');
     });
-    Route::post('/expenses/import', [ExpenseController::class, 'import'])->name('api.expenses.import');
     Route::post('/expenses', [ExpenseController::class, 'store'])->name('api.expenses.store');
     Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('api.expenses.show')->whereUuid('expense');
     Route::match(['PUT', 'PATCH'], '/expenses/{expense}', [ExpenseController::class, 'update'])->name('api.expenses.update')->whereUuid('expense');

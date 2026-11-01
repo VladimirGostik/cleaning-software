@@ -726,22 +726,6 @@ readonly postal_code: string | null,
 };
 }
 namespace Expenses {
-export type BankCsvImportData = {
-readonly mapping: App.Data.Expenses.BankCsvMappingData,
-readonly rows: App.Data.Expenses.ExpenseImportRowData[],
-};
-export type BankCsvMappingData = {
-readonly delimiter: string,
-readonly date_column: string,
-readonly date_format: string,
-readonly amount_column: string | null,
-readonly counterparty_column: string | null,
-readonly note_column: string | null,
-readonly reference_column: string | null,
-readonly decimal_separator: ',' | '.',
-readonly debit_column: string | null,
-readonly credit_column: string | null,
-};
 export type ExpenseAnalysisContextData = {
 readonly companies: App.Data.Expenses.ExpenseCompanyContextData[],
 readonly today: string,
@@ -803,25 +787,47 @@ export type ExpenseFormContextData = {
 readonly companies: App.Data.Auth.MobileCompanyData[],
 readonly categories: App.Enums.ExpenseCategoryEnum[],
 };
+export type ExpenseImportAccountCheckData = {
+readonly status: App.Enums.ExpenseImportAccountStatusEnum,
+readonly statement_iban: string,
+readonly owner_tenant_id: string | null,
+readonly owner_tenant_name: string | null,
+};
+export type ExpenseImportData = {
+readonly account_iban: string,
+readonly rows: App.Data.Expenses.ExpenseImportRowInputData[],
+};
 export type ExpenseImportPreviewData = {
-readonly mapping: App.Data.Expenses.BankCsvMappingData,
+readonly account_check: App.Data.Expenses.ExpenseImportAccountCheckData,
 readonly rows: App.Data.Expenses.ExpenseImportRowData[],
 readonly skipped_credit_rows: number,
+readonly skipped_other_rows: number,
 };
 export type ExpenseImportResultData = {
 readonly created: number,
-readonly skipped_duplicates: number,
+readonly already_imported: number,
+readonly excluded: number,
 };
 export type ExpenseImportRowData = {
-readonly row: number,
+readonly reference: string,
 readonly date: string,
 readonly amount: string,
 readonly counterparty: string | null,
 readonly note: string | null,
-readonly reference: string | null,
 readonly proposed_category: App.Enums.ExpenseCategoryEnum | null,
 readonly confidence: number,
-readonly duplicate: boolean,
+readonly state: App.Enums.ExpenseImportRowStateEnum,
+readonly existing_expense_id: string | null,
+readonly include: boolean,
+};
+export type ExpenseImportRowInputData = {
+readonly reference: string,
+readonly date: string,
+readonly amount: string,
+readonly counterparty: string | null,
+readonly note: string | null,
+readonly proposed_category: App.Enums.ExpenseCategoryEnum | null,
+readonly confidence: number,
 readonly include: boolean,
 };
 export type ExpenseImportUploadData = {
@@ -1882,7 +1888,9 @@ export type EfaStatusEnum = "none" | "ready" | "generated" | "submitted" | "acce
 export type EmployeeTypeEnum = "brigade" | "tpp" | "self_employed";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
 export type ExpenseCategoryEnum = "fuel" | "materials" | "cleaning_supplies" | "equipment" | "services" | "rent" | "utilities" | "wages" | "insurance" | "fees" | "bank_charges" | "other";
-export type ExpenseSourceEnum = "manual" | "receipt" | "bank_csv" | "mcp";
+export type ExpenseImportAccountStatusEnum = "matched" | "other_company" | "unknown_account" | "company_iban_missing";
+export type ExpenseImportRowStateEnum = "new" | "already_imported" | "previously_deleted" | "possible_match";
+export type ExpenseSourceEnum = "manual" | "receipt" | "bank_statement" | "mcp";
 export type ExpenseStatusEnum = "draft" | "confirmed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";

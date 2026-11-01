@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Data\Expenses\BankCsvImportData;
 use App\Data\Expenses\ExpenseAnalyzeData;
 use App\Data\Expenses\ExpenseConfirmData;
 use App\Data\Expenses\ExpenseDetailData;
 use App\Data\Expenses\ExpenseDraftData;
 use App\Data\Expenses\ExpenseFormContextData;
-use App\Data\Expenses\ExpenseImportPreviewData;
-use App\Data\Expenses\ExpenseImportResultData;
-use App\Data\Expenses\ExpenseImportUploadData;
 use App\Data\Expenses\ExpenseListItemData;
 use App\Data\Expenses\ExpenseReceiptUploadData;
 use App\Data\Expenses\ExpenseUpsertData;
@@ -21,7 +17,6 @@ use App\Http\Controllers\ExpenseController as WebExpenseController;
 use App\Models\Expense;
 use App\Models\User;
 use App\Scribe\Attributes\ResponseFromSpatieData;
-use App\Services\ExpenseImportService;
 use App\Services\ExpenseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +29,7 @@ use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\QueryParam;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-#[Group('Expenses', 'Expense ledger, receipts, AI analysis and bank CSV import')]
+#[Group('Expenses', 'Expense ledger, receipts, AI analysis')]
 #[Authenticated]
 final class ExpenseController extends Controller
 {
@@ -42,14 +37,13 @@ final class ExpenseController extends Controller
 
     public function __construct(
         private readonly ExpenseService $expenses,
-        private readonly ExpenseImportService $imports,
     ) {}
 
     #[Endpoint('List expenses', 'Expenses of all companies the user may view (scope=all) or of the active company (scope=company, default).')]
     #[QueryParam('scope', 'string', 'all or company.', required: false, example: 'all')]
     #[QueryParam('filter[status]', 'string', 'draft or confirmed.', required: false, example: 'draft')]
     #[QueryParam('filter[category]', 'string', 'Expense category.', required: false)]
-    #[QueryParam('filter[source]', 'string', 'manual, receipt, bank_csv or mcp.', required: false)]
+    #[QueryParam('filter[source]', 'string', 'manual, receipt, bank_statement or mcp.', required: false)]
     #[QueryParam('filter[tenant_id]', 'string', 'Restrict to one company.', required: false)]
     #[QueryParam('filter[date]', 'string', 'Date (Y-m-d), optionally with an operator such as >=2026-01-01.', required: false)]
     #[QueryParam('filter[search]', 'string', 'Supplier or description contains.', required: false)]
@@ -89,25 +83,6 @@ final class ExpenseController extends Controller
         $actor = $request->user();
 
         return response()->json($this->expenses->analyze($data, $actor));
-    }
-
-    #[Authorize('import', Expense::class)]
-    #[Endpoint('Preview bank CSV import', 'Multipart CSV (max 1 MB, at most 100 debit rows) for the active company. Nothing is saved.')]
-    #[ResponseFromSpatieData(ExpenseImportPreviewData::class, User::class)]
-    public function importPreview(ExpenseImportUploadData $data): JsonResponse
-    {
-        return response()->json($this->imports->preview($data->file));
-    }
-
-    #[Authorize('import', Expense::class)]
-    #[Endpoint('Import bank CSV rows', 'Creates draft expenses in the active company from the reviewed preview rows; duplicates are skipped.')]
-    #[ResponseFromSpatieData(ExpenseImportResultData::class, User::class, status: 201)]
-    public function import(BankCsvImportData $data, Request $request): JsonResponse
-    {
-        /** @var User $actor */
-        $actor = $request->user();
-
-        return response()->json($this->imports->import($data, $actor), 201);
     }
 
     #[Authorize('create', Expense::class)]

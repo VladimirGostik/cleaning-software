@@ -12,8 +12,9 @@ final class ExpenseImportPreviewData extends Data
 {
     /** @param  list<ExpenseImportRowData>  $rows */
     public function __construct(
-        public readonly BankCsvMappingData $mapping,
+        public readonly ExpenseImportAccountCheckData $account_check,
         public readonly array $rows,
         public readonly int $skipped_credit_rows,
+        public readonly int $skipped_other_rows,
     ) {}
 }

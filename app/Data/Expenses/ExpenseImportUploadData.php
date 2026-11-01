@@ -20,10 +20,8 @@ final class ExpenseImportUploadData extends Data
     /** @return array<string, mixed> */
     public static function rules(): array
     {
-        $maxKb = config('expenses.csv.max_size_kb', 1024);
-
         return [
-            'file' => ['required', 'file', 'extensions:csv,txt', 'max:'.(is_numeric($maxKb) ? (int) $maxKb : 1024)],
+            'file' => ['required', 'file', 'extensions:xml', 'max:'.config()->integer('expenses.statement.max_size_kb')],
         ];
     }
 
@@ -31,8 +29,8 @@ final class ExpenseImportUploadData extends Data
     public static function messages(): array
     {
         return [
-            'file.max' => __('app.csv_too_large'),
-            'file.extensions' => __('app.csv_invalid'),
+            'file.max' => __('app.expense_import_file_too_large'),
+            'file.extensions' => __('app.expense_import_file_invalid'),
         ];
     }
 }

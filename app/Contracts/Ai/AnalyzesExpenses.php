@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Contracts\Ai;
 
-use App\Data\Expenses\BankCsvMappingData;
 use App\Data\Expenses\ExpenseAnalysisContextData;
 use App\Data\Expenses\ExpenseCategoryProposalData;
 use App\Data\Expenses\ExpenseDraftData;
@@ -18,14 +17,6 @@ interface AnalyzesExpenses
 
     /** @throws AiUnavailableException */
     public function analyzeText(string $text, ExpenseAnalysisContextData $ctx): ExpenseDraftData;
-
-    /**
-     * @param  list<string>  $headerRow
-     * @param  list<list<string>>  $sampleRows
-     *
-     * @throws AiUnavailableException
-     */
-    public function mapBankCsv(array $headerRow, array $sampleRows): BankCsvMappingData;
 
     /**
      * @param  list<ExpenseRowData>  $rows
