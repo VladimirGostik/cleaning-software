@@ -55,6 +55,9 @@ RUN apk add --no-cache \
     font-noto \
     && rm -rf /var/cache/apk/*
 
+COPY resources/fonts/geist/*.otf /usr/share/fonts/geist/
+RUN fc-cache -f
+
 ENV CHROMIUM_PATH=/usr/bin/chromium-browser
 
 # Build-time smoke test: fail the build if headless Chromium cannot launch.

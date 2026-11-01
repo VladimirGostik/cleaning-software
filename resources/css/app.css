@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './fonts.css';
 @import './document-body.css';
 @plugin 'daisyui' {
     themes: false;
@@ -12,59 +13,80 @@
 [data-theme='app-theme'] {
     color-scheme: light;
 
-    --color-base-100: oklch(99% 0.005 250);
-    --color-base-200: oklch(96% 0.008 250);
-    --color-base-300: oklch(92% 0.012 250);
-    --color-base-content: oklch(20% 0.04 250);
+    --color-base-100: #ffffff;
+    --color-base-200: #f6f7f6;
+    --color-base-300: #e9ecea;
+    --color-base-content: #111c18;
 
-    --color-primary: oklch(52% 0.14 72);
-    --color-primary-content: oklch(98% 0.005 72);
+    --color-primary: #0e7c5f;
+    --color-primary-content: #ffffff;
 
-    --color-secondary: oklch(35% 0.15 265);
-    --color-secondary-content: oklch(98% 0.005 265);
+    --color-secondary: #ff5a1f;
+    --color-secondary-content: #111c18;
 
-    --color-accent: oklch(70% 0.18 150);
-    --color-accent-content: oklch(15% 0.04 150);
+    --color-accent: #9c3a0e;
+    --color-accent-content: #ffffff;
 
-    --color-neutral: oklch(21% 0.04 265);
-    --color-neutral-content: oklch(87% 0.025 256);
+    --color-neutral: #eef1ef;
+    --color-neutral-content: #111c18;
 
-    --color-info: oklch(72% 0.15 230);
-    --color-info-content: oklch(15% 0.04 230);
+    --color-info: #0e7c5f;
+    --color-info-content: #ffffff;
 
-    --color-success: oklch(70% 0.18 150);
-    --color-success-content: oklch(15% 0.04 150);
+    --color-success: #1f6b41;
+    --color-success-content: #ffffff;
 
-    --color-warning: oklch(78% 0.18 80);
-    --color-warning-content: oklch(15% 0.04 80);
+    --color-warning: #855600;
+    --color-warning-content: #ffffff;
 
-    --color-error: oklch(62% 0.22 25);
-    --color-error-content: oklch(98% 0.005 25);
+    --color-error: #b42318;
+    --color-error-content: #ffffff;
 
     --radius-selector: 0.5rem;
-    --radius-field: 0.5rem;
-    --radius-box: 0.75rem;
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
     --size-selector: 0.25rem;
     --size-field: 0.25rem;
     --border: 1px;
-    --depth: 1;
+    --depth: 0;
     --noise: 0;
+
+    --kg-chip-planned-fg: #0a654d;
+    --kg-chip-planned-bg: #e7f4ef;
+    --kg-chip-in-progress-fg: #9c3a0e;
+    --kg-chip-in-progress-bg: #fff0e8;
+    --kg-chip-done-fg: #1f6b41;
+    --kg-chip-done-bg: #e6f4eb;
+    --kg-chip-warning-fg: #855600;
+    --kg-chip-warning-bg: #fff5dc;
+    --kg-chip-danger-fg: #b42318;
+    --kg-chip-danger-bg: #fdecea;
+    --kg-chip-neutral-fg: #55605b;
+    --kg-chip-neutral-bg: #eef1ef;
 }
 
 @theme {
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --font-sans: 'Geist', system-ui, sans-serif;
+    --color-muted: #5a6661;
+    --color-primary-hover: #0a654d;
+    --color-primary-soft: #e7f4ef;
+    --color-border-strong: #87918d;
+    --color-danger-soft: #fdecea;
+    --shadow-float: 0 4px 16px rgba(17, 28, 24, 0.08);
 }
 
 @layer base {
     html {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        letter-spacing: -0.005em;
+        letter-spacing: 0;
     }
     h1,
     h2,
-    h3,
+    h3 {
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }
     h4,
     h5,
     h6 {
@@ -73,39 +95,19 @@
 }
 
 :root {
-    --auth-gradient-from: #78350f;
-    --auth-gradient-mid: #a16207;
-    --auth-gradient-to: #713f12;
-    --auth-text-muted: rgba(255, 255, 255, 0.7);
-    --auth-text-bright: rgba(255, 255, 255, 0.9);
-    --auth-copyright: rgba(255, 255, 255, 0.6);
-    --auth-border-muted: #cbd5e1;
-    --auth-link: #1e3a8a;
-}
-
-/* Auth page utility classes (from main) */
-.auth-hero-bg {
-    background: linear-gradient(
-        135deg,
-        var(--auth-gradient-from) 0%,
-        var(--auth-gradient-mid) 45%,
-        var(--auth-gradient-to) 100%
-    );
-}
-
-.auth-mobile-logo-bg {
-    background: linear-gradient(to bottom right, var(--auth-gradient-mid), var(--auth-gradient-to));
+    --auth-border-muted: #87918d;
+    --auth-link: #9c3a0e;
 }
 
 .auth-input:focus {
-    border-color: var(--auth-gradient-mid);
-    --tw-ring-color: color-mix(in srgb, var(--auth-gradient-mid) 20%, transparent);
-    box-shadow: 0 0 0 2px var(--tw-ring-color);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+    outline: 0;
 }
 
 .auth-checkbox-checked {
-    border-color: var(--auth-gradient-mid);
-    background-color: var(--auth-gradient-mid);
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
     color: white;
 }
 
@@ -119,35 +121,127 @@
 }
 
 .auth-submit-btn {
-    background-color: var(--auth-gradient-mid);
+    background-color: #ff5a1f;
+    color: #111c18;
 }
 
 .auth-submit-btn:hover:not(:disabled) {
-    background-color: var(--auth-gradient-to);
+    background-color: #e64f18;
 }
 
-/* Replacements for main's inline style="" attributes (identical computed styles) */
-.auth-hero-overlay {
-    background-image:
-        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08), transparent 40%),
-        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.06), transparent 40%);
+/* Unlayered on purpose: must outrank DaisyUI component rules and Tailwind utilities (shadow-sm) */
+.btn.btn {
+    font-weight: 500;
+}
+.btn.btn-sm {
+    --size: 2.25rem;
+}
+.btn-primary:hover {
+    background: var(--color-primary-hover);
+}
+.btn-neutral {
+    border: 0;
+}
+.btn-error {
+    background: var(--color-danger-soft);
+    color: var(--color-error);
+    border: 0;
+}
+.input,
+.select,
+.textarea {
+    border-color: var(--color-border-strong);
+}
+.input:focus-within,
+.select:focus-within,
+.textarea:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+    outline: 0;
+}
+.input.input-error:focus-within,
+.select.select-error:focus-within,
+.textarea.textarea-error:focus-within {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px var(--color-danger-soft);
+}
+.dropdown-content,
+.toast .alert,
+.modal-box,
+.popover {
+    box-shadow: var(--shadow-float);
+}
+.table thead th {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-muted);
+}
+.table tbody tr:hover {
+    background: var(--color-base-200);
+}
+.table td,
+.table th {
+    border-color: var(--color-base-300);
+}
+.tabs-box {
+    background: var(--color-neutral);
+    border-radius: var(--radius-field);
+    padding: 2px;
+}
+.tabs-box .tab-active {
+    background: var(--color-base-100);
+    box-shadow: var(--shadow-float);
+}
+.toggle,
+.radio,
+.checkbox.checkbox-round {
+    border-radius: 9999px;
+}
+.kg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25rem;
+    white-space: nowrap;
+}
+.kg-chip svg {
+    width: 16px;
+    height: 16px;
+}
+.kg-chip--planned {
+    color: var(--kg-chip-planned-fg);
+    background: var(--kg-chip-planned-bg);
+}
+.kg-chip--in_progress {
+    color: var(--kg-chip-in-progress-fg);
+    background: var(--kg-chip-in-progress-bg);
+}
+.kg-chip--done {
+    color: var(--kg-chip-done-fg);
+    background: var(--kg-chip-done-bg);
+}
+.kg-chip--warning {
+    color: var(--kg-chip-warning-fg);
+    background: var(--kg-chip-warning-bg);
+}
+.kg-chip--danger {
+    color: var(--kg-chip-danger-fg);
+    background: var(--kg-chip-danger-bg);
+}
+.kg-chip--neutral {
+    color: var(--kg-chip-neutral-fg);
+    background: var(--kg-chip-neutral-bg);
 }
 
-.auth-logo-chip {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
+.card {
+    box-shadow: none;
 }
-
-.auth-text-muted {
-    color: var(--auth-text-muted);
-}
-
-.auth-text-bright {
-    color: var(--auth-text-bright);
-}
-
-.auth-copyright {
-    color: var(--auth-copyright);
+.card:not([class*='border']) {
+    border: 1px solid var(--color-base-300);
 }
 
 /* DaisyUI 5 .badge has fixed height + no white-space rule -> long labels wrap out of the pill. */

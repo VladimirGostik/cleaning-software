@@ -61,5 +61,5 @@ void createInertiaApp({
             .use(i18n)
             .mount(el);
     },
-    progress: { color: '#a16207' },
+    progress: { color: '#0E7C5F' },
 });
