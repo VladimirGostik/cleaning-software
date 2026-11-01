@@ -67,6 +67,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property array<int, array<string, float>>|null $vat_breakdown
  * @property string $customer_name
  * @property string|null $customer_email
+ * @property string|null $customer_represented_by
  * @property Collection<int, InvoiceItem> $items
  * @property int|null $supplier_signature_media_id
  * @property EfaStatusEnum $efa_status
@@ -117,6 +118,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'footer_text',
     'customer_name',
     'customer_representative',
+    'customer_represented_by',
     'customer_ico',
     'customer_dic',
     'customer_vat_number',

@@ -45,4 +45,10 @@ final class ObjectPolicy
     {
         return $user->can(PermissionEnum::ViewAllObjects->value);
     }
+
+    public function viewBilling(User $user): bool
+    {
+        // Same breadth modifier as contacts: own-only cleaners reach objects through jobs.
+        return $this->viewContacts($user);
+    }
 }

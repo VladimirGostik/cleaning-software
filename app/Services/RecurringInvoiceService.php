@@ -46,7 +46,7 @@ final readonly class RecurringInvoiceService
             )
             ->allowedSorts('name', 'status', 'frequency', 'next_run_at', 'created_at')
             ->defaultSort('-created_at')
-            ->with(['client:id,name', 'cleaningObject:id,name,client_id', 'cleaningObject.client:id,name'])
+            ->with(['client:id,name', 'cleaningObject:id,name,client_id,billing_name', 'cleaningObject.client:id,name'])
             ->paginate($request->integer('per_page', 25))
             ->withQueryString()
             ->through(fn (RecurringInvoice $ri) => RecurringInvoiceListItemData::fromModel($ri));

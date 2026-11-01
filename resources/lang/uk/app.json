@@ -1907,5 +1907,11 @@
     "assistant_error_session": "Сеанс завершився. Перезавантажте сторінку та увійдіть знову.",
     "assistant_error_failed": "Не вдалося надіслати повідомлення. Спробуйте ще раз.",
     "assistant_pending_done": "Готово.",
-    "assistant_pending_cancelled": "Скасовано."
+    "assistant_pending_cancelled": "Скасовано.",
+    "object_billing": "Платіжні реквізити",
+    "object_billing_name": "Платник",
+    "object_billing_hint": "Якщо заповнено, рахунки за цей об'єкт виставляються на цього платника в особі клієнта. Порожня адреса = адреса об'єкта.",
+    "invoice_pdf_represented_by": "в особі",
+    "invoice_subject_bills_to": "Покупець: {name} · в особі {client}",
+    "object_billing_name_required": "Вкажіть платника, якщо вводите інші платіжні реквізити."
 }

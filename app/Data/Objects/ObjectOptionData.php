@@ -17,9 +17,10 @@ final class ObjectOptionData extends Data
         public readonly string $client_id,
         public readonly ?string $client_name,
         public readonly bool $is_active,
+        public readonly ?string $billing_name,
     ) {}
 
-    public static function fromModel(CleaningObject $object): self
+    public static function fromModel(CleaningObject $object, bool $includeBilling): self
     {
         return new self(
             id: $object->id,
@@ -27,6 +28,7 @@ final class ObjectOptionData extends Data
             client_id: $object->client_id,
             client_name: $object->client?->name,
             is_active: (bool) $object->is_active,
+            billing_name: $includeBilling ? $object->billing_name : null,
         );
     }
 }

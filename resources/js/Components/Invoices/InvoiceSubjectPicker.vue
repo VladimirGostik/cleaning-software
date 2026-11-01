@@ -42,6 +42,14 @@ const objectOptions = computed<SelectOption[]>(() => {
         .map((o) => ({ value: o.id, label: o.name }));
 });
 
+const billsTo = computed<string | null>(() => {
+    if (!form || props.mode !== 'object') return null;
+    const objectId = (form as Record<string, unknown>).cleaning_object_id as string | null;
+    const object = props.objects.find((o) => o.id === objectId);
+    if (!object?.billing_name) return null;
+    return t('invoice_subject_bills_to', { name: object.billing_name, client: object.client_name ?? '' });
+});
+
 function clearCustomerFields(): void {
     if (!form) return;
     const f = form as Record<string, unknown>;
@@ -112,6 +120,8 @@ if (form) {
             :disabled="!selectedClientId"
             required
         />
+
+        <p v-if="billsTo" class="text-sm text-base-content/70">{{ billsTo }}</p>
 
         <div v-if="props.mode === 'standalone'" class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextInput field="customer_name" :label="t('invoice_customer_name')" required />

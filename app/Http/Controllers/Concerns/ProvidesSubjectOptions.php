@@ -9,6 +9,7 @@ use App\Data\Objects\ObjectOptionData;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Client/object dropdown option builders shared by controllers that offer a
@@ -29,6 +30,8 @@ trait ProvidesSubjectOptions
     /** @return array<int, ObjectOptionData> */
     private function objectOptions(?string $keepObjectId = null): array
     {
+        $includeBilling = Gate::allows('viewBilling', CleaningObject::class);
+
         return CleaningObject::query()
             ->with('client:id,name')
             ->where(function (Builder $query) use ($keepObjectId): void {
@@ -40,7 +43,7 @@ trait ProvidesSubjectOptions
             })
             ->orderBy('name')
             ->get()
-            ->map(fn (CleaningObject $object) => ObjectOptionData::fromModel($object))
+            ->map(fn (CleaningObject $object) => ObjectOptionData::fromModel($object, $includeBilling))
             ->all();
     }
 }

@@ -314,6 +314,7 @@ final readonly class InvoiceService
                 'footer_text' => $invoice->footer_text,
                 'customer_name' => $invoice->customer_name,
                 'customer_representative' => $invoice->customer_representative,
+                'customer_represented_by' => $invoice->customer_represented_by,
                 'customer_ico' => $invoice->customer_ico,
                 'customer_peppol_participant_id' => $invoice->customer_peppol_participant_id,
                 'supplier_peppol_participant_id' => $invoice->supplier_peppol_participant_id,
@@ -403,6 +404,7 @@ final readonly class InvoiceService
                 'footer_text' => $invoice->footer_text,
                 'customer_name' => $invoice->customer_name,
                 'customer_representative' => $invoice->customer_representative,
+                'customer_represented_by' => $invoice->customer_represented_by,
                 'customer_ico' => $invoice->customer_ico,
                 'customer_peppol_participant_id' => $invoice->customer_peppol_participant_id,
                 'supplier_peppol_participant_id' => $invoice->supplier_peppol_participant_id,
@@ -548,9 +550,6 @@ final readonly class InvoiceService
         ?Client $client,
         ?CleaningObject $object,
     ): array {
-        $customerName = $client->name ?? ($data->customer_name ?? '');
-        $customerCountry = $client !== null ? $client->country : ($data->customer_country ?? 'SK');
-
         return [
             'client_id' => $data->client_id,
             'cleaning_object_id' => $data->cleaning_object_id,
@@ -571,18 +570,8 @@ final readonly class InvoiceService
             'rounding_mode' => $data->rounding_mode,
             'header_text' => $data->header_text,
             'footer_text' => $data->footer_text,
-            'customer_name' => $customerName,
-            'customer_representative' => $data->customer_representative,
-            'customer_ico' => $client->ico ?? $data->customer_ico,
-            'customer_peppol_participant_id' => $client?->peppol_participant_id,
+            ...$this->customerAttributes($data, $client, $object),
             'supplier_peppol_participant_id' => $tenant->peppol_participant_id,
-            'customer_dic' => $client->dic ?? $data->customer_dic,
-            'customer_vat_number' => $client->vat_number ?? $data->customer_vat_number,
-            'customer_street' => $client->street ?? $data->customer_street,
-            'customer_city' => $client->city ?? $data->customer_city,
-            'customer_postal_code' => $client->postal_code ?? $data->customer_postal_code,
-            'customer_country' => $customerCountry,
-            'customer_email' => $data->customer_email,
             'object_name' => $object?->name,
             'object_street' => $object?->street,
             'object_city' => $object?->city,
@@ -601,6 +590,60 @@ final readonly class InvoiceService
             'supplier_contact_phone' => $tenant->contact_phone,
             'supplier_registration_info' => $tenant->registration_info,
             'note' => $data->note,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function customerAttributes(InvoiceUpsertData $data, ?Client $client, ?CleaningObject $object): array
+    {
+        $buyer = [
+            'customer_representative' => $data->customer_representative,
+            'customer_email' => $data->customer_email,
+        ];
+
+        if ($object?->hasBillingIdentity()) {
+            $ownAddress = $object->billing_street !== null || $object->billing_city !== null || $object->billing_postal_code !== null;
+
+            return $buyer + [
+                'customer_name' => $object->billing_name,
+                'customer_ico' => $object->billing_ico,
+                'customer_peppol_participant_id' => $object->billing_peppol_participant_id,
+                'customer_dic' => $object->billing_dic,
+                'customer_vat_number' => $object->billing_vat_number,
+                'customer_street' => $ownAddress ? $object->billing_street : $object->street,
+                'customer_city' => $ownAddress ? $object->billing_city : $object->city,
+                'customer_postal_code' => $ownAddress ? $object->billing_postal_code : $object->postal_code,
+                'customer_country' => $object->country,
+                'customer_represented_by' => $client?->name,
+            ];
+        }
+
+        if ($client !== null) {
+            return $buyer + [
+                'customer_name' => $client->name,
+                'customer_ico' => $client->ico,
+                'customer_peppol_participant_id' => $client->peppol_participant_id,
+                'customer_dic' => $client->dic,
+                'customer_vat_number' => $client->vat_number,
+                'customer_street' => $client->street,
+                'customer_city' => $client->city,
+                'customer_postal_code' => $client->postal_code,
+                'customer_country' => $client->country,
+                'customer_represented_by' => null,
+            ];
+        }
+
+        return $buyer + [
+            'customer_name' => $data->customer_name ?? '',
+            'customer_ico' => $data->customer_ico,
+            'customer_peppol_participant_id' => null,
+            'customer_dic' => $data->customer_dic,
+            'customer_vat_number' => $data->customer_vat_number,
+            'customer_street' => $data->customer_street,
+            'customer_city' => $data->customer_city,
+            'customer_postal_code' => $data->customer_postal_code,
+            'customer_country' => $data->customer_country ?? 'SK',
+            'customer_represented_by' => null,
         ];
     }
 }

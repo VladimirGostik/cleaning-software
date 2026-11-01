@@ -38,6 +38,9 @@ const { t } = useI18n();
         <div>
             <h3 class="text-sm font-semibold text-base-content/70">{{ t('invoice_pdf_customer') }}</h3>
             <p class="font-medium">{{ props.invoice.customer_name }}</p>
+            <p v-if="props.invoice.customer_represented_by" class="text-sm text-base-content/60">
+                {{ t('invoice_pdf_represented_by') }}: {{ props.invoice.customer_represented_by }}
+            </p>
             <p v-if="props.invoice.customer_representative">{{ props.invoice.customer_representative }}</p>
             <p v-if="props.invoice.customer_street">{{ props.invoice.customer_street }}</p>
             <p v-if="props.invoice.customer_postal_code || props.invoice.customer_city">

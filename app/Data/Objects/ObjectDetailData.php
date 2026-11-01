@@ -40,9 +40,10 @@ final class ObjectDetailData extends Data
          */
         #[DataCollectionOf(ObjectContactData::class)]
         public readonly ?DataCollection $contacts,
+        public readonly ?ObjectBillingData $billing,
     ) {}
 
-    public static function fromModel(CleaningObject $object, bool $includeContacts): self
+    public static function fromModel(CleaningObject $object, bool $includeContacts, bool $includeBilling): self
     {
         return new self(
             id: $object->id,
@@ -63,6 +64,7 @@ final class ObjectDetailData extends Data
             is_active: (bool) $object->is_active,
             created_at: $object->created_at->toIso8601String(),
             contacts: $includeContacts ? ObjectContactData::collect($object->contacts, DataCollection::class) : null,
+            billing: $includeBilling ? ObjectBillingData::fromModel($object) : null,
         );
     }
 }

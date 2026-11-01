@@ -971,6 +971,7 @@ readonly header_text: string | null,
 readonly footer_text: string | null,
 readonly customer_name: string,
 readonly customer_representative: string | null,
+readonly customer_represented_by: string | null,
 readonly customer_ico: string | null,
 readonly customer_dic: string | null,
 readonly customer_vat_number: string | null,
@@ -1197,6 +1198,16 @@ readonly preferences: App.Data.Notifications.NotificationPreferenceUpdateItemDat
 };
 }
 namespace Objects {
+export type ObjectBillingData = {
+readonly name: string,
+readonly ico: string | null,
+readonly dic: string | null,
+readonly vat_number: string | null,
+readonly peppol_participant_id: string | null,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+};
 export type ObjectContactData = {
 readonly id: string | null,
 readonly name: string,
@@ -1224,6 +1235,7 @@ readonly floor: number | null,
 readonly is_active: boolean,
 readonly created_at: string,
 readonly contacts: App.Data.Objects.ObjectContactData[] | null,
+readonly billing: App.Data.Objects.ObjectBillingData | null,
 };
 export type ObjectListItemData = {
 readonly id: string,
@@ -1245,6 +1257,7 @@ readonly name: string,
 readonly client_id: string,
 readonly client_name: string | null,
 readonly is_active: boolean,
+readonly billing_name: string | null,
 };
 export type ObjectUpsertData = {
 readonly client_id: string,
@@ -1262,6 +1275,14 @@ readonly area_sqm: number | null,
 readonly floor: number | null,
 readonly is_active: boolean,
 readonly contacts: App.Data.Objects.ObjectContactData[],
+readonly billing_name: string | null,
+readonly billing_ico: string | null,
+readonly billing_dic: string | null,
+readonly billing_vat_number: string | null,
+readonly billing_peppol_participant_id: string | null,
+readonly billing_street: string | null,
+readonly billing_city: string | null,
+readonly billing_postal_code: string | null,
 };
 }
 namespace Profile {

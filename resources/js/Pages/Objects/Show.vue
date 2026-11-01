@@ -9,6 +9,7 @@ import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
 import ObjectDetailCard from '@/Components/Objects/ObjectDetailCard.vue';
+import ObjectBillingCard from '@/Components/Objects/ObjectBillingCard.vue';
 import ObjectAccessCard from '@/Components/Objects/ObjectAccessCard.vue';
 import ObjectWorkBreakdownsCard from '@/Components/Objects/ObjectWorkBreakdownsCard.vue';
 import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
@@ -123,6 +124,8 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
         <div class="space-y-6">
             <ObjectDetailCard :object="object" />
+
+            <ObjectBillingCard v-if="object.billing" :billing="object.billing" />
 
             <ContactsList
                 v-if="object.contacts !== null"

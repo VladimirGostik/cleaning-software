@@ -53,6 +53,7 @@ final class ObjectController extends Controller
         $actor = $request->user();
 
         $includeContacts = $actor->can('viewContacts', CleaningObject::class);
+        $includeBilling = $actor->can('viewBilling', CleaningObject::class);
 
         $object->load(array_filter([
             'client',
@@ -62,7 +63,7 @@ final class ObjectController extends Controller
         ]));
 
         return Inertia::render('Objects/Show', [
-            'object' => ObjectDetailData::fromModel($object, $includeContacts),
+            'object' => ObjectDetailData::fromModel($object, $includeContacts, $includeBilling),
             'clients' => $actor->can('update', $object) ? $this->clientOptions($actor) : [],
             'workBreakdowns' => $object->workBreakdowns
                 ->map(fn (WorkBreakdown $breakdown) => WorkBreakdownDetailData::fromModel($breakdown))

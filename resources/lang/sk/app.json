@@ -1907,5 +1907,11 @@
     "assistant_error_session": "Platnosť relácie vypršala. Načítajte stránku znova a prihláste sa.",
     "assistant_error_failed": "Správu sa nepodarilo odoslať. Skúste to znova.",
     "assistant_pending_done": "Hotovo.",
-    "assistant_pending_cancelled": "Zrušené."
+    "assistant_pending_cancelled": "Zrušené.",
+    "object_billing": "Fakturačné údaje",
+    "object_billing_name": "Fakturovaný subjekt",
+    "object_billing_hint": "Ak je vyplnený, faktúry za tento objekt sa vystavujú na tento subjekt v zastúpení klienta. Prázdna adresa = adresa objektu.",
+    "invoice_pdf_represented_by": "v zastúpení",
+    "invoice_subject_bills_to": "Odberateľ: {name} · v zastúpení {client}",
+    "object_billing_name_required": "Vyplňte fakturovaný subjekt, keď zadávate ďalšie fakturačné údaje."
 }

@@ -74,6 +74,7 @@
         <td>
             <div class="kg-label">{{ __('app.invoice_pdf_customer') }}</div>
             <div class="kg-name">{{ $invoice->customer_name }}</div>
+            @if($invoice->customer_represented_by)<div class="muted">{{ __('app.invoice_pdf_represented_by') }}: {{ $invoice->customer_represented_by }}</div>@endif
             @if($invoice->customer_street){{ $invoice->customer_street }}<br>@endif
             @if($invoice->customer_postal_code || $invoice->customer_city){{ implode(' ', array_filter([$invoice->customer_postal_code, $invoice->customer_city])) }}<br>@endif
             @if($invoice->customer_country){{ $invoice->customer_country }}<br>@endif

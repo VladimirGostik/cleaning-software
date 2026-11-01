@@ -13,7 +13,7 @@ import FormActions from '@/Components/Forms/FormActions.vue';
 import ContactsListField from '@/Components/Contacts/ContactsListField.vue';
 
 import { OBJECT_TYPES, objectTypeKey } from '@/utils/enums';
-import { objectToUpsertPayload, type ObjectFormData } from './objectPayload';
+import { emptyBillingFormData, objectToUpsertPayload, type ObjectFormData } from './objectPayload';
 import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
 import { useAuthorization } from '@/Composables/useAuthorization';
 
@@ -32,6 +32,7 @@ const { allows } = useAuthorization();
 
 const isEdit = computed(() => !!props.object);
 const canSeeContacts = computed(() => allows('view all objects'));
+const canSeeBilling = canSeeContacts;
 
 const form = useForm<ObjectFormData>(
     isEdit.value ? 'put' : 'post',
@@ -54,6 +55,7 @@ const form = useForm<ObjectFormData>(
               floor: null,
               is_active: true,
               contacts: [],
+              ...emptyBillingFormData(),
           },
 );
 
@@ -134,6 +136,31 @@ function submit(): void {
                 <div v-if="canSeeContacts" class="space-y-4">
                     <h2 class="text-sm font-semibold text-base-content/70">{{ t('object_contacts') }}</h2>
                     <ContactsListField field="contacts" />
+                </div>
+
+                <div v-if="canSeeBilling" class="space-y-4">
+                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('object_billing') }}</h2>
+                    <p class="text-xs text-base-content/60">{{ t('object_billing_hint') }}</p>
+
+                    <TextInput field="billing_name" :label="t('object_billing_name')" />
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <TextInput field="billing_ico" :label="t('client_ico')" />
+                        <TextInput field="billing_dic" :label="t('client_dic')" />
+                        <TextInput field="billing_vat_number" :label="t('client_vat_number')" />
+                    </div>
+
+                    <div>
+                        <TextInput field="billing_peppol_participant_id" :label="t('peppol_participant_id')" />
+                        <p class="mt-1 text-xs text-base-content/60">{{ t('peppol_participant_id_hint') }}</p>
+                    </div>
+
+                    <TextInput field="billing_street" :label="t('street')" />
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <TextInput field="billing_city" :label="t('city')" />
+                        <TextInput field="billing_postal_code" :label="t('postal_code')" />
+                    </div>
                 </div>
 
                 <TextareaInput

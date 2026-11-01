@@ -46,6 +46,17 @@ final class CleaningObjectFactory extends Factory
         return $this->state(fn () => ['is_active' => false]);
     }
 
+    /** @param array<string, mixed> $overrides */
+    public function withBillingIdentity(array $overrides = []): static
+    {
+        return $this->state(fn () => [
+            'billing_name' => fake()->company(),
+            'billing_ico' => fake()->numerify('########'),
+            'billing_dic' => fake()->numerify('##########'),
+            ...$overrides,
+        ]);
+    }
+
     public function withContacts(int $count = 1): static
     {
         return $this->afterCreating(function (CleaningObject $object) use ($count): void {

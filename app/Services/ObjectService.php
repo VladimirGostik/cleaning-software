@@ -57,7 +57,7 @@ final readonly class ObjectService
     {
         return $this->db->transaction(function () use ($data, $actor): CleaningObject {
             /** @var array<string, mixed> $attributes */
-            $attributes = $data->except('contacts')->toArray();
+            $attributes = $this->attributes($data, $actor);
             /** @var CleaningObject $object */
             $object = CleaningObject::create($attributes);
 
@@ -73,7 +73,7 @@ final readonly class ObjectService
     {
         return $this->db->transaction(function () use ($object, $data, $actor): CleaningObject {
             /** @var array<string, mixed> $attributes */
-            $attributes = $data->except('contacts')->toArray();
+            $attributes = $this->attributes($data, $actor);
             $object->update($attributes);
 
             // Gated actor's `contacts` payload is ignored — existing rows are left intact,
@@ -113,7 +113,18 @@ final readonly class ObjectService
             ->with('client:id,name')
             ->orderBy('name')
             ->get()
-            ->map(fn (CleaningObject $object) => ObjectOptionData::fromModel($object))
+            ->map(fn (CleaningObject $object) => ObjectOptionData::fromModel($object, false))
             ->all();
+    }
+
+    /** @return array<string, mixed> */
+    private function attributes(ObjectUpsertData $data, User $actor): array
+    {
+        $gated = $actor->can('viewBilling', CleaningObject::class) ? [] : ObjectUpsertData::BILLING_FIELDS;
+
+        /** @var array<string, mixed> $attributes */
+        $attributes = $data->except('contacts', ...$gated)->toArray();
+
+        return $attributes;
     }
 }

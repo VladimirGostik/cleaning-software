@@ -39,7 +39,7 @@ final class RecurringInvoiceListItemData extends Data
             frequency: $ri->frequency,
             client_id: $ri->client_id,
             customer_name: $ri->customer_name,
-            customer_display_name: $ri->client->name ?? $ri->cleaningObject?->client->name ?? $ri->customer_name,
+            customer_display_name: $ri->cleaningObject->billing_name ?? $ri->client->name ?? $ri->cleaningObject?->client->name ?? $ri->customer_name,
             day_of_month: $ri->day_of_month,
             next_run_at: $ri->next_run_at?->toDateString(),
             occurrences_generated: $ri->occurrences_generated,

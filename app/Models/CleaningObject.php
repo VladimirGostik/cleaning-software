@@ -41,6 +41,14 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $area_sqm
  * @property int|null $floor
  * @property bool $is_active
+ * @property string|null $billing_name
+ * @property string|null $billing_ico
+ * @property string|null $billing_dic
+ * @property string|null $billing_vat_number
+ * @property string|null $billing_peppol_participant_id
+ * @property string|null $billing_street
+ * @property string|null $billing_city
+ * @property string|null $billing_postal_code
  * @property string|null $gps_lat
  * @property string|null $gps_lng
  * @property Carbon $created_at
@@ -63,6 +71,8 @@ use Spatie\Activitylog\Support\LogOptions;
     'client_id', 'type', 'name', 'street', 'city', 'postal_code', 'country',
     'access_code', 'key_box_code', 'key_count', 'special_instructions',
     'area_sqm', 'floor', 'is_active', 'gps_lat', 'gps_lng',
+    'billing_name', 'billing_ico', 'billing_dic', 'billing_vat_number',
+    'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code',
 ])]
 final class CleaningObject extends Model
 {
@@ -92,6 +102,8 @@ final class CleaningObject extends Model
                 'client_id', 'type', 'name', 'street', 'city', 'postal_code',
                 'country', 'access_code', 'key_box_code', 'key_count',
                 'special_instructions', 'area_sqm', 'floor', 'is_active',
+                'billing_name', 'billing_ico', 'billing_dic', 'billing_vat_number',
+                'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
@@ -107,6 +119,11 @@ final class CleaningObject extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class)->withTrashed();
+    }
+
+    public function hasBillingIdentity(): bool
+    {
+        return filled($this->billing_name);
     }
 
     /** @return HasMany<WorkBreakdown, $this> */
