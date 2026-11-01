@@ -65,7 +65,7 @@ abstract class CleanMasterTool extends Tool
 
     protected function assertCompanyAllowed(User $user, string $companyId): void
     {
-        Gate::forUser($user)->authorize('actIn', [Tenant::class, $companyId]);
+        Gate::forUser($user)->authorize($this->channel() === ActionChannelEnum::Assistant ? 'chatIn' : 'actIn', [Tenant::class, $companyId]);
     }
 
     final public function invoke(Request $request): Response

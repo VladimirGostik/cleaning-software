@@ -10,6 +10,7 @@ use App\Enums\SupportedLanguage;
 use App\Enums\TenantColorEnum;
 use App\Models\Tenant;
 use App\Navigation\NavigationRegistry;
+use App\Services\Ai\AiClientOptions;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -70,6 +71,7 @@ final class HandleInertiaRequests extends Middleware
                     ->toArray();
             },
             'canCreateTenant' => fn (): bool => $request->user()?->can('create', Tenant::class) ?? false,
+            'assistantAvailable' => fn (): bool => app(AiClientOptions::class)->isConfigured(),
             'locale' => fn () => app()->getLocale(),
             'languages' => fn () => SupportedLanguage::getForLanguageSwitcher(),
             'navigation' => fn () => $this->navigation->forUser($request->user()),

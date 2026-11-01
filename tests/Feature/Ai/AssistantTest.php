@@ -11,6 +11,7 @@ use App\Data\Ai\AssistantRequestData;
 use App\Enums\ActionChannelEnum;
 use App\Enums\ConfirmationChannelEnum;
 use App\Enums\InvoiceStatusEnum;
+use App\Mcp\Tools\ListTasksTool;
 use App\Models\Invoice;
 use App\Models\PendingAction;
 use App\Models\Role;
@@ -29,6 +30,8 @@ use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Laravel\Ai\Responses\Data\ToolCall;
+use Laravel\Mcp\Request as McpRequest;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\Fakes\FakeAssistant;
 use Tests\Support\CreatesMcpFixtures;
 use Tests\TestCase;
@@ -183,6 +186,114 @@ final class AssistantTest extends TestCase
 
         $this->admin->update(['is_active' => false]);
         $this->send()->assertForbidden();
+    }
+
+    public function test_a_member_with_mobile_access_but_without_use_assistant_is_refused(): void
+    {
+        $this->app->instance(ChatsWithTools::class, $fake = new FakeAssistant);
+        $cleaner = $this->member($this->alpha, 'Interná upratovačka');
+        $this->grant($cleaner, $this->alpha, 'access mobile app');
+
+        $this->send(user: $cleaner)
+            ->assertForbidden()
+            ->assertJsonPath('message', __('app.assistant_forbidden'));
+
+        $this->assertSame([], $fake->requests);
+    }
+
+    private function adminInAlphaWithoutAssistantInBeta(): User
+    {
+        $user = $this->member($this->alpha, 'Admin');
+        $this->member($this->beta, 'Vedúca', $user);
+        $this->consoleContext();
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->beta->id);
+        Role::inTenant($this->beta->id)->where('name', 'Vedúca')->firstOrFail()->revokePermissionTo('use assistant');
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+
+        return $user;
+    }
+
+    public function test_the_assistant_channel_sees_only_companies_where_use_assistant_is_held(): void
+    {
+        $user = $this->adminInAlphaWithoutAssistantInBeta();
+        $this->apiAs($user, $this->alpha);
+
+        $this->realProvider([
+            $this->toolTurn([
+                ['name' => 'list_companies', 'input' => []],
+                ['name' => 'list_tasks', 'input' => ['company_id' => $this->beta->id]],
+                ['name' => 'company_overview', 'input' => ['company_id' => $this->beta->id]],
+                ['name' => 'company_overview', 'input' => []],
+            ]),
+            $this->textTurn('ok'),
+        ]);
+
+        $this->withHeaders(['X-Tenant-Id' => $this->alpha->id])
+            ->postJson('/api/assistant/messages', ['company_id' => $this->alpha->id, 'messages' => $this->messages()])
+            ->assertOk();
+
+        [$requestOne, $requestTwo] = $this->sentRequests();
+        $this->assertStringNotContainsString($this->beta->id, (string) json_encode($requestOne->data()['system'] ?? ''));
+        $this->assertStringContainsString($this->alpha->id, (string) json_encode($requestOne->data()['system'] ?? ''));
+
+        [$companies, $list, $overviewBeta, $overviewAll] = $this->toolResults($requestTwo);
+        $this->assertStringContainsString('Alpha', $companies);
+        $this->assertStringNotContainsString('Beta', $companies);
+        $this->assertStringContainsString('Error:', $list);
+        $this->assertStringContainsString('Error:', $overviewBeta);
+        $this->assertStringNotContainsString($this->beta->id, $overviewAll);
+    }
+
+    public function test_a_chat_company_without_use_assistant_is_refused_even_when_another_company_has_it(): void
+    {
+        $user = $this->adminInAlphaWithoutAssistantInBeta();
+        $this->app->instance(ChatsWithTools::class, $fake = new FakeAssistant);
+
+        $this->send(['company_id' => $this->beta->id], $user)
+            ->assertForbidden()
+            ->assertJsonPath('message', __('app.assistant_forbidden'));
+        $this->assertSame([], $fake->requests);
+    }
+
+    public function test_use_assistant_held_only_in_a_company_without_mobile_access_is_mobile_forbidden(): void
+    {
+        $this->app->instance(ChatsWithTools::class, $fake = new FakeAssistant);
+        $user = $this->member($this->alpha, 'Interná upratovačka');
+        $this->member($this->beta, 'Interná upratovačka', $user);
+        $this->apiAs($user, $this->alpha);
+        $this->grant($user, $this->beta, 'use assistant');
+        $user->revokePermissionTo('access mobile app');
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+
+        $this->withHeaders(['X-Tenant-Id' => $this->alpha->id])
+            ->postJson('/api/assistant/messages', ['company_id' => $this->beta->id, 'messages' => $this->messages()])
+            ->assertForbidden()
+            ->assertJsonPath('message', __('app.mobile_forbidden'));
+        $this->assertSame([], $fake->requests);
+    }
+
+    public function test_mcp_tokens_still_see_and_use_every_company(): void
+    {
+        $user = $this->adminInAlphaWithoutAssistantInBeta();
+        $token = $this->mcpToken($user);
+
+        $this->assertEqualsCanonicalizing(
+            [$this->alpha->id, $this->beta->id],
+            $this->callTool($token, 'list_companies')->column('companies', 'company_id'),
+        );
+        $this->assertFalse($this->callTool($token, 'list_tasks', ['company_id' => $this->beta->id])->isError);
+    }
+
+    public function test_task_run_tools_are_not_gated_by_use_assistant(): void
+    {
+        $user = $this->adminInAlphaWithoutAssistantInBeta();
+        $this->consoleContext();
+        $this->actingAs($user);
+
+        $response = app(ListTasksTool::class)->asChannel(ActionChannelEnum::TaskRun)
+            ->invoke(new McpRequest(['company_id' => $this->beta->id]));
+
+        $this->assertFalse($response->isError());
     }
 
     public function test_provider_failures_throttling_and_token_kind(): void

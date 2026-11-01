@@ -19,6 +19,15 @@ final class TenantPolicy
         return $this->snapshot->allowsCompany($user, $companyId) ? Response::allow() : Response::deny(__('app.mobile_forbidden'));
     }
 
+    public function chatIn(User $user, string $companyId): Response
+    {
+        if (! $this->snapshot->allowsCompany($user, $companyId)) {
+            return Response::deny(__('app.mobile_forbidden'));
+        }
+
+        return $this->snapshot->allowsAssistantIn($user, $companyId) ? Response::allow() : Response::deny(__('app.assistant_forbidden'));
+    }
+
     /**
      * A brand-new tenant has no roles yet, so a permission check would be circular;
      * firm creation is gated by the platform-admin flag instead.

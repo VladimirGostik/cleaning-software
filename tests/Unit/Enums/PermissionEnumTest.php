@@ -66,4 +66,11 @@ final class PermissionEnumTest extends TestCase
         $this->assertSame('manage employee_access', PermissionEnum::ManageEmployeeAccess->value);
         $this->assertSame('manageEmployeeAccess', PermissionEnum::ManageEmployeeAccess->sharedKey());
     }
+
+    public function test_use_assistant_is_grouped_and_exposed_under_its_shared_key(): void
+    {
+        $this->assertSame('use assistant', PermissionEnum::UseAssistant->value);
+        $this->assertSame('ai', PermissionEnum::UseAssistant->group());
+        $this->assertSame('useAssistant', PermissionEnum::UseAssistant->sharedKey());
+    }
 }
