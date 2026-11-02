@@ -25,6 +25,7 @@ use App\Models\Expense;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Ai\Guard\PromptGuard;
+use App\Services\Expenses\CamtStatement;
 use App\Services\Expenses\CamtStatementParser;
 use App\Services\Expenses\StatementRow;
 use App\Services\Tenancy\TenantPermissionSnapshot;
@@ -52,7 +53,11 @@ final readonly class ExpenseImportService
 
     public function preview(UploadedFile $file, User $actor): ExpenseImportPreviewData
     {
-        $statement = $this->parser->parse($file->getContent());
+        return $this->inspect($this->parser->parse($file->getContent()), $actor, true);
+    }
+
+    public function inspect(CamtStatement $statement, User $actor, bool $categorize): ExpenseImportPreviewData
+    {
         $check = $this->accountCheck($statement->iban, $actor);
 
         if ($check->status !== ExpenseImportAccountStatusEnum::Matched) {
@@ -86,7 +91,7 @@ final readonly class ExpenseImportService
 
         $matches = $this->possibleMatches($unmatched, $keys);
         $fresh = array_values(array_filter($unmatched, static fn (StatementRow $row): bool => ! isset($matches[$row->reference])));
-        $proposals = $this->proposals($fresh);
+        $proposals = $categorize ? $this->proposals($fresh) : [];
 
         $data = [];
 

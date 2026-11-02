@@ -63,6 +63,24 @@ abstract class CleanMasterTool extends Tool
         return $text;
     }
 
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    protected function scannedArguments(array $arguments): array
+    {
+        return $arguments;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    protected function auditedArguments(array $arguments): array
+    {
+        return $arguments;
+    }
+
     protected function assertCompanyAllowed(User $user, string $companyId): void
     {
         Gate::forUser($user)->authorize($this->channel() === ActionChannelEnum::Assistant ? 'chatIn' : 'actIn', [Tenant::class, $companyId]);
@@ -140,7 +158,7 @@ abstract class CleanMasterTool extends Tool
             return false;
         }
 
-        $verdict = $this->promptGuard->scanValues($request->all());
+        $verdict = $this->promptGuard->scanValues($this->scannedArguments($request->all()));
 
         if ($verdict->flagged) {
             $this->promptGuard->restrictMcp($user);
@@ -195,6 +213,6 @@ abstract class CleanMasterTool extends Tool
             return;
         }
 
-        $this->audit->record($user, $this->name(), $this->auditTenant($user, $companyId), $this->channel(), $request->all(), $outcome, [...$this->auditExtra, ...$extra]);
+        $this->audit->record($user, $this->name(), $this->auditTenant($user, $companyId), $this->channel(), $this->auditedArguments($request->all()), $outcome, [...$this->auditExtra, ...$extra]);
     }
 }

@@ -88,7 +88,7 @@ final class AssistantAgentToolsTest extends TestCase
 
     public function test_the_assistant_toolset_and_the_server_tools_are_unchanged_by_task_runs(): void
     {
-        $this->assertCount(30, CleanMasterServer::TOOLS);
+        $this->assertCount(32, CleanMasterServer::TOOLS);
         $this->assertNotContains('report_task_outcome', $this->serverToolNames());
         $this->assertContains('complete_task', array_map(ToolNameResolver::resolve(...), (new AssistantToolbox)->make(new AssistantTurn)));
     }

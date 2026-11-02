@@ -13,7 +13,7 @@ final readonly class PromptInjectionDetector
 
     private const int MAX_ENCODED_LENGTH = 4000;
 
-    private const string SENSITIVE_TOOLS = 'prepare_action|confirm_action|delete_global_task|update_document_template|issue_invoice|send_invoice|send_quote|sign_contract|cancel_invoice|delete_invoice_draft|delete_quote|delete_task|delete_expense|create_invoice_draft|update_invoice_draft|update_quote_draft|assign_task|create_expense';
+    private const string SENSITIVE_TOOLS = 'prepare_action|confirm_action|delete_global_task|update_document_template|issue_invoice|send_invoice|send_quote|sign_contract|cancel_invoice|delete_invoice_draft|delete_quote|delete_task|delete_expense|create_invoice_draft|update_invoice_draft|update_quote_draft|assign_task|create_expense|import_bank_expenses';
 
     /** @var array<string, array{0: int, 1: list<string>}> */
     private const array RULES = [

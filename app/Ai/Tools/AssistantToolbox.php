@@ -11,7 +11,9 @@ use App\Mcp\Tools\CompanyOverviewTool;
 use App\Mcp\Tools\CompleteTaskTool;
 use App\Mcp\Tools\ConfirmActionTool;
 use App\Mcp\Tools\DeleteGlobalTaskTool;
+use App\Mcp\Tools\ImportBankExpensesTool;
 use App\Mcp\Tools\ListCompaniesTool;
+use App\Mcp\Tools\PreviewBankExpensesTool;
 use App\Mcp\Tools\UpdateDocumentTemplateTool;
 use App\Mcp\Tools\UpdateTaskTool;
 use App\Services\Ai\AssistantTurn;
@@ -25,6 +27,8 @@ final class AssistantToolbox
         ConfirmActionTool::class,
         DeleteGlobalTaskTool::class,
         UpdateDocumentTemplateTool::class,
+        PreviewBankExpensesTool::class,
+        ImportBankExpensesTool::class,
     ];
 
     /** A run is pinned to one company and cannot change existing tasks, including the one it works on. */

@@ -871,6 +871,45 @@ readonly amount: string,
 readonly counterparty: string | null,
 readonly note: string | null,
 };
+export type ExpenseStatementImportResultData = {
+readonly created: number,
+readonly already_imported: number,
+readonly excluded: number,
+readonly text_withheld: string[],
+readonly security_notice: string | null,
+};
+export type ExpenseStatementPreviewData = {
+readonly account_check: App.Data.Expenses.ExpenseImportAccountCheckData,
+readonly counts: Record<string, number>,
+readonly amount_total: string,
+readonly rows: App.Data.Expenses.ExpenseStatementPreviewRowData[],
+readonly security_notice: string | null,
+};
+export type ExpenseStatementPreviewRowData = {
+readonly reference: string,
+readonly date: string,
+readonly amount: string,
+readonly state: App.Enums.ExpenseImportRowStateEnum,
+readonly existing_expense_id: string | null,
+readonly include: boolean,
+readonly text_withheld: boolean,
+readonly existing_differs: boolean,
+};
+export type ExpenseStatementRowData = {
+readonly reference: string,
+readonly date: string,
+readonly amount: string,
+readonly direction: string,
+readonly currency: string,
+readonly counterparty: string | null,
+readonly note: string | null,
+};
+export type ExpenseStatementRowsData = {
+readonly account_iban: string,
+readonly rows: App.Data.Expenses.ExpenseStatementRowData[],
+readonly include_references: string[],
+readonly exclude_references: string[],
+};
 export type ExpenseUpsertData = {
 readonly date: string,
 readonly amount: string,
