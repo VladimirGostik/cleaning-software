@@ -255,6 +255,7 @@ Synced with `laravel-13-conventions/references/review-checks.md` §"Distilled ho
 9. Eager-load accessed relations (`with` / `withCount`); no `Model::all()` in request paths.
 10. Events/jobs dispatched inside a transaction: `ShouldDispatchAfterCommit` / `->afterCommit()`.
 11. No comments that restate code — no prose docblocks, no `// Arrange` markers, no step narration; PHPDoc only for types PHP can't express (array shapes, generics). 1-line WHY only.
+12. Copy a model with `replicate()`; a prefixed snapshot (`customer_*`) is filled by one builder, never repeated field lists. Same-shape child under several parents = one polymorphic table; legal snapshots and diverging children keep a table per parent with shared code.
 
 **Per-project enforcement:**
 
