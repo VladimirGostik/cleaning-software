@@ -1,10 +1,12 @@
 <!-- e2e-flow -->
+
 # E2E flow: invoicing batch (payments, bulk actions, mail texts, recurring auto-send, Pohoda export, EFA + Peppol)
 
 - surface: web
 - mode: changes (uncommitted working tree on `main`, source plan `.inogile/plans/invoicing-batch-payments-bulk-efa.md`)
 
 ## Project profile
+
 - type: skeleton-web (inogile vue-skeleton fork, custom port band)
 - base_url: http://localhost:8002 (compose `app` 8002->8000; Vite assets http://localhost:5175)
 - start: already running / reuse — `app`, `vite`, `postgres`, `redis`, `mailpit` are up. `queue` service is EXITED (`--max-time=3600`, no restart policy) -> runner MUST `docker compose up -d queue` before Scenario 8/4 and re-check `docker compose ps queue` if a mail does not arrive within 30 s.
@@ -18,15 +20,17 @@
 - projects: `desktop` only (admin back-office; DataTable selection + drawers are desktop flows). No mobile scenario in scope.
 
 ## Test data strategy (applies to all scenarios)
+
 - Run tag `RUN = E2E-<yyyyMMdd-HHmmss>`; every created customer/client name starts with `RUN`; every mail recipient is `e2e+<RUN>-<n>@example.test` (unique per run, Mailpit search by `to:`).
 - Invoices are created through the UI (true E2E) by a shared helper in `tests/e2e/support/invoices.ts`:
-  - `createDraftInvoice(page, { customer, email?, ico?, country = 'SK', city = 'Bratislava', street = 'Hlavná 1', postal = '81101', price, quantity = 1 })` -> `/invoices/create`, subject type radio "Bez klienta" (label of `invoice_subject_mode_standalone` — confirm live), fill "Názov zákazníka", "E-mail", "IČO", "Krajina", street/city/PSČ, one item ("Názov a popis položky" = `RUN upratovanie`, "Počet", "Jednotková cena"), submit (`invoice_add` label) -> lands on Show/Edit; return invoice id from URL.
-  - `issueInvoice(page, id)` -> Show -> button "Vystaviť" -> issue modal submit "Vystaviť" -> status badge "Vystavená"; read the assigned number (FA-YYYY-NNNN) from the page.
+    - `createDraftInvoice(page, { customer, email?, ico?, country = 'SK', city = 'Bratislava', street = 'Hlavná 1', postal = '81101', price, quantity = 1 })` -> `/invoices/create`, subject type radio "Bez klienta" (label of `invoice_subject_mode_standalone` — confirm live), fill "Názov zákazníka", "E-mail", "IČO", "Krajina", street/city/PSČ, one item ("Názov a popis položky" = `RUN upratovanie`, "Počet", "Jednotková cena"), submit (`invoice_add` label) -> lands on Show/Edit; return invoice id from URL.
+    - `issueInvoice(page, id)` -> Show -> button "Vystaviť" -> issue modal submit "Vystaviť" -> status badge "Vystavená"; read the assigned number (FA-YYYY-NNNN) from the page.
 - Index isolation: filter the list by the run tag via the search filter (`AllowedFilter::search` on `number`, `customer_name`) so pre-existing invoices (FA-2026-0001/0002) are never selected or mutated.
 - Test invoices stay in the dev DB after the run (issued invoices cannot be deleted by design). Leftover Drafts are deleted in `afterAll`. Settings changes (mail texts, tenant Peppol ID) are restored to empty in `afterAll`; created client + recurring template are deleted in `afterAll`.
 - Use `test.describe.serial` where scenarios share created invoices (bulk scenarios).
 
 ## Scenario 1: Record partial payment, settle with second payment, delete reverts, overpayment rejected
+
 - file: tests/e2e/invoice-payments.spec.ts
 - route: /invoices/{id} (Show)
 - project: desktop
@@ -51,6 +55,7 @@
 - test_data: amounts 150 (fail), 40, 60; note `RUN záloha`.
 
 ## Scenario 2: Credit-note refund
+
 - file: tests/e2e/invoice-payments.spec.ts
 - route: /invoices/{id} (Show of original, then of the credit note)
 - project: desktop
@@ -67,6 +72,7 @@
 - test_data: price 50.00.
 
 ## Scenario 3: Duplicate button on list row
+
 - file: tests/e2e/invoice-bulk.spec.ts (serial describe, first)
 - route: /invoices
 - project: desktop
@@ -80,6 +86,7 @@
 - test_data: the duplicate (Draft, has email) is reused as a draft in Scenario 4.
 
 ## Scenario 4: Bulk issue drafts with a skipped row + result modal
+
 - file: tests/e2e/invoice-bulk.spec.ts
 - route: /invoices
 - project: desktop
@@ -95,6 +102,7 @@
 - test_data: none extra.
 
 ## Scenario 5: Bulk send e-mail with skipped row -> Mailpit
+
 - file: tests/e2e/invoice-bulk.spec.ts
 - route: /invoices + Mailpit API
 - project: desktop
@@ -109,6 +117,7 @@
 - test_data: none extra.
 
 ## Scenario 6: Bulk mark paid with skipped row
+
 - file: tests/e2e/invoice-bulk.spec.ts
 - route: /invoices
 - project: desktop
@@ -122,6 +131,7 @@
 - test_data: none extra.
 
 ## Scenario 7: Bulk merged PDF download
+
 - file: tests/e2e/invoice-bulk.spec.ts
 - route: /invoices -> GET /invoices/bulk/pdf?ids[]=…
 - project: desktop
@@ -135,6 +145,7 @@
 - test_data: none.
 
 ## Scenario 8: Settings mail text card + custom subject/body in the sent mail
+
 - file: tests/e2e/invoice-mail-texts.spec.ts
 - route: /settings/invoicing, /invoices/{id}, Mailpit API
 - project: desktop
@@ -155,6 +166,7 @@
 - test_data: subject/body above.
 
 ## Scenario 9: Recurring invoice auto-send toggle
+
 - file: tests/e2e/recurring-auto-send.spec.ts
 - route: /recurring-invoices/create -> /recurring-invoices/{id}
 - project: desktop
@@ -173,6 +185,7 @@
 - test_data: as above.
 
 ## Scenario 10: Pohoda export modal
+
 - file: tests/e2e/pohoda-export.spec.ts
 - route: /invoices -> GET /invoices/export/pohoda/preview + /invoices/export/pohoda
 - project: desktop
@@ -191,13 +204,14 @@
 - test_data: today's date.
 
 ## Scenario 11: EFA card on invoice detail (null driver)
+
 - file: tests/e2e/efa-peppol.spec.ts
 - route: /invoices/{id} -> GET /invoices/{id}/efa-xml
 - project: desktop
 - precondition: helper creates
-  - `RUN efa-draft` draft (no ICO);
-  - `RUN efa-noico` issued, customer without IČO, country SK;
-  - `RUN efa-ok` issued, customer IČO `12345678`, country SK, street/city/PSČ filled.
+    - `RUN efa-draft` draft (no ICO);
+    - `RUN efa-noico` issued, customer without IČO, country SK;
+    - `RUN efa-ok` issued, customer IČO `12345678`, country SK, street/city/PSČ filled.
 - steps:
     1. Show of `RUN efa-draft` -> card "Elektronická faktúra".
     2. Show of `RUN efa-noico` -> card.
@@ -211,6 +225,7 @@
 - test_data: IČO 12345678.
 
 ## Scenario 12: Peppol ID in Settings supplier card and client form
+
 - file: tests/e2e/efa-peppol.spec.ts
 - route: /settings/invoicing, /clients, /clients/{id}
 - project: desktop
@@ -231,6 +246,7 @@
 - test_data: `abc`, `1234:12345678`, `0245:12345678`, `0245:87654321`.
 
 ## Assumptions (orchestrator, owner delegated "urob ako najlepšie vieš")
+
 - Business rules taken from the approved source plan (D1–D13) + code, no extra owner questions: partial state = derived "Čiastočne uhradená" badge; credit-note refund = "Zaevidovať vrátenie" on the credit note settles it; bulk skips reported with reasons, never 403; merged PDF cap 10 (cap UI not E2E-tested — covered by `InvoiceBulkPdfTest`); EFA submit hidden with null driver.
 - Data stays in the dev DB (tagged `E2E-<timestamp>`), consumes FA-2026-NNNN numbers of "Demo Cleaning s.r.o." — acceptable for an undeployed greenfield project; nothing pre-existing is mutated except Settings fields that are restored afterwards.
 - Exact field labels (subject-mode radio, recurring form fields, login form) confirmed live by the runner; Slovak strings above are from `resources/lang/sk/app.json`.
