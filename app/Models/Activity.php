@@ -4,20 +4,32 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\ActivityBatch;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Activity as SpatieActivity;
 
 /**
  * @property string|null $tenant_id
+ * @property string|null $batch_uuid
+ * @property Carbon|null $reverted_at
+ * @property string|null $revert_batch_uuid
  */
 final class Activity extends SpatieActivity
 {
     /** Not persisted: keeps `tenant_id` null (global task rows) even while a tenant is bound. */
     public bool $keepNullTenant = false;
 
+    protected function casts(): array
+    {
+        return [...parent::casts(), 'reverted_at' => 'datetime'];
+    }
+
     protected static function booted(): void
     {
         self::creating(function (self $activity): void {
+            $activity->batch_uuid ??= ActivityBatch::current();
+
             if ($activity->tenant_id === null && ! $activity->keepNullTenant && app()->bound('current_tenant_id')) {
                 $activity->tenant_id = current_tenant_id();
             }

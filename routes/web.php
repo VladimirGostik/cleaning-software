@@ -103,6 +103,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/audit-logs/{activity}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+    Route::post('/audit-logs/{activity}/revert', [AuditLogController::class, 'revert'])->name('audit-logs.revert');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/bell', [NotificationController::class, 'bell'])->name('notifications.bell');

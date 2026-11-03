@@ -20,4 +20,10 @@ final class ActivityPolicy
         return $user->can(PermissionEnum::ViewAuditLogs->value)
             && $activity->isVisibleInTenant(current_tenant_id());
     }
+
+    public function revert(User $user, Activity $activity): bool
+    {
+        return $user->can(PermissionEnum::RevertAuditLogs->value)
+            && $activity->tenant_id === current_tenant_id();
+    }
 }

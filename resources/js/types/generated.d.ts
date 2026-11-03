@@ -6,12 +6,15 @@ readonly log_name: string | null,
 readonly description: string,
 readonly subject_type: string | null,
 readonly subject_id: string | null,
+readonly subject_label: string | null,
 readonly event: string | null,
 readonly causer_name: string | null,
 readonly causer_email: string | null,
 readonly properties: Record<string, any> | null,
 readonly attribute_changes: Record<string, any> | null,
 readonly created_at: string,
+readonly revert: App.Data.ActivityRevertData,
+readonly changes: App.Data.ActivityRevertChangeData[],
 };
 export type ActivityLogIndexFilterData = {
 readonly search: string | null,
@@ -28,10 +31,32 @@ readonly log_name: string | null,
 readonly description: string,
 readonly subject_type: string | null,
 readonly subject_id: string | null,
+readonly subject_label: string | null,
 readonly event: string | null,
 readonly causer_name: string | null,
 readonly causer_email: string | null,
 readonly created_at: string,
+readonly revert: App.Data.ActivityRevertData,
+};
+export type ActivityRevertChangeData = {
+readonly field: string,
+readonly label: string,
+readonly old: any,
+readonly new: any,
+readonly current: any,
+readonly conflict: boolean,
+readonly masked: boolean,
+};
+export type ActivityRevertData = {
+readonly status: App.Enums.ActivityRevertStatusEnum,
+readonly reason: App.Enums.ActivityRevertBlockReasonEnum | null,
+readonly changes_count: number,
+readonly batch_size: number,
+readonly blocking_activity_id: number | null,
+readonly reverted_at: string | null,
+readonly reverted_by_name: string | null,
+readonly reverted_by_activity_id: number | null,
+readonly reverts_activity_id: number | null,
 };
 export type AuthTokenData = {
 readonly token: string,
@@ -1955,6 +1980,8 @@ readonly redirect_to: string | null,
 }
 namespace Enums {
 export type ActionChannelEnum = "mcp" | "assistant" | "task_run";
+export type ActivityRevertBlockReasonEnum = "unsupported_operation" | "unsupported_model" | "lifecycle_field" | "no_company" | "forbidden" | "subject_missing" | "subject_deleted" | "subject_not_deleted" | "parent_deleted" | "already_reverted" | "conflict" | "has_later_changes" | "not_draft" | "primary_contact" | "no_changes" | "unique_conflict" | "batch_member_blocked";
+export type ActivityRevertStatusEnum = "available" | "unavailable" | "reverted";
 export type AssistantActionTypeEnum = "open" | "created" | "updated";
 export type AssistantRoleEnum = "user" | "assistant";
 export type BulkActionEnum = "pay" | "send" | "issue";
@@ -1995,7 +2022,7 @@ export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense";
 export type PendingActionStatusEnum = "pending" | "executed" | "cancelled" | "expired";
-export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "manage employee_access" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "use assistant" | "view expenses" | "manage expenses";
+export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "manage employee_access" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "revert audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "use assistant" | "view expenses" | "manage expenses";
 export type QuoteBillingPeriodEnum = "one_off" | "monthly" | "quarterly" | "yearly";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";

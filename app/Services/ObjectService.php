@@ -9,6 +9,7 @@ use App\Data\Objects\ObjectOptionData;
 use App\Data\Objects\ObjectUpsertData;
 use App\Models\CleaningObject;
 use App\Models\User;
+use App\Support\ActivityBatch;
 use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\Request;
@@ -71,7 +72,7 @@ final readonly class ObjectService
 
     public function update(CleaningObject $object, ObjectUpsertData $data, User $actor): CleaningObject
     {
-        return $this->db->transaction(function () use ($object, $data, $actor): CleaningObject {
+        return ActivityBatch::run(fn (): CleaningObject => $this->db->transaction(function () use ($object, $data, $actor): CleaningObject {
             /** @var array<string, mixed> $attributes */
             $attributes = $this->attributes($data, $actor);
             $object->update($attributes);
@@ -83,7 +84,7 @@ final readonly class ObjectService
             }
 
             return $object->load(['client', 'contacts']);
-        });
+        }));
     }
 
     public function deactivate(CleaningObject $object): void

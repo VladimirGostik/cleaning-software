@@ -10,6 +10,7 @@ use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\ClientContact;
 use App\Models\ObjectContact;
+use App\Support\ActivityBatch;
 use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\Request;
@@ -48,7 +49,7 @@ final readonly class ClientService
 
     public function create(ClientUpsertData $data): Client
     {
-        return $this->db->transaction(function () use ($data): Client {
+        return ActivityBatch::run(fn (): Client => $this->db->transaction(function () use ($data): Client {
             /** @var array<string, mixed> $attributes */
             $attributes = $data->except('contacts')->toArray();
             /** @var Client $client */
@@ -57,12 +58,12 @@ final readonly class ClientService
             $this->contacts->sync($client->contacts(), $data->contacts->items(), 'app.client_contact_invalid');
 
             return $client->load('contacts');
-        });
+        }));
     }
 
     public function update(Client $client, ClientUpsertData $data): Client
     {
-        return $this->db->transaction(function () use ($client, $data): Client {
+        return ActivityBatch::run(fn (): Client => $this->db->transaction(function () use ($client, $data): Client {
             /** @var array<string, mixed> $attributes */
             $attributes = $data->except('contacts')->toArray();
             $client->update($attributes);
@@ -70,7 +71,7 @@ final readonly class ClientService
             $this->contacts->sync($client->contacts(), $data->contacts->items(), 'app.client_contact_invalid');
 
             return $client->load('contacts');
-        });
+        }));
     }
 
     /**
@@ -82,13 +83,13 @@ final readonly class ClientService
     {
         $client->load(['contacts', 'objects.contacts']);
 
-        $this->db->transaction(function () use ($client): void {
+        ActivityBatch::run(fn () => $this->db->transaction(function () use ($client): void {
             $client->contacts->each(fn (ClientContact $contact) => $contact->delete());
             $client->objects->each(function (CleaningObject $object): void {
                 $object->contacts->each(fn (ObjectContact $contact) => $contact->delete());
                 $object->delete();
             });
             $client->delete();
-        });
+        }));
     }
 }

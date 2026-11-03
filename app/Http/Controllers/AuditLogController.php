@@ -9,10 +9,13 @@ use App\Data\ActivityLogListItemData;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\Activity;
+use App\Models\User;
 use App\Navigation\NavItem;
+use App\Services\ActivityRevertService;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
@@ -24,12 +27,12 @@ final class AuditLogController extends Controller
 {
     #[Authorize('viewAny', Activity::class)]
     #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: NavIconEnum::AuditLogs, permission: PermissionEnum::ViewAuditLogs->value, group: 'settings', order: 50)]
-    public function index(Request $request): Response
+    public function index(Request $request, ActivityRevertService $reverts): Response
     {
         $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';
         $tenantId = current_tenant_id();
 
-        $items = QueryBuilder::for(Activity::visibleInTenant($tenantId))
+        $items = QueryBuilder::for(Activity::visibleInTenant($tenantId)->with('causer'))
             ->allowedFilters(
                 AllowedFilter::callbackClean('search', function (Builder $query, mixed $value) use ($op): void {
                     if (blank($value) || ! is_scalar($value)) {
@@ -56,8 +59,13 @@ final class AuditLogController extends Controller
             )
             ->defaultSort('-created_at')
             ->paginate($request->integer('per_page', 25))
-            ->withQueryString()
-            ->through(fn (Activity $a) => ActivityLogListItemData::fromModel($a));
+            ->withQueryString();
+
+        /** @var User $actor */
+        $actor = $request->user();
+        $revert = $reverts->describeMany($items->getCollection(), $actor);
+        $labels = $reverts->subjectLabels($items->getCollection());
+        $items->through(fn (Activity $a) => ActivityLogListItemData::fromModel($a, $revert[$a->id], $labels[$a->id] ?? null));
 
         return Inertia::render('AuditLogs/Index', [
             'activities' => $items,
@@ -66,10 +74,25 @@ final class AuditLogController extends Controller
     }
 
     #[Authorize('view', 'activity')]
-    public function show(Activity $activity): Response
+    public function show(Request $request, Activity $activity, ActivityRevertService $reverts): Response
     {
+        /** @var User $actor */
+        $actor = $request->user();
+        $revert = $reverts->describe($activity, $actor);
+        $label = $reverts->subjectLabels(collect([$activity]))[$activity->id] ?? null;
+
         return Inertia::render('AuditLogs/Show', [
-            'activity' => ActivityLogDetailData::fromModel($activity),
+            'activity' => ActivityLogDetailData::fromModel($activity, $revert, $label, $reverts->changes($activity)),
         ]);
+    }
+
+    #[Authorize('revert', 'activity')]
+    public function revert(Request $request, Activity $activity, ActivityRevertService $reverts): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $reverts->revert($activity, $actor);
+
+        return back()->with('success', __('app.audit_log_reverted'));
     }
 }

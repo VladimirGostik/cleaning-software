@@ -29,6 +29,7 @@ enum PermissionEnum: string
 
     // Platform — audit / docs / media
     case ViewAuditLogs = 'view audit logs';
+    case RevertAuditLogs = 'revert audit logs';
     case ViewApiDocs = 'view api docs';
     case ViewMedia = 'view media';
     case UploadFiles = 'upload files';
@@ -126,7 +127,7 @@ enum PermissionEnum: string
 
             self::ViewRoles, self::CreateRoles, self::EditRoles, self::DeleteRoles => 'roles',
 
-            self::ViewAuditLogs => 'audit_logs',
+            self::ViewAuditLogs, self::RevertAuditLogs => 'audit_logs',
             self::ViewApiDocs => 'api_docs',
             self::ViewMedia, self::UploadFiles => 'media',
 

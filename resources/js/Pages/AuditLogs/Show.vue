@@ -2,10 +2,18 @@
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
+import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
+import StatusErrorAlert from '@/Components/StatusErrorAlert.vue';
+import ActivityChangesDiff from '@/Components/AuditLogs/ActivityChangesDiff.vue';
+import ActivityRevertCard from '@/Components/AuditLogs/ActivityRevertCard.vue';
+import ActivityRevertStatus from '@/Components/AuditLogs/ActivityRevertStatus.vue';
+import { useActivityRevertConfirm } from '@/Composables/useActivityRevertConfirm';
+import { revertSubjectLabel } from '@/utils/auditLog';
 import { formatDatetime } from '@/utils/date';
 import type { Breadcrumb } from '@/types';
 
 const { t } = useI18n();
+const revertConfirm = useActivityRevertConfirm();
 
 const props = defineProps<{
     activity: App.Data.ActivityLogDetailData;
@@ -14,7 +22,7 @@ const props = defineProps<{
 const breadcrumbs: Breadcrumb[] = [
     { label: t('dashboard'), url: '/' },
     { label: t('audit_logs'), url: '/audit-logs' },
-    { label: props.activity.description },
+    { label: props.activity.subject_label ?? props.activity.description },
 ];
 
 function formatJson(data: Record<string, unknown> | null): string {
@@ -31,6 +39,8 @@ function formatJson(data: Record<string, unknown> | null): string {
             </Link>
         </template>
     </Header>
+
+    <StatusErrorAlert class="mb-4" />
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="card bg-base-100 shadow-sm">
@@ -51,6 +61,14 @@ function formatJson(data: Record<string, unknown> | null): string {
                             </span>
                             <span v-else>-</span>
                         </dd>
+                    </div>
+                    <div class="py-2 flex justify-between">
+                        <dt class="text-sm text-base-content/60">{{ t('audit_subject') }}</dt>
+                        <dd class="text-sm font-medium">{{ revertSubjectLabel(activity) }}</dd>
+                    </div>
+                    <div class="py-2 flex justify-between">
+                        <dt class="text-sm text-base-content/60">{{ t('audit_revert_column') }}</dt>
+                        <dd><ActivityRevertStatus :revert="activity.revert" /></dd>
                     </div>
                     <div class="py-2 flex justify-between">
                         <dt class="text-sm text-base-content/60">{{ t('subject_type') }}</dt>
@@ -84,22 +102,48 @@ function formatJson(data: Record<string, unknown> | null): string {
             </div>
         </div>
 
-        <div v-if="activity.attribute_changes" class="card bg-base-100 shadow-sm lg:col-span-2">
+        <ActivityRevertCard
+            :revert="activity.revert"
+            :changes="activity.changes"
+            @revert="revertConfirm.openModal(activity)"
+        />
+
+        <div class="card bg-base-100 shadow-sm lg:col-span-2">
             <div class="card-body">
                 <h2 class="card-title text-base">{{ t('attribute_changes') }}</h2>
-                <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
-                    formatJson(activity.attribute_changes)
-                }}</pre>
+                <ActivityChangesDiff :changes="activity.changes" :event="activity.event" />
             </div>
         </div>
 
-        <div v-if="activity.properties" class="card bg-base-100 shadow-sm lg:col-span-2">
-            <div class="card-body">
-                <h2 class="card-title text-base">{{ t('properties') }}</h2>
-                <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
-                    formatJson(activity.properties)
-                }}</pre>
+        <details
+            v-if="activity.attribute_changes || activity.properties"
+            class="card bg-base-100 shadow-sm lg:col-span-2"
+        >
+            <summary class="card-body cursor-pointer text-base font-semibold">{{ t('audit_technical_data') }}</summary>
+            <div class="card-body pt-0">
+                <template v-if="activity.attribute_changes">
+                    <h3 class="text-sm font-medium">{{ t('attribute_changes') }}</h3>
+                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
+                        formatJson(activity.attribute_changes)
+                    }}</pre>
+                </template>
+                <template v-if="activity.properties">
+                    <h3 class="text-sm font-medium">{{ t('properties') }}</h3>
+                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
+                        formatJson(activity.properties)
+                    }}</pre>
+                </template>
             </div>
-        </div>
+        </details>
     </div>
+
+    <ConfirmDeleteModal
+        :is-open="revertConfirm.state.isOpen"
+        :title="revertConfirm.getModalTitle()"
+        :description="revertConfirm.getModalDescription()"
+        :confirm-label="t('audit_revert_action')"
+        confirm-variant="warning"
+        @cancel="revertConfirm.closeModal"
+        @confirm="revertConfirm.confirmDelete"
+    />
 </template>

@@ -17,13 +17,15 @@ final class ActivityLogListItemData extends Data
         public readonly string $description,
         public readonly ?string $subject_type,
         public readonly ?string $subject_id,
+        public readonly ?string $subject_label,
         public readonly ?string $event,
         public readonly ?string $causer_name,
         public readonly ?string $causer_email,
         public readonly string $created_at,
+        public readonly ActivityRevertData $revert,
     ) {}
 
-    public static function fromModel(Activity $activity): self
+    public static function fromModel(Activity $activity, ActivityRevertData $revert, ?string $subjectLabel): self
     {
         $causer = $activity->causerUser();
 
@@ -33,10 +35,12 @@ final class ActivityLogListItemData extends Data
             description: $activity->description,
             subject_type: $activity->subject_type ? class_basename($activity->subject_type) : null,
             subject_id: $activity->subject_id ? (string) $activity->subject_id : null,
+            subject_label: $subjectLabel,
             event: $activity->event,
             causer_name: $causer?->name,
             causer_email: $causer?->email,
             created_at: $activity->created_at?->toIso8601String() ?? '',
+            revert: $revert,
         );
     }
 }
