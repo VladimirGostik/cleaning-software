@@ -14,6 +14,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +22,8 @@ use Throwable;
 
 #[Tries(3)]
 #[Backoff([10, 30, 60])]
-#[Timeout(120)]
+#[Timeout(85)]
+#[FailOnTimeout]
 final class InvoiceIssued extends Notification implements ShouldQueue
 {
     use Queueable;
