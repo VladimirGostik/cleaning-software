@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Data\RecurringInvoices;
 
 use Spatie\LaravelData\Attributes\Validation\Between;
+use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -16,7 +17,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 final class RecurringInvoiceItemData extends Data
 {
     public function __construct(
-        #[Required]
+        #[Required, Max(255)]
         public readonly string $description,
         #[Required, Min(0), Rule('decimal:0,2')]
         public readonly float $quantity,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Quotes;
 
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\TaskFrequencyEnum;
 use App\Models\QuoteItem;
 use Spatie\LaravelData\Attributes\Validation\Between;
@@ -34,6 +35,8 @@ final class QuoteItemData extends Data
         public readonly float $discount_percent = 0,
         #[Min(0)]
         public readonly float $vat_rate = 0,
+        #[Required]
+        public readonly QuoteBillingPeriodEnum $billing_period = QuoteBillingPeriodEnum::OneOff,
         #[Nullable, Max(500)]
         public readonly ?string $note = null,
         public readonly ?float $line_base = null,
@@ -52,6 +55,7 @@ final class QuoteItemData extends Data
             unit_price: (float) $item->unit_price,
             discount_percent: (float) $item->discount_percent,
             vat_rate: (float) $item->vat_rate,
+            billing_period: $item->billing_period,
             note: $item->note,
             line_base: (float) $item->line_base,
             line_vat: (float) $item->line_vat,

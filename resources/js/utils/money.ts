@@ -33,6 +33,10 @@ export function formatMoney(
     }).format(toNumber(amount));
 }
 
+export function formatQuantity(value: number, locale: string): string {
+    return new Intl.NumberFormat(localeTag(locale), { maximumFractionDigits: 2 }).format(value);
+}
+
 export function formatPercent(rate: number, locale: string): string {
     return `${new Intl.NumberFormat(localeTag(locale), { maximumFractionDigits: 2 }).format(rate)} %`;
 }

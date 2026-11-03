@@ -23,6 +23,8 @@ const props = defineProps<{
     vatRateOptions: readonly number[];
     currency: App.Enums.CurrencyEnum;
     blankRow: () => ItemRow;
+    descriptionLabel?: string;
+    descriptionPlaceholder?: string;
 }>();
 
 defineSlots<{
@@ -103,7 +105,7 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
             class="hidden items-end gap-x-2 pb-1 text-xs font-medium uppercase tracking-wide text-base-content/60 2xl:grid"
             :class="gridClass"
         >
-            <span>{{ t('invoice_pdf_item_description') }}</span>
+            <span>{{ descriptionLabel ?? t('invoice_pdf_item_description') }}</span>
             <span>{{ t('invoice_pdf_item_quantity') }}</span>
             <span>{{ t('invoice_pdf_item_unit') }}</span>
             <span>{{ t('invoice_pdf_item_unit_price') }}</span>
@@ -124,6 +126,8 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
                 :is-vat-payer="isVatPayer"
                 :vat-rate-options="vatRateSelectOptions"
                 :currency="currency"
+                :description-label="descriptionLabel"
+                :description-placeholder="descriptionPlaceholder"
                 :line="lines[index]"
                 :errors="errors"
                 @set-field="setField"

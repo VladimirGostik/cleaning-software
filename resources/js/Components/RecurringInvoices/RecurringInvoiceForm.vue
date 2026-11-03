@@ -77,6 +77,7 @@ interface RecurringInvoiceFormData {
 const props = defineProps<{
     context: App.Data.Invoices.InvoiceFormContextData;
     recurringInvoice?: App.Data.RecurringInvoices.RecurringInvoiceDetailData | null;
+    prefill?: App.Data.RecurringInvoices.RecurringInvoicePrefillData | null;
 }>();
 
 const { t } = useI18n();
@@ -95,7 +96,11 @@ function blankItem(): ItemRow {
 }
 
 function initialMode(ri: App.Data.RecurringInvoices.RecurringInvoiceDetailData | null | undefined): SubjectMode {
-    if (!ri) return 'standalone';
+    if (!ri) {
+        if (props.prefill?.cleaning_object_id) return 'object';
+        if (props.prefill?.client_id) return 'client';
+        return 'standalone';
+    }
     if (ri.cleaning_object_id) return 'object';
     if (ri.client_id) return 'client';
     return 'standalone';
@@ -146,12 +151,14 @@ function initialData(): RecurringInvoiceFormData {
         };
     }
 
+    const prefill = props.prefill;
+
     return {
-        client_id: null,
-        cleaning_object_id: null,
-        name: '',
+        client_id: prefill?.client_id ?? null,
+        cleaning_object_id: prefill?.cleaning_object_id ?? null,
+        name: prefill?.name ?? '',
         type: 'monthly',
-        frequency: 'monthly',
+        frequency: prefill?.frequency ?? 'monthly',
         day_of_month: 1,
         auto_issue: false,
         auto_send: false,
@@ -159,24 +166,24 @@ function initialData(): RecurringInvoiceFormData {
         end_date: null,
         occurrences_limit: null,
         due_days: 14,
-        customer_name: null,
+        customer_name: prefill?.customer_name ?? null,
         customer_representative: null,
         customer_ico: null,
         customer_dic: null,
         customer_vat_number: null,
-        customer_street: null,
-        customer_city: null,
-        customer_postal_code: null,
+        customer_street: prefill?.customer_street ?? null,
+        customer_city: prefill?.customer_city ?? null,
+        customer_postal_code: prefill?.customer_postal_code ?? null,
         customer_country: 'SK',
-        customer_email: null,
-        note: null,
-        items: [blankItem()],
+        customer_email: prefill?.customer_email ?? null,
+        note: prefill?.note ?? null,
+        items: prefill ? prefill.items.map((item) => ({ ...item })) : [blankItem()],
         constant_symbol: props.context.defaults.constant_symbol,
         header_text: props.context.defaults.header_text,
         footer_text: props.context.defaults.footer_text,
         deposit: 0,
         payment_type: props.context.defaults.payment_type,
-        currency: props.context.defaults.currency,
+        currency: prefill?.currency ?? props.context.defaults.currency,
         rounding_mode: props.context.defaults.rounding_mode,
     };
 }

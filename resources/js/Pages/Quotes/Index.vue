@@ -14,10 +14,10 @@ import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import QuoteStatusBadge from '@/Components/Quotes/QuoteStatusBadge.vue';
 import QuoteKindBadge from '@/Components/Quotes/QuoteKindBadge.vue';
 import QuoteRoughBadge from '@/Components/Quotes/QuoteRoughBadge.vue';
+import QuotePeriodTotalsInline from '@/Components/Quotes/QuotePeriodTotalsInline.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
-import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 import { readSpatieQuery } from '@/Composables/useSpatieTableQuery';
 import { formatDate } from '@/utils/date';
 import { QUOTE_KINDS, QUOTE_STATUSES, quoteKindKey, quoteStatusKey } from '@/utils/enums';
@@ -26,7 +26,6 @@ import type { FilterConfig, TableColumn } from '@/types/table';
 
 const { t } = useI18n();
 const { allows } = useAuthorization();
-const { money } = useMoneyFormat();
 
 const props = defineProps<{
     quotes: Paginator<App.Data.Quotes.QuoteListItemData>;
@@ -196,7 +195,13 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                 </template>
 
                 <template #cell-total="{ row }">
-                    {{ row.kind === 'document' ? t('empty_dash') : money(row.total, row.currency) }}
+                    <template v-if="row.kind === 'document'">{{ t('empty_dash') }}</template>
+                    <QuotePeriodTotalsInline
+                        v-else
+                        :period-totals="row.period_totals"
+                        :fallback-total="row.total"
+                        :currency="row.currency"
+                    />
                 </template>
 
                 <template #buttons="{ row }">

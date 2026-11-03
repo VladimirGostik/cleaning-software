@@ -11,12 +11,15 @@ use App\Data\Quotes\QuoteConvertToContractData;
 use App\Data\Quotes\QuoteItemData;
 use App\Data\Quotes\QuoteListItemData;
 use App\Data\Quotes\QuoteUpsertData;
+use App\Data\RecurringInvoices\RecurringInvoiceItemData;
+use App\Data\RecurringInvoices\RecurringInvoicePrefillData;
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Enums\RoundingModeEnum;
@@ -233,7 +236,9 @@ final readonly class QuoteService
                 'vat_amount' => $quote->vat_amount,
                 'total' => $quote->total,
                 'vat_breakdown' => $quote->vat_breakdown,
+                'period_totals' => $quote->period_totals,
                 'note' => $quote->note,
+                'included_text' => $quote->included_text,
             ]);
 
             if ($quote->kind === QuoteKindEnum::Itemized) {
@@ -244,6 +249,7 @@ final readonly class QuoteService
                         'quote_id' => $newQuote->id,
                         'description' => $item->description,
                         'frequency' => $item->frequency,
+                        'billing_period' => $item->billing_period,
                         'note' => $item->note,
                         'quantity' => $item->quantity,
                         'unit' => $item->unit,
@@ -280,16 +286,15 @@ final readonly class QuoteService
 
     public function convertToInvoice(Quote $quote): Invoice
     {
-        if ($quote->isDocument()) {
-            throw ValidationException::withMessages(['status' => [__('app.quote_document_not_convertible')]]);
+        $this->guardConvertible($quote);
+
+        $oneOffItems = $quote->items->where('billing_period', QuoteBillingPeriodEnum::OneOff);
+
+        if ($oneOffItems->isEmpty()) {
+            throw ValidationException::withMessages(['status' => [__('app.quote_has_no_one_off_items')]]);
         }
 
-        if (! $quote->canBeConverted()) {
-            throw ValidationException::withMessages(['status' => [__('app.quote_not_acceptable_for_conversion')]]);
-        }
-
-        return $this->db->transaction(function () use ($quote): Invoice {
-            $quote->loadMissing('items');
+        return $this->db->transaction(function () use ($quote, $oneOffItems): Invoice {
 
             $today = now()->toDateString();
             $defaultDueDays = config('invoicing.default_due_days', 14);
@@ -299,19 +304,10 @@ final readonly class QuoteService
             $defaults = TenantInterface::query()->where('tenant_id', $quote->tenant_id)->first();
 
             $items = [];
-            /** @var QuoteItem $item */
-            foreach ($quote->items as $item) {
-                $description = $item->frequency !== null
-                    ? "{$item->description} ({$item->frequency->label()})"
-                    : $item->description;
-
-                if ($item->note !== null && $item->note !== '') {
-                    $description .= " — {$item->note}";
-                }
-
+            foreach ($oneOffItems as $item) {
                 $items[] = InvoiceItemData::from([
                     'id' => null,
-                    'description' => $description,
+                    'description' => $this->itemDescription($item),
                     'quantity' => (float) $item->quantity,
                     'unit' => $item->unit,
                     'unit_price' => (float) $item->unit_price,
@@ -361,6 +357,46 @@ final readonly class QuoteService
         });
     }
 
+    public function recurringInvoicePrefill(Quote $quote, QuoteBillingPeriodEnum $period): RecurringInvoicePrefillData
+    {
+        $this->guardConvertible($quote);
+
+        $frequency = $period->recurringFrequency();
+        $items = $quote->items->where('billing_period', $period);
+
+        if ($frequency === null || $items->isEmpty()) {
+            throw ValidationException::withMessages(['status' => [__('app.quote_has_no_items_for_period')]]);
+        }
+
+        $isClientless = $quote->client_id === null;
+
+        return new RecurringInvoicePrefillData(
+            quote_id: $quote->id,
+            client_id: $quote->client_id,
+            cleaning_object_id: $quote->cleaning_object_id,
+            name: __('app.quote_recurring_invoice_name', [
+                'name' => $quote->subject ?? $quote->number ?? __('app.quote_pdf_title'),
+                'period' => $period->label(),
+            ]),
+            frequency: $frequency,
+            customer_name: $isClientless ? $quote->customer_name : null,
+            customer_email: $isClientless ? $quote->customer_email : null,
+            customer_street: $isClientless ? $quote->customer_street : null,
+            customer_city: $isClientless ? $quote->customer_city : null,
+            customer_postal_code: $isClientless ? $quote->customer_postal_code : null,
+            currency: $quote->currency,
+            note: $quote->note,
+            items: $items->map(fn (QuoteItem $item) => new RecurringInvoiceItemData(
+                description: $this->itemDescription($item),
+                quantity: (float) $item->quantity,
+                unit: $item->unit,
+                unit_price: (float) $item->unit_price,
+                discount_percent: (float) $item->discount_percent,
+                vat_rate: (float) $item->vat_rate,
+            ))->values()->all(),
+        );
+    }
+
     public function convertToContract(Quote $quote, QuoteConvertToContractData $data, User $actor): Contract
     {
         if ($quote->isDocument()) {
@@ -401,6 +437,32 @@ final readonly class QuoteService
         ]);
 
         return $this->contracts->create($upsert, $actor, $quote);
+    }
+
+    private function guardConvertible(Quote $quote): void
+    {
+        if ($quote->isDocument()) {
+            throw ValidationException::withMessages(['status' => [__('app.quote_document_not_convertible')]]);
+        }
+
+        if (! $quote->canBeConverted()) {
+            throw ValidationException::withMessages(['status' => [__('app.quote_not_acceptable_for_conversion')]]);
+        }
+
+        $quote->loadMissing('items');
+    }
+
+    private function itemDescription(QuoteItem $item): string
+    {
+        $description = $item->frequency !== null
+            ? "{$item->description} ({$item->frequency->label()})"
+            : $item->description;
+
+        if ($item->note !== null && $item->note !== '') {
+            $description .= " — {$item->note}";
+        }
+
+        return mb_strlen($description) > 255 ? mb_substr($description, 0, 254).'…' : $description;
     }
 
     private function syncDocument(Quote $quote, QuoteUpsertData $data, ?User $actor, string $sessionId): void
@@ -529,6 +591,7 @@ final readonly class QuoteService
                 'quote_id' => $quote->id,
                 'description' => $itemData->description,
                 'frequency' => $itemData->frequency,
+                'billing_period' => $itemData->billing_period,
                 'note' => $itemData->note,
                 'quantity' => $itemData->quantity,
                 'unit' => $itemData->unit,
@@ -548,18 +611,38 @@ final readonly class QuoteService
      */
     private function computeTotals(Quote $quote): array
     {
-        $quote->loadMissing('items');
+        $quote->load('items');
 
-        $totals = $this->totals->totals(
-            $quote->items->map(fn (QuoteItem $item) => $item->only(['vat_rate', 'line_base', 'line_vat', 'line_total']))->all(),
-            $quote->is_vat_payer,
-        );
+        $lines = $quote->items->map(fn (QuoteItem $item) => $item->only(['vat_rate', 'line_base', 'line_vat', 'line_total']))->all();
+        $totals = $this->totals->totals($lines, $quote->is_vat_payer);
+
+        $periodTotals = [];
+
+        foreach (QuoteBillingPeriodEnum::cases() as $period) {
+            $periodLines = $quote->items
+                ->where('billing_period', $period)
+                ->map(fn (QuoteItem $item) => $item->only(['vat_rate', 'line_base', 'line_vat', 'line_total']))
+                ->all();
+
+            if ($periodLines === []) {
+                continue;
+            }
+
+            $group = $this->totals->totals($periodLines, $quote->is_vat_payer);
+            $periodTotals[] = [
+                'billing_period' => $period->value,
+                'subtotal' => number_format($group['subtotal'], 2, '.', ''),
+                'vat_amount' => number_format($group['vat_amount'], 2, '.', ''),
+                'total' => number_format($group['total'], 2, '.', ''),
+            ];
+        }
 
         return [
             'subtotal' => $totals['subtotal'],
             'vat_amount' => $totals['vat_amount'],
             'total' => $totals['total'],
             'vat_breakdown' => $totals['vat_breakdown'],
+            'period_totals' => $periodTotals,
         ];
     }
 
@@ -582,6 +665,7 @@ final readonly class QuoteService
             'vat_rate' => $tenant->is_vat_payer ? $tenant->vat_rate : null,
             'currency' => $data->currency,
             'note' => $data->note,
+            'included_text' => $data->included_text,
             'customer_name' => $hasClient ? null : $data->customer_name,
             'customer_email' => $hasClient ? null : $data->customer_email,
             'customer_street' => $hasClient ? null : $data->customer_street,

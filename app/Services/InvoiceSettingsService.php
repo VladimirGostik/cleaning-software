@@ -38,6 +38,7 @@ final readonly class InvoiceSettingsService
                 'registration_info' => $data->registration_info,
                 'representative_name' => $this->blankToNull($data->representative_name),
                 'peppol_participant_id' => $this->blankToNull($data->peppol_participant_id),
+                'signing_place' => $this->blankToNull($data->signing_place),
             ];
 
             // Only update vat_rate when explicitly provided — column is NOT NULL with DB default 23
@@ -54,6 +55,12 @@ final readonly class InvoiceSettingsService
                 $tenant->update(['signature_media_id' => null]);
             }
 
+            if ($data->logo_uuid !== null) {
+                $this->uploads->moveToModel($tenant, 'logo', $data->logo_uuid, $actor, $sessionId);
+            } elseif ($data->remove_logo) {
+                $tenant->clearMediaCollection('logo');
+            }
+
             $interfaceFields = [
                 'recurring_default_state' => $data->recurring_default_state,
                 'default_constant_symbol' => $data->default_constant_symbol,
@@ -62,6 +69,7 @@ final readonly class InvoiceSettingsService
                 'default_rounding_mode' => $data->default_rounding_mode,
                 'default_header_text' => $data->default_header_text,
                 'default_footer_text' => $data->default_footer_text,
+                'default_quote_included_text' => $this->blankToNull($data->default_quote_included_text),
                 'invoice_mail_subject' => $this->blankToNull($data->invoice_mail_subject),
                 'invoice_mail_body' => $this->blankToNull($data->invoice_mail_body),
             ];

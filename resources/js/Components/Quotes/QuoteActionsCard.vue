@@ -13,6 +13,8 @@ import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 
 import Can from '@/Components/Can.vue';
+import QuoteRecurringInvoiceAction from './QuoteRecurringInvoiceAction.vue';
+import { isRecurringPeriod } from '@/utils/quoteBilling';
 
 const props = defineProps<{
     quote: App.Data.Quotes.QuoteDetailData;
@@ -36,6 +38,10 @@ const isAccepted = computed(() => props.quote.status === 'accepted');
 const isItemized = computed(() => props.quote.kind === 'itemized');
 const canDownloadPdf = computed(() => isItemized.value || props.quote.document !== null);
 const hasMissingTokens = computed(() => (props.quote.text_document?.missing_tokens.length ?? 0) > 0);
+const hasOneOffGroup = computed(() => props.quote.period_totals.some((group) => group.billing_period === 'one_off'));
+const recurringPeriods = computed(() =>
+    props.quote.period_totals.map((group) => group.billing_period).filter(isRecurringPeriod),
+);
 const canConvertContract = computed(() => props.quote.client_id !== null && props.quote.cleaning_object_id !== null);
 </script>
 
@@ -82,7 +88,7 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                 </button>
             </Can>
 
-            <Can v-if="isAccepted && isItemized" permission="create invoices">
+            <Can v-if="isAccepted && isItemized && hasOneOffGroup" permission="create invoices">
                 <div>
                     <button
                         type="button"
@@ -92,10 +98,17 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                         <ReceiptPercentIcon class="size-5" />
                         {{ t('quote_action_convert_invoice') }}
                     </button>
+                    <p v-if="recurringPeriods.length > 0" class="mt-1 pl-1 text-xs text-base-content/50">
+                        {{ t('quote_convert_invoice_one_off_only') }}
+                    </p>
                     <p v-if="props.quote.invoices.length > 0" class="mt-1 pl-1 text-xs text-base-content/50">
                         {{ t('quote_converted_count', { count: props.quote.invoices.length }) }}
                     </p>
                 </div>
+            </Can>
+
+            <Can v-if="isAccepted && isItemized && recurringPeriods.length > 0" permission="create recurring_invoices">
+                <QuoteRecurringInvoiceAction :quote-id="props.quote.id" :periods="recurringPeriods" />
             </Can>
 
             <Can v-if="isAccepted && isItemized" permission="create contracts">

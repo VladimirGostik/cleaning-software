@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Quotes;
 
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\QuoteKindEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Tenant;
+use App\Models\TenantInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -434,5 +436,111 @@ final class QuoteControllerTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $this->get(route('quotes.pdf', $quote))->assertNotFound();
+    }
+
+    public function test_create_context_carries_firm_default_included_text(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        TenantInterface::query()->where('tenant_id', $tenant->id)->update(['default_quote_included_text' => "Materials\nTravel"]);
+
+        $this->get(route('quotes.create'))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('context.default_included_text', "Materials\nTravel"));
+    }
+
+    public function test_create_context_default_included_text_is_null_when_unset(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->get(route('quotes.create'))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('context.default_included_text', null));
+    }
+
+    public function test_store_persists_billing_period_and_included_text(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $payload = $this->storeHttpPayload([
+            'included_text' => "Materials\nTravel",
+            'items' => [
+                ['id' => null, 'description' => 'Windows', 'frequency' => null, 'billing_period' => 'yearly', 'quantity' => 1, 'unit' => null, 'unit_price' => 200, 'discount_percent' => 0, 'vat_rate' => 0],
+            ],
+        ]);
+
+        $this->post(route('quotes.store'), $payload)->assertSessionDoesntHaveErrors();
+
+        $quote = Quote::query()->sole();
+        $this->assertSame("Materials\nTravel", $quote->included_text);
+        $this->assertSame(QuoteBillingPeriodEnum::Yearly, $quote->items()->sole()->billing_period);
+        $this->assertSame('yearly', $quote->period_totals[0]['billing_period'] ?? null);
+    }
+
+    public function test_store_without_billing_period_defaults_to_one_off(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('quotes.store'), $this->storeHttpPayload())->assertSessionDoesntHaveErrors();
+
+        $this->assertSame(QuoteBillingPeriodEnum::OneOff, Quote::query()->sole()->items()->sole()->billing_period);
+    }
+
+    public function test_store_rejects_unknown_billing_period(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $payload = $this->storeHttpPayload([
+            'items' => [
+                ['id' => null, 'description' => 'X', 'frequency' => null, 'billing_period' => 'weekly', 'quantity' => 1, 'unit' => null, 'unit_price' => 10, 'discount_percent' => 0, 'vat_rate' => 0],
+            ],
+        ]);
+
+        $this->post(route('quotes.store'), $payload)->assertSessionHasErrors('items.0.billing_period');
+    }
+
+    public function test_store_rejects_included_text_over_2000_chars_and_for_document_kind(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('quotes.store'), $this->storeHttpPayload(['included_text' => str_repeat('a', 2001)]))
+            ->assertSessionHasErrors('included_text');
+
+        $this->post(route('quotes.store'), $this->storeHttpPayload(['kind' => 'document', 'items' => [], 'included_text' => 'x']))
+            ->assertSessionHasErrors('included_text');
+    }
+
+    public function test_cleared_included_text_is_stored_as_null(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('quotes.store'), $this->storeHttpPayload(['included_text' => '']))->assertSessionDoesntHaveErrors();
+
+        $this->assertNull(Quote::query()->sole()->included_text);
+    }
+
+    public function test_show_exposes_period_totals_and_included_text(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $this->post(route('quotes.store'), $this->storeHttpPayload(['included_text' => 'Materials']));
+        $quote = Quote::query()->sole();
+
+        $this->get(route('quotes.show', $quote))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('quote.included_text', 'Materials')
+            ->where('quote.period_totals.0.billing_period', 'one_off')
+            ->where('quote.items.0.billing_period', 'one_off'));
+    }
+
+    public function test_index_exposes_period_totals(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $this->post(route('quotes.store'), $this->storeHttpPayload());
+
+        $this->get(route('quotes.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('quotes.data.0.period_totals.0.billing_period', 'one_off'));
     }
 }

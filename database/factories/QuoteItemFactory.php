@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\TaskFrequencyEnum;
 use App\Models\QuoteItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -26,6 +27,7 @@ final class QuoteItemFactory extends Factory
         return [
             'description' => fake()->sentence(3),
             'frequency' => null,
+            'billing_period' => QuoteBillingPeriodEnum::OneOff,
             'note' => null,
             'quantity' => $quantity,
             'unit' => fake()->randomElement(['hod', 'ks', 'm²', null]),
@@ -37,6 +39,21 @@ final class QuoteItemFactory extends Factory
             'line_total' => $lineBase,
             'position' => fake()->numberBetween(0, 10),
         ];
+    }
+
+    public function monthly(): static
+    {
+        return $this->state(fn () => ['billing_period' => QuoteBillingPeriodEnum::Monthly]);
+    }
+
+    public function quarterly(): static
+    {
+        return $this->state(fn () => ['billing_period' => QuoteBillingPeriodEnum::Quarterly]);
+    }
+
+    public function yearly(): static
+    {
+        return $this->state(fn () => ['billing_period' => QuoteBillingPeriodEnum::Yearly]);
     }
 
     public function withNote(string $note = 'Includes window cleaning'): static

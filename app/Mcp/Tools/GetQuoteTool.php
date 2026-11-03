@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mcp\Tools;
 
 use App\Data\Quotes\QuoteItemData;
+use App\Data\Quotes\QuotePeriodTotalsData;
 use App\Models\Quote;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -47,6 +48,8 @@ final class GetQuoteTool extends TenantTool
             'subtotal' => $quote->subtotal,
             'vat_amount' => $quote->vat_amount,
             'total' => $quote->total,
+            'period_totals' => QuotePeriodTotalsData::collectFrom($quote->period_totals),
+            'included_text' => $quote->included_text,
             'note' => $quote->note,
             'items' => $quote->items->map(fn ($item): array => QuoteItemData::fromModel($item)->toArray())->all(),
         ]);

@@ -118,6 +118,19 @@ final class McpToolsReadTest extends TestCase
         $this->assertSame($foreign->id, $ok->string('id'));
     }
 
+    public function test_get_and_list_quote_expose_period_totals(): void
+    {
+        $totals = [['billing_period' => 'one_off', 'subtotal' => '300.00', 'vat_amount' => '0.00', 'total' => '300.00']];
+        $quote = Quote::factory()->create(['tenant_id' => $this->alpha->id, 'period_totals' => $totals, 'included_text' => 'Labour']);
+
+        $get = $this->callTool($this->token, 'get_quote', ['company_id' => $this->alpha->id, 'quote_id' => $quote->id]);
+        $list = $this->callTool($this->token, 'list_quotes', ['company_id' => $this->alpha->id]);
+
+        $this->assertSame($totals, $get->get('period_totals'));
+        $this->assertSame('Labour', $get->string('included_text'));
+        $this->assertSame($totals, $list->rows()[0]['period_totals']);
+    }
+
     public function test_lists_are_scoped_to_the_company_and_filters_apply(): void
     {
         $mine = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);

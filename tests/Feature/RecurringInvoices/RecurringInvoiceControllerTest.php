@@ -6,16 +6,23 @@ namespace Tests\Feature\RecurringInvoices;
 
 use App\Data\Invoices\InvoiceListItemData;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\PermissionEnum;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\Quote;
+use App\Models\QuoteItem;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
+use App\Models\Role;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 final class RecurringInvoiceControllerTest extends TestCase
@@ -305,5 +312,126 @@ final class RecurringInvoiceControllerTest extends TestCase
             ->assertSessionDoesntHaveErrors();
 
         $this->assertFalse($ri->refresh()->auto_send);
+    }
+
+    /**
+     * @param  list<QuoteBillingPeriodEnum>  $periods
+     * @param  array<string, mixed>  $quoteState
+     */
+    private function acceptedQuote(Tenant $tenant, array $periods, array $quoteState = []): Quote
+    {
+        $quote = Quote::factory()->accepted()->create(array_merge(['tenant_id' => $tenant->id], $quoteState));
+
+        foreach ($periods as $position => $period) {
+            QuoteItem::factory()->create([
+                'tenant_id' => $tenant->id,
+                'quote_id' => $quote->id,
+                'description' => $period->value.' item',
+                'billing_period' => $period,
+                'position' => $position,
+            ]);
+        }
+
+        return $quote;
+    }
+
+    public function test_create_without_query_has_null_prefill(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->get(route('recurring-invoices.create'))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('prefill', null));
+    }
+
+    public function test_create_with_invalid_query_params_has_null_prefill(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->get(route('recurring-invoices.create', ['quote_id' => 'nope', 'billing_period' => 'monthly']))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('prefill', null));
+        $this->get(route('recurring-invoices.create', ['quote_id' => (string) Str::uuid(), 'billing_period' => 'weekly']))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('prefill', null));
+    }
+
+    public function test_create_prefills_from_accepted_quote_group(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $quote = $this->acceptedQuote($tenant, [QuoteBillingPeriodEnum::OneOff, QuoteBillingPeriodEnum::Monthly, QuoteBillingPeriodEnum::Yearly]);
+
+        $this->get(route('recurring-invoices.create', ['quote_id' => $quote->id, 'billing_period' => 'yearly']))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('prefill.quote_id', $quote->id)
+                ->where('prefill.frequency', 'annually')
+                ->has('prefill.items', 1)
+                ->where('prefill.items.0.description', 'yearly item'));
+    }
+
+    public function test_create_prefill_redirects_back_with_status_error_when_quote_not_accepted(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $quote = Quote::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->get(route('recurring-invoices.create', ['quote_id' => $quote->id, 'billing_period' => 'monthly']))
+            ->assertSessionHasErrors('status');
+    }
+
+    public function test_create_prefill_rejects_one_off_and_empty_group(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $quote = $this->acceptedQuote($tenant, [QuoteBillingPeriodEnum::OneOff]);
+
+        $this->get(route('recurring-invoices.create', ['quote_id' => $quote->id, 'billing_period' => 'one_off']))
+            ->assertSessionHasErrors(['status' => __('app.quote_has_no_items_for_period')]);
+        $this->get(route('recurring-invoices.create', ['quote_id' => $quote->id, 'billing_period' => 'monthly']))
+            ->assertSessionHasErrors(['status' => __('app.quote_has_no_items_for_period')]);
+    }
+
+    public function test_create_prefill_for_foreign_tenant_quote_is_not_found(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $foreign = $this->acceptedQuote(Tenant::factory()->create(), [QuoteBillingPeriodEnum::Monthly]);
+
+        $this->get(route('recurring-invoices.create', ['quote_id' => $foreign->id, 'billing_period' => 'monthly']))
+            ->assertNotFound();
+    }
+
+    public function test_create_prefill_forbidden_without_create_recurring_permission(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Interná upratovačka', $tenant);
+        $quote = $this->acceptedQuote($tenant, [QuoteBillingPeriodEnum::Monthly]);
+
+        $this->get(route('recurring-invoices.create', ['quote_id' => $quote->id, 'billing_period' => 'monthly']))
+            ->assertForbidden();
+    }
+
+    public function test_create_prefill_forbidden_without_view_on_quote(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Účtovníčka', $tenant);
+        $role = Role::inTenant($tenant->id)->where('name', 'Účtovníčka')->firstOrFail();
+        $role->revokePermissionTo(PermissionEnum::ViewQuotes->value);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $quote = $this->acceptedQuote($tenant, [QuoteBillingPeriodEnum::Monthly]);
+
+        $this->get(route('recurring-invoices.create', ['quote_id' => $quote->id, 'billing_period' => 'monthly']))
+            ->assertForbidden();
+    }
+
+    public function test_store_rejects_item_description_over_255_chars(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('recurring-invoices.store'), $this->storePayload([
+            'items' => [['description' => str_repeat('a', 256), 'quantity' => 1, 'unit_price' => 100]],
+        ]))->assertSessionHasErrors('items.0.description');
     }
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import QuoteKindBadge from './QuoteKindBadge.vue';
-import InvoiceTotalsPanel from '@/Components/Invoices/InvoiceTotalsPanel.vue';
+import QuoteTotalsSplit from './QuoteTotalsSplit.vue';
 import { formatDate } from '@/utils/date';
-import type { VatBreakdownLine } from '@/Composables/useInvoiceTotals';
+import type { QuotePeriodTotals } from '@/utils/quoteBilling';
 
 const props = defineProps<{
     number: string | null;
@@ -12,10 +12,7 @@ const props = defineProps<{
     validUntil: string;
     currency: App.Enums.CurrencyEnum;
     isVatPayer: boolean;
-    subtotal: number;
-    vatAmount: number;
-    vatBreakdown: readonly VatBreakdownLine[];
-    total: number;
+    periodTotals: readonly QuotePeriodTotals[];
 }>();
 
 const { t } = useI18n();
@@ -44,15 +41,9 @@ const { t } = useI18n();
 
             <div class="divider my-0" />
 
-            <InvoiceTotalsPanel
+            <QuoteTotalsSplit
                 v-if="props.kind === 'itemized'"
-                :subtotal="props.subtotal"
-                :vat-amount="props.vatAmount"
-                :vat-breakdown="props.vatBreakdown"
-                :rounding-amount="0"
-                :total="props.total"
-                :deposit="0"
-                :balance-due="props.total"
+                :period-totals="props.periodTotals"
                 :currency="props.currency"
                 :is-vat-payer="props.isVatPayer"
             />

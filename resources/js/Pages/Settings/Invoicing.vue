@@ -10,6 +10,9 @@ defineProps<{
     signature: App.Data.Tenants.TenantSignatureData | null;
     // eslint-disable-next-line vue/prop-name-casing -- Inertia page prop, must match the server key exactly
     signature_constraints: App.Data.Invoices.InvoiceSignatureConstraintsData;
+    logo: App.Data.Tenants.TenantLogoData | null;
+    // eslint-disable-next-line vue/prop-name-casing -- Inertia page prop, must match the server key exactly
+    logo_constraints: App.Data.Invoices.TenantLogoConstraintsData;
     mailPlaceholders: App.Data.Invoices.InvoiceMailPlaceholderCatalogData;
 }>();
 
@@ -26,6 +29,8 @@ const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label:
         :settings="settings"
         :signature="signature"
         :signature-constraints="signature_constraints"
+        :logo="logo"
+        :logo-constraints="logo_constraints"
         :mail-placeholders="mailPlaceholders"
     />
 </template>

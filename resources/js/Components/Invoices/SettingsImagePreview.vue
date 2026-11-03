@@ -3,9 +3,12 @@ import { useI18n } from 'vue-i18n';
 import { formatBytes } from '@/utils/bytes';
 import { formatDate } from '@/utils/date';
 
+export type SettingsImage = Pick<App.Data.Tenants.TenantSignatureData, 'url' | 'file_name' | 'size' | 'uploaded_at'>;
+
 withDefaults(
     defineProps<{
-        signature: App.Data.Tenants.TenantSignatureData;
+        image: SettingsImage;
+        alt: string;
         muted?: boolean;
     }>(),
     { muted: false },
@@ -17,17 +20,17 @@ const { t } = useI18n();
 <template>
     <div class="flex items-center gap-3 rounded-box border border-base-300 bg-base-200 p-3">
         <img
-            :key="signature.uploaded_at"
-            :src="`${signature.url}?v=${encodeURIComponent(signature.uploaded_at)}`"
-            :alt="t('invoice_settings_signature_preview_alt')"
+            :key="image.uploaded_at"
+            :src="`${image.url}?v=${encodeURIComponent(image.uploaded_at)}`"
+            :alt="alt"
             class="max-h-24 max-w-56 object-contain"
             :class="{ 'opacity-40 grayscale': muted }"
         />
         <div class="min-w-0">
-            <p class="truncate font-medium">{{ signature.file_name }}</p>
+            <p class="truncate font-medium">{{ image.file_name }}</p>
             <p class="text-xs text-base-content/60">
-                {{ formatBytes(signature.size) }} · {{ t('invoice_settings_signature_uploaded_at') }}
-                {{ formatDate(signature.uploaded_at) }}
+                {{ formatBytes(image.size) }} · {{ t('settings_image_uploaded_at') }}
+                {{ formatDate(image.uploaded_at) }}
             </p>
         </div>
     </div>

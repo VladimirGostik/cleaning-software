@@ -6,6 +6,7 @@ namespace App\Data\Invoices;
 
 use App\Models\InvoiceItem;
 use Spatie\LaravelData\Attributes\Validation\Between;
+use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -18,7 +19,7 @@ final class InvoiceItemData extends Data
 {
     public function __construct(
         public readonly ?string $id,
-        #[Required]
+        #[Required, Max(255)]
         public readonly string $description,
         #[Required, Min(0), Rule('decimal:0,2')]
         public readonly float $quantity,

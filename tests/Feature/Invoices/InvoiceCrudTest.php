@@ -403,4 +403,15 @@ final class InvoiceCrudTest extends TestCase
             'rounding_mode' => 'none',
         ], $overrides);
     }
+
+    public function test_store_rejects_item_description_over_255_chars(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $payload = $this->storeHttpPayload([
+            'items' => [['id' => null, 'description' => str_repeat('a', 256), 'quantity' => 1, 'unit' => null, 'unit_price' => 10, 'discount_percent' => 0, 'vat_rate' => 0]],
+        ]);
+
+        $this->post(route('invoices.store'), $payload)->assertSessionHasErrors('items.0.description');
+    }
 }

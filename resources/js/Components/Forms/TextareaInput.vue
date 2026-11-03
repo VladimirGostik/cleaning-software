@@ -11,6 +11,7 @@ const props = withDefaults(
         rows?: number;
         disabled?: boolean;
         placeholder?: string;
+        maxlength?: number;
     }>(),
     { rows: 4 },
 );
@@ -52,6 +53,7 @@ defineExpose({ insertAtCursor });
             :rows="rows"
             :disabled="disabled"
             :placeholder="placeholder"
+            :maxlength="maxlength"
             :aria-required="required ? 'true' : undefined"
             :aria-invalid="error ? 'true' : undefined"
             @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"

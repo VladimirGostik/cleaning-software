@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { taskFrequencyKey } from '@/utils/enums';
 import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 
@@ -12,8 +11,6 @@ export interface InvoiceItemsTableRow {
     unit_price: number;
     discount_percent: number;
     vat_rate: number;
-    frequency?: App.Enums.TaskFrequencyEnum | null;
-    note?: string | null;
     line_base?: number | null;
     line_vat?: number | null;
     line_total?: number | null;
@@ -61,10 +58,6 @@ function lineTotal(index: number, row: InvoiceItemsTableRow): number {
                 <tr v-for="(item, index) in props.items" :key="index">
                     <td class="min-w-32">
                         {{ item.description }}
-                        <p v-if="item.frequency" class="text-xs text-base-content/60">
-                            {{ t(taskFrequencyKey(item.frequency)) }}
-                        </p>
-                        <p v-if="item.note" class="text-xs text-base-content/60">{{ item.note }}</p>
                     </td>
                     <td class="text-right tabular-nums whitespace-nowrap">
                         {{ item.unit ? `${item.quantity} ${item.unit}` : item.quantity }}

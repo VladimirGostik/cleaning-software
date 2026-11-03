@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
 import RecurringInvoiceForm from '@/Components/RecurringInvoices/RecurringInvoiceForm.vue';
@@ -11,6 +11,7 @@ import type { Breadcrumb } from '@/types';
 
 const props = defineProps<{
     context: App.Data.Invoices.InvoiceFormContextData;
+    prefill: App.Data.RecurringInvoices.RecurringInvoicePrefillData | null;
 }>();
 
 const { t } = useI18n();
@@ -37,7 +38,12 @@ function onSettingsSaved(): void {
         @open-settings="settingsDrawer.open"
     />
 
-    <RecurringInvoiceForm :context="context" />
+    <div v-if="prefill" class="alert alert-info mb-4">
+        <span>{{ t('recurring_invoice_prefilled_from_quote') }}</span>
+        <Link :href="`/quotes/${prefill.quote_id}`" class="link">{{ t('recurring_invoice_prefill_open_quote') }}</Link>
+    </div>
+
+    <RecurringInvoiceForm :context="context" :prefill="prefill" />
 
     <InvoiceSettingsDrawer
         :open="settingsDrawer.state.isOpen"

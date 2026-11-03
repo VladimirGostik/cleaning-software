@@ -43,6 +43,7 @@ final class QuoteFormContextData extends Data
         public readonly DocumentLetterheadData $letterhead,
         /** @var string[] */
         public readonly array $footer,
+        public readonly ?string $default_included_text,
     ) {}
 
     /**
@@ -82,6 +83,7 @@ final class QuoteFormContextData extends Data
             tokens: $tokens,
             letterhead: DocumentFrame::letterhead($tenant),
             footer: DocumentFrame::footer($tenant),
+            default_included_text: $tenant->interface?->default_quote_included_text,
         );
     }
 }

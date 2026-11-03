@@ -18,12 +18,13 @@ import QuoteActionsCard from '@/Components/Quotes/QuoteActionsCard.vue';
 import QuoteLinksCard from '@/Components/Quotes/QuoteLinksCard.vue';
 import QuoteAttachClientPanel from '@/Components/Quotes/QuoteAttachClientPanel.vue';
 import QuoteConvertToContractModal from '@/Components/Quotes/QuoteConvertToContractModal.vue';
-import InvoiceItemsTable from '@/Components/Invoices/InvoiceItemsTable.vue';
-import InvoiceTotalsPanel from '@/Components/Invoices/InvoiceTotalsPanel.vue';
+import QuoteItemsTable from '@/Components/Quotes/QuoteItemsTable.vue';
+import QuoteTotalsSplit from '@/Components/Quotes/QuoteTotalsSplit.vue';
+import QuoteIncludedList from '@/Components/Quotes/QuoteIncludedList.vue';
 
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { formatDate } from '@/utils/date';
-import { toNumber } from '@/utils/money';
+import { periodTotalsFromData } from '@/utils/quoteBilling';
 import type { Breadcrumb } from '@/types';
 
 const props = defineProps<{
@@ -34,6 +35,8 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+
+const periodTotals = computed(() => periodTotalsFromData(props.quote.period_totals));
 
 const ui = reactive({
     convertContractOpen: false,
@@ -123,23 +126,19 @@ function duplicate(): void {
                     <QuoteMetaGrid :quote="quote" />
 
                     <template v-if="quote.kind === 'itemized'">
-                        <InvoiceItemsTable
+                        <QuoteItemsTable
                             :items="quote.items"
                             :currency="quote.currency"
                             :is-vat-payer="quote.is_vat_payer"
                         />
 
-                        <InvoiceTotalsPanel
-                            :subtotal="toNumber(quote.subtotal)"
-                            :vat-amount="toNumber(quote.vat_amount)"
-                            :vat-breakdown="quote.vat_breakdown"
-                            :rounding-amount="0"
-                            :total="toNumber(quote.total)"
-                            :deposit="0"
-                            :balance-due="toNumber(quote.total)"
+                        <QuoteTotalsSplit
+                            :period-totals="periodTotals"
                             :currency="quote.currency"
                             :is-vat-payer="quote.is_vat_payer"
                         />
+
+                        <QuoteIncludedList :text="quote.included_text" />
                     </template>
 
                     <QuoteDocumentPanel v-else :quote="quote" />

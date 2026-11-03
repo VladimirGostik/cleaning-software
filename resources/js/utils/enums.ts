@@ -39,6 +39,29 @@ export const RECURRING_FREQUENCIES: readonly App.Enums.RecurringFrequencyEnum[] 
     'annually',
 ];
 
+export const QUOTE_BILLING_PERIODS: readonly App.Enums.QuoteBillingPeriodEnum[] = [
+    'one_off',
+    'monthly',
+    'quarterly',
+    'yearly',
+];
+
+export function quoteBillingPeriodKey(period: App.Enums.QuoteBillingPeriodEnum): string {
+    return `quote_period_${period}`;
+}
+
+export function quoteBillingAdverbKey(period: App.Enums.QuoteBillingPeriodEnum): string {
+    return `quote_period_adverb_${period}`;
+}
+
+export function quoteBillingUnitKey(period: App.Enums.QuoteBillingPeriodEnum): string {
+    return `quote_period_unit_${period}`;
+}
+
+export function quoteBillingSuffixKey(period: App.Enums.QuoteBillingPeriodEnum): string {
+    return `quote_period_suffix_${period}`;
+}
+
 export const RECURRING_STATUSES: readonly App.Enums.RecurringInvoiceStatusEnum[] = [
     'active',
     'paused',

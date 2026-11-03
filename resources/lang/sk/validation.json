@@ -350,5 +350,12 @@
     "attributes.billing_peppol_participant_id": "fakturačné Peppol ID",
     "attributes.billing_street": "fakturačná ulica",
     "attributes.billing_city": "fakturačné mesto",
-    "attributes.billing_postal_code": "fakturačné PSČ"
+    "attributes.billing_postal_code": "fakturačné PSČ",
+    "attributes.items.*.billing_period": "fakturačné obdobie",
+    "attributes.included_text": "v cene je zahrnuté",
+    "attributes.logo_uuid": "logo",
+    "attributes.remove_logo": "odstrániť logo",
+    "attributes.default_quote_included_text": "predvolený text „V cene je zahrnuté“",
+    "attributes.signing_place": "miesto podpisu",
+    "attributes.billing_period": "fakturačné obdobie"
 }

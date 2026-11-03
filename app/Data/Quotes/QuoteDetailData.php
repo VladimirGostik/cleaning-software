@@ -54,6 +54,10 @@ final class QuoteDetailData extends Data
         /** @var VatBreakdownLineData[] */
         #[DataCollectionOf(VatBreakdownLineData::class)]
         public readonly array $vat_breakdown,
+        /** @var QuotePeriodTotalsData[] */
+        #[DataCollectionOf(QuotePeriodTotalsData::class)]
+        public readonly array $period_totals,
+        public readonly ?string $included_text,
         public readonly ?MediaFileData $document,
         public readonly ?QuoteTextDocumentData $text_document,
         /** @var QuoteInvoiceLinkData[] */
@@ -99,6 +103,8 @@ final class QuoteDetailData extends Data
             customer_postal_code: $quote->customer_postal_code,
             items: $quote->items->map(fn (QuoteItem $item) => QuoteItemData::fromModel($item))->all(),
             vat_breakdown: array_map(fn (array $l) => VatBreakdownLineData::from($l), $quote->vat_breakdown ?? []),
+            period_totals: QuotePeriodTotalsData::collectFrom($quote->period_totals),
+            included_text: $quote->included_text,
             document: $media !== null ? MediaFileData::fromMedia($media, route('quotes.pdf', $quote)) : null,
             text_document: QuoteTextDocumentData::fromQuote($quote, $text, $rawText),
             invoices: $quote->invoices->map(fn (Invoice $invoice) => QuoteInvoiceLinkData::fromModel($invoice))->all(),

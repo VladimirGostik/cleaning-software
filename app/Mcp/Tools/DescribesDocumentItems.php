@@ -8,8 +8,10 @@ use App\Data\Invoices\InvoiceItemData;
 use App\Data\Quotes\QuoteItemData;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Models\Tenant;
 use DateTimeInterface;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -29,6 +31,7 @@ trait DescribesDocumentItems
             'issue_date' => $pick('issue_date', $existing?->issue_date->toDateString()),
             'valid_until' => $pick('valid_until', $existing?->valid_until->toDateString()),
             'note' => $pick('note', $existing?->note),
+            'included_text' => $pick('included_text', $existing !== null ? $existing->included_text : $this->firmDefaultIncludedText()),
             'customer_name' => $pick('customer_name', $existing?->customer_name),
             'customer_email' => $pick('customer_email', $existing?->customer_email),
             'customer_street' => $pick('customer_street', $existing?->customer_street),
@@ -95,6 +98,7 @@ trait DescribesDocumentItems
             'issue_date' => $schema->string()->format('date')->description('YYYY-MM-DD.'),
             'valid_until' => $schema->string()->format('date')->description('YYYY-MM-DD, not before issue_date.'),
             'note' => $schema->string()->nullable()->description('Free note printed on the quote.'),
+            'included_text' => $schema->string()->max(2000)->nullable()->description('"Included in the price" bullets, one per line. Omitted on create = the company default; omitted on update = unchanged.'),
             'customer_name' => $schema->string()->nullable()->description('Recipient name when there is no client_id.'),
             'customer_email' => $schema->string()->nullable()->description('Recipient e-mail.'),
             'customer_street' => $schema->string()->nullable(),
@@ -142,6 +146,9 @@ trait DescribesDocumentItems
 
         if ($withNote) {
             $properties['note'] = $schema->string()->max(500)->nullable();
+            $properties['billing_period'] = $schema->string()
+                ->enum(array_map(fn (QuoteBillingPeriodEnum $case): string => $case->value, QuoteBillingPeriodEnum::cases()))
+                ->description('How the price is billed: one_off, monthly, quarterly or yearly. Defaults to one_off.');
         }
 
         return $schema->array()->items($schema->object($properties))->description('Line items; replaces all existing lines when given.');
@@ -172,11 +179,17 @@ trait DescribesDocumentItems
             if ($withNote) {
                 $row['frequency'] = null;
                 $row['note'] = $item['note'] ?? null;
+                $row['billing_period'] = $item['billing_period'] ?? QuoteBillingPeriodEnum::OneOff->value;
             }
 
             $rows[] = $row;
         }
 
         return $rows;
+    }
+
+    private function firmDefaultIncludedText(): ?string
+    {
+        return Tenant::query()->with('interface')->find(current_tenant_id())?->interface?->default_quote_included_text;
     }
 }

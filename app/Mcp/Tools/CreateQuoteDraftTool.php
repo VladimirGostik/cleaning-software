@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
+use App\Data\Quotes\QuotePeriodTotalsData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Enums\QuoteKindEnum;
 use App\Models\Quote;
@@ -37,7 +38,7 @@ final class CreateQuoteDraftTool extends TenantTool
 
         $quote = $quotes->create($data, $user, '');
 
-        return $this->json(['id' => $quote->id, 'number' => $quote->number, 'status' => $quote->status->value, 'total' => $quote->total]);
+        return $this->json(['id' => $quote->id, 'number' => $quote->number, 'status' => $quote->status->value, 'total' => $quote->total, 'period_totals' => QuotePeriodTotalsData::collectFrom($quote->period_totals)]);
     }
 
     /** @return array<string, Type> */

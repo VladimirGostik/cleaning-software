@@ -350,5 +350,12 @@
     "attributes.billing_peppol_participant_id": "billing Peppol ID",
     "attributes.billing_street": "billing street",
     "attributes.billing_city": "billing city",
-    "attributes.billing_postal_code": "billing postal code"
+    "attributes.billing_postal_code": "billing postal code",
+    "attributes.items.*.billing_period": "billing period",
+    "attributes.included_text": "included in the price",
+    "attributes.logo_uuid": "logo",
+    "attributes.remove_logo": "remove logo",
+    "attributes.default_quote_included_text": "default “Included in the price” text",
+    "attributes.signing_place": "place of signing",
+    "attributes.billing_period": "billing period"
 }

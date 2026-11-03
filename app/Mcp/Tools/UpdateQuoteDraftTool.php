@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
+use App\Data\Quotes\QuotePeriodTotalsData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Models\Quote;
 use App\Models\User;
@@ -41,7 +42,7 @@ final class UpdateQuoteDraftTool extends TenantTool
 
         $updated = $quotes->update($quote, $data, $user, '');
 
-        return $this->json(['id' => $updated->id, 'number' => $updated->number, 'status' => $updated->status->value, 'total' => $updated->total]);
+        return $this->json(['id' => $updated->id, 'number' => $updated->number, 'status' => $updated->status->value, 'total' => $updated->total, 'period_totals' => QuotePeriodTotalsData::collectFrom($updated->period_totals)]);
     }
 
     /** @return array<string, Type> */

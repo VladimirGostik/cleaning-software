@@ -7,6 +7,8 @@ namespace App\Http\Controllers;
 use App\Contracts\ResolvesSupplierSignature;
 use App\Data\Invoices\InvoiceSettingsData;
 use App\Data\Invoices\InvoiceSignatureConstraintsData;
+use App\Data\Invoices\TenantLogoConstraintsData;
+use App\Data\Tenants\TenantLogoData;
 use App\Data\Tenants\TenantSignatureData;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
@@ -38,6 +40,8 @@ final class InvoiceSettingsController extends Controller
             'settings' => InvoiceSettingsData::fromTenant($tenant),
             'signature' => TenantSignatureData::fromTenant($tenant),
             'signature_constraints' => InvoiceSignatureConstraintsData::fromConfig(),
+            'logo' => TenantLogoData::fromTenant($tenant),
+            'logo_constraints' => TenantLogoConstraintsData::fromConfig(),
             'mailPlaceholders' => $placeholders->invoiceMailCatalog(),
         ]);
     }
@@ -57,6 +61,29 @@ final class InvoiceSettingsController extends Controller
     {
         $tenant = Tenant::query()->findOrFail(current_tenant_id());
         $media = $tenant->signatureMedia;
+
+        if ($media === null) {
+            abort(404);
+        }
+
+        $disk = Storage::disk($media->disk);
+        $path = $media->getPathRelativeToRoot();
+
+        if (! $disk->exists($path)) {
+            abort(404);
+        }
+
+        return response($disk->get($path), 200, [
+            'Content-Type' => $media->mime_type ?? 'application/octet-stream',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    #[Authorize(PermissionEnum::ManageBillingSettings->value)]
+    public function logo(): Response
+    {
+        $tenant = Tenant::query()->findOrFail(current_tenant_id());
+        $media = $tenant->logoMedia();
 
         if ($media === null) {
             abort(404);

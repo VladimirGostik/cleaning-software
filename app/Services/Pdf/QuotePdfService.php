@@ -19,6 +19,7 @@ final readonly class QuotePdfService implements RendersQuotePdf
         private QuoteTextService $text,
         private DocumentPdfRenderer $pdf,
         private DocumentLocale $locale,
+        private TenantLogoResolver $logos,
     ) {}
 
     /** Returns raw PDF bytes via the `chrome` driver. Itemized quotes only — document-kind quotes serve the uploaded file directly. */
@@ -42,12 +43,16 @@ final readonly class QuotePdfService implements RendersQuotePdf
             );
         }
 
-        return $this->locale->run(fn (): string => Pdf::view('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])
+        return $this->locale->run(fn (): string => Pdf::view('pdf.quotes.default', [
+            'quote' => $quote,
+            'tenant' => $tenant,
+            'logoDataUri' => $this->logos->forTenant($tenant),
+        ])
             ->format('A4')
             ->portrait()
             ->headerHtml('<div></div>')
-            ->footerView('pdf.quotes.footer', ['tenant' => $tenant, 'preview' => false])
-            ->margins(18, 18, 26, 18)
+            ->footerView('pdf.quotes.footer', ['tenant' => $tenant])
+            ->margins(14, 18, 20, 18)
             ->generatePdfContent());
     }
 }

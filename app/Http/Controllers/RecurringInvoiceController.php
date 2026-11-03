@@ -7,19 +7,25 @@ namespace App\Http\Controllers;
 use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceListItemData;
 use App\Data\RecurringInvoices\RecurringInvoiceDetailData;
+use App\Data\RecurringInvoices\RecurringInvoicePrefillData;
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;
+use App\Models\Quote;
 use App\Models\RecurringInvoice;
 use App\Models\Tenant;
 use App\Navigation\NavItem;
+use App\Services\QuoteService;
 use App\Services\RecurringInvoiceService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -43,12 +49,13 @@ final class RecurringInvoiceController extends Controller
     }
 
     #[Authorize('create', RecurringInvoice::class)]
-    public function create(): InertiaResponse
+    public function create(Request $request, QuoteService $quotes): InertiaResponse
     {
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
 
         return Inertia::render('RecurringInvoices/Create', [
             'context' => InvoiceFormContextData::fromTenant($tenant, $this->clientOptions(), $this->objectOptions()),
+            'prefill' => $this->prefill($request, $quotes),
         ]);
     }
 
@@ -131,5 +138,20 @@ final class RecurringInvoiceController extends Controller
         $this->service->cancel($recurringInvoice);
 
         return to_route('recurring-invoices.show', $recurringInvoice)->with('success', __('app.recurring_invoice_cancelled'));
+    }
+
+    private function prefill(Request $request, QuoteService $quotes): ?RecurringInvoicePrefillData
+    {
+        $quoteId = $request->string('quote_id')->toString();
+        $period = QuoteBillingPeriodEnum::tryFrom($request->string('billing_period')->toString());
+
+        if ($period === null || ! Str::isUuid($quoteId)) {
+            return null;
+        }
+
+        $quote = Quote::query()->findOrFail($quoteId);
+        Gate::authorize('view', $quote);
+
+        return $quotes->recurringInvoicePrefill($quote, $period);
     }
 }

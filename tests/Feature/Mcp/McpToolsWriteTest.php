@@ -194,6 +194,54 @@ final class McpToolsWriteTest extends TestCase
         $this->assertCount(1, $quote->items);
     }
 
+    public function test_quote_draft_keeps_billing_period_per_row_and_returns_period_totals(): void
+    {
+        $created = $this->callTool($this->token, 'create_quote_draft', [
+            'company_id' => $this->alpha->id,
+            'customer_name' => 'Acme',
+            'issue_date' => '2026-11-02',
+            'valid_until' => '2026-12-02',
+            'items' => [
+                ['description' => 'Windows', 'quantity' => 1, 'unit_price' => 300],
+                ['description' => 'Stairs', 'quantity' => 1, 'unit_price' => 70, 'billing_period' => 'monthly'],
+            ],
+        ]);
+        $this->assertFalse($created->isError, $created->text);
+        $this->assertSame(['one_off', 'monthly'], array_column((array) $created->get('period_totals'), 'billing_period'));
+
+        $quote = Quote::findOrFail($created->string('id'));
+        $this->assertSame(['one_off', 'monthly'], $quote->items->sortBy('position')->map(fn ($item) => $item->billing_period->value)->values()->all());
+
+        $updated = $this->callTool($this->token, 'update_quote_draft', [
+            'company_id' => $this->alpha->id,
+            'quote_id' => $quote->id,
+            'items' => [['description' => 'Yearly', 'quantity' => 1, 'unit_price' => 200, 'billing_period' => 'yearly']],
+        ]);
+        $this->assertFalse($updated->isError, $updated->text);
+        $this->assertSame(['yearly'], array_column((array) $updated->get('period_totals'), 'billing_period'));
+    }
+
+    public function test_quote_draft_uses_firm_included_default_only_when_argument_is_missing(): void
+    {
+        $this->alpha->interface()->updateOrCreate([], ['default_quote_included_text' => "Labour\nMaterial"]);
+        $base = [
+            'company_id' => $this->alpha->id,
+            'customer_name' => 'Acme',
+            'issue_date' => '2026-11-02',
+            'valid_until' => '2026-12-02',
+            'items' => [['description' => 'Windows', 'quantity' => 1, 'unit_price' => 30]],
+        ];
+
+        $defaulted = $this->callTool($this->token, 'create_quote_draft', $base);
+        $explicit = $this->callTool($this->token, 'create_quote_draft', [...$base, 'included_text' => 'Only this']);
+
+        $this->assertSame("Labour\nMaterial", Quote::findOrFail($defaulted->string('id'))->included_text);
+        $this->assertSame('Only this', Quote::findOrFail($explicit->string('id'))->included_text);
+
+        $this->callTool($this->token, 'update_quote_draft', ['company_id' => $this->alpha->id, 'quote_id' => $explicit->string('id'), 'subject' => 'S']);
+        $this->assertSame('Only this', Quote::findOrFail($explicit->string('id'))->included_text);
+    }
+
     public function test_a_sent_quote_is_not_editable_through_the_tool(): void
     {
         $quote = Quote::factory()->sent()->create(['tenant_id' => $this->alpha->id]);

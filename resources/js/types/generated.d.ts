@@ -1140,6 +1140,10 @@ readonly invoice_mail_subject: string | null,
 readonly invoice_mail_body: string | null,
 readonly peppol_participant_id: string | null,
 readonly representative_name: string | null,
+readonly logo_uuid: string | null,
+readonly remove_logo: boolean,
+readonly default_quote_included_text: string | null,
+readonly signing_place: string | null,
 };
 export type InvoiceSignatureConstraintsData = {
 readonly allowed_mimes: string[],
@@ -1208,6 +1212,10 @@ readonly to: string,
 export type PohodaExportPreviewData = {
 readonly count: number,
 readonly skipped_non_eur: number,
+};
+export type TenantLogoConstraintsData = {
+readonly allowed_mimes: string[],
+readonly max_size_kb: number,
 };
 export type VatBreakdownLineData = {
 readonly rate: number,
@@ -1397,6 +1405,8 @@ readonly customer_city: string | null,
 readonly customer_postal_code: string | null,
 readonly items: App.Data.Quotes.QuoteItemData[],
 readonly vat_breakdown: App.Data.Invoices.VatBreakdownLineData[],
+readonly period_totals: App.Data.Quotes.QuotePeriodTotalsData[],
+readonly included_text: string | null,
 readonly document: App.Data.MediaFileData | null,
 readonly text_document: App.Data.Quotes.QuoteTextDocumentData | null,
 readonly invoices: App.Data.Quotes.QuoteInvoiceLinkData[],
@@ -1416,6 +1426,7 @@ readonly templates: App.Data.Quotes.QuoteTemplateOptionData[],
 readonly tokens: App.Data.DocumentTemplates.DocumentTokenData[],
 readonly letterhead: App.Data.Documents.DocumentLetterheadData,
 readonly footer: string[],
+readonly default_included_text: string | null,
 };
 export type QuoteInvoiceLinkData = {
 readonly id: string,
@@ -1431,6 +1442,7 @@ readonly unit: string | null,
 readonly unit_price: number,
 readonly discount_percent: number,
 readonly vat_rate: number,
+readonly billing_period: App.Enums.QuoteBillingPeriodEnum,
 readonly note: string | null,
 readonly line_base: number | null,
 readonly line_vat: number | null,
@@ -1447,9 +1459,16 @@ readonly client_id: string | null,
 readonly object_name: string | null,
 readonly currency: App.Enums.CurrencyEnum,
 readonly total: string,
+readonly period_totals: App.Data.Quotes.QuotePeriodTotalsData[],
 readonly issue_date: string,
 readonly valid_until: string,
 readonly has_document: boolean,
+};
+export type QuotePeriodTotalsData = {
+readonly billing_period: App.Enums.QuoteBillingPeriodEnum,
+readonly subtotal: string,
+readonly vat_amount: string,
+readonly total: string,
 };
 export type QuoteTemplateOptionData = {
 readonly id: string,
@@ -1487,6 +1506,7 @@ readonly number: string | null,
 readonly document_uuid: string | null,
 readonly document_template_id: string | null,
 readonly document_body: string | null,
+readonly included_text: string | null,
 readonly document_show_header: boolean,
 readonly document_show_footer: boolean,
 readonly kind: App.Enums.QuoteKindEnum,
@@ -1557,6 +1577,21 @@ readonly occurrences_limit: number | null,
 readonly auto_issue: boolean,
 readonly start_date: string,
 readonly end_date: string | null,
+};
+export type RecurringInvoicePrefillData = {
+readonly quote_id: string,
+readonly client_id: string | null,
+readonly cleaning_object_id: string | null,
+readonly name: string,
+readonly frequency: App.Enums.RecurringFrequencyEnum,
+readonly customer_name: string | null,
+readonly customer_email: string | null,
+readonly customer_street: string | null,
+readonly customer_city: string | null,
+readonly customer_postal_code: string | null,
+readonly currency: App.Enums.CurrencyEnum,
+readonly note: string | null,
+readonly items: App.Data.RecurringInvoices.RecurringInvoiceItemData[],
 };
 export type RecurringInvoiceUpsertData = {
 readonly client_id: string | null,
@@ -1886,6 +1921,13 @@ readonly name: string,
 readonly is_active: boolean,
 readonly color: App.Enums.TenantColorEnum | null,
 };
+export type TenantLogoData = {
+readonly url: string,
+readonly file_name: string,
+readonly mime_type: string,
+readonly size: number,
+readonly uploaded_at: string,
+};
 export type TenantSignatureData = {
 readonly url: string,
 readonly file_name: string,
@@ -1954,6 +1996,7 @@ export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense";
 export type PendingActionStatusEnum = "pending" | "executed" | "cancelled" | "expired";
 export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "manage employee_access" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "use assistant" | "view expenses" | "manage expenses";
+export type QuoteBillingPeriodEnum = "one_off" | "monthly" | "quarterly" | "yearly";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type RecurringDefaultStateEnum = "draft" | "issued";

@@ -7,8 +7,10 @@ namespace Tests\Feature\Quotes;
 use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Data\Quotes\QuoteItemData;
+use App\Data\Quotes\QuotePeriodTotalsData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Models\Tenant;
 use App\Services\InvoiceService;
 use App\Services\QuoteService;
@@ -105,5 +107,32 @@ final class QuoteTotalsParityTest extends TestCase
         $this->assertSame('0.00', $quote->vat_amount);
         $this->assertSame($invoice->total, $quote->total);
         $this->assertNull($quote->vat_breakdown);
+    }
+
+    public function test_single_group_period_total_matches_overall_total(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => true, 'vat_rate' => 23]);
+        $this->bindTenant($tenant);
+
+        $quoteItems = array_map(fn (array $i) => new QuoteItemData(
+            id: null, description: 'Item', frequency: null, quantity: $i['quantity'], unit: null,
+            unit_price: $i['unit_price'], discount_percent: $i['discount_percent'], vat_rate: $i['vat_rate'],
+            billing_period: QuoteBillingPeriodEnum::Monthly,
+        ), $this->items());
+
+        $quote = app(QuoteService::class)->create(QuoteUpsertData::from([
+            'client_id' => null, 'cleaning_object_id' => null, 'subject' => null,
+            'issue_date' => now()->toDateString(), 'valid_until' => now()->addDays(30)->toDateString(), 'note' => null,
+            'items' => $quoteItems, 'customer_name' => 'Parity Co', 'customer_email' => null, 'customer_street' => null,
+            'customer_city' => null, 'customer_postal_code' => null, 'number' => null, 'document_uuid' => null,
+            'kind' => 'itemized', 'currency' => 'EUR',
+        ]), null, 'sess-1');
+
+        $groups = QuotePeriodTotalsData::collectFrom($quote->fresh()?->period_totals);
+
+        $this->assertCount(1, $groups);
+        $this->assertSame($quote->subtotal, $groups[0]->subtotal);
+        $this->assertSame($quote->vat_amount, $groups[0]->vat_amount);
+        $this->assertSame($quote->total, $groups[0]->total);
     }
 }

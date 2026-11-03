@@ -8,6 +8,7 @@ use App\Contracts\RendersQuotePdf;
 use App\Enums\DocumentTypeEnum;
 use App\Models\Document;
 use App\Models\Quote;
+use App\Models\QuoteItem;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -151,5 +152,24 @@ final class QuoteApiTest extends TestCase
         $this->assertStringStartsWith('image/', (string) $response->headers->get('Content-Type'));
         $this->assertStringStartsWith('inline', (string) $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('scan.png', (string) $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_detail_and_list_expose_period_totals_and_item_billing_period(): void
+    {
+        $quote = Quote::factory()->create(['tenant_id' => $this->alpha->id, 'period_totals' => [
+            ['billing_period' => 'one_off', 'subtotal' => '10.00', 'vat_amount' => '0.00', 'total' => '10.00'],
+            ['billing_period' => 'monthly', 'subtotal' => '5.00', 'vat_amount' => '0.00', 'total' => '5.00'],
+        ]]);
+        QuoteItem::factory()->monthly()->create(['tenant_id' => $this->alpha->id, 'quote_id' => $quote->id]);
+
+        $this->apiAs($this->leader, $this->alpha)->getJson("/api/quotes/{$quote->id}")
+            ->assertOk()
+            ->assertJsonPath('total', $quote->total)
+            ->assertJsonPath('period_totals.1.billing_period', 'monthly')
+            ->assertJsonPath('items.0.billing_period', 'monthly');
+
+        $this->apiAs($this->leader, $this->alpha)->getJson('/api/quotes')
+            ->assertOk()
+            ->assertJsonPath('data.0.period_totals.0.billing_period', 'one_off');
     }
 }

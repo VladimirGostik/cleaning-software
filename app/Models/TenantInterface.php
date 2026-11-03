@@ -29,6 +29,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property RoundingModeEnum $default_rounding_mode
  * @property string|null $default_header_text
  * @property string|null $default_footer_text
+ * @property string|null $default_quote_included_text
  * @property string|null $invoice_mail_subject
  * @property string|null $invoice_mail_body
  */
@@ -42,6 +43,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'default_rounding_mode',
     'default_header_text',
     'default_footer_text',
+    'default_quote_included_text',
     'invoice_mail_subject',
     'invoice_mail_body',
 ])]
@@ -68,7 +70,7 @@ final class TenantInterface extends Model
             ->logOnly([
                 'color', 'recurring_default_state',
                 'default_constant_symbol', 'default_payment_type', 'default_currency', 'default_rounding_mode',
-                'default_header_text', 'default_footer_text', 'invoice_mail_subject', 'invoice_mail_body',
+                'default_header_text', 'default_footer_text', 'default_quote_included_text', 'invoice_mail_subject', 'invoice_mail_body',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

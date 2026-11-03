@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Tests\Feature\Quotes;
 
 use App\Data\Quotes\QuoteItemData;
+use App\Data\Quotes\QuotePeriodTotalsData;
 use App\Data\Quotes\QuoteUpsertData;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
+use App\Enums\RecurringFrequencyEnum;
 use App\Events\QuoteSent;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Quote;
+use App\Models\QuoteItem;
 use App\Models\Tenant;
 use App\Services\QuoteService;
 use Database\Seeders\RoleTemplatesSeeder;
@@ -553,5 +557,169 @@ final class QuoteServiceTest extends TestCase
         $paginator = app(QuoteService::class)->paginate(request());
 
         $this->assertSame(1, $paginator->total());
+    }
+
+    /** @return array<int, QuoteItemData> */
+    private function periodItems(): array
+    {
+        $make = fn (string $description, float $qty, float $price, QuoteBillingPeriodEnum $period): QuoteItemData => new QuoteItemData(
+            id: null,
+            description: $description,
+            frequency: null,
+            quantity: $qty,
+            unit: null,
+            unit_price: $price,
+            discount_percent: 0,
+            vat_rate: 23,
+            billing_period: $period,
+        );
+
+        return [
+            $make('Yearly windows', 1, 200, QuoteBillingPeriodEnum::Yearly),
+            $make('Monthly a', 1, 70, QuoteBillingPeriodEnum::Monthly),
+            $make('Setup', 1, 300, QuoteBillingPeriodEnum::OneOff),
+            $make('Monthly b', 2, 25, QuoteBillingPeriodEnum::Monthly),
+            $make('Quarterly', 1, 80, QuoteBillingPeriodEnum::Quarterly),
+        ];
+    }
+
+    public function test_period_totals_group_items_in_enum_order_and_keep_overall_total(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false]);
+        $this->bindTenant($tenant);
+
+        $quote = app(QuoteService::class)->create($this->upsertData(['items' => $this->periodItems()]), null, 'sess-1');
+
+        $this->assertSame('700.00', $quote->total);
+        $this->assertEquals(
+            [
+                ['billing_period' => 'one_off', 'subtotal' => '300.00', 'vat_amount' => '0.00', 'total' => '300.00'],
+                ['billing_period' => 'monthly', 'subtotal' => '120.00', 'vat_amount' => '0.00', 'total' => '120.00'],
+                ['billing_period' => 'quarterly', 'subtotal' => '80.00', 'vat_amount' => '0.00', 'total' => '80.00'],
+                ['billing_period' => 'yearly', 'subtotal' => '200.00', 'vat_amount' => '0.00', 'total' => '200.00'],
+            ],
+            $quote->fresh()?->period_totals,
+        );
+    }
+
+    public function test_period_totals_hold_vat_per_group_for_vat_payer(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => true, 'vat_rate' => 23]);
+        $this->bindTenant($tenant);
+
+        $quote = app(QuoteService::class)->create($this->upsertData(['items' => $this->periodItems()]), null, 'sess-1');
+
+        $totals = QuotePeriodTotalsData::collectFrom($quote->fresh()?->period_totals);
+        $byPeriod = [];
+        foreach ($totals as $row) {
+            $byPeriod[$row->billing_period->value] = [$row->subtotal, $row->vat_amount, $row->total];
+        }
+
+        $this->assertSame([
+            'one_off' => ['300.00', '69.00', '369.00'],
+            'monthly' => ['120.00', '27.60', '147.60'],
+            'quarterly' => ['80.00', '18.40', '98.40'],
+            'yearly' => ['200.00', '46.00', '246.00'],
+        ], $byPeriod);
+    }
+
+    public function test_group_without_items_is_absent_from_period_totals(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+
+        $items = array_values(array_filter($this->periodItems(), fn (QuoteItemData $i): bool => $i->billing_period === QuoteBillingPeriodEnum::Monthly));
+        $quote = app(QuoteService::class)->create($this->upsertData(['items' => $items]), null, 'sess-1');
+
+        $this->assertSame(['monthly'], array_column((array) $quote->fresh()?->period_totals, 'billing_period'));
+    }
+
+    public function test_update_recomputes_period_totals(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $service = app(QuoteService::class);
+        $quote = $service->create($this->upsertData(['items' => $this->periodItems()]), null, 'sess-1');
+
+        $service->update($quote, $this->upsertData(), null, 'sess-1');
+
+        $this->assertSame(['one_off'], array_column((array) $quote->fresh()?->period_totals, 'billing_period'));
+    }
+
+    public function test_document_kind_quote_has_no_period_totals(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $quote = Quote::factory()->document()->create(['tenant_id' => $tenant->id]);
+
+        $this->assertNull($quote->fresh()?->period_totals);
+        $this->assertSame([], QuotePeriodTotalsData::collectFrom($quote->period_totals));
+    }
+
+    public function test_included_text_is_stored_and_split_into_trimmed_lines(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+
+        $quote = app(QuoteService::class)->create(
+            $this->upsertData(['included_text' => "  Materials \n\n\r\nTravel  \n   "]),
+            null,
+            'sess-1',
+        );
+
+        $this->assertSame(['Materials', 'Travel'], $quote->includedLines());
+    }
+
+    public function test_cleared_included_text_yields_no_lines(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+
+        $quote = app(QuoteService::class)->create($this->upsertData(['included_text' => '']), null, 'sess-1');
+
+        $this->assertSame([], $quote->includedLines());
+    }
+
+    public function test_duplicate_copies_billing_period_period_totals_and_included_text(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $service = app(QuoteService::class);
+        $quote = $service->create($this->upsertData(['items' => $this->periodItems(), 'included_text' => 'Materials']), null, 'sess-1');
+
+        $copy = $service->duplicate($quote->fresh() ?? $quote);
+
+        $this->assertSame('Materials', $copy->included_text);
+        $this->assertEquals($quote->fresh()?->period_totals, $copy->fresh()?->period_totals);
+        $this->assertEqualsCanonicalizing(
+            ['monthly', 'monthly', 'one_off', 'quarterly', 'yearly'],
+            $copy->items->map(fn (QuoteItem $i): string => $i->billing_period->value)->all(),
+        );
+    }
+
+    public function test_item_billing_period_defaults_to_one_off(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+
+        $quote = app(QuoteService::class)->create($this->upsertData(), null, 'sess-1');
+
+        $this->assertSame(QuoteBillingPeriodEnum::OneOff, $quote->items->first()?->billing_period);
+    }
+
+    public function test_billing_period_enum_display_helpers(): void
+    {
+        app()->setLocale('sk');
+
+        $this->assertNull(QuoteBillingPeriodEnum::OneOff->adverb());
+        $this->assertFalse(QuoteBillingPeriodEnum::OneOff->isRecurring());
+        $this->assertSame('mesačne', QuoteBillingPeriodEnum::Monthly->adverb());
+        $this->assertSame('mesiac', QuoteBillingPeriodEnum::Monthly->unitNoun());
+        $this->assertSame('mes.', QuoteBillingPeriodEnum::Monthly->shortSuffix());
+        $this->assertSame('štvrťrok', QuoteBillingPeriodEnum::Quarterly->unitNoun());
+        $this->assertSame('ročne', QuoteBillingPeriodEnum::Yearly->adverb());
+        $this->assertSame('rok', QuoteBillingPeriodEnum::Yearly->shortSuffix());
+        $this->assertSame(RecurringFrequencyEnum::Annually, QuoteBillingPeriodEnum::Yearly->recurringFrequency());
+        $this->assertNull(QuoteBillingPeriodEnum::OneOff->recurringFrequency());
     }
 }

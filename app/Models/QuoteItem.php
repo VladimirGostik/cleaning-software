@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\TaskFrequencyEnum;
 use Database\Factories\QuoteItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $quote_id
  * @property string $description
  * @property TaskFrequencyEnum|null $frequency
+ * @property QuoteBillingPeriodEnum $billing_period
  * @property string|null $note
  * @property string $quantity
  * @property string|null $unit
@@ -35,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'quote_id',
     'description',
     'frequency',
+    'billing_period',
     'note',
     'quantity',
     'unit',
@@ -58,6 +61,7 @@ final class QuoteItem extends Model
     {
         return [
             'frequency' => TaskFrequencyEnum::class,
+            'billing_period' => QuoteBillingPeriodEnum::class,
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',

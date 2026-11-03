@@ -9,7 +9,7 @@ import { useMoneyFormat } from '@/Composables/useMoneyFormat';
 import type { ItemRow } from './InvoiceItemsEditor.vue';
 import type { LineTotals } from '@/Composables/useInvoiceTotals';
 
-defineProps<{
+const props = defineProps<{
     row: ItemRow;
     index: number;
     field: string;
@@ -19,6 +19,8 @@ defineProps<{
     currency: App.Enums.CurrencyEnum;
     line: LineTotals | undefined;
     errors: Record<string, string | undefined>;
+    descriptionLabel?: string;
+    descriptionPlaceholder?: string;
 }>();
 
 const emit = defineEmits<{
@@ -51,10 +53,10 @@ function setField(index: number, key: string, value: unknown): void {
         <div class="col-span-2 2xl:col-span-1">
             <TextInput
                 :model-value="row.description"
-                :label="t('invoice_pdf_item_description')"
+                :label="props.descriptionLabel ?? t('invoice_pdf_item_description')"
                 label-class="2xl:sr-only"
                 required
-                :placeholder="t('invoice_item_description_placeholder')"
+                :placeholder="props.descriptionPlaceholder ?? t('invoice_item_description_placeholder')"
                 :error="errors[`${field}.${index}.description`]"
                 @update:model-value="setField(index, 'description', $event)"
             />

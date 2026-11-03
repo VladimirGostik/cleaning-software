@@ -49,7 +49,9 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $vat_amount
  * @property string $total
  * @property array<int, array<string, float>>|null $vat_breakdown
+ * @property array<int, array{billing_period: string, subtotal: string, vat_amount: string, total: string}>|null $period_totals
  * @property string|null $note
+ * @property string|null $included_text
  * @property Collection<int, QuoteItem> $items
  * @property Collection<int, Invoice> $invoices
  * @property Collection<int, Contract> $contracts
@@ -82,7 +84,9 @@ use Spatie\Activitylog\Support\LogOptions;
     'vat_amount',
     'total',
     'vat_breakdown',
+    'period_totals',
     'note',
+    'included_text',
 ])]
 final class Quote extends Model
 {
@@ -109,6 +113,7 @@ final class Quote extends Model
             'vat_amount' => 'decimal:2',
             'total' => 'decimal:2',
             'vat_breakdown' => 'array',
+            'period_totals' => 'array',
         ];
     }
 
@@ -181,5 +186,18 @@ final class Quote extends Model
     public function isDocument(): bool
     {
         return $this->kind === QuoteKindEnum::Document;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function includedLines(): array
+    {
+        $lines = preg_split('/\R/u', (string) $this->included_text) ?: [];
+
+        return array_values(array_filter(
+            array_map(trim(...), $lines),
+            static fn (string $line): bool => $line !== '',
+        ));
     }
 }

@@ -8,6 +8,7 @@ use App\Enums\CurrencyEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Models\Quote;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -25,6 +26,9 @@ final class QuoteListItemData extends Data
         public readonly ?string $object_name,
         public readonly CurrencyEnum $currency,
         public readonly string $total,
+        /** @var QuotePeriodTotalsData[] */
+        #[DataCollectionOf(QuotePeriodTotalsData::class)]
+        public readonly array $period_totals,
         public readonly string $issue_date,
         public readonly string $valid_until,
         public readonly bool $has_document,
@@ -43,6 +47,7 @@ final class QuoteListItemData extends Data
             object_name: $quote->cleaningObject?->name,
             currency: $quote->currency,
             total: $quote->total,
+            period_totals: QuotePeriodTotalsData::collectFrom($quote->period_totals),
             issue_date: $quote->issue_date->toDateString(),
             valid_until: $quote->valid_until->toDateString(),
             has_document: $quote->document?->getFirstMedia('file') !== null,

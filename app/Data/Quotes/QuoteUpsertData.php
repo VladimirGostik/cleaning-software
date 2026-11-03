@@ -60,6 +60,8 @@ final class QuoteUpsertData extends Data
         public readonly ?string $document_template_id = null,
         #[Nullable, Max(200000)]
         public readonly ?string $document_body = null,
+        #[Nullable, Max(2000)]
+        public readonly ?string $included_text = null,
         public readonly bool $document_show_header = true,
         public readonly bool $document_show_footer = true,
         public readonly QuoteKindEnum $kind = QuoteKindEnum::Itemized,
@@ -140,6 +142,7 @@ final class QuoteUpsertData extends Data
                 ],
             ),
             'document_body' => Rule::when($isDocument, ['prohibited'], ['nullable', 'string', 'max:200000']),
+            'included_text' => Rule::when($isDocument, ['prohibited'], ['nullable', 'string', 'max:2000']),
             'currency' => ['required', Rule::enum(CurrencyEnum::class)],
         ];
     }

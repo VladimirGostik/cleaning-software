@@ -15,6 +15,13 @@ export interface LineTotals {
     rate: number;
 }
 
+export function computeLineTotals(item: TotalsItem, isVatPayer: boolean): LineTotals {
+    const rate = isVatPayer ? item.vat_rate : 0;
+    const base = round2(item.quantity * item.unit_price * (1 - item.discount_percent / 100));
+    const vat = round2((base * rate) / 100);
+    return { base, vat, total: round2(base + vat), rate };
+}
+
 export interface VatBreakdownLine {
     rate: number;
     base: number;
@@ -44,12 +51,7 @@ export function useInvoiceTotals(
     roundingMode: MaybeRefOrGetter<App.Enums.RoundingModeEnum>,
 ): UseInvoiceTotalsReturn {
     const lines = computed<LineTotals[]>(() =>
-        toValue(items).map((item) => {
-            const rate = toValue(isVatPayer) ? item.vat_rate : 0;
-            const base = round2(item.quantity * item.unit_price * (1 - item.discount_percent / 100));
-            const vat = round2((base * rate) / 100);
-            return { base, vat, total: round2(base + vat), rate };
-        }),
+        toValue(items).map((item) => computeLineTotals(item, toValue(isVatPayer))),
     );
 
     const subtotal = computed(() => round2(lines.value.reduce((sum, line) => sum + line.base, 0)));

@@ -20,10 +20,18 @@ import QuoteTextDocumentCard from './QuoteTextDocumentCard.vue';
 import QuoteTextDocumentWorkspace from './QuoteTextDocumentWorkspace.vue';
 import InvoiceItemsEditor, { type ItemRow } from '@/Components/Invoices/InvoiceItemsEditor.vue';
 
-import { useInvoiceTotals } from '@/Composables/useInvoiceTotals';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
-import { CURRENCIES, currencyKey, enumOptions, TASK_FREQUENCIES, taskFrequencyKey } from '@/utils/enums';
+import {
+    CURRENCIES,
+    currencyKey,
+    enumOptions,
+    QUOTE_BILLING_PERIODS,
+    quoteBillingPeriodKey,
+    TASK_FREQUENCIES,
+    taskFrequencyKey,
+} from '@/utils/enums';
+import { quotePeriodTotals } from '@/utils/quoteBilling';
 import { useDependentValidation } from '@/Composables/useDependentValidation';
 import { useQuoteTextDocument } from '@/Composables/useQuoteTextDocument';
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -31,6 +39,7 @@ import { useAuthorization } from '@/Composables/useAuthorization';
 type QuoteItemRow = ItemRow & {
     id: string | null;
     frequency: App.Enums.TaskFrequencyEnum | null;
+    billing_period: App.Enums.QuoteBillingPeriodEnum;
     note: string | null;
     line_base: number | null;
     line_vat: number | null;
@@ -47,6 +56,7 @@ interface QuoteFormData {
     valid_until: string;
     currency: App.Enums.CurrencyEnum;
     note: string | null;
+    included_text: string | null;
     items: QuoteItemRow[];
     customer_name: string | null;
     customer_email: string | null;
@@ -75,6 +85,7 @@ function blankItem(): QuoteItemRow {
         id: null,
         description: '',
         frequency: null,
+        billing_period: 'one_off',
         note: null,
         quantity: 1,
         unit: null,
@@ -109,6 +120,7 @@ function initialData(): QuoteFormData {
             valid_until: toDateInputValue(quote.valid_until),
             currency: quote.currency,
             note: quote.note,
+            included_text: quote.included_text,
             items: quote.items.map((item) => ({ ...item })),
             customer_name: isClientless ? quote.customer_name : null,
             customer_email: isClientless ? quote.customer_email : null,
@@ -135,6 +147,7 @@ function initialData(): QuoteFormData {
         valid_until: toDateInputValue(addDays(today, props.context.default_validity_days)),
         currency: props.context.default_currency,
         note: null,
+        included_text: props.context.default_included_text,
         items: [blankItem()],
         customer_name: null,
         customer_email: null,
@@ -165,6 +178,7 @@ useDependentValidation(form, {
 form.transform((data: QuoteFormData) => {
     const {
         items,
+        included_text,
         document_uuid,
         document_template_id,
         document_body,
@@ -180,7 +194,14 @@ form.transform((data: QuoteFormData) => {
         note: rest.note || null,
         ...(data.kind === 'document'
             ? { document_uuid }
-            : { items, document_template_id, document_body, document_show_header, document_show_footer }),
+            : {
+                  items,
+                  included_text: included_text || null,
+                  document_template_id,
+                  document_body,
+                  document_show_header,
+                  document_show_footer,
+              }),
     };
 });
 
@@ -212,15 +233,11 @@ const templateOptions = computed<App.Data.Quotes.QuoteTemplateOptionData[]>(() =
 const textDocument = useQuoteTextDocument({ form, templates: () => templateOptions.value });
 const settingsUrl = computed(() => (allows('manage billing settings') ? '/settings/invoicing' : null));
 
-const totals = useInvoiceTotals(
-    () => form.items,
-    () => props.context.is_vat_payer,
-    () => 0,
-    () => 'none',
-);
+const periodTotals = computed(() => quotePeriodTotals(form.items, props.context.is_vat_payer));
 
 const isDocument = computed(() => form.kind === 'document');
 const currencyOptions = computed<SelectOption[]>(() => enumOptions(CURRENCIES, currencyKey, t));
+const periodOptions = computed<SelectOption[]>(() => enumOptions(QUOTE_BILLING_PERIODS, quoteBillingPeriodKey, t));
 const frequencyOptions = computed<SelectOption[]>(() => [
     { value: '', label: t('quote_item_frequency_none') },
     ...enumOptions(TASK_FREQUENCIES, taskFrequencyKey, t),
@@ -286,7 +303,10 @@ function submit(): void {
                                 <p class="mt-1 text-xs text-base-content/60">{{ t('quote_number_hint') }}</p>
                             </div>
 
-                            <TextInput field="subject" :label="t('quote_subject_text')" />
+                            <div>
+                                <TextInput field="subject" :label="t('quote_subject_text')" />
+                                <p class="mt-1 text-xs text-base-content/60">{{ t('quote_subject_hint') }}</p>
+                            </div>
 
                             <DateInput
                                 :model-value="form.issue_date"
@@ -318,20 +338,32 @@ function submit(): void {
                             :vat-rate-options="context.vat_rate_options"
                             :currency="form.currency"
                             :blank-row="blankItem"
+                            :description-label="t('quote_item_name_label')"
+                            :description-placeholder="t('quote_item_name_placeholder')"
                         >
                             <template #row-extra="{ row, index, setField, errors }">
                                 <div class="space-y-2">
-                                    <SelectInput
-                                        :model-value="(row.frequency as string | null) ?? ''"
-                                        :label="t('quote_item_frequency')"
-                                        :options="frequencyOptions"
-                                        :error="errors[`items.${index}.frequency`]"
-                                        @update:model-value="setField(index, 'frequency', $event || null)"
-                                    />
-                                    <TextInput
+                                    <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                        <SelectInput
+                                            :model-value="row.billing_period as string"
+                                            :label="t('quote_item_billing_period')"
+                                            :options="periodOptions"
+                                            :error="errors[`items.${index}.billing_period`]"
+                                            @update:model-value="setField(index, 'billing_period', $event)"
+                                        />
+                                        <SelectInput
+                                            :model-value="(row.frequency as string | null) ?? ''"
+                                            :label="t('quote_item_frequency')"
+                                            :options="frequencyOptions"
+                                            :error="errors[`items.${index}.frequency`]"
+                                            @update:model-value="setField(index, 'frequency', $event || null)"
+                                        />
+                                    </div>
+                                    <TextareaInput
                                         :model-value="(row.note as string | null) ?? ''"
                                         :label="t('quote_item_note')"
-                                        maxlength="500"
+                                        :rows="2"
+                                        :maxlength="500"
                                         :error="errors[`items.${index}.note`]"
                                         @update:model-value="setField(index, 'note', $event || null)"
                                     />
@@ -351,6 +383,19 @@ function submit(): void {
                             :max-size-kb="context.document_max_size_kb"
                             :error="form.errors.document_uuid"
                         />
+                    </div>
+                </div>
+
+                <div v-if="!isDocument" class="card bg-base-100 shadow-sm">
+                    <div class="card-body space-y-2">
+                        <TextareaInput
+                            :model-value="form.included_text ?? ''"
+                            :label="t('quote_pdf_included')"
+                            :rows="4"
+                            :error="form.errors.included_text"
+                            @update:model-value="form.included_text = $event"
+                        />
+                        <p class="text-xs text-base-content/60">{{ t('quote_included_hint') }}</p>
                     </div>
                 </div>
 
@@ -400,10 +445,7 @@ function submit(): void {
                     :valid-until="form.valid_until"
                     :currency="form.currency"
                     :is-vat-payer="context.is_vat_payer"
-                    :subtotal="totals.subtotal.value"
-                    :vat-amount="totals.vatAmount.value"
-                    :vat-breakdown="totals.vatBreakdown.value"
-                    :total="totals.total.value"
+                    :period-totals="periodTotals"
                 />
             </div>
         </form>

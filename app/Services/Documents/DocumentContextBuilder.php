@@ -8,6 +8,7 @@ use App\Data\Contracts\ContractGenerateData;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
+use App\Enums\QuoteBillingPeriodEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Quote;
@@ -20,7 +21,10 @@ use Illuminate\Support\Facades\View;
 
 final readonly class DocumentContextBuilder
 {
-    public function __construct(private DocumentLocale $locale) {}
+    public function __construct(
+        private DocumentLocale $locale,
+        private QuoteDisplay $quoteDisplay,
+    ) {}
 
     public function forContract(
         CleaningObject|Client|TenantMembership $subject,
@@ -216,7 +220,11 @@ final readonly class DocumentContextBuilder
             'customer.address' => 'Stredná 7, 811 04 Bratislava',
             'quote.issue_date' => now()->format(Formats::DATE),
             'quote.valid_until' => now()->addDays(30)->format(Formats::DATE),
-            'quote.total' => '1 200,00 EUR',
+            'quote.total' => '300,00 EUR jednorazovo + 120,00 EUR mesačne',
+            'quote.total_one_off' => '300,00 EUR',
+            'quote.total_monthly' => '120,00 EUR',
+            'quote.total_quarterly' => null,
+            'quote.total_yearly' => null,
             'quote.number' => 'CP-2026-001',
             'quote.subject' => 'Pravidelné upratovanie',
             'quote.note' => 'Ceny sú uvedené bez DPH.',
@@ -242,15 +250,14 @@ final readonly class DocumentContextBuilder
             'block.quote_items' => $this->renderBlock('quote-items', [
                 'headers' => $this->quoteItemHeaders(),
                 'rows' => [
-                    ['description' => 'Pravidelné upratovanie kancelárií', 'quantity' => '10,00 hod', 'unit_price' => '12,00 EUR', 'total' => '120,00 EUR'],
-                    ['description' => 'Umývanie okien', 'quantity' => '4,00 hod', 'unit_price' => '15,00 EUR', 'total' => '60,00 EUR'],
+                    ['description' => 'Jednorazové umývanie okien', 'note' => 'Vrátane rámov a parapetov.', 'quantity' => '1×', 'unit_price' => '300,00 EUR', 'total' => '300,00 EUR'],
+                    ['description' => 'Pravidelné upratovanie kancelárií', 'note' => null, 'quantity' => 'mesačne', 'unit_price' => '120,00 EUR / mesiac', 'total' => '120,00 EUR / mes.'],
                 ],
             ]),
             'block.quote_totals' => $this->renderBlock('quote-totals', [
                 'rows' => [
-                    ['label' => __('app.document_quote_subtotal'), 'value' => '150,00 EUR', 'bold' => false],
-                    ['label' => __('app.document_quote_vat'), 'value' => '30,00 EUR', 'bold' => false],
-                    ['label' => __('app.document_quote_total'), 'value' => '180,00 EUR', 'bold' => true],
+                    ['label' => QuoteBillingPeriodEnum::OneOff->label(), 'value' => '300,00 EUR', 'bold' => true],
+                    ['label' => QuoteBillingPeriodEnum::Monthly->label(), 'value' => '120,00 EUR / mes.', 'bold' => true],
                 ],
             ]),
         ];
@@ -322,7 +329,11 @@ final readonly class DocumentContextBuilder
                 : $this->address($quote->customer_street, $quote->customer_postal_code, $quote->customer_city),
             'quote.issue_date' => $quote->issue_date->format(Formats::DATE),
             'quote.valid_until' => $quote->valid_until->format(Formats::DATE),
-            'quote.total' => $quote->currency->format((float) $quote->total),
+            'quote.total' => $this->quoteDisplay->totalsLine($quote),
+            'quote.total_one_off' => $this->quoteDisplay->groupTotal($quote, QuoteBillingPeriodEnum::OneOff),
+            'quote.total_monthly' => $this->quoteDisplay->groupTotal($quote, QuoteBillingPeriodEnum::Monthly),
+            'quote.total_quarterly' => $this->quoteDisplay->groupTotal($quote, QuoteBillingPeriodEnum::Quarterly),
+            'quote.total_yearly' => $this->quoteDisplay->groupTotal($quote, QuoteBillingPeriodEnum::Yearly),
             'quote.number' => $quote->number,
             'quote.subject' => $quote->subject,
             'quote.note' => $quote->note,
@@ -420,21 +431,12 @@ final readonly class DocumentContextBuilder
 
         /** @var QuoteItem $item */
         foreach ($quote->items as $item) {
-            $description = $item->description;
-
-            if ($item->frequency !== null) {
-                $description .= ' ('.$item->frequency->label().')';
-            }
-
-            if ($item->note !== null && $item->note !== '') {
-                $description .= ' — '.$item->note;
-            }
-
             $rows[] = [
-                'description' => $description,
-                'quantity' => $this->decimal((float) $item->quantity).' '.($item->unit ?? 'ks'),
-                'unit_price' => $quote->currency->format((float) $item->unit_price),
-                'total' => $quote->currency->format((float) $item->line_total),
+                'description' => $item->description,
+                'note' => $item->note,
+                'quantity' => $this->quoteDisplay->quantity($item),
+                'unit_price' => $this->quoteDisplay->unitPrice($quote, $item).$this->quoteDisplay->discount($item),
+                'total' => $this->quoteDisplay->lineTotal($quote, $item),
             ];
         }
 
@@ -443,16 +445,7 @@ final readonly class DocumentContextBuilder
 
     private function quoteTotalsBlock(Quote $quote): string
     {
-        $rows = [];
-
-        if ($quote->is_vat_payer) {
-            $rows[] = ['label' => __('app.document_quote_subtotal'), 'value' => $quote->currency->format((float) $quote->subtotal), 'bold' => false];
-            $rows[] = ['label' => __('app.document_quote_vat'), 'value' => $quote->currency->format((float) $quote->vat_amount), 'bold' => false];
-        }
-
-        $rows[] = ['label' => __('app.document_quote_total'), 'value' => $quote->currency->format((float) $quote->total), 'bold' => true];
-
-        return $this->renderBlock('quote-totals', ['rows' => $rows]);
+        return $this->renderBlock('quote-totals', ['rows' => $this->quoteDisplay->totalRows($quote)]);
     }
 
     /**

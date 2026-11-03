@@ -15,6 +15,12 @@ return [
         'allowed_mimes' => ['image/png', 'image/jpeg', 'image/webp'],
     ],
 
+    'logo' => [
+        'disk' => env('DOCUMENTS_DISK', 'local'),
+        'max_size_kb' => 1024,
+        'allowed_mimes' => ['image/png', 'image/jpeg', 'image/webp'],
+    ],
+
     'bulk' => [
         'max_ids' => 100,
         'pdf_max_ids' => 10,
