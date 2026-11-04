@@ -2061,5 +2061,6 @@
     "audit_diff_conflict": "Konflikt",
     "audit_diff_masked": "Skrytá hodnota",
     "audit_diff_empty": "Tento záznam neobsahuje zmeny polí.",
-    "audit_technical_data": "Technické údaje"
+    "audit_technical_data": "Technické údaje",
+    "auth_throttled": "Príliš veľa pokusov. Skúste to znova o :seconds s."
 }

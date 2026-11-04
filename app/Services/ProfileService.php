@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Data\UpdateProfileData;
 use App\Enums\MobileSessionRevokeReasonEnum;
+use App\Events\PasswordChanged;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
 
@@ -39,6 +40,8 @@ final readonly class ProfileService
             $user->update(['password' => $password]);
 
             $this->sessions->revokeAllFor($user, MobileSessionRevokeReasonEnum::PasswordChanged, except: $current);
+
+            event(new PasswordChanged($user));
         });
     }
 }

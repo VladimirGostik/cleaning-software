@@ -14,6 +14,7 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\ViewErrorBag;
 use Illuminate\Testing\PendingCommand;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
@@ -61,6 +62,27 @@ abstract class TestCase extends BaseTestCase
         $this->bindTenant($tenant);
 
         return $user;
+    }
+
+    protected function sessionError(string $key): string
+    {
+        $errors = session('errors');
+
+        if ($errors instanceof ViewErrorBag) {
+            return $errors->first($key);
+        }
+
+        // after several requests in one test the flashed bag stays a raw array
+        $message = data_get($errors, "default.messages.{$key}.0");
+
+        return is_string($message) ? $message : '';
+    }
+
+    protected function assertThrottleMessage(string $message): void
+    {
+        $expected = array_map(fn (int $seconds): string => __('app.auth_throttled', ['seconds' => $seconds]), range(1, 60));
+
+        $this->assertContains($message, $expected);
     }
 
     /** Sanctum `mobile` token for `$user`; grants `access mobile app` directly in every active membership tenant. */

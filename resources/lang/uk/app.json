@@ -2061,5 +2061,6 @@
     "audit_diff_conflict": "Конфлікт",
     "audit_diff_masked": "Приховане значення",
     "audit_diff_empty": "Цей запис не містить змін полів.",
-    "audit_technical_data": "Технічні дані"
+    "audit_technical_data": "Технічні дані",
+    "auth_throttled": "Забагато спроб. Спробуйте ще раз через :seconds с."
 }

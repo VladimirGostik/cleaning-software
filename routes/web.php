@@ -54,9 +54,9 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
 
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
-        Route::post('/login', [AuthController::class, 'login']);
-        Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
-        Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:web-login');
+        Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:password-email')->name('password.email');
+        Route::post('/reset-password', [NewPasswordController::class, 'store'])->middleware('throttle:password-reset')->name('password.store');
     });
 });
 

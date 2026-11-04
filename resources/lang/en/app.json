@@ -2061,5 +2061,6 @@
     "audit_diff_conflict": "Conflict",
     "audit_diff_masked": "Hidden value",
     "audit_diff_empty": "This entry holds no field changes.",
-    "audit_technical_data": "Technical data"
+    "audit_technical_data": "Technical data",
+    "auth_throttled": "Too many attempts. Try again in :seconds seconds."
 }

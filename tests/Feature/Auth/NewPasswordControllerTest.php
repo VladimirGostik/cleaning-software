@@ -80,4 +80,26 @@ final class NewPasswordControllerTest extends TestCase
 
         $response->assertInvalid(['token', 'email', 'password']);
     }
+
+    public function test_sixth_reset_password_request_from_one_ip_is_throttled(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.42'])->post('/reset-password', [
+                'token' => 'bad',
+                'email' => 'x@example.com',
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ]);
+        }
+
+        $response = $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.42'])->post('/reset-password', [
+            'token' => 'bad',
+            'email' => 'x@example.com',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertMatchesRegularExpression('/\d/', $this->sessionError('email'));
+    }
 }

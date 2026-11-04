@@ -34,15 +34,18 @@ use App\Services\Pdf\QuotePdfService;
 use App\Services\Pdf\SupplierSignatureResolver;
 use App\Services\Push\FirebasePushSender;
 use App\Support\PrecognitiveDataValidatorResolver;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 use ReflectionClass;
 use Spatie\LaravelData\Contracts\BaseData;
@@ -122,11 +125,62 @@ final class AppServiceProvider extends ServiceProvider
         RateLimiter::for('task-comments', fn (Request $request) => Limit::perMinute(30)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('task-ai-runs', fn (Request $request) => Limit::perMinute(10)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('mobile-token', fn (Request $request) => Limit::perMinute(30)->by('ip:'.get_client_ip()));
-        RateLimiter::for('mobile-login', fn (Request $request): array => [
-            Limit::perMinute(10)->by('ip:'.get_client_ip()),
-            Limit::perMinute(5)->by('email:'.Str::lower($request->string('email')->toString()).'|ip:'.get_client_ip()),
-        ]);
+        RateLimiter::for('mobile-login', fn (Request $request): array => array_map(
+            fn (Limit $limit): Limit => $limit->response(function (Request $request, array $headers): never {
+                event(new Lockout($request));
+
+                throw new ThrottleRequestsException('Too Many Attempts.', null, $headers);
+            }),
+            $this->loginLimits($request),
+        ));
+        RateLimiter::for('web-login', function (Request $request): Limit|array {
+            if ($request->isAttemptingPrecognition()) {
+                return $this->precognitionLimit();
+            }
+
+            return array_map(
+                fn (Limit $limit): Limit => $this->throttledWithValidationError($limit, lockout: true),
+                $this->loginLimits($request),
+            );
+        });
+        RateLimiter::for('password-email', fn (Request $request): Limit => $request->isAttemptingPrecognition()
+            ? $this->precognitionLimit()
+            : $this->throttledWithValidationError(Limit::perMinute(5)->by('ip:'.get_client_ip())));
+        RateLimiter::for('password-reset', fn (Request $request): Limit => $request->isAttemptingPrecognition()
+            ? $this->precognitionLimit()
+            : $this->throttledWithValidationError(Limit::perMinute(5)->by('ip:'.get_client_ip())));
         RateLimiter::for('invitation-accept', fn (Request $request) => Limit::perMinute(5)->by('ip:'.get_client_ip()));
+    }
+
+    /** @return list<Limit> */
+    private function loginLimits(Request $request): array
+    {
+        $email = $request->input('email');
+
+        return [
+            Limit::perMinute(10)->by('ip:'.get_client_ip()),
+            Limit::perMinute(5)->by('email:'.Str::lower(is_string($email) ? $email : '').'|ip:'.get_client_ip()),
+        ];
+    }
+
+    private function precognitionLimit(): Limit
+    {
+        return Limit::perMinute(60)->by('precognition:ip:'.get_client_ip());
+    }
+
+    private function throttledWithValidationError(Limit $limit, bool $lockout = false): Limit
+    {
+        return $limit->response(function (Request $request, array $headers) use ($lockout): never {
+            if ($lockout) {
+                event(new Lockout($request));
+            }
+
+            $seconds = $headers['Retry-After'] ?? 60;
+
+            throw ValidationException::withMessages([
+                'email' => __('app.auth_throttled', ['seconds' => is_numeric($seconds) ? (int) $seconds : 60]),
+            ]);
+        });
     }
 
     private function loadJsonTranslations(): void
