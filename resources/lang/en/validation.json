@@ -280,6 +280,8 @@
     "attributes.reference": "reference",
     "attributes.registration_info": "registration info",
     "attributes.remind_at": "reminder",
+    "attributes.remind_on": "reminder date",
+    "attributes.remind_slot": "reminder time",
     "attributes.remove_signature": "remove signature",
     "attributes.representative_name": "representative",
     "attributes.role_name": "role",

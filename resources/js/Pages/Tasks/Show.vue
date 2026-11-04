@@ -20,7 +20,9 @@ import { useTaskAttachmentUpload } from '@/Composables/useTaskAttachmentUpload';
 import { useTaskAiRun } from '@/Composables/useTaskAiRun';
 import { useTaskTransition } from '@/Composables/useTaskTransition';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
-import { formatDatetime } from '@/utils/date';
+import { formatDate, formatDatetime } from '@/utils/date';
+import { taskReminderSlotKey } from '@/utils/enums';
+import { findReminderSlot, formatSlotTime } from '@/utils/taskReminder';
 import { shouldShowTaskAiCard } from '@/utils/taskAi';
 import type { Breadcrumb } from '@/types';
 
@@ -32,6 +34,16 @@ const props = defineProps<{
     context: App.Data.Tasks.TaskFormContextData;
     thread: App.Data.Tasks.TaskThreadData;
 }>();
+
+const reminderLabel = computed(() => {
+    if (!props.task.remind_on || !props.task.remind_slot) return t('empty_dash');
+
+    const found = findReminderSlot(props.context.reminder_slots, props.task.remind_slot);
+    const name = t(taskReminderSlotKey(props.task.remind_slot));
+    const slot = found ? t('task_reminder_slot_option', { slot: name, time: formatSlotTime(found.hour) }) : name;
+
+    return t('task_reminder_at_slot', { date: formatDate(props.task.remind_on), slot });
+});
 
 const breadcrumbs = computed<Breadcrumb[]>(() => [
     { label: t('dashboard'), url: '/' },
@@ -181,7 +193,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                         </div>
                         <div class="flex justify-between gap-4">
                             <dt class="text-base-content/60">{{ t('task_remind_at') }}</dt>
-                            <dd>{{ task.remind_at ? formatDatetime(task.remind_at) : t('empty_dash') }}</dd>
+                            <dd>{{ reminderLabel }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
                             <dt class="text-base-content/60">{{ t('task_assignee') }}</dt>

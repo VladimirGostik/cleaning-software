@@ -51,7 +51,12 @@ final readonly class FcmChannel
 
         // Swallowed on purpose: a retry after a partial multicast failure would re-send to the tokens that already got it.
         try {
-            $this->devices->removeTokens($this->sender->send($message, $tokens));
+            $unusable = $this->sender->send($message, $tokens);
+            $this->devices->removeTokens($unusable);
+
+            if ($unusable !== []) {
+                Log::warning('push.token.pruned', ['user_id' => $notifiable->id, 'count' => count($unusable)]);
+            }
         } catch (Throwable $e) {
             Log::error('push.send.failed', [
                 'type' => $notification->notificationType()->value,

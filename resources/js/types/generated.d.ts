@@ -1816,6 +1816,8 @@ readonly is_global: boolean,
 readonly created_at: string,
 readonly description: string | null,
 readonly remind_at: string | null,
+readonly remind_on: string | null,
+readonly remind_slot: App.Enums.TaskReminderSlotEnum | null,
 readonly completed_at: string | null,
 readonly source: App.Enums.TaskSourceEnum,
 readonly assigned_membership_id: string | null,
@@ -1835,6 +1837,9 @@ readonly assignee_hint: string | null,
 export type TaskFormContextData = {
 readonly companies: App.Data.Auth.MobileCompanyData[],
 readonly members: Record<string, App.Data.Tasks.TaskMemberOptionData[]>,
+readonly reminder_slots: App.Data.Tasks.TaskReminderSlotData[],
+readonly default_remind_on: string,
+readonly default_remind_slot: App.Enums.TaskReminderSlotEnum,
 };
 export type TaskListItemData = {
 readonly id: string,
@@ -1862,6 +1867,10 @@ export type TaskQuestionData = {
 readonly comment_id: string,
 readonly answered: boolean,
 readonly can_answer: boolean,
+};
+export type TaskReminderSlotData = {
+readonly slot: App.Enums.TaskReminderSlotEnum,
+readonly hour: number,
 };
 export type TaskRunCompanyData = {
 readonly id: string,
@@ -1910,6 +1919,8 @@ readonly tenant_id?: string | null,
 readonly description: string | null,
 readonly due_at: string | null,
 readonly remind_at: string | null,
+readonly remind_on: string | null,
+readonly remind_slot: App.Enums.TaskReminderSlotEnum | null,
 readonly assigned_membership_id: string | null,
 readonly taskable_type: string | null,
 readonly taskable_id: string | null,
@@ -2028,6 +2039,7 @@ export type SupportedLanguage = "sk" | "en" | "uk";
 export type TaskCommentAuthorEnum = "user" | "ai";
 export type TaskFrequencyEnum = "one_time" | "weekly_1x" | "weekly_2x" | "weekly_3x" | "biweekly" | "monthly" | "bimonthly" | "seasonal";
 export type TaskPriorityEnum = "low" | "normal" | "high";
+export type TaskReminderSlotEnum = "morning" | "noon" | "evening";
 export type TaskRunOutcomeEnum = "done" | "question" | "cannot";
 export type TaskRunStatusEnum = "queued" | "running" | "done" | "needs_input" | "awaiting_confirmation" | "could_not_finish" | "blocked" | "failed";
 export type TaskSourceEnum = "manual" | "voice" | "assistant" | "mcp";

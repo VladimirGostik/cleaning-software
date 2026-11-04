@@ -59,7 +59,7 @@ final class UpdateTaskTool extends TenantTool
             'priority' => $schema->string()->enum(['low', 'normal', 'high'])->description('New priority.'),
             'description' => $schema->string()->max(5000)->nullable()->description('New description; null clears it.'),
             'due_at' => $schema->string()->nullable()->description('New due date-time, ISO 8601; null clears it.'),
-            'remind_at' => $schema->string()->nullable()->description('New reminder date-time, ISO 8601; null clears it.'),
+            'remind_at' => $schema->string()->nullable()->description('New reminder date-time, ISO 8601, rounded up to the next slot (07:00, 12:00 or 19:00 Europe/Bratislava); null clears it.'),
         ];
     }
 }

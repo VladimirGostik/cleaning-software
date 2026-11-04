@@ -361,3 +361,7 @@ export function expenseStatusKey(status: App.Enums.ExpenseStatusEnum): string {
 export function expenseSourceKey(source: App.Enums.ExpenseSourceEnum): string {
     return `expense_source_${source}`;
 }
+
+export function taskReminderSlotKey(slot: App.Enums.TaskReminderSlotEnum): string {
+    return `task_reminder_slot_${slot}`;
+}

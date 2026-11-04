@@ -36,6 +36,7 @@ final readonly class FirebasePushSender implements SendsPush
         foreach (array_chunk($tokens, self::FCM_MULTICAST_LIMIT) as $chunk) {
             $report = $messaging->sendMulticast($message->toFcmPayload(), $chunk);
             $unusable = [...$unusable, ...$this->unusableTokens($report)];
+            $this->logRejected($report);
         }
 
         return array_values(array_unique($unusable));
@@ -52,9 +53,31 @@ final readonly class FirebasePushSender implements SendsPush
             static fn (SendReport $item): string => $item->target()->value(),
             array_filter(
                 $report->getItems(),
-                static fn (SendReport $item): bool => $item->error() instanceof NotFound || $item->messageTargetWasInvalid(),
+                static fn (SendReport $item): bool => self::isUnusable($item),
             ),
         ));
+    }
+
+    private function logRejected(MulticastSendReport $report): void
+    {
+        $errors = [];
+
+        foreach ($report->getItems() as $item) {
+            $error = $item->error();
+
+            if ($error !== null && ! self::isUnusable($item)) {
+                $errors[] = $error::class.': '.$error->getMessage();
+            }
+        }
+
+        if ($errors !== []) {
+            Log::warning('push.send.rejected', ['count' => count($errors), 'errors' => array_values(array_unique($errors))]);
+        }
+    }
+
+    private static function isUnusable(SendReport $item): bool
+    {
+        return $item->error() instanceof NotFound || $item->messageTargetWasInvalid();
     }
 
     private function isConfigured(): bool

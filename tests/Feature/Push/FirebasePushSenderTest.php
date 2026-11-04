@@ -6,6 +6,7 @@ namespace Tests\Feature\Push;
 
 use App\Services\Push\FirebasePushSender;
 use App\Services\Push\PushMessage;
+use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Contract\Messaging;
 use Kreait\Firebase\Exception\Messaging\InvalidArgument;
 use Kreait\Firebase\Exception\Messaging\NotFound;
@@ -99,6 +100,32 @@ final class FirebasePushSenderTest extends TestCase
         )));
 
         $this->assertEqualsCanonicalizing(['tok1', 'tok501'], $this->app->make(FirebasePushSender::class)->send($this->message(), $tokens));
+    }
+
+    public function test_rejections_other_than_unusable_tokens_are_logged_without_tokens(): void
+    {
+        $this->expectMulticast()->once()->andReturn(MulticastSendReport::withItems([
+            $this->ok('good'),
+            $this->failed('gone', NotFound::becauseTokenNotFound('gone')),
+            $this->failed('secret-token', new SenderIdMismatch('SenderId mismatch')),
+        ]));
+        Log::shouldReceive('warning')->once()->with('push.send.rejected', [
+            'count' => 1,
+            'errors' => [SenderIdMismatch::class.': SenderId mismatch'],
+        ]);
+
+        $this->app->make(FirebasePushSender::class)->send($this->message(), ['good', 'gone', 'secret-token']);
+    }
+
+    public function test_no_rejection_log_when_everything_is_sent_or_unusable(): void
+    {
+        $this->expectMulticast()->once()->andReturn(MulticastSendReport::withItems([
+            $this->ok('good'),
+            $this->failed('gone', NotFound::becauseTokenNotFound('gone')),
+        ]));
+        Log::shouldReceive('warning')->never();
+
+        $this->app->make(FirebasePushSender::class)->send($this->message(), ['good', 'gone']);
     }
 
     public function test_no_tokens_means_no_call(): void

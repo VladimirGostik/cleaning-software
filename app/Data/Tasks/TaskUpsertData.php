@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Data\Tasks;
 
 use App\Enums\TaskPriorityEnum;
+use App\Enums\TaskReminderSlotEnum;
 use App\Enums\TaskSourceEnum;
 use App\Models\Task;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Support\Fluent;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Attributes\Validation\Date;
+use Spatie\LaravelData\Attributes\Validation\DateFormat;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -37,6 +41,10 @@ final class TaskUpsertData extends Data
         public readonly ?string $due_at = null,
         #[Nullable, Date]
         public readonly ?string $remind_at = null,
+        #[Nullable, DateFormat('Y-m-d')]
+        public readonly ?string $remind_on = null,
+        #[Nullable]
+        public readonly ?TaskReminderSlotEnum $remind_slot = null,
         #[Nullable, Uuid]
         public readonly ?string $assigned_membership_id = null,
         #[Nullable, Max(32)]
@@ -53,6 +61,17 @@ final class TaskUpsertData extends Data
 
     public function remindAtUtc(): ?CarbonImmutable
     {
+        if ($this->remind_slot !== null && $this->remind_on !== null) {
+            return $this->remind_slot->instantOn($this->remind_on);
+        }
+
+        $requested = $this->requestedRemindAtUtc();
+
+        return $requested === null ? null : TaskReminderSlotEnum::nextAtOrAfter($requested);
+    }
+
+    public function requestedRemindAtUtc(): ?CarbonImmutable
+    {
         return $this->remind_at === null ? null : CarbonImmutable::parse($this->remind_at)->utc();
     }
 
@@ -67,6 +86,14 @@ final class TaskUpsertData extends Data
         }
 
         return $this->tenant_id;
+    }
+
+    /** Spatie skips rules of absent defaulted properties, so the slot pair is checked here. */
+    public static function withValidator(Validator $validator): void
+    {
+        $validator->sometimes('remind_on', 'required', static fn (Fluent $input): bool => filled($input->get('remind_slot')));
+        $validator->sometimes('remind_slot', 'required', static fn (Fluent $input): bool => filled($input->get('remind_on')));
+        $validator->sometimes('remind_at', 'prohibited', static fn (Fluent $input): bool => filled($input->get('remind_slot')));
     }
 
     /** @return array<string, mixed> */

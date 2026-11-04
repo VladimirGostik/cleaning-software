@@ -280,6 +280,8 @@
     "attributes.reference": "referencia",
     "attributes.registration_info": "údaje o registrácii",
     "attributes.remind_at": "pripomenutie",
+    "attributes.remind_on": "dátum pripomenutia",
+    "attributes.remind_slot": "čas pripomenutia",
     "attributes.remove_signature": "odstrániť podpis",
     "attributes.representative_name": "zastupujúca osoba",
     "attributes.role_name": "rola",

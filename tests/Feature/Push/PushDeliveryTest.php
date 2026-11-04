@@ -141,6 +141,23 @@ final class PushDeliveryTest extends TestCase
         $this->assertSame(['ios-tok'], DeviceToken::query()->pluck('token')->all());
     }
 
+    public function test_pruned_tokens_are_logged_by_count_without_token_values(): void
+    {
+        $this->twoDevices();
+        $this->sender->unusable = ['and-tok'];
+        Log::shouldReceive('warning')->once()->with('push.token.pruned', ['user_id' => $this->user->id, 'count' => 1]);
+
+        $this->user->notify($this->dueNotification($this->firm->id));
+    }
+
+    public function test_nothing_is_logged_as_pruned_when_every_token_is_usable(): void
+    {
+        $this->twoDevices();
+        Log::shouldReceive('warning')->never();
+
+        $this->user->notify($this->dueNotification($this->firm->id));
+    }
+
     public function test_sender_failure_does_not_fail_the_notification(): void
     {
         $this->twoDevices();

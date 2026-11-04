@@ -11,8 +11,10 @@ use App\Data\Tasks\TaskDetailData;
 use App\Data\Tasks\TaskFormContextData;
 use App\Data\Tasks\TaskListItemData;
 use App\Data\Tasks\TaskMemberOptionData;
+use App\Data\Tasks\TaskReminderSlotData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Enums\PermissionEnum;
+use App\Enums\TaskReminderSlotEnum;
 use App\Enums\TaskRunStatusEnum;
 use App\Enums\TaskStatusEnum;
 use App\Events\TaskAssigned;
@@ -26,6 +28,7 @@ use App\Services\Dashboard\TenantVisibility;
 use App\Services\Tenancy\TenantPermissionSnapshot;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
+use Carbon\CarbonInterface;
 use Closure;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
@@ -136,9 +139,14 @@ final readonly class TaskService
             );
         }
 
+        [$defaultOn, $defaultSlot] = TaskReminderSlotEnum::firstAfter(now());
+
         return new TaskFormContextData(
             companies: array_map(MobileCompanyData::fromVisibility(...), $creatable),
             members: $members,
+            reminder_slots: TaskReminderSlotData::forAllSlots(),
+            default_remind_on: $defaultOn,
+            default_remind_slot: $defaultSlot,
         );
     }
 
@@ -212,7 +220,7 @@ final readonly class TaskService
                 'description' => $data->description,
                 'priority' => $data->priority,
                 'due_at' => $data->dueAtUtc(),
-                'remind_at' => $data->remindAtUtc(),
+                'remind_at' => $this->remindAtFor($task, $data),
                 'taskable_type' => $subjectClass,
                 'taskable_id' => $data->taskable_id,
             ]);
@@ -225,6 +233,24 @@ final readonly class TaskService
 
             return $this->hydrate($task);
         });
+    }
+
+    /** A reminder the request does not actually change (same minute, or the slot pair derived from it) is kept as stored. */
+    private function remindAtFor(Task $task, TaskUpsertData $data): ?CarbonInterface
+    {
+        $stored = $task->remind_at;
+
+        if ($stored !== null) {
+            $sameMinute = $data->requestedRemindAtUtc()?->startOfMinute()->equalTo($stored->copy()->startOfMinute()) === true;
+            $samePair = $data->remind_slot !== null
+                && TaskReminderSlotEnum::dateAndSlotFor($stored) === [$data->remind_on, $data->remind_slot];
+
+            if ($sameMinute || $samePair) {
+                return $stored;
+            }
+        }
+
+        return $data->remindAtUtc();
     }
 
     public function complete(Task $task): Task

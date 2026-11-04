@@ -51,7 +51,7 @@ final class CreateTaskTool extends TenantTool
             'priority' => $schema->string()->enum(['low', 'normal', 'high'])->description('Defaults to normal.'),
             'description' => $schema->string()->max(5000)->description('Longer description.'),
             'due_at' => $schema->string()->description('Due date-time, ISO 8601.'),
-            'remind_at' => $schema->string()->description('Reminder date-time, ISO 8601.'),
+            'remind_at' => $schema->string()->description('Reminder date-time, ISO 8601. Rounded up to the next slot: 07:00, 12:00 or 19:00 Europe/Bratislava.'),
             'assigned_membership_id' => $schema->string()->format('uuid')->description('Membership of the assignee in this company.'),
             'taskable_type' => $schema->string()->enum(array_keys(Task::TASKABLE_TYPES))->description('Kind of record the task refers to.'),
             'taskable_id' => $schema->string()->format('uuid')->description('Id of that record; required with taskable_type.'),

@@ -280,6 +280,8 @@
     "attributes.reference": "референс",
     "attributes.registration_info": "реєстраційні дані",
     "attributes.remind_at": "нагадування",
+    "attributes.remind_on": "дата нагадування",
+    "attributes.remind_slot": "час нагадування",
     "attributes.remove_signature": "видалити підпис",
     "attributes.representative_name": "представник",
     "attributes.role_name": "роль",

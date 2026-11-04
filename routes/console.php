@@ -12,6 +12,7 @@ use App\Console\Commands\MarkOverdueInvoices;
 use App\Console\Commands\PruneMobileSessions;
 use App\Console\Commands\PurgeTemporaryUploadsCommand;
 use App\Console\Commands\RemindTasks;
+use App\Enums\TaskReminderSlotEnum;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -35,5 +36,8 @@ $atSlovakHour(Schedule::command(GenerateScheduledJobs::class), 12);
 $atSlovakHour(Schedule::command(ExpirePendingActions::class), 12);
 $atSlovakHour(Schedule::command('sanctum:prune-expired --hours=24'), 12);
 $atSlovakHour(Schedule::command(PruneMobileSessions::class), 12);
-$atSlovakHour(Schedule::command(RemindTasks::class), 19)->withoutOverlapping();
+foreach (TaskReminderSlotEnum::cases() as $slot) {
+    $atSlovakHour(Schedule::command(RemindTasks::class), $slot->hour())->withoutOverlapping();
+}
+
 $atSlovakHour(Schedule::command(ExpireTaskRuns::class), 12);

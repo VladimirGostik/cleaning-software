@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Data\Tasks;
 
 use App\Enums\TaskPriorityEnum;
+use App\Enums\TaskReminderSlotEnum;
 use App\Enums\TaskSourceEnum;
 use App\Enums\TaskStatusEnum;
 use App\Models\Task;
@@ -28,6 +29,8 @@ final class TaskDetailData extends Data
         public readonly string $created_at,
         public readonly ?string $description,
         public readonly ?string $remind_at,
+        public readonly ?string $remind_on,
+        public readonly ?TaskReminderSlotEnum $remind_slot,
         public readonly ?string $completed_at,
         public readonly TaskSourceEnum $source,
         public readonly ?string $assigned_membership_id,
@@ -39,6 +42,8 @@ final class TaskDetailData extends Data
     /** Expects `tenant`, `creator`, `assignedMembership.user` and `taskable` eager loaded. */
     public static function fromModel(Task $task, TaskCanData $can, int $attachmentsCount): self
     {
+        [$remindOn, $remindSlot] = $task->remind_at === null ? [null, null] : TaskReminderSlotEnum::dateAndSlotFor($task->remind_at);
+
         return new self(
             id: $task->id,
             tenant_id: $task->tenant_id,
@@ -53,6 +58,8 @@ final class TaskDetailData extends Data
             created_at: $task->created_at->toIso8601String(),
             description: $task->description,
             remind_at: $task->remind_at?->toIso8601String(),
+            remind_on: $remindOn,
+            remind_slot: $remindSlot,
             completed_at: $task->completed_at?->toIso8601String(),
             source: $task->source,
             assigned_membership_id: $task->assigned_membership_id,

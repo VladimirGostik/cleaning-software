@@ -8,19 +8,26 @@ import TextInput from '@/Components/Forms/TextInput.vue';
 import TextareaInput from '@/Components/Forms/TextareaInput.vue';
 import SelectInput from '@/Components/Forms/SelectInput.vue';
 import DateTimeInput from '@/Components/Forms/DateTimeInput.vue';
+import DateInput from '@/Components/Forms/DateInput.vue';
+import RadioGroup from '@/Components/Forms/RadioGroup.vue';
+import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
 import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
+import type { RadioOption } from '@/Components/Forms/RadioGroup.vue';
 
 import { usePageProps } from '@/Composables/usePageProps';
 import { toDatetimeInputValue } from '@/utils/date';
-import { TASK_PRIORITIES, taskPriorityKey } from '@/utils/enums';
+import { TASK_PRIORITIES, taskPriorityKey, taskReminderSlotKey } from '@/utils/enums';
+import { buildReminderPayload, formatSlotTime, initialReminderState } from '@/utils/taskReminder';
 
 interface TaskFormData {
     title: string;
     priority: App.Enums.TaskPriorityEnum;
     description: string;
     due_at: string;
-    remind_at: string;
+    remind_enabled: boolean;
+    remind_on: string | null;
+    remind_slot: App.Enums.TaskReminderSlotEnum;
     tenant_id: string | null;
     assigned_membership_id: string | null;
     taskable_type: string | null;
@@ -64,7 +71,7 @@ const form = useForm<TaskFormData>(
         priority: props.task?.priority ?? 'normal',
         description: props.task?.description ?? '',
         due_at: toDatetimeInputValue(props.task?.due_at),
-        remind_at: toDatetimeInputValue(props.task?.remind_at),
+        ...initialReminderState(props.task, props.context),
         tenant_id: props.task ? props.task.tenant_id : defaultTenantId(),
         assigned_membership_id: props.task?.assigned_membership_id ?? null,
         taskable_type: props.task?.subject?.type ?? null,
@@ -75,6 +82,13 @@ const form = useForm<TaskFormData>(
 
 const priorityOptions = computed<SelectOption[]>(() =>
     TASK_PRIORITIES.map((v) => ({ value: v, label: t(taskPriorityKey(v)) })),
+);
+
+const reminderSlotOptions = computed<RadioOption[]>(() =>
+    props.context.reminder_slots.map((s) => ({
+        value: s.slot,
+        label: t('task_reminder_slot_option', { slot: t(taskReminderSlotKey(s.slot)), time: formatSlotTime(s.hour) }),
+    })),
 );
 
 const companyOptions = computed<SelectOption[]>(() => [
@@ -119,11 +133,12 @@ function toIso(local: string, original: string | null | undefined): string | nul
 }
 
 function buildPayload(data: TaskFormData): Record<string, unknown> {
+    const { remind_enabled, remind_on, remind_slot, ...rest } = data;
     const payload: Record<string, unknown> = {
-        ...data,
+        ...rest,
         description: data.description === '' ? null : data.description,
         due_at: toIso(data.due_at, props.task?.due_at),
-        remind_at: toIso(data.remind_at, props.task?.remind_at),
+        ...buildReminderPayload({ remind_enabled, remind_on, remind_slot }, props.task),
     };
 
     if (isEdit.value) {
@@ -158,7 +173,18 @@ function submit(): void {
                 <SelectInput field="priority" :label="t('task_priority')" :options="priorityOptions" required />
 
                 <DateTimeInput v-model="form.due_at" :label="t('task_due_at')" :error="form.errors.due_at" />
-                <DateTimeInput v-model="form.remind_at" :label="t('task_remind_at')" :error="form.errors.remind_at" />
+
+                <ToggleInput v-model="form.remind_enabled" :label="t('task_reminder_toggle')" />
+
+                <template v-if="form.remind_enabled">
+                    <DateInput v-model="form.remind_on" :label="t('task_remind_on')" :error="form.errors.remind_on" />
+                    <RadioGroup
+                        v-model="form.remind_slot"
+                        :label="t('task_remind_slot')"
+                        :options="reminderSlotOptions"
+                        :error="form.errors.remind_slot"
+                    />
+                </template>
 
                 <SelectInput
                     v-if="!isEdit && context.companies.length > 0"

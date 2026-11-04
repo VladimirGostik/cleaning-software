@@ -451,7 +451,7 @@ final class McpToolsWriteTest extends TestCase
         $this->assertFalse($created->isError, $created->text);
         $task = Task::unscopedForSystem()->findOrFail($created->string('id'));
         $this->assertSame('2026-11-05 08:30:00', $task->due_at?->utc()->format('Y-m-d H:i:s'));
-        $this->assertSame('2026-11-05 07:00:00', $task->remind_at?->utc()->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-05 11:00:00', $task->remind_at?->utc()->format('Y-m-d H:i:s'));
 
         $this->callTool($this->token, 'update_task', ['company_id' => $this->alpha->id, 'task_id' => $task->id, 'due_at' => '2026-11-06T10:00:00+02:00']);
         $this->assertSame('2026-11-06 08:00:00', $task->refresh()->due_at?->utc()->format('Y-m-d H:i:s'));
