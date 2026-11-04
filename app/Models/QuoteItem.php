@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
+use App\Concerns\IsDocumentItem;
 use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\TaskFrequencyEnum;
 use Database\Factories\QuoteItemFactory;
@@ -52,7 +53,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class QuoteItem extends Model
 {
     /** @use HasFactory<QuoteItemFactory> */
-    use BelongsToTenant, HasFactory, HasUuids;
+    use BelongsToTenant, HasFactory, HasUuids, IsDocumentItem;
 
     /**
      * @return array<string, string>
@@ -62,14 +63,9 @@ final class QuoteItem extends Model
         return [
             'frequency' => TaskFrequencyEnum::class,
             'billing_period' => QuoteBillingPeriodEnum::class,
-            'quantity' => 'decimal:2',
-            'unit_price' => 'decimal:2',
-            'discount_percent' => 'decimal:2',
-            'vat_rate' => 'decimal:2',
             'line_base' => 'decimal:2',
             'line_vat' => 'decimal:2',
             'line_total' => 'decimal:2',
-            'position' => 'integer',
         ];
     }
 

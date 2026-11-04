@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Invoices\InvoiceIssueData;
-use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceListItemData;
 use App\Data\Invoices\InvoicePaymentData;
 use App\Data\Invoices\InvoiceStatsData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Enums\CurrencyEnum;
+use App\Enums\EfaStatusEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentSourceEnum;
@@ -24,6 +24,7 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use App\Notifications\InvoiceIssued;
 use App\Scopes\TenantScope;
+use App\Support\CustomerParty;
 use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\Request;
@@ -36,10 +37,16 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 final readonly class InvoiceService
 {
+    private const COPY_EXCEPT = [
+        'number', 'variable_symbol', 'credited_invoice_id', 'recurring_invoice_id', 'quote_id',
+        'period_from', 'period_to', 'issued_at', 'issued_by_name', 'sent_at', 'paid_at', 'cancelled_at',
+        'supplier_signature_media_id', 'efa_id', 'efa_submitted_at', 'efa_last_error', 'deleted_at',
+    ];
+
     public function __construct(
         private InvoiceNumberService $numberService,
         private DatabaseManager $db,
-        private DocumentTotalsCalculator $totals,
+        private DocumentItemService $items,
     ) {}
 
     /**
@@ -109,9 +116,9 @@ final readonly class InvoiceService
             $attributes = $this->buildAttributes($data, $tenant, $client, $object);
             $invoice = Invoice::create($attributes);
 
-            $this->syncItems($invoice, $data->items, $tenant->id, (bool) $tenant->is_vat_payer);
+            $this->items->replacePriced($invoice->items(), $data->items, (bool) $tenant->is_vat_payer);
 
-            $invoice->update($this->computeTotals($invoice));
+            $this->recalculateTotals($invoice);
 
             return $invoice->load('items');
         });
@@ -133,9 +140,9 @@ final readonly class InvoiceService
 
             $invoice->update($attributes);
 
-            $this->syncItems($invoice, $data->items, $tenant->id, (bool) $invoice->is_vat_payer);
+            $this->items->replacePriced($invoice->items(), $data->items, (bool) $invoice->is_vat_payer);
 
-            $invoice->update($this->computeTotals($invoice));
+            $this->recalculateTotals($invoice);
 
             return $invoice->load('items');
         });
@@ -282,85 +289,38 @@ final readonly class InvoiceService
                 $invoice->vat_breakdown ?? [],
             );
 
-            $creditNote = Invoice::create([
-                'tenant_id' => $invoice->tenant_id,
-                'client_id' => $invoice->client_id,
-                'cleaning_object_id' => $invoice->cleaning_object_id,
+            $today = now()->toDateString();
+
+            $creditNote = $invoice->replicate(self::COPY_EXCEPT)->withoutRelations()->fill([
                 'credited_invoice_id' => $invoice->id,
-                'type' => $invoice->type,
                 'status' => InvoiceStatusEnum::Issued,
                 'number' => $creditNumber,
                 'variable_symbol' => $this->numberService->variableSymbol($creditNumber),
-                'issue_date' => now()->toDateString(),
-                'delivery_date' => now()->toDateString(),
-                'due_date' => now()->toDateString(),
+                'issue_date' => $today,
+                'delivery_date' => $today,
+                'due_date' => $today,
                 'issued_at' => now(),
                 'issued_by_name' => $this->resolveIssuerName($invoice->tenant_id, $actor),
                 'supplier_signature_media_id' => $tenant->signature_media_id,
-                'is_vat_payer' => $invoice->is_vat_payer,
-                'vat_rate' => $invoice->vat_rate,
                 'subtotal' => -1 * (float) $invoice->subtotal,
                 'vat_amount' => -1 * (float) $invoice->vat_amount,
                 'total' => -1 * (float) $invoice->total,
                 'deposit' => -1 * (float) $invoice->deposit,
                 'vat_breakdown' => $negatedBreakdown,
                 'rounding_amount' => -1 * (float) $invoice->rounding_amount,
-                'constant_symbol' => $invoice->constant_symbol,
-                'specific_symbol' => $invoice->specific_symbol,
-                'payment_type' => $invoice->payment_type,
-                'currency' => $invoice->currency,
-                'rounding_mode' => $invoice->rounding_mode,
-                'header_text' => $invoice->header_text,
-                'footer_text' => $invoice->footer_text,
-                'customer_name' => $invoice->customer_name,
-                'customer_representative' => $invoice->customer_representative,
-                'customer_represented_by' => $invoice->customer_represented_by,
-                'customer_ico' => $invoice->customer_ico,
-                'customer_peppol_participant_id' => $invoice->customer_peppol_participant_id,
-                'supplier_peppol_participant_id' => $invoice->supplier_peppol_participant_id,
-                'customer_dic' => $invoice->customer_dic,
-                'customer_vat_number' => $invoice->customer_vat_number,
-                'customer_street' => $invoice->customer_street,
-                'customer_city' => $invoice->customer_city,
-                'customer_postal_code' => $invoice->customer_postal_code,
-                'customer_country' => $invoice->customer_country,
-                'customer_email' => $invoice->customer_email,
-                'object_name' => $invoice->object_name,
-                'object_street' => $invoice->object_street,
-                'object_city' => $invoice->object_city,
-                'object_postal_code' => $invoice->object_postal_code,
-                'supplier_name' => $invoice->supplier_name,
-                'supplier_ico' => $invoice->supplier_ico,
-                'supplier_dic' => $invoice->supplier_dic,
-                'supplier_vat_number' => $invoice->supplier_vat_number,
-                'supplier_iban' => $invoice->supplier_iban,
-                'supplier_swift' => $invoice->supplier_swift,
-                'supplier_address_line' => $invoice->supplier_address_line,
-                'supplier_city' => $invoice->supplier_city,
-                'supplier_postal_code' => $invoice->supplier_postal_code,
-                'supplier_country' => $invoice->supplier_country,
-                'supplier_contact_email' => $invoice->supplier_contact_email,
-                'supplier_contact_phone' => $invoice->supplier_contact_phone,
-                'supplier_registration_info' => $invoice->supplier_registration_info,
-                'note' => $invoice->note,
+                'paid_amount' => '0.00',
+                'efa_status' => EfaStatusEnum::None,
             ]);
+            $creditNote->save();
 
             /** @var InvoiceItem $item */
             foreach ($invoice->items as $item) {
-                InvoiceItem::create([
-                    'tenant_id' => $invoice->tenant_id,
-                    'invoice_id' => $creditNote->id,
-                    'description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
+                $creditNote->items()->save($item->replicate()->fill([
                     'unit_price' => -1 * (float) $item->unit_price,
-                    'discount_percent' => $item->discount_percent,
-                    'vat_rate' => $item->vat_rate,
                     'line_base' => -1 * (float) $item->line_base,
                     'line_vat' => -1 * (float) $item->line_vat,
                     'line_total' => -1 * (float) $item->line_total,
-                    'position' => $item->position,
-                ]);
+                ]));
             }
 
             return $invoice;
@@ -376,81 +336,18 @@ final readonly class InvoiceService
             $defaultDueDays = config('invoicing.default_due_days', 14);
             $dueDateDefault = now()->addDays(is_numeric($defaultDueDays) ? (int) $defaultDueDays : 14)->toDateString();
 
-            $newInvoice = Invoice::create([
-                'tenant_id' => $invoice->tenant_id,
-                'client_id' => $invoice->client_id,
-                'cleaning_object_id' => $invoice->cleaning_object_id,
-                'type' => $invoice->type,
+            $newInvoice = $invoice->replicate(self::COPY_EXCEPT)->withoutRelations()->fill([
                 'status' => InvoiceStatusEnum::Draft,
-                'number' => null,
-                'variable_symbol' => null,
                 'issue_date' => $today,
                 'delivery_date' => $today,
                 'due_date' => $dueDateDefault,
-                'is_vat_payer' => $invoice->is_vat_payer,
-                'vat_rate' => $invoice->vat_rate,
-                'subtotal' => $invoice->subtotal,
-                'vat_amount' => $invoice->vat_amount,
-                'total' => $invoice->total,
-                'deposit' => $invoice->deposit,
-                'vat_breakdown' => $invoice->vat_breakdown,
-                'rounding_amount' => $invoice->rounding_amount,
-                'constant_symbol' => $invoice->constant_symbol,
-                'specific_symbol' => $invoice->specific_symbol,
-                'payment_type' => $invoice->payment_type,
-                'currency' => $invoice->currency,
-                'rounding_mode' => $invoice->rounding_mode,
-                'header_text' => $invoice->header_text,
-                'footer_text' => $invoice->footer_text,
-                'customer_name' => $invoice->customer_name,
-                'customer_representative' => $invoice->customer_representative,
-                'customer_represented_by' => $invoice->customer_represented_by,
-                'customer_ico' => $invoice->customer_ico,
-                'customer_peppol_participant_id' => $invoice->customer_peppol_participant_id,
-                'supplier_peppol_participant_id' => $invoice->supplier_peppol_participant_id,
-                'customer_dic' => $invoice->customer_dic,
-                'customer_vat_number' => $invoice->customer_vat_number,
-                'customer_street' => $invoice->customer_street,
-                'customer_city' => $invoice->customer_city,
-                'customer_postal_code' => $invoice->customer_postal_code,
-                'customer_country' => $invoice->customer_country,
-                'customer_email' => $invoice->customer_email,
-                'object_name' => $invoice->object_name,
-                'object_street' => $invoice->object_street,
-                'object_city' => $invoice->object_city,
-                'object_postal_code' => $invoice->object_postal_code,
-                'supplier_name' => $invoice->supplier_name,
-                'supplier_ico' => $invoice->supplier_ico,
-                'supplier_dic' => $invoice->supplier_dic,
-                'supplier_vat_number' => $invoice->supplier_vat_number,
-                'supplier_iban' => $invoice->supplier_iban,
-                'supplier_swift' => $invoice->supplier_swift,
-                'supplier_address_line' => $invoice->supplier_address_line,
-                'supplier_city' => $invoice->supplier_city,
-                'supplier_postal_code' => $invoice->supplier_postal_code,
-                'supplier_country' => $invoice->supplier_country,
-                'supplier_contact_email' => $invoice->supplier_contact_email,
-                'supplier_contact_phone' => $invoice->supplier_contact_phone,
-                'supplier_registration_info' => $invoice->supplier_registration_info,
-                'note' => $invoice->note,
+                'paid_amount' => '0.00',
+                'efa_status' => EfaStatusEnum::None,
             ]);
+            $newInvoice->save();
 
-            /** @var InvoiceItem $item */
             foreach ($invoice->items as $item) {
-                InvoiceItem::create([
-                    'tenant_id' => $invoice->tenant_id,
-                    'invoice_id' => $newInvoice->id,
-                    'description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
-                    'unit_price' => $item->unit_price,
-                    'discount_percent' => $item->discount_percent,
-                    'vat_rate' => $item->vat_rate,
-                    'line_base' => $item->line_base,
-                    'line_vat' => $item->line_vat,
-                    'line_total' => $item->line_total,
-                    'position' => $item->position,
-                ]);
+                $newInvoice->items()->save($item->replicate());
             }
 
             return $newInvoice->load('items');
@@ -500,45 +397,11 @@ final readonly class InvoiceService
         return $membership !== null ? $membership->display_name : $actor->name;
     }
 
-    /**
-     * @param  array<InvoiceItemData>  $items
-     */
-    private function syncItems(Invoice $invoice, array $items, string $tenantId, bool $isVatPayer): void
-    {
-        $invoice->items()->delete();
-
-        foreach ($items as $position => $itemData) {
-            $line = $this->totals->line($itemData->quantity, $itemData->unit_price, $itemData->discount_percent, $itemData->vat_rate, $isVatPayer);
-
-            InvoiceItem::create([
-                'tenant_id' => $tenantId,
-                'invoice_id' => $invoice->id,
-                'description' => $itemData->description,
-                'quantity' => $itemData->quantity,
-                'unit' => $itemData->unit,
-                'unit_price' => $itemData->unit_price,
-                'discount_percent' => $itemData->discount_percent,
-                'vat_rate' => $itemData->vat_rate,
-                'line_base' => $line['line_base'],
-                'line_vat' => $line['line_vat'],
-                'line_total' => $line['line_total'],
-                'position' => $position,
-            ]);
-        }
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function computeTotals(Invoice $invoice): array
+    private function recalculateTotals(Invoice $invoice): void
     {
         $invoice->loadMissing('items');
 
-        return $this->totals->totals(
-            $invoice->items->map(fn (InvoiceItem $item) => $item->only(['vat_rate', 'line_base', 'line_vat', 'line_total']))->all(),
-            $invoice->is_vat_payer,
-            $invoice->rounding_mode,
-        );
+        $invoice->update($this->items->totals($invoice->items, $invoice->is_vat_payer, $invoice->rounding_mode));
     }
 
     /**
@@ -570,12 +433,18 @@ final readonly class InvoiceService
             'rounding_mode' => $data->rounding_mode,
             'header_text' => $data->header_text,
             'footer_text' => $data->footer_text,
-            ...$this->customerAttributes($data, $client, $object),
+            ...CustomerParty::forInvoice($object, $client, CustomerParty::fromEntered($data))->toInvoiceAttributes(),
+            ...$this->supplierAttributes($tenant),
+            ...$this->objectAttributes($object),
+            'note' => $data->note,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function supplierAttributes(Tenant $tenant): array
+    {
+        return [
             'supplier_peppol_participant_id' => $tenant->peppol_participant_id,
-            'object_name' => $object?->name,
-            'object_street' => $object?->street,
-            'object_city' => $object?->city,
-            'object_postal_code' => $object?->postal_code,
             'supplier_name' => $tenant->name,
             'supplier_ico' => $tenant->ico,
             'supplier_dic' => $tenant->dic,
@@ -589,61 +458,17 @@ final readonly class InvoiceService
             'supplier_contact_email' => $tenant->contact_email,
             'supplier_contact_phone' => $tenant->contact_phone,
             'supplier_registration_info' => $tenant->registration_info,
-            'note' => $data->note,
         ];
     }
 
     /** @return array<string, mixed> */
-    private function customerAttributes(InvoiceUpsertData $data, ?Client $client, ?CleaningObject $object): array
+    private function objectAttributes(?CleaningObject $object): array
     {
-        $buyer = [
-            'customer_representative' => $data->customer_representative,
-            'customer_email' => $data->customer_email,
-        ];
-
-        if ($object?->hasBillingIdentity()) {
-            $ownAddress = $object->billing_street !== null || $object->billing_city !== null || $object->billing_postal_code !== null;
-
-            return $buyer + [
-                'customer_name' => $object->billing_name,
-                'customer_ico' => $object->billing_ico,
-                'customer_peppol_participant_id' => $object->billing_peppol_participant_id,
-                'customer_dic' => $object->billing_dic,
-                'customer_vat_number' => $object->billing_vat_number,
-                'customer_street' => $ownAddress ? $object->billing_street : $object->street,
-                'customer_city' => $ownAddress ? $object->billing_city : $object->city,
-                'customer_postal_code' => $ownAddress ? $object->billing_postal_code : $object->postal_code,
-                'customer_country' => $object->country,
-                'customer_represented_by' => $client?->name,
-            ];
-        }
-
-        if ($client !== null) {
-            return $buyer + [
-                'customer_name' => $client->name,
-                'customer_ico' => $client->ico,
-                'customer_peppol_participant_id' => $client->peppol_participant_id,
-                'customer_dic' => $client->dic,
-                'customer_vat_number' => $client->vat_number,
-                'customer_street' => $client->street,
-                'customer_city' => $client->city,
-                'customer_postal_code' => $client->postal_code,
-                'customer_country' => $client->country,
-                'customer_represented_by' => null,
-            ];
-        }
-
-        return $buyer + [
-            'customer_name' => $data->customer_name ?? '',
-            'customer_ico' => $data->customer_ico,
-            'customer_peppol_participant_id' => null,
-            'customer_dic' => $data->customer_dic,
-            'customer_vat_number' => $data->customer_vat_number,
-            'customer_street' => $data->customer_street,
-            'customer_city' => $data->customer_city,
-            'customer_postal_code' => $data->customer_postal_code,
-            'customer_country' => $data->customer_country ?? 'SK',
-            'customer_represented_by' => null,
+        return [
+            'object_name' => $object?->name,
+            'object_street' => $object?->street,
+            'object_city' => $object?->city,
+            'object_postal_code' => $object?->postal_code,
         ];
     }
 }

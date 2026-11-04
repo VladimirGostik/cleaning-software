@@ -6,7 +6,7 @@ namespace Tests\Feature\Clients;
 
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use App\Models\Tenant;
 use App\Services\ClientService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,15 +20,12 @@ final class ClientServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $contact = ClientContact::factory()->create([
-            'client_id' => $client->id,
-            'tenant_id' => $tenant->id,
-        ]);
+        $contact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id]);
 
         app(ClientService::class)->delete($client);
 
-        $this->assertSoftDeleted('client_contacts', ['id' => $contact->id]);
-        $this->assertDatabaseHas('client_contacts', ['id' => $contact->id]);
+        $this->assertSoftDeleted('contacts', ['id' => $contact->id]);
+        $this->assertDatabaseHas('contacts', ['id' => $contact->id]);
     }
 
     public function test_delete_soft_deletes_the_client(): void
@@ -48,10 +45,10 @@ final class ClientServiceTest extends TestCase
 
         app(ClientService::class)->delete($client);
 
-        $notDeleted = ClientContact::withoutTrashed()->where('client_id', $client->id)->count();
+        $notDeleted = Contact::withoutTrashed()->where('contactable_id', $client->id)->count();
         $this->assertSame(0, $notDeleted);
 
-        $softDeleted = ClientContact::onlyTrashed()->where('client_id', $client->id)->count();
+        $softDeleted = Contact::onlyTrashed()->where('contactable_id', $client->id)->count();
         $this->assertSame(3, $softDeleted);
     }
 
@@ -70,15 +67,12 @@ final class ClientServiceTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $contact = ClientContact::factory()->create([
-            'client_id' => $client->id,
-            'tenant_id' => $tenant->id,
-        ]);
+        $contact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id]);
 
         $this->delete(route('clients.destroy', $client));
 
-        $this->assertSoftDeleted('client_contacts', ['id' => $contact->id]);
-        $this->assertDatabaseHas('client_contacts', ['id' => $contact->id]);
+        $this->assertSoftDeleted('contacts', ['id' => $contact->id]);
+        $this->assertDatabaseHas('contacts', ['id' => $contact->id]);
     }
 
     /**

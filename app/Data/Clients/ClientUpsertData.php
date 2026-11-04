@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Clients;
 
+use App\Data\Contacts\ContactData;
 use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use App\Rules\AtMostOnePrimaryContact;
@@ -45,8 +46,8 @@ final class ClientUpsertData extends Data
         public readonly string $country,
         #[Nullable]
         public readonly ?string $note,
-        /** @var DataCollection<int, ClientContactData> */
-        #[DataCollectionOf(ClientContactData::class)]
+        /** @var DataCollection<int, ContactData> */
+        #[DataCollectionOf(ContactData::class)]
         public readonly DataCollection $contacts,
         #[Nullable, Max(64)]
         public readonly ?string $peppol_participant_id = null,

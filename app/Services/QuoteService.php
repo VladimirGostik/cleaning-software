@@ -8,7 +8,6 @@ use App\Data\Contracts\ContractUpsertData;
 use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Data\Quotes\QuoteConvertToContractData;
-use App\Data\Quotes\QuoteItemData;
 use App\Data\Quotes\QuoteListItemData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Data\RecurringInvoices\RecurringInvoiceItemData;
@@ -37,6 +36,7 @@ use App\Services\Documents\DocumentHtmlSanitizer;
 use App\Services\Documents\DocumentTemplateCatalogue;
 use App\Services\Documents\DocumentTemplateRenderer;
 use App\Services\Documents\QuoteTextService;
+use App\Support\CustomerParty;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
 use Illuminate\Database\DatabaseManager;
@@ -52,7 +52,7 @@ final readonly class QuoteService
         private InvoiceService $invoices,
         private ContractService $contracts,
         private TemporaryUploadService $uploads,
-        private DocumentTotalsCalculator $totals,
+        private DocumentItemService $items,
         private DatabaseManager $db,
         private QuoteTextService $text,
         private DocumentTemplateRenderer $renderer,
@@ -110,8 +110,8 @@ final readonly class QuoteService
             $quote = Quote::create($attributes);
 
             if ($data->kind === QuoteKindEnum::Itemized) {
-                $this->syncItems($quote, $data->items, $tenant->id, (bool) $tenant->is_vat_payer);
-                $quote->update($this->computeTotals($quote));
+                $this->items->replacePriced($quote->items(), $data->items, (bool) $tenant->is_vat_payer);
+                $quote->update($this->billingTotals($quote));
             }
 
             $this->syncDocument($quote, $data, $actor, $sessionId);
@@ -132,8 +132,8 @@ final readonly class QuoteService
             $quote->update($this->buildAttributes($data, $tenant));
 
             if ($data->kind === QuoteKindEnum::Itemized) {
-                $this->syncItems($quote, $data->items, $tenant->id, (bool) $quote->is_vat_payer);
-                $quote->update($this->computeTotals($quote));
+                $this->items->replacePriced($quote->items(), $data->items, (bool) $quote->is_vat_payer);
+                $quote->update($this->billingTotals($quote));
             }
 
             $this->syncDocument($quote, $data, $actor, $sessionId);
@@ -196,11 +196,7 @@ final readonly class QuoteService
         $quote->update([
             'client_id' => $clientId,
             'cleaning_object_id' => $objectId,
-            'customer_name' => null,
-            'customer_email' => null,
-            'customer_street' => null,
-            'customer_city' => null,
-            'customer_postal_code' => null,
+            ...(new CustomerParty)->toQuoteAttributes(),
         ]);
 
         return $quote;
@@ -214,53 +210,18 @@ final readonly class QuoteService
             $configuredValidityDays = config('quotes.default_validity_days', 30);
             $validityDays = is_numeric($configuredValidityDays) ? (int) $configuredValidityDays : 30;
 
-            $newQuote = Quote::create([
-                'tenant_id' => $quote->tenant_id,
-                'client_id' => $quote->client_id,
-                'cleaning_object_id' => $quote->cleaning_object_id,
-                'status' => QuoteStatusEnum::Draft,
-                'kind' => $quote->kind,
-                'number' => null,
-                'subject' => $quote->subject,
-                'customer_name' => $quote->customer_name,
-                'customer_email' => $quote->customer_email,
-                'customer_street' => $quote->customer_street,
-                'customer_city' => $quote->customer_city,
-                'customer_postal_code' => $quote->customer_postal_code,
-                'issue_date' => now()->toDateString(),
-                'valid_until' => now()->addDays($validityDays)->toDateString(),
-                'is_vat_payer' => $quote->is_vat_payer,
-                'vat_rate' => $quote->vat_rate,
-                'currency' => $quote->currency,
-                'subtotal' => $quote->subtotal,
-                'vat_amount' => $quote->vat_amount,
-                'total' => $quote->total,
-                'vat_breakdown' => $quote->vat_breakdown,
-                'period_totals' => $quote->period_totals,
-                'note' => $quote->note,
-                'included_text' => $quote->included_text,
-            ]);
+            $newQuote = $quote->replicate(['number', 'sent_at', 'accepted_at', 'rejected_at', 'deleted_at'])
+                ->withoutRelations()
+                ->fill([
+                    'status' => QuoteStatusEnum::Draft,
+                    'issue_date' => now()->toDateString(),
+                    'valid_until' => now()->addDays($validityDays)->toDateString(),
+                ]);
+            $newQuote->save();
 
             if ($quote->kind === QuoteKindEnum::Itemized) {
-                /** @var QuoteItem $item */
                 foreach ($quote->items as $item) {
-                    QuoteItem::create([
-                        'tenant_id' => $quote->tenant_id,
-                        'quote_id' => $newQuote->id,
-                        'description' => $item->description,
-                        'frequency' => $item->frequency,
-                        'billing_period' => $item->billing_period,
-                        'note' => $item->note,
-                        'quantity' => $item->quantity,
-                        'unit' => $item->unit,
-                        'unit_price' => $item->unit_price,
-                        'discount_percent' => $item->discount_percent,
-                        'vat_rate' => $item->vat_rate,
-                        'line_base' => $item->line_base,
-                        'line_vat' => $item->line_vat,
-                        'line_total' => $item->line_total,
-                        'position' => $item->position,
-                    ]);
+                    $newQuote->items()->save($item->replicate());
                 }
             } else {
                 $this->copyUploadedFile($quote, $newQuote);
@@ -299,7 +260,6 @@ final readonly class QuoteService
             $today = now()->toDateString();
             $defaultDueDays = config('invoicing.default_due_days', 14);
             $dueDate = now()->addDays(is_numeric($defaultDueDays) ? (int) $defaultDueDays : 14)->toDateString();
-            $isClientless = $quote->client_id === null;
 
             $defaults = TenantInterface::query()->where('tenant_id', $quote->tenant_id)->first();
 
@@ -328,16 +288,7 @@ final readonly class QuoteService
                 'due_date' => $dueDate,
                 'period_from' => null,
                 'period_to' => null,
-                'customer_name' => $isClientless ? $quote->customer_name : null,
-                'customer_representative' => null,
-                'customer_ico' => null,
-                'customer_dic' => null,
-                'customer_vat_number' => null,
-                'customer_street' => $isClientless ? $quote->customer_street : null,
-                'customer_city' => $isClientless ? $quote->customer_city : null,
-                'customer_postal_code' => $isClientless ? $quote->customer_postal_code : null,
-                'customer_country' => null,
-                'customer_email' => $isClientless ? $quote->customer_email : null,
+                ...$this->quoteParty($quote)->toEnteredAttributes(),
                 'note' => $quote->note,
                 'items' => $items,
                 'constant_symbol' => null,
@@ -368,25 +319,19 @@ final readonly class QuoteService
             throw ValidationException::withMessages(['status' => [__('app.quote_has_no_items_for_period')]]);
         }
 
-        $isClientless = $quote->client_id === null;
-
-        return new RecurringInvoicePrefillData(
-            quote_id: $quote->id,
-            client_id: $quote->client_id,
-            cleaning_object_id: $quote->cleaning_object_id,
-            name: __('app.quote_recurring_invoice_name', [
+        return RecurringInvoicePrefillData::from([
+            'quote_id' => $quote->id,
+            'client_id' => $quote->client_id,
+            'cleaning_object_id' => $quote->cleaning_object_id,
+            'name' => __('app.quote_recurring_invoice_name', [
                 'name' => $quote->subject ?? $quote->number ?? __('app.quote_pdf_title'),
                 'period' => $period->label(),
             ]),
-            frequency: $frequency,
-            customer_name: $isClientless ? $quote->customer_name : null,
-            customer_email: $isClientless ? $quote->customer_email : null,
-            customer_street: $isClientless ? $quote->customer_street : null,
-            customer_city: $isClientless ? $quote->customer_city : null,
-            customer_postal_code: $isClientless ? $quote->customer_postal_code : null,
-            currency: $quote->currency,
-            note: $quote->note,
-            items: $items->map(fn (QuoteItem $item) => new RecurringInvoiceItemData(
+            'frequency' => $frequency,
+            ...$this->quoteParty($quote)->toQuoteAttributes(),
+            'currency' => $quote->currency,
+            'note' => $quote->note,
+            'items' => $items->map(fn (QuoteItem $item) => new RecurringInvoiceItemData(
                 description: $this->itemDescription($item),
                 quantity: (float) $item->quantity,
                 unit: $item->unit,
@@ -394,7 +339,7 @@ final readonly class QuoteService
                 discount_percent: (float) $item->discount_percent,
                 vat_rate: (float) $item->vat_rate,
             ))->values()->all(),
-        );
+        ]);
     }
 
     public function convertToContract(Quote $quote, QuoteConvertToContractData $data, User $actor): Contract
@@ -577,58 +522,24 @@ final readonly class QuoteService
     }
 
     /**
-     * @param  array<QuoteItemData>  $items
-     */
-    private function syncItems(Quote $quote, array $items, string $tenantId, bool $isVatPayer): void
-    {
-        $quote->items()->delete();
-
-        foreach ($items as $position => $itemData) {
-            $line = $this->totals->line($itemData->quantity, $itemData->unit_price, $itemData->discount_percent, $itemData->vat_rate, $isVatPayer);
-
-            QuoteItem::create([
-                'tenant_id' => $tenantId,
-                'quote_id' => $quote->id,
-                'description' => $itemData->description,
-                'frequency' => $itemData->frequency,
-                'billing_period' => $itemData->billing_period,
-                'note' => $itemData->note,
-                'quantity' => $itemData->quantity,
-                'unit' => $itemData->unit,
-                'unit_price' => $itemData->unit_price,
-                'discount_percent' => $itemData->discount_percent,
-                'vat_rate' => $itemData->vat_rate,
-                'line_base' => $line['line_base'],
-                'line_vat' => $line['line_vat'],
-                'line_total' => $line['line_total'],
-                'position' => $position,
-            ]);
-        }
-    }
-
-    /**
      * @return array<string, mixed>
      */
-    private function computeTotals(Quote $quote): array
+    private function billingTotals(Quote $quote): array
     {
         $quote->load('items');
 
-        $lines = $quote->items->map(fn (QuoteItem $item) => $item->only(['vat_rate', 'line_base', 'line_vat', 'line_total']))->all();
-        $totals = $this->totals->totals($lines, $quote->is_vat_payer);
+        $totals = $this->items->totals($quote->items, $quote->is_vat_payer);
 
         $periodTotals = [];
 
         foreach (QuoteBillingPeriodEnum::cases() as $period) {
-            $periodLines = $quote->items
-                ->where('billing_period', $period)
-                ->map(fn (QuoteItem $item) => $item->only(['vat_rate', 'line_base', 'line_vat', 'line_total']))
-                ->all();
+            $periodItems = $quote->items->where('billing_period', $period);
 
-            if ($periodLines === []) {
+            if ($periodItems->isEmpty()) {
                 continue;
             }
 
-            $group = $this->totals->totals($periodLines, $quote->is_vat_payer);
+            $group = $this->items->totals($periodItems, $quote->is_vat_payer);
             $periodTotals[] = [
                 'billing_period' => $period->value,
                 'subtotal' => number_format($group['subtotal'], 2, '.', ''),
@@ -644,6 +555,11 @@ final readonly class QuoteService
             'vat_breakdown' => $totals['vat_breakdown'],
             'period_totals' => $periodTotals,
         ];
+    }
+
+    private function quoteParty(Quote $quote): CustomerParty
+    {
+        return $quote->client_id === null ? CustomerParty::fromQuote($quote) : new CustomerParty;
     }
 
     /**
@@ -666,11 +582,7 @@ final readonly class QuoteService
             'currency' => $data->currency,
             'note' => $data->note,
             'included_text' => $data->included_text,
-            'customer_name' => $hasClient ? null : $data->customer_name,
-            'customer_email' => $hasClient ? null : $data->customer_email,
-            'customer_street' => $hasClient ? null : $data->customer_street,
-            'customer_city' => $hasClient ? null : $data->customer_city,
-            'customer_postal_code' => $hasClient ? null : $data->customer_postal_code,
+            ...($hasClient ? new CustomerParty : CustomerParty::fromQuote($data))->toQuoteAttributes(),
         ];
     }
 }

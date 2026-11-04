@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\ClientContact;
+use App\Models\Contact;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<ClientContact>
+ * @extends Factory<Contact>
  */
-final class ClientContactFactory extends Factory
+final class ContactFactory extends Factory
 {
-    /** @var class-string<ClientContact> */
-    protected $model = ClientContact::class;
+    /** @var class-string<Contact> */
+    protected $model = Contact::class;
 
     /** @return array<string, mixed> */
     public function definition(): array

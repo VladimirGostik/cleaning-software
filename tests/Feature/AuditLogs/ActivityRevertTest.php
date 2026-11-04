@@ -9,12 +9,11 @@ use App\Enums\InvoiceStatusEnum;
 use App\Models\Activity;
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use App\Models\Contract;
 use App\Models\Document;
 use App\Models\Expense;
 use App\Models\Invoice;
-use App\Models\ObjectContact;
 use App\Models\Quote;
 use App\Models\Role;
 use App\Models\Task;
@@ -85,7 +84,7 @@ final class ActivityRevertTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function contactPayload(ClientContact $contact, bool $primary): array
+    private function contactPayload(Contact $contact, bool $primary): array
     {
         return ['id' => $contact->id, 'name' => $contact->name, 'position' => null, 'email' => null, 'phone' => null, 'is_primary' => $primary];
     }
@@ -138,8 +137,8 @@ final class ActivityRevertTest extends TestCase
     public function test_revert_of_a_client_edit_with_contact_changes_restores_all_and_keeps_one_primary(): void
     {
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Before']);
-        $first = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
-        $second = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id, 'is_primary' => false]);
+        $first = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
+        $second = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id, 'is_primary' => false]);
 
         $this->patch(route('clients.update', $client), $this->clientPayload($client, [
             'name' => 'After',
@@ -149,23 +148,23 @@ final class ActivityRevertTest extends TestCase
             ],
         ]));
 
-        $this->assertSoftDeleted('client_contacts', ['id' => $first->id]);
+        $this->assertSoftDeleted('contacts', ['id' => $first->id]);
 
         $this->revert($this->row($client, 'updated'))->assertSessionHasNoErrors();
 
         $this->assertSame('Before', $client->refresh()->name);
         $this->assertNull($first->fresh()?->deleted_at);
-        $this->assertSoftDeleted('client_contacts', ['name' => 'Added']);
-        $primaries = ClientContact::query()->where('client_id', $client->id)->where('is_primary', true)->pluck('id');
+        $this->assertSoftDeleted('contacts', ['name' => 'Added']);
+        $primaries = Contact::query()->where('contactable_id', $client->id)->where('is_primary', true)->pluck('id');
         $this->assertSame([$first->id], $primaries->all());
     }
 
     public function test_batched_client_delete_revert_restores_everything_and_redo_deletes_again(): void
     {
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $contact = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
+        $contact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
         $object = CleaningObject::factory()->create(['tenant_id' => $this->tenant->id, 'client_id' => $client->id]);
-        $objectContact = ObjectContact::factory()->create(['tenant_id' => $this->tenant->id, 'cleaning_object_id' => $object->id]);
+        $objectContact = Contact::factory()->for($object, 'contactable')->create(['tenant_id' => $this->tenant->id]);
 
         $this->delete(route('clients.destroy', $client));
         $this->assertSoftDeleted('clients', ['id' => $client->id]);
@@ -199,7 +198,7 @@ final class ActivityRevertTest extends TestCase
 
         $this->assertSoftDeleted('clients', ['id' => $client->id]);
         $this->assertSoftDeleted('objects', ['id' => $object->id]);
-        $this->assertSoftDeleted('client_contacts', ['id' => $contact->id]);
+        $this->assertSoftDeleted('contacts', ['id' => $contact->id]);
     }
 
     public function test_stale_update_is_blocked_and_the_detail_marks_the_conflict(): void
@@ -311,7 +310,7 @@ final class ActivityRevertTest extends TestCase
     public function test_contact_restore_is_blocked_while_its_client_is_trashed(): void
     {
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $contact = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id]);
+        $contact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id]);
         $contact->delete();
         $client->delete();
 
@@ -323,7 +322,7 @@ final class ActivityRevertTest extends TestCase
     public function test_primary_contact_create_cannot_be_reverted_alone(): void
     {
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $primary = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
+        $primary = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
 
         $row = $this->row($primary, 'created');
         $this->assertSame('primary_contact', $this->reasonOf($row));
@@ -343,10 +342,10 @@ final class ActivityRevertTest extends TestCase
     public function test_batch_member_blocked_names_the_blocking_row(): void
     {
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $contact = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id]);
+        $contact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id]);
         $this->delete(route('clients.destroy', $client));
 
-        ClientContact::withTrashed()->find($contact->id)?->restore();
+        Contact::withTrashed()->find($contact->id)?->restore();
 
         $clientRow = $this->row($client, 'deleted');
         /** @var array{reason: ?string, blocking_activity_id: ?int} $info */
@@ -428,7 +427,7 @@ final class ActivityRevertTest extends TestCase
     public function test_sole_contact_removed_by_an_edit_is_restored_as_primary(): void
     {
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $contact = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
+        $contact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
         $contact->delete();
 
         $this->revert($this->row($contact, 'deleted'))->assertSessionHasNoErrors();
@@ -439,9 +438,9 @@ final class ActivityRevertTest extends TestCase
     public function test_contact_restored_while_another_primary_exists_becomes_non_primary(): void
     {
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $old = ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
+        $old = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
         $old->delete();
-        ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
+        Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id, 'is_primary' => true]);
 
         $this->revert($this->row($old, 'deleted'))->assertSessionHasNoErrors();
 
@@ -508,9 +507,9 @@ final class ActivityRevertTest extends TestCase
         for ($i = 0; $i < $count; $i++) {
             $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
             $client->update(['name' => 'Renamed '.$i]);
-            ClientContact::factory()->for($client)->create(['tenant_id' => $this->tenant->id]);
+            Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $this->tenant->id]);
             $object = CleaningObject::factory()->create(['tenant_id' => $this->tenant->id, 'client_id' => $client->id]);
-            ObjectContact::factory()->create(['tenant_id' => $this->tenant->id, 'cleaning_object_id' => $object->id]);
+            Contact::factory()->for($object, 'contactable')->create(['tenant_id' => $this->tenant->id]);
             Task::factory()->forTenant($this->tenant)->create();
             Expense::factory()->forTenant($this->tenant)->create();
         }

@@ -12,6 +12,7 @@ use App\Enums\QuoteBillingPeriodEnum;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Tenant;
+use App\Support\CustomerParty;
 use DateTimeInterface;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -23,6 +24,7 @@ trait DescribesDocumentItems
     protected function quoteFields(Request $request, ?Quote $existing = null): array
     {
         $pick = fn (string $key, mixed $current = null): mixed => $request->has($key) ? $request->get($key) : $current;
+        $customer = ($existing !== null ? CustomerParty::fromQuote($existing) : new CustomerParty)->toQuoteAttributes();
 
         return [
             'client_id' => $pick('client_id', $existing?->client_id),
@@ -32,11 +34,7 @@ trait DescribesDocumentItems
             'valid_until' => $pick('valid_until', $existing?->valid_until->toDateString()),
             'note' => $pick('note', $existing?->note),
             'included_text' => $pick('included_text', $existing !== null ? $existing->included_text : $this->firmDefaultIncludedText()),
-            'customer_name' => $pick('customer_name', $existing?->customer_name),
-            'customer_email' => $pick('customer_email', $existing?->customer_email),
-            'customer_street' => $pick('customer_street', $existing?->customer_street),
-            'customer_city' => $pick('customer_city', $existing?->customer_city),
-            'customer_postal_code' => $pick('customer_postal_code', $existing?->customer_postal_code),
+            ...$this->overrideFromRequest($request, $customer, array_keys($customer)),
             'currency' => $pick('currency', $existing?->currency->value ?? CurrencyEnum::EUR->value),
             'items' => $request->has('items')
                 ? $this->itemRows($request->get('items'), true)
@@ -49,6 +47,8 @@ trait DescribesDocumentItems
     {
         $pick = fn (string $key, mixed $current = null): mixed => $request->has($key) ? $request->get($key) : $current;
         $date = fn (?DateTimeInterface $value): ?string => $value?->format('Y-m-d');
+
+        $customer = ($existing !== null ? CustomerParty::fromEntered($existing) : new CustomerParty)->toEnteredAttributes();
 
         $preserved = $existing === null ? [] : [
             'deposit' => (float) $existing->deposit,
@@ -66,16 +66,7 @@ trait DescribesDocumentItems
             'due_date' => $pick('due_date', $date($existing?->due_date)),
             'period_from' => $pick('period_from', $date($existing?->period_from)),
             'period_to' => $pick('period_to', $date($existing?->period_to)),
-            'customer_name' => $pick('customer_name', $existing?->customer_name),
-            'customer_representative' => $existing?->customer_representative,
-            'customer_ico' => $pick('customer_ico', $existing?->customer_ico),
-            'customer_dic' => $existing?->customer_dic,
-            'customer_vat_number' => $existing?->customer_vat_number,
-            'customer_street' => $pick('customer_street', $existing?->customer_street),
-            'customer_city' => $pick('customer_city', $existing?->customer_city),
-            'customer_postal_code' => $pick('customer_postal_code', $existing?->customer_postal_code),
-            'customer_country' => $existing?->customer_country,
-            'customer_email' => $pick('customer_email', $existing?->customer_email),
+            ...$this->overrideFromRequest($request, $customer, ['customer_name', 'customer_ico', 'customer_street', 'customer_city', 'customer_postal_code', 'customer_email']),
             'note' => $pick('note', $existing?->note),
             'constant_symbol' => $existing?->constant_symbol,
             'specific_symbol' => $existing?->specific_symbol,
@@ -186,6 +177,22 @@ trait DescribesDocumentItems
         }
 
         return $rows;
+    }
+
+    /**
+     * @param  array<string, ?string>  $values
+     * @param  list<string>  $keys
+     * @return array<string, mixed>
+     */
+    private function overrideFromRequest(Request $request, array $values, array $keys): array
+    {
+        foreach ($keys as $key) {
+            if ($request->has($key)) {
+                $values[$key] = $request->get($key);
+            }
+        }
+
+        return $values;
     }
 
     private function firmDefaultIncludedText(): ?string

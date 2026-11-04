@@ -7,7 +7,7 @@ namespace Tests\Feature\Clients;
 use App\Enums\ClientTypeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -158,13 +158,13 @@ final class ClientIndexTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        ClientContact::factory()->for($client)->create([
+        Contact::factory()->for($client, 'contactable')->create([
             'tenant_id' => $tenant->id,
             'email' => 'primary@example.com',
             'phone' => null,
             'is_primary' => true,
         ]);
-        ClientContact::factory()->for($client)->create([
+        Contact::factory()->for($client, 'contactable')->create([
             'tenant_id' => $tenant->id,
             'email' => 'other@example.com',
             'phone' => null,
@@ -187,7 +187,7 @@ final class ClientIndexTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        ClientContact::factory()->for($client)->create([
+        Contact::factory()->for($client, 'contactable')->create([
             'tenant_id' => $tenant->id,
             'email' => null,
             'phone' => '+421900123456',
@@ -210,7 +210,7 @@ final class ClientIndexTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        ClientContact::factory()->for($client)->create([
+        Contact::factory()->for($client, 'contactable')->create([
             'tenant_id' => $tenant->id,
             'email' => 'nonprimary@example.com',
             'is_primary' => false,

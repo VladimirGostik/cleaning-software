@@ -13,8 +13,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -38,7 +38,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon $created_at
  * @property int|null $contacts_count
  * @property int|null $objects_count
- * @property Collection<int, ClientContact> $contacts
+ * @property Collection<int, Contact> $contacts
  * @property Collection<int, CleaningObject> $objects
  */
 #[Fillable([
@@ -79,19 +79,19 @@ final class Client extends Model
     }
 
     /**
-     * @return HasMany<ClientContact, $this>
+     * @return MorphMany<Contact, $this>
      */
-    public function contacts(): HasMany
+    public function contacts(): MorphMany
     {
-        return $this->hasMany(ClientContact::class);
+        return $this->morphMany(Contact::class, 'contactable');
     }
 
     /**
-     * @return HasOne<ClientContact, $this>
+     * @return MorphOne<Contact, $this>
      */
-    public function primaryContact(): HasOne
+    public function primaryContact(): MorphOne
     {
-        return $this->hasOne(ClientContact::class)->where('is_primary', true);
+        return $this->morphOne(Contact::class, 'contactable')->where('is_primary', true);
     }
 
     /**

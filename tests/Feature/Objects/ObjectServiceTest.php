@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Objects;
 
-use App\Data\Objects\ObjectContactData;
+use App\Data\Contacts\ContactData;
 use App\Data\Objects\ObjectUpsertData;
 use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
@@ -93,7 +93,7 @@ final class ObjectServiceTest extends TestCase
             area_sqm: null,
             floor: null,
             is_active: true,
-            contacts: new DataCollection(ObjectContactData::class, []),
+            contacts: new DataCollection(ContactData::class, []),
         );
 
         $object = app(ObjectService::class)->create($data, $actor);

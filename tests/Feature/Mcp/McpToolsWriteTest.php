@@ -13,7 +13,9 @@ use App\Enums\TaskStatusEnum;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Quote;
+use App\Models\QuoteItem;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
@@ -281,6 +283,98 @@ final class McpToolsWriteTest extends TestCase
         $this->assertSame('Acme s.r.o.', $invoice->customer_name);
         $this->assertSame('5.00', $invoice->deposit);
         $this->assertCount(1, $invoice->items);
+    }
+
+    public function test_update_invoice_draft_keeps_carried_over_customer_fields_and_replaces_the_pickable_ones(): void
+    {
+        $invoice = Invoice::factory()->create([
+            'tenant_id' => $this->alpha->id,
+            'customer_name' => 'Old name',
+            'customer_representative' => 'Jana Zastupca',
+            'customer_ico' => '11111111',
+            'customer_dic' => '2011111111',
+            'customer_vat_number' => 'SK2011111111',
+            'customer_street' => 'Old 1',
+            'customer_city' => 'Old city',
+            'customer_postal_code' => '111 11',
+            'customer_country' => 'CZ',
+            'customer_email' => 'old@example.test',
+        ]);
+        InvoiceItem::factory()->create(['tenant_id' => $this->alpha->id, 'invoice_id' => $invoice->id]);
+
+        $untouched = $this->callTool($this->token, 'update_invoice_draft', [
+            'company_id' => $this->alpha->id,
+            'invoice_id' => $invoice->id,
+            'note' => 'Only a note',
+        ]);
+        $this->assertFalse($untouched->isError, $untouched->text);
+        $invoice->refresh();
+        $this->assertSame(
+            ['Old name', 'Jana Zastupca', '11111111', '2011111111', 'SK2011111111', 'Old 1', 'Old city', '111 11', 'CZ', 'old@example.test'],
+            [
+                $invoice->customer_name, $invoice->customer_representative, $invoice->customer_ico, $invoice->customer_dic, $invoice->customer_vat_number,
+                $invoice->customer_street, $invoice->customer_city, $invoice->customer_postal_code, $invoice->customer_country, $invoice->customer_email,
+            ],
+        );
+
+        $changed = $this->callTool($this->token, 'update_invoice_draft', [
+            'company_id' => $this->alpha->id,
+            'invoice_id' => $invoice->id,
+            'customer_name' => 'New name',
+            'customer_ico' => '22222222',
+            'customer_street' => 'New 2',
+            'customer_city' => 'New city',
+            'customer_postal_code' => '222 22',
+            'customer_email' => 'new@example.test',
+        ]);
+        $this->assertFalse($changed->isError, $changed->text);
+        $invoice->refresh();
+        $this->assertSame(
+            ['New name', '22222222', 'New 2', 'New city', '222 22', 'new@example.test'],
+            [$invoice->customer_name, $invoice->customer_ico, $invoice->customer_street, $invoice->customer_city, $invoice->customer_postal_code, $invoice->customer_email],
+        );
+        $this->assertSame(
+            ['Jana Zastupca', '2011111111', 'SK2011111111', 'CZ'],
+            [$invoice->customer_representative, $invoice->customer_dic, $invoice->customer_vat_number, $invoice->customer_country],
+        );
+        $this->assertCount(1, $invoice->items);
+    }
+
+    public function test_update_quote_draft_keeps_all_five_recipient_fields_when_omitted_and_replaces_the_given_ones(): void
+    {
+        $quote = Quote::factory()->withoutClient()->create([
+            'tenant_id' => $this->alpha->id,
+            'customer_name' => 'Lead s.r.o.',
+            'customer_email' => 'lead@example.test',
+            'customer_street' => 'Lead 1',
+            'customer_city' => 'Zvolen',
+            'customer_postal_code' => '960 01',
+        ]);
+        QuoteItem::factory()->create(['tenant_id' => $this->alpha->id, 'quote_id' => $quote->id]);
+
+        $untouched = $this->callTool($this->token, 'update_quote_draft', [
+            'company_id' => $this->alpha->id,
+            'quote_id' => $quote->id,
+            'note' => 'Only a note',
+        ]);
+        $this->assertFalse($untouched->isError, $untouched->text);
+        $quote->refresh();
+        $this->assertSame(
+            ['Lead s.r.o.', 'lead@example.test', 'Lead 1', 'Zvolen', '960 01'],
+            [$quote->customer_name, $quote->customer_email, $quote->customer_street, $quote->customer_city, $quote->customer_postal_code],
+        );
+
+        $changed = $this->callTool($this->token, 'update_quote_draft', [
+            'company_id' => $this->alpha->id,
+            'quote_id' => $quote->id,
+            'customer_city' => 'Nitra',
+        ]);
+        $this->assertFalse($changed->isError, $changed->text);
+        $quote->refresh();
+        $this->assertSame(
+            ['Lead s.r.o.', 'lead@example.test', 'Lead 1', 'Nitra', '960 01'],
+            [$quote->customer_name, $quote->customer_email, $quote->customer_street, $quote->customer_city, $quote->customer_postal_code],
+        );
     }
 
     public function test_write_tools_never_cross_the_company_boundary(): void

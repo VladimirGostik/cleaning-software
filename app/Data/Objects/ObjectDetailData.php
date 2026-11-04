@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Objects;
 
+use App\Data\Contacts\ContactData;
 use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
@@ -36,9 +37,9 @@ final class ObjectDetailData extends Data
          * Q1 gate: `null` = actor may not see object contacts at all; `[]` = permitted actor,
          * this object simply has none. Never conflate the two — see `ObjectPolicy::viewContacts()`.
          *
-         * @var DataCollection<int, ObjectContactData>|null
+         * @var DataCollection<int, ContactData>|null
          */
-        #[DataCollectionOf(ObjectContactData::class)]
+        #[DataCollectionOf(ContactData::class)]
         public readonly ?DataCollection $contacts,
         public readonly ?ObjectBillingData $billing,
     ) {}
@@ -63,7 +64,7 @@ final class ObjectDetailData extends Data
             floor: $object->floor,
             is_active: (bool) $object->is_active,
             created_at: $object->created_at->toIso8601String(),
-            contacts: $includeContacts ? ObjectContactData::collect($object->contacts, DataCollection::class) : null,
+            contacts: $includeContacts ? ContactData::collect($object->contacts, DataCollection::class) : null,
             billing: $includeBilling ? ObjectBillingData::fromModel($object) : null,
         );
     }

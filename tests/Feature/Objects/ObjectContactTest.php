@@ -7,8 +7,7 @@ namespace Tests\Feature\Objects;
 use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ClientContact;
-use App\Models\ObjectContact;
+use App\Models\Contact;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\ViewErrorBag;
@@ -62,8 +61,8 @@ final class ObjectContactTest extends TestCase
         $this->post(route('objects.store'), $payload)->assertRedirect();
 
         $object = CleaningObject::where('name', 'Test Office')->firstOrFail();
-        $this->assertDatabaseHas('object_contacts', [
-            'cleaning_object_id' => $object->id,
+        $this->assertDatabaseHas('contacts', [
+            'contactable_id' => $object->id,
             'name' => 'Domovník',
             'is_primary' => true,
         ]);
@@ -100,8 +99,8 @@ final class ObjectContactTest extends TestCase
         $this->post(route('objects.store'), $payload)->assertRedirect();
 
         $object = CleaningObject::where('name', 'Test Office')->firstOrFail();
-        $this->assertDatabaseHas('object_contacts', [
-            'cleaning_object_id' => $object->id,
+        $this->assertDatabaseHas('contacts', [
+            'contactable_id' => $object->id,
             'tenant_id' => $tenant->id,
         ]);
     }
@@ -122,7 +121,7 @@ final class ObjectContactTest extends TestCase
         $this->put(route('objects.update', $object), $payload)->assertRedirect();
 
         $this->assertSame(2, $object->contacts()->count());
-        $this->assertDatabaseHas('object_contacts', ['cleaning_object_id' => $object->id, 'name' => 'New Contact']);
+        $this->assertDatabaseHas('contacts', ['contactable_id' => $object->id, 'name' => 'New Contact']);
     }
 
     public function test_update_switches_primary_contact(): void
@@ -141,8 +140,8 @@ final class ObjectContactTest extends TestCase
 
         $this->put(route('objects.update', $object), $payload)->assertRedirect();
 
-        $this->assertDatabaseHas('object_contacts', ['id' => $second->id, 'is_primary' => true]);
-        $this->assertDatabaseHas('object_contacts', ['id' => $first->id, 'is_primary' => false]);
+        $this->assertDatabaseHas('contacts', ['id' => $second->id, 'is_primary' => true]);
+        $this->assertDatabaseHas('contacts', ['id' => $first->id, 'is_primary' => false]);
     }
 
     public function test_update_soft_deletes_removed_contact(): void
@@ -160,8 +159,8 @@ final class ObjectContactTest extends TestCase
 
         $this->put(route('objects.update', $object), $payload)->assertRedirect();
 
-        $this->assertSoftDeleted('object_contacts', ['id' => $removed->id]);
-        $this->assertDatabaseHas('object_contacts', ['id' => $kept->id, 'deleted_at' => null]);
+        $this->assertSoftDeleted('contacts', ['id' => $removed->id]);
+        $this->assertDatabaseHas('contacts', ['id' => $kept->id, 'deleted_at' => null]);
     }
 
     public function test_show_returns_contacts_in_detail_data(): void
@@ -216,7 +215,7 @@ final class ObjectContactTest extends TestCase
 
         $this->assertDatabaseHas('activity_log', [
             'subject_id' => $contact->id,
-            'subject_type' => ObjectContact::class,
+            'subject_type' => Contact::class,
         ]);
     }
 
@@ -268,7 +267,7 @@ final class ObjectContactTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
-        $clientContact = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id]);
+        $clientContact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id]);
 
         $payload = $this->storePayload($client->id, [
             ['id' => $clientContact->id, 'name' => $clientContact->name, 'position' => null, 'email' => null, 'phone' => null, 'is_primary' => true],
@@ -346,7 +345,7 @@ final class ObjectContactTest extends TestCase
         $this->put(route('objects.update', $object), $this->storePayload($client->id))->assertRedirect();
 
         foreach ($contactIds as $id) {
-            $this->assertSoftDeleted('object_contacts', ['id' => $id]);
+            $this->assertSoftDeleted('contacts', ['id' => $id]);
         }
     }
 

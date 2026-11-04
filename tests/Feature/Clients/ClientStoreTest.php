@@ -59,8 +59,8 @@ final class ClientStoreTest extends TestCase
         ]);
 
         $client = Client::where('ico', '12345678')->firstOrFail();
-        $this->assertDatabaseHas('client_contacts', [
-            'client_id' => $client->id,
+        $this->assertDatabaseHas('contacts', [
+            'contactable_id' => $client->id,
             'name' => 'Jan Novak',
             'is_primary' => true,
         ]);

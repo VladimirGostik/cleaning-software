@@ -12,18 +12,18 @@ use App\Enums\PermissionEnum;
 use App\Models\Activity;
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use App\Models\Contract;
 use App\Models\Document;
 use App\Models\Expense;
 use App\Models\Invoice;
-use App\Models\ObjectContact;
 use App\Models\Quote;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use App\Models\User;
 use App\Support\ActivityBatch;
+use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
@@ -57,9 +57,8 @@ final readonly class ActivityRevertService
             'type', 'name', 'ico', 'dic', 'vat_number', 'is_vat_payer', 'street', 'city',
             'postal_code', 'country', 'peppol_participant_id',
         ],
-        ClientContact::class => self::CONTACT_FIELDS,
+        Contact::class => self::CONTACT_FIELDS,
         CleaningObject::class => self::OBJECT_FIELDS,
-        ObjectContact::class => self::CONTACT_FIELDS,
         Task::class => ['title', 'description', 'priority', 'due_at', 'remind_at'],
         Expense::class => ['date', 'amount', 'currency', 'vat_amount', 'supplier_name', 'category'],
         Tenant::class => [
@@ -79,13 +78,13 @@ final readonly class ActivityRevertService
 
     /** Models whose `created` / `restored` row is reverted by deleting the subject. */
     private const array REMOVABLE = [
-        Client::class, ClientContact::class, ObjectContact::class, Task::class,
+        Client::class, Contact::class, Task::class,
         Expense::class, Invoice::class, Quote::class, Contract::class,
     ];
 
     /** Models whose `deleted` row is reverted by restoring the subject (`restored` rows may also delete CleaningObject). */
     private const array RESTORABLE = [
-        Client::class, ClientContact::class, CleaningObject::class, ObjectContact::class,
+        Client::class, Contact::class, CleaningObject::class,
         Task::class, Expense::class, Invoice::class, Quote::class, Contract::class,
     ];
 
@@ -374,7 +373,7 @@ final readonly class ActivityRevertService
             return [Reason::NotDraft, null];
         }
 
-        if ($kind === 'remove' && $ctx['size'] === 1 && ($subject instanceof ClientContact || $subject instanceof ObjectContact) && $subject->is_primary) {
+        if ($kind === 'remove' && $ctx['size'] === 1 && $subject instanceof Contact && $subject->is_primary) {
             return [Reason::PrimaryContact, null];
         }
 
@@ -426,7 +425,7 @@ final readonly class ActivityRevertService
     {
         $fields = self::UPDATE_FIELDS[$class];
 
-        if ($batchSize > 1 && in_array($class, [ClientContact::class, ObjectContact::class], true)) {
+        if ($batchSize > 1 && $class === Contact::class) {
             $fields[] = 'is_primary';
         }
 
@@ -464,10 +463,10 @@ final readonly class ActivityRevertService
     /** @param  Ctx  $ctx */
     private function parentTrashed(Model $subject, string $class, array $ctx): bool
     {
-        [$relation, $parentClass] = match (true) {
-            $subject instanceof ClientContact, $subject instanceof CleaningObject => ['client', Client::class],
-            $subject instanceof ObjectContact => ['cleaningObject', CleaningObject::class],
-            default => [null, null],
+        $relation = match (true) {
+            $subject instanceof CleaningObject => 'client',
+            $subject instanceof Contact => 'contactable',
+            default => null,
         };
 
         if ($relation === null) {
@@ -498,16 +497,10 @@ final readonly class ActivityRevertService
             return $actor->can(PermissionEnum::ManageBillingSettings->value);
         }
 
-        if ($subject instanceof ClientContact) {
-            $parent = $subject->getRelationValue('client');
+        if ($subject instanceof Contact) {
+            $parent = $subject->getRelationValue('contactable');
 
-            return $parent instanceof Client && $actor->can('update', $parent);
-        }
-
-        if ($subject instanceof ObjectContact) {
-            $parent = $subject->getRelationValue('cleaningObject');
-
-            return $parent instanceof CleaningObject && $actor->can('update', $parent);
+            return ($parent instanceof Client || $parent instanceof CleaningObject) && $actor->can('update', $parent);
         }
 
         return $actor->can($kind === 'update' ? 'update' : 'delete', $subject);
@@ -554,15 +547,17 @@ final readonly class ActivityRevertService
             return false;
         }
 
-        $contactIds = ClientContact::query()->where('client_id', $subject->id)->pluck('id');
         $objectIds = CleaningObject::query()->where('client_id', $subject->id)->pluck('id');
-        $objectContactIds = $objectIds->isEmpty()
-            ? collect()
-            : ObjectContact::query()->whereIn('cleaning_object_id', $objectIds)->pluck('id');
+        $contactIds = Contact::query()
+            ->where(fn (Builder $query) => $query
+                ->whereMorphedTo('contactable', $subject)
+                ->orWhere(fn (Builder $query) => $query
+                    ->where('contactable_type', Relation::getMorphAlias(CleaningObject::class))
+                    ->whereIn('contactable_id', $objectIds)))
+            ->pluck('id');
 
-        return $contactIds->contains(fn (mixed $id): bool => ! isset($ctx['subjects'][$this->key(ClientContact::class, $id)]))
-            || $objectIds->contains(fn (mixed $id): bool => ! isset($ctx['subjects'][$this->key(CleaningObject::class, $id)]))
-            || $objectContactIds->contains(fn (mixed $id): bool => ! isset($ctx['subjects'][$this->key(ObjectContact::class, $id)]));
+        return $contactIds->contains(fn (mixed $id): bool => ! isset($ctx['subjects'][$this->key(Contact::class, $id)]))
+            || $objectIds->contains(fn (mixed $id): bool => ! isset($ctx['subjects'][$this->key(CleaningObject::class, $id)]));
     }
 
     /** @param  Ctx  $ctx */
@@ -641,12 +636,8 @@ final readonly class ActivityRevertService
 
     private function restore(Model $subject, int $batchSize): void
     {
-        if ($batchSize === 1 && $subject instanceof ClientContact) {
-            $subject->forceFill(['is_primary' => ! ClientContact::query()->where('client_id', $subject->client_id)->where('is_primary', true)->exists()]);
-        }
-
-        if ($batchSize === 1 && $subject instanceof ObjectContact) {
-            $subject->forceFill(['is_primary' => ! ObjectContact::query()->where('cleaning_object_id', $subject->cleaning_object_id)->where('is_primary', true)->exists()]);
+        if ($batchSize === 1 && $subject instanceof Contact) {
+            $subject->forceFill(['is_primary' => ! Contact::query()->where('contactable_type', $subject->contactable_type)->where('contactable_id', $subject->contactable_id)->where('is_primary', true)->exists()]);
         }
 
         if (method_exists($subject, 'restore')) {
@@ -759,8 +750,8 @@ final readonly class ActivityRevertService
         $subject = $activity->subject;
 
         $label = match (true) {
-            $subject instanceof Client, $subject instanceof ClientContact, $subject instanceof CleaningObject,
-            $subject instanceof ObjectContact, $subject instanceof Tenant => $subject->name,
+            $subject instanceof Client, $subject instanceof Contact, $subject instanceof CleaningObject,
+            $subject instanceof Tenant => $subject->name,
             $subject instanceof Task => $subject->title,
             $subject instanceof Expense => $subject->supplier_name,
             $subject instanceof TenantInterface => __('app.audit_subject_invoice_settings'),
@@ -808,15 +799,18 @@ final readonly class ActivityRevertService
     {
         $subjects = $activities->map(fn (Activity $a): mixed => $a->subject)->filter(fn (mixed $s): bool => $s instanceof Model);
 
-        /** @var list<array{class-string<Model>, string, class-string<Model>, string}> $maps */
+        $clientAlias = Relation::getMorphAlias(Client::class);
+        $objectAlias = Relation::getMorphAlias(CleaningObject::class);
+
+        /** @var list<array{string, class-string<Model>, string, Closure(Model): bool}> $maps */
         $maps = [
-            [ClientContact::class, 'client', Client::class, 'client_id'],
-            [CleaningObject::class, 'client', Client::class, 'client_id'],
-            [ObjectContact::class, 'cleaningObject', CleaningObject::class, 'cleaning_object_id'],
+            ['client', Client::class, 'client_id', fn (Model $s): bool => $s instanceof CleaningObject],
+            ['contactable', Client::class, 'contactable_id', fn (Model $s): bool => $s instanceof Contact && $s->contactable_type === $clientAlias],
+            ['contactable', CleaningObject::class, 'contactable_id', fn (Model $s): bool => $s instanceof Contact && $s->contactable_type === $objectAlias],
         ];
 
-        foreach ($maps as [$child, $relation, $parentClass, $foreignKey]) {
-            $children = $subjects->filter(fn (mixed $s): bool => $s instanceof $child && ! $s->relationLoaded($relation));
+        foreach ($maps as [$relation, $parentClass, $foreignKey, $isChild]) {
+            $children = $subjects->filter(fn (mixed $s): bool => $isChild($s) && ! $s->relationLoaded($relation));
 
             if ($children->isEmpty()) {
                 continue;

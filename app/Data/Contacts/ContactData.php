@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Data\Objects;
+namespace App\Data\Contacts;
 
-use App\Contracts\ContactPayload;
 use Spatie\LaravelData\Attributes\Validation\Email;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
@@ -13,7 +12,7 @@ use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]
-final class ObjectContactData extends Data implements ContactPayload
+final class ContactData extends Data
 {
     public function __construct(
         public readonly ?string $id,

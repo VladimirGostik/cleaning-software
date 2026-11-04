@@ -283,14 +283,6 @@ readonly permissions: App.Enums.PermissionEnum[],
 };
 }
 namespace Clients {
-export type ClientContactData = {
-readonly id: string | null,
-readonly name: string,
-readonly position: string | null,
-readonly email: string | null,
-readonly phone: string | null,
-readonly is_primary: boolean,
-};
 export type ClientDetailData = {
 readonly id: string,
 readonly type: App.Enums.ClientTypeEnum,
@@ -304,7 +296,7 @@ readonly city: string | null,
 readonly postal_code: string | null,
 readonly country: string,
 readonly note: string | null,
-readonly contacts: App.Data.Clients.ClientContactData[],
+readonly contacts: App.Data.Contacts.ContactData[],
 readonly created_at: string,
 readonly peppol_participant_id: string | null,
 };
@@ -336,8 +328,18 @@ readonly city: string | null,
 readonly postal_code: string | null,
 readonly country: string,
 readonly note: string | null,
-readonly contacts: App.Data.Clients.ClientContactData[],
+readonly contacts: App.Data.Contacts.ContactData[],
 readonly peppol_participant_id: string | null,
+};
+}
+namespace Contacts {
+export type ContactData = {
+readonly id: string | null,
+readonly name: string,
+readonly position: string | null,
+readonly email: string | null,
+readonly phone: string | null,
+readonly is_primary: boolean,
 };
 }
 namespace Contracts {
@@ -1294,14 +1296,6 @@ readonly street: string | null,
 readonly city: string | null,
 readonly postal_code: string | null,
 };
-export type ObjectContactData = {
-readonly id: string | null,
-readonly name: string,
-readonly position: string | null,
-readonly email: string | null,
-readonly phone: string | null,
-readonly is_primary: boolean,
-};
 export type ObjectDetailData = {
 readonly id: string,
 readonly client_id: string,
@@ -1320,7 +1314,7 @@ readonly area_sqm: string | null,
 readonly floor: number | null,
 readonly is_active: boolean,
 readonly created_at: string,
-readonly contacts: App.Data.Objects.ObjectContactData[] | null,
+readonly contacts: App.Data.Contacts.ContactData[] | null,
 readonly billing: App.Data.Objects.ObjectBillingData | null,
 };
 export type ObjectListItemData = {
@@ -1360,7 +1354,7 @@ readonly special_instructions: string | null,
 readonly area_sqm: number | null,
 readonly floor: number | null,
 readonly is_active: boolean,
-readonly contacts: App.Data.Objects.ObjectContactData[],
+readonly contacts: App.Data.Contacts.ContactData[],
 readonly billing_name: string | null,
 readonly billing_ico: string | null,
 readonly billing_dic: string | null,

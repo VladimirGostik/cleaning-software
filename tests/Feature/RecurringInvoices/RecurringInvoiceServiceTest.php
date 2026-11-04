@@ -10,6 +10,7 @@ use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Services\RecurringInvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -385,5 +386,152 @@ final class RecurringInvoiceServiceTest extends TestCase
         $this->service->delete($ri);
 
         $this->assertSoftDeleted('recurring_invoices', ['id' => $id]);
+    }
+
+    // -------------------------------------------------------------------------
+    // standalone customer fields — create, update, generate
+    // -------------------------------------------------------------------------
+
+    /** @return array<string, string> */
+    private function standaloneCustomer(): array
+    {
+        return [
+            'customer_name' => 'Standalone s.r.o.',
+            'customer_representative' => 'Jana Zastupca',
+            'customer_ico' => '12345678',
+            'customer_dic' => '2012345678',
+            'customer_vat_number' => 'SK2012345678',
+            'customer_street' => 'Hlavna 1',
+            'customer_city' => 'Zvolen',
+            'customer_postal_code' => '960 01',
+            'customer_country' => 'CZ',
+            'customer_email' => 'standalone@example.test',
+        ];
+    }
+
+    public function test_create_stores_all_ten_standalone_customer_fields(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+
+        $ri = $this->service->create($this->makeUpsertData($this->standaloneCustomer()));
+
+        $row = $ri->fresh();
+        $this->assertNotNull($row);
+        $this->assertSame($this->standaloneCustomer(), $row->only(array_keys($this->standaloneCustomer())));
+    }
+
+    public function test_update_replaces_all_ten_standalone_customer_fields(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $ri = $this->service->create($this->makeUpsertData($this->standaloneCustomer()));
+        $changed = [
+            'customer_name' => 'Changed a.s.',
+            'customer_representative' => 'Peter Novy',
+            'customer_ico' => '87654321',
+            'customer_dic' => '2087654321',
+            'customer_vat_number' => 'SK2087654321',
+            'customer_street' => 'Vedlajsia 9',
+            'customer_city' => 'Zilina',
+            'customer_postal_code' => '010 01',
+            'customer_country' => 'SK',
+            'customer_email' => 'changed@example.test',
+        ];
+
+        $this->service->update($ri, $this->makeUpsertData($changed));
+
+        $row = $ri->fresh();
+        $this->assertNotNull($row);
+        $this->assertSame($changed, $row->only(array_keys($changed)));
+    }
+
+    public function test_update_with_nulls_clears_the_optional_customer_fields(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $ri = $this->service->create($this->makeUpsertData($this->standaloneCustomer()));
+
+        $this->service->update($ri, $this->makeUpsertData(['customer_name' => 'Only Name']));
+
+        $row = $ri->fresh();
+        $this->assertNotNull($row);
+        $this->assertSame([
+            'customer_name' => 'Only Name',
+            'customer_representative' => null,
+            'customer_ico' => null,
+            'customer_dic' => null,
+            'customer_vat_number' => null,
+            'customer_street' => null,
+            'customer_city' => null,
+            'customer_postal_code' => null,
+            'customer_country' => null,
+            'customer_email' => null,
+        ], $row->only(array_keys($this->standaloneCustomer())));
+    }
+
+    public function test_generated_invoice_carries_all_ten_standalone_customer_fields(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $ri = $this->service->create($this->makeUpsertData($this->standaloneCustomer()));
+
+        $invoice = $this->service->generateInvoiceFromTemplate($ri);
+
+        $row = Invoice::query()->findOrFail($invoice->id);
+        $this->assertSame($ri->id, $row->recurring_invoice_id);
+        $this->assertSame($this->standaloneCustomer(), $row->only(array_keys($this->standaloneCustomer())));
+        $this->assertNull($row->customer_peppol_participant_id);
+        $this->assertNull($row->customer_represented_by);
+    }
+
+    public function test_generated_invoice_defaults_country_to_sk_when_template_has_none(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $ri = $this->service->create($this->makeUpsertData(['customer_country' => null]));
+
+        $invoice = $this->service->generateInvoiceFromTemplate($ri);
+
+        $this->assertNull($ri->fresh()?->customer_country);
+        $this->assertSame('SK', Invoice::query()->findOrFail($invoice->id)->customer_country);
+    }
+
+    public function test_generated_invoice_for_client_takes_client_snapshot_but_keeps_entered_representative_and_email(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $client = Client::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Client Corp',
+            'ico' => '11112222',
+            'dic' => '2011112222',
+            'vat_number' => 'SK2011112222',
+            'street' => 'Klientska 4',
+            'city' => 'Nitra',
+            'postal_code' => '949 01',
+            'country' => 'CZ',
+        ]);
+        $ri = $this->service->create($this->makeUpsertData([
+            ...$this->standaloneCustomer(),
+            'client_id' => $client->id,
+        ]));
+
+        $invoice = $this->service->generateInvoiceFromTemplate($ri);
+
+        $row = Invoice::query()->findOrFail($invoice->id);
+        $this->assertSame([
+            'customer_name' => 'Client Corp',
+            'customer_representative' => 'Jana Zastupca',
+            'customer_ico' => '11112222',
+            'customer_dic' => '2011112222',
+            'customer_vat_number' => 'SK2011112222',
+            'customer_street' => 'Klientska 4',
+            'customer_city' => 'Nitra',
+            'customer_postal_code' => '949 01',
+            'customer_country' => 'CZ',
+            'customer_email' => 'standalone@example.test',
+            'customer_represented_by' => null,
+        ], $row->only([...array_keys($this->standaloneCustomer()), 'customer_represented_by']));
     }
 }

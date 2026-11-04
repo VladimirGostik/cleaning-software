@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Clients;
 
+use App\Data\Contacts\ContactData;
 use App\Enums\ClientTypeEnum;
 use App\Models\Client;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
@@ -27,8 +28,8 @@ final class ClientDetailData extends Data
         public readonly ?string $postal_code,
         public readonly string $country,
         public readonly ?string $note,
-        /** @var DataCollection<int, ClientContactData> */
-        #[DataCollectionOf(ClientContactData::class)]
+        /** @var DataCollection<int, ContactData> */
+        #[DataCollectionOf(ContactData::class)]
         public readonly DataCollection $contacts,
         public readonly string $created_at,
         public readonly ?string $peppol_participant_id = null,
@@ -49,7 +50,7 @@ final class ClientDetailData extends Data
             postal_code: $client->postal_code,
             country: $client->country,
             note: $client->note,
-            contacts: ClientContactData::collect($client->contacts, DataCollection::class),
+            contacts: ContactData::collect($client->contacts, DataCollection::class),
             created_at: $client->created_at->toIso8601String(),
             peppol_participant_id: $client->peppol_participant_id,
         );

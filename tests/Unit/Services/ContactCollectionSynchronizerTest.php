@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services;
 
-use App\Data\Clients\ClientContactData;
+use App\Data\Contacts\ContactData;
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use App\Models\Tenant;
 use App\Services\ContactCollectionSynchronizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,8 +18,8 @@ final class ContactCollectionSynchronizerTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * @param  list<ClientContactData>  $items
-     * @return array<int, ClientContactData>
+     * @param  list<ContactData>  $items
+     * @return array<int, ContactData>
      */
     private function contacts(array $items): array
     {
@@ -35,13 +35,13 @@ final class ContactCollectionSynchronizerTest extends TestCase
         app(ContactCollectionSynchronizer::class)->sync(
             $client->contacts(),
             $this->contacts([
-                new ClientContactData(id: null, name: 'Contact 1', position: null, email: null, phone: null, is_primary: true),
+                new ContactData(id: null, name: 'Contact 1', position: null, email: null, phone: null, is_primary: true),
             ]),
             'app.client_contact_invalid',
         );
 
         $this->assertCount(1, $client->contacts()->get());
-        $this->assertDatabaseHas('client_contacts', ['client_id' => $client->id, 'name' => 'Contact 1', 'is_primary' => true]);
+        $this->assertDatabaseHas('contacts', ['contactable_id' => $client->id, 'name' => 'Contact 1', 'is_primary' => true]);
     }
 
     public function test_sync_updates_existing_contacts(): void
@@ -49,17 +49,17 @@ final class ContactCollectionSynchronizerTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $existing = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id, 'name' => 'Old Name']);
+        $existing = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id, 'name' => 'Old Name']);
 
         app(ContactCollectionSynchronizer::class)->sync(
             $client->contacts(),
             $this->contacts([
-                new ClientContactData(id: $existing->id, name: 'New Name', position: null, email: null, phone: null, is_primary: true),
+                new ContactData(id: $existing->id, name: 'New Name', position: null, email: null, phone: null, is_primary: true),
             ]),
             'app.client_contact_invalid',
         );
 
-        $this->assertDatabaseHas('client_contacts', ['id' => $existing->id, 'name' => 'New Name']);
+        $this->assertDatabaseHas('contacts', ['id' => $existing->id, 'name' => 'New Name']);
     }
 
     public function test_sync_soft_deletes_outgoing_contacts(): void
@@ -67,7 +67,7 @@ final class ContactCollectionSynchronizerTest extends TestCase
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $existing = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id, 'is_primary' => true]);
+        $existing = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id, 'is_primary' => true]);
 
         app(ContactCollectionSynchronizer::class)->sync(
             $client->contacts(),
@@ -75,7 +75,7 @@ final class ContactCollectionSynchronizerTest extends TestCase
             'app.client_contact_invalid',
         );
 
-        $this->assertSoftDeleted('client_contacts', ['id' => $existing->id]);
+        $this->assertSoftDeleted('contacts', ['id' => $existing->id]);
     }
 
     public function test_sync_promotes_first_when_no_primary(): void
@@ -87,8 +87,8 @@ final class ContactCollectionSynchronizerTest extends TestCase
         app(ContactCollectionSynchronizer::class)->sync(
             $client->contacts(),
             $this->contacts([
-                new ClientContactData(id: null, name: 'Contact 1', position: null, email: null, phone: null, is_primary: false),
-                new ClientContactData(id: null, name: 'Contact 2', position: null, email: null, phone: null, is_primary: false),
+                new ContactData(id: null, name: 'Contact 1', position: null, email: null, phone: null, is_primary: false),
+                new ContactData(id: null, name: 'Contact 2', position: null, email: null, phone: null, is_primary: false),
             ]),
             'app.client_contact_invalid',
         );
@@ -103,14 +103,14 @@ final class ContactCollectionSynchronizerTest extends TestCase
         $this->bindTenant($tenant);
         $clientA = Client::factory()->create(['tenant_id' => $tenant->id]);
         $clientB = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $foreignContact = ClientContact::factory()->for($clientB)->create(['tenant_id' => $tenant->id]);
+        $foreignContact = Contact::factory()->for($clientB, 'contactable')->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(ValidationException::class);
 
         app(ContactCollectionSynchronizer::class)->sync(
             $clientA->contacts(),
             $this->contacts([
-                new ClientContactData(id: $foreignContact->id, name: $foreignContact->name, position: null, email: null, phone: null, is_primary: true),
+                new ContactData(id: $foreignContact->id, name: $foreignContact->name, position: null, email: null, phone: null, is_primary: true),
             ]),
             'app.client_contact_invalid',
         );

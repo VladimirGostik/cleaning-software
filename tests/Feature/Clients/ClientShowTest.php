@@ -6,7 +6,7 @@ namespace Tests\Feature\Clients;
 
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -22,7 +22,7 @@ final class ClientShowTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id, 'is_primary' => true]);
+        Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id, 'is_primary' => true]);
 
         $response = $this->get(route('clients.show', $client));
 

@@ -30,7 +30,7 @@ final class ObjectContactCascadeTest extends TestCase
         $this->assertSoftDeleted('objects', ['id' => $object->id]);
 
         foreach ($contactIds as $id) {
-            $this->assertSoftDeleted('object_contacts', ['id' => $id]);
+            $this->assertSoftDeleted('contacts', ['id' => $id]);
         }
     }
 
@@ -45,7 +45,7 @@ final class ObjectContactCascadeTest extends TestCase
         app(ObjectService::class)->deactivate($object);
 
         $this->assertDatabaseHas('objects', ['id' => $object->id, 'is_active' => false]);
-        $this->assertDatabaseHas('object_contacts', ['id' => $contactId, 'deleted_at' => null]);
+        $this->assertDatabaseHas('contacts', ['id' => $contactId, 'deleted_at' => null]);
     }
 
     public function test_object_reactivate_leaves_contacts_untouched(): void
@@ -59,7 +59,7 @@ final class ObjectContactCascadeTest extends TestCase
         app(ObjectService::class)->reactivate($object);
 
         $this->assertDatabaseHas('objects', ['id' => $object->id, 'is_active' => true]);
-        $this->assertDatabaseHas('object_contacts', ['id' => $contactId, 'deleted_at' => null]);
+        $this->assertDatabaseHas('contacts', ['id' => $contactId, 'deleted_at' => null]);
     }
 
     public function test_soft_deleted_contacts_excluded_from_detail_data(): void

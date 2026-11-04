@@ -6,7 +6,7 @@ namespace Database\Factories;
 
 use App\Enums\ClientTypeEnum;
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -50,7 +50,7 @@ final class ClientFactory extends Factory
     public function withContacts(int $count = 2): static
     {
         return $this->afterCreating(function (Client $client) use ($count): void {
-            ClientContact::factory()->count($count)->for($client)->create(['tenant_id' => $client->tenant_id]);
+            Contact::factory()->count($count)->for($client, 'contactable')->create(['tenant_id' => $client->tenant_id]);
             $client->contacts()->first()?->update(['is_primary' => true]);
         });
     }

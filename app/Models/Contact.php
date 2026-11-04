@@ -6,19 +6,19 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
-use Database\Factories\ClientContactFactory;
+use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['client_id', 'name', 'position', 'email', 'phone', 'is_primary'])]
-final class ClientContact extends Model
+#[Fillable(['name', 'position', 'email', 'phone', 'is_primary'])]
+final class Contact extends Model
 {
-    /** @use HasFactory<ClientContactFactory> */
+    /** @use HasFactory<ContactFactory> */
     use BelongsToTenant, HasFactory, HasUuids, LogsActivity, SoftDeletes;
 
     /**
@@ -40,10 +40,10 @@ final class ClientContact extends Model
     }
 
     /**
-     * @return BelongsTo<Client, $this>
+     * @return MorphTo<Model, $this>
      */
-    public function client(): BelongsTo
+    public function contactable(): MorphTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->morphTo();
     }
 }

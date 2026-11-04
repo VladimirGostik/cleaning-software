@@ -163,7 +163,7 @@ final class ObjectContactVisibilityTest extends TestCase
         $this->post(route('objects.store'), $payload)->assertRedirect();
 
         $object = CleaningObject::where('name', 'Test Office')->firstOrFail();
-        $this->assertDatabaseCount('object_contacts', 0);
+        $this->assertDatabaseCount('contacts', 0);
         $this->assertCount(0, $object->contacts);
     }
 
@@ -181,8 +181,8 @@ final class ObjectContactVisibilityTest extends TestCase
         // Payload omits `contacts` entirely — the actor's form never showed them.
         $this->put(route('objects.update', $object), $this->storePayload($client->id))->assertRedirect();
 
-        $this->assertDatabaseCount('object_contacts', 1);
-        $this->assertNotSoftDeleted('object_contacts', ['cleaning_object_id' => $object->id]);
+        $this->assertDatabaseCount('contacts', 1);
+        $this->assertNotSoftDeleted('contacts', ['contactable_id' => $object->id]);
     }
 
     public function test_cross_tenant_object_contacts_not_visible(): void

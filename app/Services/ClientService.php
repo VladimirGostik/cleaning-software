@@ -8,8 +8,7 @@ use App\Data\Clients\ClientListItemData;
 use App\Data\Clients\ClientUpsertData;
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ClientContact;
-use App\Models\ObjectContact;
+use App\Models\Contact;
 use App\Support\ActivityBatch;
 use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
@@ -84,9 +83,9 @@ final readonly class ClientService
         $client->load(['contacts', 'objects.contacts']);
 
         ActivityBatch::run(fn () => $this->db->transaction(function () use ($client): void {
-            $client->contacts->each(fn (ClientContact $contact) => $contact->delete());
+            $client->contacts->each(fn (Contact $contact) => $contact->delete());
             $client->objects->each(function (CleaningObject $object): void {
-                $object->contacts->each(fn (ObjectContact $contact) => $contact->delete());
+                $object->contacts->each(fn (Contact $contact) => $contact->delete());
                 $object->delete();
             });
             $client->delete();

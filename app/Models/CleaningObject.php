@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -57,8 +57,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Client|null $client
  * @property Collection<int, WorkBreakdown> $workBreakdowns
  * @property Collection<int, ScheduledJob> $jobs
- * @property Collection<int, ObjectContact> $contacts
- * @property ObjectContact|null $primaryContact
+ * @property Collection<int, Contact> $contacts
+ * @property Contact|null $primaryContact
  *
  * D1 override (phase 3 plan): two lifecycle switches on this model — `is_active` for direct
  * user deactivation, `deleted_at` for the soft-delete cascade fired by `ClientService::delete()`
@@ -144,18 +144,18 @@ final class CleaningObject extends Model
         return $this->morphMany(Contract::class, 'contractable');
     }
 
-    /** @return HasMany<ObjectContact, $this> */
-    public function contacts(): HasMany
+    /** @return MorphMany<Contact, $this> */
+    public function contacts(): MorphMany
     {
-        return $this->hasMany(ObjectContact::class, 'cleaning_object_id')
+        return $this->morphMany(Contact::class, 'contactable')
             ->orderByDesc('is_primary')
             ->orderBy('name');
     }
 
-    /** @return HasOne<ObjectContact, $this> */
-    public function primaryContact(): HasOne
+    /** @return MorphOne<Contact, $this> */
+    public function primaryContact(): MorphOne
     {
-        return $this->hasOne(ObjectContact::class, 'cleaning_object_id')->where('is_primary', true);
+        return $this->morphOne(Contact::class, 'contactable')->where('is_primary', true);
     }
 
     /**

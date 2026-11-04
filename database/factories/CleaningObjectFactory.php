@@ -7,7 +7,7 @@ namespace Database\Factories;
 use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
-use App\Models\ObjectContact;
+use App\Models\Contact;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -60,7 +60,7 @@ final class CleaningObjectFactory extends Factory
     public function withContacts(int $count = 1): static
     {
         return $this->afterCreating(function (CleaningObject $object) use ($count): void {
-            ObjectContact::factory()->count($count)->for($object, 'cleaningObject')->create(['tenant_id' => $object->tenant_id]);
+            Contact::factory()->count($count)->for($object, 'contactable')->create(['tenant_id' => $object->tenant_id]);
             $object->contacts()->first()?->update(['is_primary' => true]);
         });
     }

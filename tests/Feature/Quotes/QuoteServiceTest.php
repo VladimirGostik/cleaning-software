@@ -20,12 +20,16 @@ use App\Models\Tenant;
 use App\Services\QuoteService;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\AssertsFullRows;
 use Tests\TestCase;
 
 final class QuoteServiceTest extends TestCase
 {
+    use AssertsFullRows;
     use RefreshDatabase;
 
     /** @return array<int, QuoteItemData> */
@@ -721,5 +725,206 @@ final class QuoteServiceTest extends TestCase
         $this->assertSame('rok', QuoteBillingPeriodEnum::Yearly->shortSuffix());
         $this->assertSame(RecurringFrequencyEnum::Annually, QuoteBillingPeriodEnum::Yearly->recurringFrequency());
         $this->assertNull(QuoteBillingPeriodEnum::OneOff->recurringFrequency());
+    }
+
+    // -------------------------------------------------------------------------
+    // duplicate — full column characterization
+    // -------------------------------------------------------------------------
+
+    /** @return list<array<string, mixed>> */
+    private function fullQuoteItemColumns(): array
+    {
+        return [
+            [
+                'description' => 'One-off deep clean', 'frequency' => 'one_time', 'billing_period' => 'one_off', 'note' => 'Bring ladder',
+                'quantity' => '1.00', 'unit' => 'ks', 'unit_price' => '200.00', 'discount_percent' => '0.00', 'vat_rate' => '20.00',
+                'line_base' => '200.00', 'line_vat' => '40.00', 'line_total' => '240.00', 'position' => 0,
+            ],
+            [
+                'description' => 'Monthly office', 'frequency' => 'weekly_2x', 'billing_period' => 'monthly', 'note' => null,
+                'quantity' => '8.50', 'unit' => 'hod', 'unit_price' => '12.00', 'discount_percent' => '10.00', 'vat_rate' => '20.00',
+                'line_base' => '91.80', 'line_vat' => '18.36', 'line_total' => '110.16', 'position' => 1,
+            ],
+            [
+                'description' => 'Quarterly windows', 'frequency' => null, 'billing_period' => 'quarterly', 'note' => 'All floors',
+                'quantity' => '4.00', 'unit' => null, 'unit_price' => '30.00', 'discount_percent' => '0.00', 'vat_rate' => '0.00',
+                'line_base' => '120.00', 'line_vat' => '0.00', 'line_total' => '120.00', 'position' => 2,
+            ],
+            [
+                'description' => 'Yearly carpets', 'frequency' => 'seasonal', 'billing_period' => 'yearly', 'note' => null,
+                'quantity' => '1.00', 'unit' => 'ks', 'unit_price' => '500.00', 'discount_percent' => '5.00', 'vat_rate' => '20.00',
+                'line_base' => '475.00', 'line_vat' => '95.00', 'line_total' => '570.00', 'position' => 3,
+            ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function carriedQuoteColumns(): array
+    {
+        return [
+            'kind' => 'itemized',
+            'subject' => 'Annual cleaning offer',
+            'customer_name' => 'Lead s.r.o.',
+            'customer_email' => 'lead@example.test',
+            'customer_street' => 'Leadova 5',
+            'customer_city' => 'Zvolen',
+            'customer_postal_code' => '960 01',
+            'is_vat_payer' => true,
+            'vat_rate' => '20.00',
+            'currency' => 'CZK',
+            'subtotal' => '886.80',
+            'vat_amount' => '153.36',
+            'total' => '1040.16',
+            'vat_breakdown' => [['rate' => 20.0, 'base' => 766.8, 'vat' => 153.36, 'total' => 920.16]],
+            'period_totals' => [
+                ['billing_period' => 'one_off', 'subtotal' => '200.00', 'vat_amount' => '40.00', 'total' => '240.00'],
+                ['billing_period' => 'monthly', 'subtotal' => '91.80', 'vat_amount' => '18.36', 'total' => '110.16'],
+            ],
+            'note' => 'Internal quote note',
+            'included_text' => "Materials\nTravel",
+        ];
+    }
+
+    private function fullQuoteSource(Tenant $tenant, string $status): Quote
+    {
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+
+        $quote = Quote::factory()->create([
+            ...$this->carriedQuoteColumns(),
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'cleaning_object_id' => $object->id,
+            'status' => $status,
+            'number' => 'CP-2026-0007',
+            'issue_date' => '2026-10-01',
+            'valid_until' => '2026-10-31',
+            'sent_at' => '2026-10-02 09:00:00',
+            'accepted_at' => '2026-10-05 11:00:00',
+            'rejected_at' => '2026-10-06 12:00:00',
+        ]);
+
+        foreach ($this->fullQuoteItemColumns() as $columns) {
+            QuoteItem::factory()->create([...$columns, 'tenant_id' => $tenant->id, 'quote_id' => $quote->id]);
+        }
+
+        return $quote->load('items');
+    }
+
+    /** @return array<string, array{0: string}> */
+    public static function duplicableStatuses(): array
+    {
+        return ['sent' => ['sent'], 'accepted' => ['accepted']];
+    }
+
+    #[DataProvider('duplicableStatuses')]
+    public function test_duplicate_copies_every_carried_column_and_resets_lifecycle_columns(string $status): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 4)->setTime(10, 0, 0));
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $source = $this->fullQuoteSource($tenant, $status);
+
+        $copy = app(QuoteService::class)->duplicate($source);
+
+        $this->assertNotSame($source->id, $copy->id);
+        $this->assertFullRow($copy, [
+            ...$this->carriedQuoteColumns(),
+            'tenant_id' => $source->tenant_id,
+            'client_id' => $source->client_id,
+            'cleaning_object_id' => $source->cleaning_object_id,
+            'status' => 'draft',
+            'number' => null,
+            'issue_date' => '2026-11-04',
+            'valid_until' => '2026-12-04',
+            'sent_at' => null,
+            'accepted_at' => null,
+            'rejected_at' => null,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_duplicate_copies_items_of_every_billing_period_column_by_column(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $source = $this->fullQuoteSource($tenant, 'accepted');
+
+        $copy = app(QuoteService::class)->duplicate($source);
+
+        $this->assertTrue($copy->relationLoaded('items'));
+        $this->assertCount(4, $copy->items);
+
+        $copyItems = $copy->items->all();
+        $sourceItems = $source->items->all();
+
+        foreach ($this->fullQuoteItemColumns() as $index => $columns) {
+            $this->assertNotSame($sourceItems[$index]->id, $copyItems[$index]->id);
+            $this->assertFullRow($copyItems[$index], [
+                ...$columns,
+                'tenant_id' => $source->tenant_id,
+                'quote_id' => $copy->id,
+            ]);
+        }
+
+        $this->assertSame(4, QuoteItem::query()->where('quote_id', $source->id)->count());
+    }
+
+    public function test_duplicate_leaves_the_source_untouched(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $source = $this->fullQuoteSource($tenant, 'sent');
+        $before = (array) DB::table('quotes')->where('id', $source->id)->first();
+
+        app(QuoteService::class)->duplicate($source);
+
+        $this->assertEquals($before, (array) DB::table('quotes')->where('id', $source->id)->first());
+    }
+
+    public function test_duplicate_writes_a_created_activity_row_with_the_logged_attributes(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $source = $this->fullQuoteSource($tenant, 'accepted');
+
+        $copy = app(QuoteService::class)->duplicate($source);
+
+        $this->assertSame([
+            'status' => 'draft',
+            'kind' => 'itemized',
+            'number' => null,
+            'total' => '1040.16',
+            'client_id' => $source->client_id,
+            'cleaning_object_id' => $source->cleaning_object_id,
+        ], $this->createdActivityAttributes($copy));
+    }
+
+    public function test_duplicate_of_document_quote_copies_row_but_no_items(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $source = Quote::factory()->document()->accepted()->numbered()->create(['tenant_id' => $tenant->id, 'included_text' => null]);
+
+        $copy = app(QuoteService::class)->duplicate($source);
+
+        $this->assertSame(QuoteKindEnum::Document, $copy->kind);
+        $this->assertSame(QuoteStatusEnum::Draft, $copy->status);
+        $this->assertNull($copy->number);
+        $this->assertNull($copy->accepted_at);
+        $this->assertCount(0, $copy->items);
+    }
+
+    public function test_duplicate_valid_until_follows_configured_validity_days(): void
+    {
+        config(['quotes.default_validity_days' => 10]);
+        $this->travelTo(now()->setDate(2026, 11, 4)->setTime(10, 0, 0));
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $source = Quote::factory()->sent()->create(['tenant_id' => $tenant->id]);
+
+        $copy = app(QuoteService::class)->duplicate($source);
+
+        $this->assertSame('2026-11-14', $copy->valid_until->toDateString());
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Clients;
 
 use App\Models\Client;
-use App\Models\ClientContact;
+use App\Models\Contact;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -62,8 +62,8 @@ final class ClientUpdateTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $existingContact = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id]);
-        $toKeepContact = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id]);
+        $existingContact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id]);
+        $toKeepContact = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id]);
 
         $response = $this->patch(route('clients.update', $client), $this->updatePayload($client, [
             'contacts' => [
@@ -73,8 +73,8 @@ final class ClientUpdateTest extends TestCase
         ]));
 
         $response->assertRedirect(route('clients.show', $client));
-        $this->assertSoftDeleted('client_contacts', ['id' => $existingContact->id]);
-        $this->assertDatabaseHas('client_contacts', ['client_id' => $client->id, 'name' => 'New Contact']);
+        $this->assertSoftDeleted('contacts', ['id' => $existingContact->id]);
+        $this->assertDatabaseHas('contacts', ['contactable_id' => $client->id, 'name' => 'New Contact']);
     }
 
     public function test_update_changes_primary_contact(): void
@@ -83,8 +83,8 @@ final class ClientUpdateTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $contact1 = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id, 'is_primary' => true]);
-        $contact2 = ClientContact::factory()->for($client)->create(['tenant_id' => $tenant->id, 'is_primary' => false]);
+        $contact1 = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id, 'is_primary' => true]);
+        $contact2 = Contact::factory()->for($client, 'contactable')->create(['tenant_id' => $tenant->id, 'is_primary' => false]);
 
         $this->patch(route('clients.update', $client), $this->updatePayload($client, [
             'contacts' => [
@@ -93,8 +93,8 @@ final class ClientUpdateTest extends TestCase
             ],
         ]));
 
-        $this->assertDatabaseHas('client_contacts', ['id' => $contact1->id, 'is_primary' => false]);
-        $this->assertDatabaseHas('client_contacts', ['id' => $contact2->id, 'is_primary' => true]);
+        $this->assertDatabaseHas('contacts', ['id' => $contact1->id, 'is_primary' => false]);
+        $this->assertDatabaseHas('contacts', ['id' => $contact2->id, 'is_primary' => true]);
     }
 
     public function test_update_other_tenant_client_returns_404(): void
@@ -116,7 +116,7 @@ final class ClientUpdateTest extends TestCase
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $otherClient = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $foreignContact = ClientContact::factory()->for($otherClient)->create(['tenant_id' => $tenant->id]);
+        $foreignContact = Contact::factory()->for($otherClient, 'contactable')->create(['tenant_id' => $tenant->id]);
 
         $response = $this->patch(route('clients.update', $client), $this->updatePayload($client, [
             'contacts' => [

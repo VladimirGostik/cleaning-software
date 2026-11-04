@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
+use App\Concerns\IsDocumentItem;
 use Database\Factories\RecurringInvoiceItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,21 +39,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class RecurringInvoiceItem extends Model
 {
     /** @use HasFactory<RecurringInvoiceItemFactory> */
-    use BelongsToTenant, HasFactory, HasUuids;
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'quantity' => 'decimal:2',
-            'unit_price' => 'decimal:2',
-            'discount_percent' => 'decimal:2',
-            'vat_rate' => 'decimal:2',
-            'position' => 'integer',
-        ];
-    }
+    use BelongsToTenant, HasFactory, HasUuids, IsDocumentItem;
 
     /** @return BelongsTo<RecurringInvoice, $this> */
     public function recurringInvoice(): BelongsTo

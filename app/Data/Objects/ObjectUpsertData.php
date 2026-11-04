@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Objects;
 
+use App\Data\Contacts\ContactData;
 use App\Enums\ObjectTypeEnum;
 use App\Rules\AtMostOnePrimaryContact;
 use App\Rules\PeppolParticipantId;
@@ -53,8 +54,8 @@ final class ObjectUpsertData extends Data
         #[Nullable]
         public readonly ?int $floor,
         public readonly bool $is_active,
-        /** @var DataCollection<int, ObjectContactData> */
-        #[DataCollectionOf(ObjectContactData::class)]
+        /** @var DataCollection<int, ContactData> */
+        #[DataCollectionOf(ContactData::class)]
         public readonly DataCollection $contacts,
         #[Nullable, Max(255)]
         public readonly ?string $billing_name = null,

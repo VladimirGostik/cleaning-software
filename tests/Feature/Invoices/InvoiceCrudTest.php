@@ -414,4 +414,58 @@ final class InvoiceCrudTest extends TestCase
 
         $this->post(route('invoices.store'), $payload)->assertSessionHasErrors('items.0.description');
     }
+
+    // -------------------------------------------------------------------------
+    // standalone buyer snapshot
+    // -------------------------------------------------------------------------
+
+    public function test_standalone_buyer_defaults_country_to_sk_and_name_to_empty_string(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+
+        $invoice = app(InvoiceService::class)->create($this->upsertData(['customer_name' => null, 'customer_country' => null]));
+
+        $row = Invoice::query()->findOrFail($invoice->id);
+        $this->assertSame('', $row->customer_name);
+        $this->assertSame('SK', $row->customer_country);
+        $this->assertNull($row->customer_peppol_participant_id);
+        $this->assertNull($row->customer_represented_by);
+    }
+
+    public function test_standalone_buyer_keeps_all_entered_fields_and_an_explicit_country(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $entered = [
+            'customer_name' => 'Entered s.r.o.',
+            'customer_representative' => 'Jana Zastupca',
+            'customer_ico' => '12345678',
+            'customer_dic' => '2012345678',
+            'customer_vat_number' => 'SK2012345678',
+            'customer_street' => 'Hlavna 1',
+            'customer_city' => 'Zvolen',
+            'customer_postal_code' => '960 01',
+            'customer_country' => 'CZ',
+            'customer_email' => 'entered@example.test',
+        ];
+
+        $invoice = app(InvoiceService::class)->create($this->upsertData($entered));
+
+        $this->assertSame($entered, Invoice::query()->findOrFail($invoice->id)->only(array_keys($entered)));
+    }
+
+    public function test_updating_a_standalone_invoice_replaces_the_buyer_snapshot_and_reapplies_the_country_default(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $invoice = app(InvoiceService::class)->create($this->upsertData(['customer_country' => 'CZ', 'customer_ico' => '12345678']));
+
+        app(InvoiceService::class)->update($invoice, $this->upsertData(['customer_name' => 'Renamed', 'customer_country' => null, 'customer_ico' => null]));
+
+        $row = Invoice::query()->findOrFail($invoice->id);
+        $this->assertSame('Renamed', $row->customer_name);
+        $this->assertSame('SK', $row->customer_country);
+        $this->assertNull($row->customer_ico);
+    }
 }

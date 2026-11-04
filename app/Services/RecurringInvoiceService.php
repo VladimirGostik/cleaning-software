@@ -6,7 +6,6 @@ namespace App\Services;
 
 use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceUpsertData;
-use App\Data\RecurringInvoices\RecurringInvoiceItemData;
 use App\Data\RecurringInvoices\RecurringInvoiceListItemData;
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
 use App\Enums\RecurringDefaultStateEnum;
@@ -15,6 +14,7 @@ use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
 use App\Models\TenantInterface;
+use App\Support\CustomerParty;
 use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\Request;
@@ -27,6 +27,7 @@ final readonly class RecurringInvoiceService
 {
     public function __construct(
         private InvoiceService $invoices,
+        private DocumentItemService $items,
         private DatabaseManager $db,
     ) {}
 
@@ -73,16 +74,7 @@ final readonly class RecurringInvoiceService
                 'occurrences_limit' => $data->occurrences_limit,
                 'occurrences_generated' => 0,
                 'next_run_at' => $nextRunAt,
-                'customer_name' => $data->customer_name,
-                'customer_representative' => $data->customer_representative,
-                'customer_ico' => $data->customer_ico,
-                'customer_dic' => $data->customer_dic,
-                'customer_vat_number' => $data->customer_vat_number,
-                'customer_street' => $data->customer_street,
-                'customer_city' => $data->customer_city,
-                'customer_postal_code' => $data->customer_postal_code,
-                'customer_country' => $data->customer_country,
-                'customer_email' => $data->customer_email,
+                ...CustomerParty::fromEntered($data)->toEnteredAttributes(),
                 'due_days' => $data->due_days,
                 'deposit' => $data->deposit,
                 'note' => $data->note,
@@ -94,7 +86,7 @@ final readonly class RecurringInvoiceService
                 'footer_text' => $data->footer_text,
             ]);
 
-            $this->syncItems($ri, $data->items);
+            $this->items->replace($ri->items(), $data->items);
 
             return $ri->load('items');
         });
@@ -124,16 +116,7 @@ final readonly class RecurringInvoiceService
                 'end_date' => $data->end_date,
                 'occurrences_limit' => $data->occurrences_limit,
                 'next_run_at' => $nextRunAt,
-                'customer_name' => $data->customer_name,
-                'customer_representative' => $data->customer_representative,
-                'customer_ico' => $data->customer_ico,
-                'customer_dic' => $data->customer_dic,
-                'customer_vat_number' => $data->customer_vat_number,
-                'customer_street' => $data->customer_street,
-                'customer_city' => $data->customer_city,
-                'customer_postal_code' => $data->customer_postal_code,
-                'customer_country' => $data->customer_country,
-                'customer_email' => $data->customer_email,
+                ...CustomerParty::fromEntered($data)->toEnteredAttributes(),
                 'due_days' => $data->due_days,
                 'deposit' => $data->deposit,
                 'note' => $data->note,
@@ -145,7 +128,7 @@ final readonly class RecurringInvoiceService
                 'footer_text' => $data->footer_text,
             ]);
 
-            $this->syncItems($ri, $data->items);
+            $this->items->replace($ri->items(), $data->items);
 
             return $ri->load('items');
         });
@@ -236,16 +219,7 @@ final readonly class RecurringInvoiceService
             'due_date' => $dueDate,
             'period_from' => null,
             'period_to' => null,
-            'customer_name' => $ri->customer_name,
-            'customer_representative' => $ri->customer_representative,
-            'customer_ico' => $ri->customer_ico,
-            'customer_dic' => $ri->customer_dic,
-            'customer_vat_number' => $ri->customer_vat_number,
-            'customer_street' => $ri->customer_street,
-            'customer_city' => $ri->customer_city,
-            'customer_postal_code' => $ri->customer_postal_code,
-            'customer_country' => $ri->customer_country,
-            'customer_email' => $ri->customer_email,
+            ...CustomerParty::fromEntered($ri)->toEnteredAttributes(),
             'note' => $ri->note,
             'deposit' => (float) $ri->deposit,
             'constant_symbol' => $ri->constant_symbol,
@@ -292,27 +266,5 @@ final readonly class RecurringInvoiceService
         }
 
         return $data->frequency->nextRunDate($today, $data->day_of_month);
-    }
-
-    /**
-     * @param  RecurringInvoiceItemData[]  $items
-     */
-    private function syncItems(RecurringInvoice $ri, array $items): void
-    {
-        $ri->items()->delete();
-
-        foreach ($items as $position => $itemData) {
-            RecurringInvoiceItem::create([
-                'tenant_id' => $ri->tenant_id,
-                'recurring_invoice_id' => $ri->id,
-                'description' => $itemData->description,
-                'quantity' => $itemData->quantity,
-                'unit' => $itemData->unit,
-                'unit_price' => $itemData->unit_price,
-                'discount_percent' => $itemData->discount_percent,
-                'vat_rate' => $itemData->vat_rate,
-                'position' => $position,
-            ]);
-        }
     }
 }
