@@ -12,6 +12,7 @@ use App\Http\Middleware\TenantContextMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
@@ -31,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'locale.api' => ApiLocaleMiddleware::class,
             'user.active' => EnsureUserIsActive::class,
         ]);
+
+        $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO);
 
         $middleware->prependToPriorityList(before: SubstituteBindings::class, prepend: TenantContextMiddleware::class);
 

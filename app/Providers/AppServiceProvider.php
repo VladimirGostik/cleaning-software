@@ -38,8 +38,10 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
@@ -102,6 +104,27 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadJsonTranslations();
+
+        Event::listen(RequestHandled::class, function (RequestHandled $event): void {
+            if (! config('trustedproxy.log_headers')) {
+                return;
+            }
+
+            $request = $event->request;
+
+            logger()->info('proxy.headers', [
+                'remote_addr' => $request->server->get('REMOTE_ADDR'),
+                'x_forwarded_for' => $request->headers->get('X-Forwarded-For'),
+                'x_forwarded_proto' => $request->headers->get('X-Forwarded-Proto'),
+                'x_forwarded_host' => $request->headers->get('X-Forwarded-Host'),
+                'x_real_ip' => $request->headers->get('X-Real-IP'),
+                'cf_connecting_ip' => $request->headers->get('CF-Connecting-IP'),
+                'true_client_ip' => $request->headers->get('True-Client-IP'),
+                'forwarded' => $request->headers->get('Forwarded'),
+                'resolved_ip' => get_client_ip(),
+                'scheme' => $request->getScheme(),
+            ]);
+        });
 
         Gate::policy(PersonalAccessToken::class, PersonalAccessTokenPolicy::class);
 
