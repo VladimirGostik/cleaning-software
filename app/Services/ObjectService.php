@@ -87,6 +87,13 @@ final readonly class ObjectService
         }));
     }
 
+    public function fillBlankPostalCode(CleaningObject $object, string $postalCode): void
+    {
+        $this->db->transaction(function () use ($object, $postalCode): void {
+            $object->update(['postal_code' => $postalCode]);
+        });
+    }
+
     public function deactivate(CleaningObject $object): void
     {
         $this->db->transaction(function () use ($object): void {

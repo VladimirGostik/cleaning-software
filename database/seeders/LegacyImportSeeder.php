@@ -129,10 +129,11 @@ final class LegacyImportSeeder extends Seeder
         $count = fn (string $entity, string $action): int => $report->count($entity, $action);
 
         $this->command?->info(sprintf(
-            'Firms: %d created, %d existing. Clients: %d created, %d existing. Objects: %d created, %d existing, %d merged, %d skipped. Media failures: %d.',
+            'Firms: %d created, %d existing. Clients: %d created, %d existing. Objects: %d created, %d existing, %d merged, %d skipped. Postal codes: %d filled, %d invalid. Media failures: %d.',
             $count('firm', 'created'), $count('firm', 'existing'),
             $count('client', 'created'), $count('client', 'existing'),
             $count('object', 'created'), $count('object', 'existing'), $count('object', 'merged'), $count('object', 'skipped'),
+            $count('postal_code', 'filled'), $count('postal_code', 'invalid'),
             $this->mediaFailures($report),
         ));
 

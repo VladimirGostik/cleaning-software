@@ -104,6 +104,7 @@ final readonly class LegacyImportService
         /** @var array<int|string, mixed> $icDph */
         $icDph = is_array($payload['client_ic_dph'] ?? null) ? $payload['client_ic_dph'] : [];
 
+        $postalCodes = $this->postalCodeMap($payload);
         $pairs = $this->mapper->clientPairs($templates, $firmClients);
         $objects = $this->mapper->objects($templates);
         $tenants = [];
@@ -122,11 +123,11 @@ final readonly class LegacyImportService
             $tenants[$firmId] = $tenant;
             $source = $settingsSource?->is($tenant) === true ? null : $settingsSource;
 
-            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report): void {
+            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report, $postalCodes): void {
                 $this->settings->fillBlanks($tenant, $this->mapper->supplierProfile($firm), $source);
 
                 $clientIds = $this->importClients($firmId, $pairs, $legacyClients, $icDph, $report);
-                $this->importObjects($firmId, $objects, $clientIds, $owner, $report);
+                $this->importObjects($firmId, $objects, $clientIds, $postalCodes, $owner, $report);
             });
         }
 
@@ -221,8 +222,9 @@ final readonly class LegacyImportService
     /**
      * @param  list<array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, postal_code: ?string, billing_name: ?string}>  $objects
      * @param  array<int, string|null>  $clientIds
+     * @param  array<string, string>  $postalCodes
      */
-    private function importObjects(int $firmId, array $objects, array $clientIds, User $owner, LegacyImportReport $report): void
+    private function importObjects(int $firmId, array $objects, array $clientIds, array $postalCodes, User $owner, LegacyImportReport $report): void
     {
         foreach ($objects as $object) {
             if ($object['firm'] !== $firmId) {
@@ -241,12 +243,13 @@ final readonly class LegacyImportService
                 continue;
             }
 
-            $exists = CleaningObject::withTrashed()
+            $existing = CleaningObject::withTrashed()
                 ->whereRaw('lower(trim(name)) = lower(trim(?))', [$object['name']])
-                ->exists();
+                ->first();
 
-            if ($exists) {
+            if ($existing !== null) {
                 $report->add('object', $object['template_id'], $firmId, 'existing', $object['name']);
+                $this->fillPostalCode($existing, $object['template_id'], $firmId, $postalCodes, $report);
             } else {
                 $data = $this->validated(ObjectUpsertData::class, [
                     'client_id' => $clientId,
@@ -254,7 +257,7 @@ final readonly class LegacyImportService
                     'name' => $object['name'],
                     'street' => $object['street'],
                     'city' => $object['city'],
-                    'postal_code' => $object['postal_code'],
+                    'postal_code' => $object['postal_code'] ?? $this->mappedPostalCode($object['name'], $postalCodes),
                     'country' => 'SK',
                     'access_code' => null,
                     'key_box_code' => null,
@@ -267,14 +270,75 @@ final readonly class LegacyImportService
                     'billing_name' => $object['billing_name'],
                 ], "template #{$object['template_id']}");
 
-                $this->objects->create($data, $owner);
+                $created = $this->objects->create($data, $owner);
                 $report->add('object', $object['template_id'], $firmId, 'created', $object['name'], $warnings);
+
+                if ($object['postal_code'] === null && $created->postal_code !== null) {
+                    $report->add('postal_code', $object['template_id'], $firmId, 'filled', $object['name']);
+                }
             }
 
             foreach ($object['merged_template_ids'] as $mergedId) {
                 $report->add('object', $mergedId, $firmId, 'merged', $object['name']);
             }
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, string> lower-cased trimmed object name => raw postal code
+     */
+    private function postalCodeMap(array $payload): array
+    {
+        $raw = $payload['object_postal_codes'] ?? null;
+        $map = [];
+
+        if (! is_array($raw)) {
+            return $map;
+        }
+
+        foreach ($raw as $name => $code) {
+            if (is_string($code)) {
+                $map[mb_strtolower(trim((string) $name))] = $code;
+            }
+        }
+
+        return $map;
+    }
+
+    /** @param  array<string, string>  $postalCodes */
+    private function mappedPostalCode(string $name, array $postalCodes): ?string
+    {
+        $raw = $postalCodes[mb_strtolower(trim($name))] ?? null;
+
+        if ($raw === null) {
+            return null;
+        }
+
+        $digits = preg_replace('/\s+/u', '', $raw);
+
+        return $digits !== null && preg_match('/^(\d{3})(\d{2})$/', $digits, $match) === 1 ? $match[1].' '.$match[2] : null;
+    }
+
+    /** @param  array<string, string>  $postalCodes */
+    private function fillPostalCode(CleaningObject $object, int $templateId, int $firmId, array $postalCodes, LegacyImportReport $report): void
+    {
+        $raw = $postalCodes[mb_strtolower(trim($object->name))] ?? null;
+
+        if ($raw === null || trim((string) $object->postal_code) !== '') {
+            return;
+        }
+
+        $code = $this->mappedPostalCode($object->name, $postalCodes);
+
+        if ($code === null) {
+            $report->add('postal_code', $templateId, $firmId, 'invalid', $object->name);
+
+            return;
+        }
+
+        $this->objects->fillBlankPostalCode($object, $code);
+        $report->add('postal_code', $templateId, $firmId, 'filled', $object->name);
     }
 
     /** @param  array<int, Tenant>  $tenants */

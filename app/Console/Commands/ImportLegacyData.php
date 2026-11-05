@@ -149,10 +149,12 @@ final class ImportLegacyData extends Command
         );
 
         $this->info(sprintf(
-            'Created: %d firms, %d clients, %d objects.',
+            'Created: %d firms, %d clients, %d objects. Postal codes filled: %d, skipped invalid: %d.',
             $report->count('firm', 'created'),
             $report->count('client', 'created'),
             $report->count('object', 'created'),
+            $report->count('postal_code', 'filled'),
+            $report->count('postal_code', 'invalid'),
         ));
 
         $warnings = [];

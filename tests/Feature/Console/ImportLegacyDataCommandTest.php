@@ -294,6 +294,91 @@ final class ImportLegacyDataCommandTest extends TestCase
         $this->assertSame($before, $this->counts());
     }
 
+    /**
+     * @param  array<string, string>  $codes
+     * @return array<string, mixed>
+     */
+    private function withPostalCodes(array $codes): array
+    {
+        return [...$this->fixture(), 'object_postal_codes' => $codes];
+    }
+
+    public function test_postal_codes_fill_blank_on_existing_objects_only_and_second_run_fills_nothing(): void
+    {
+        $this->owner();
+        $this->writeFile();
+        $this->importLegacy();
+        $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
+        $this->writeFile($this->withPostalCodes([
+            '  beta street č.7A ' => '821 07',
+            'Test Street č.13,15' => '999 99',
+            'Kancelária Test' => '82107',
+        ]));
+        $before = Activity::query()->count();
+
+        [$code, $output] = $this->importLegacy();
+
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString('Postal codes filled: 2, skipped invalid: 0.', $output);
+        $this->assertSame('821 07', $this->objectNamed('Beta Street č.7a')->postal_code);
+        $this->assertSame('821 07', $this->objectNamed('Kancelária Test')->postal_code);
+        $this->assertSame('811 03', $this->objectNamed('Test Street č.13,15')->postal_code);
+        $this->assertGreaterThan($before, Activity::query()->count());
+
+        [, $output] = $this->importLegacy();
+
+        $this->assertStringContainsString('Postal codes filled: 0, skipped invalid: 0.', $output);
+    }
+
+    public function test_postal_code_is_set_when_the_object_is_created(): void
+    {
+        $this->owner();
+        $this->writeFile($this->withPostalCodes(['Beta Street č.7a' => '82107']));
+
+        [, $output] = $this->importLegacy();
+
+        $this->assertStringContainsString('Postal codes filled: 1, skipped invalid: 0.', $output);
+        $this->assertSame('821 07', $this->objectNamed('Beta Street č.7a')->postal_code);
+    }
+
+    public function test_invalid_postal_code_is_skipped_and_counted(): void
+    {
+        $this->owner();
+        $this->writeFile();
+        $this->importLegacy();
+        $this->writeFile($this->withPostalCodes(['Beta Street č.7a' => '8210', 'Kancelária Test' => 'abc 12']));
+
+        [, $output] = $this->importLegacy();
+
+        $this->assertStringContainsString('Postal codes filled: 0, skipped invalid: 2.', $output);
+        $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
+    }
+
+    public function test_postal_codes_dry_run_counts_but_writes_nothing(): void
+    {
+        $this->owner();
+        $this->writeFile();
+        $this->importLegacy();
+        $this->writeFile($this->withPostalCodes(['Beta Street č.7a' => '821 07']));
+
+        [, $output] = $this->importLegacy(['--dry-run' => true]);
+
+        $this->assertStringContainsString('Postal codes filled: 1, skipped invalid: 0.', $output);
+        $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
+    }
+
+    public function test_missing_postal_code_key_is_a_no_op(): void
+    {
+        $this->owner();
+        $this->writeFile();
+        $this->importLegacy();
+
+        [, $output] = $this->importLegacy();
+
+        $this->assertStringContainsString('Postal codes filled: 0, skipped invalid: 0.', $output);
+        $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
+    }
+
     public function test_dry_run_writes_nothing(): void
     {
         $this->owner();

@@ -125,6 +125,18 @@ final class LegacyImportSeederTest extends TestCase
         $this->assertSame($after, $this->counts());
     }
 
+    public function test_prints_postal_code_counts(): void
+    {
+        $this->existingFirm();
+        $this->encrypt([...$this->payload(), 'object_postal_codes' => ['invented street č.1' => '82107']]);
+
+        $this->artisanCommand('db:seed', ['--class' => LegacyImportSeeder::class])
+            ->expectsOutputToContain('Postal codes: 1 filled, 0 invalid.')
+            ->assertSuccessful();
+
+        $this->assertSame('821 07', CleaningObject::withoutGlobalScopes()->firstOrFail()->postal_code);
+    }
+
     public function test_no_existing_firm_throws_and_writes_nothing(): void
     {
         $this->encrypt();
