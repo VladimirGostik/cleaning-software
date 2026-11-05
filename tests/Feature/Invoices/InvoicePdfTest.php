@@ -175,6 +175,20 @@ final class InvoicePdfTest extends TestCase
         return Invoice::factory()->create(array_merge(['tenant_id' => $tenant->id], $overrides));
     }
 
+    public function test_kegos_layout_renders_header_text_directly_above_items_table(): void
+    {
+        $invoice = $this->boundInvoice(['header_text' => "Line A\nLine B"]);
+
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
+
+        $headerPos = strpos($html, 'Line A');
+        $this->assertNotFalse($headerPos);
+        $this->assertGreaterThan(strpos($html, __('app.invoice_pdf_due_date').':'), $headerPos);
+        $this->assertGreaterThan(strpos($html, e($invoice->customer_name)), $headerPos);
+        $this->assertLessThan(strpos($html, 'class="kg-items'), $headerPos);
+        $this->assertMatchesRegularExpression('/white-space:\s*pre-line;[^>]*>\s*Line A\nLine B/', $html);
+    }
+
     public function test_kegos_layout_renders_full_supplier_snapshot(): void
     {
         $invoice = $this->invoiceWithFullSupplierSnapshot();

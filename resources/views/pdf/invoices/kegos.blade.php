@@ -50,10 +50,6 @@
 <div style="margin-bottom:5mm;"><span class="kg-chip">{{ __('app.invoice_pdf_status') }}: {{ $invoice->status->label() }}</span></div>
 @endif
 
-@if($invoice->header_text)
-<div class="muted" style="margin-bottom:5mm; white-space:pre-line;">{{ $invoice->header_text }}</div>
-@endif
-
 <table class="parties">
     <tr>
         <td>
@@ -112,6 +108,10 @@
         </td>
     </tr>
 </table>
+
+@if($invoice->header_text)
+<div class="muted" style="margin-top:5mm; margin-bottom:2mm; white-space:pre-line;">{{ $invoice->header_text }}</div>
+@endif
 
 <table class="kg-items block">
     <thead>
