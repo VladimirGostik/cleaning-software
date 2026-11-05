@@ -30,6 +30,16 @@ final class InvoicePolicy
         return $user->can(PermissionEnum::EditInvoices->value);
     }
 
+    public function previewBuyer(User $user): bool
+    {
+        return $user->canAny([
+            PermissionEnum::CreateInvoices->value,
+            PermissionEnum::EditInvoices->value,
+            PermissionEnum::CreateRecurringInvoices->value,
+            PermissionEnum::EditRecurringInvoices->value,
+        ]);
+    }
+
     public function issue(User $user, Invoice $invoice): bool
     {
         return $user->can(PermissionEnum::EditInvoices->value);

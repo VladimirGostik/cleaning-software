@@ -48,7 +48,7 @@ final readonly class ActivityRevertService
         'type', 'name', 'street', 'city', 'postal_code', 'country', 'access_code', 'key_box_code',
         'key_count', 'special_instructions', 'area_sqm', 'floor',
         'billing_name', 'billing_ico', 'billing_dic', 'billing_vat_number',
-        'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code',
+        'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code', 'billing_email',
     ];
 
     /** Allowlist: model => fields an `updated` row may write back (is_primary of contacts is added for whole batches). */

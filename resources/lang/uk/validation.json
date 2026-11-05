@@ -360,5 +360,8 @@
     "attributes.remove_logo": "видалити логотип",
     "attributes.default_quote_included_text": "типовий текст «У ціну включено»",
     "attributes.signing_place": "місце підписання",
-    "attributes.billing_period": "період оплати"
+    "attributes.billing_period": "період оплати",
+    "attributes.billing_email": "платіжний e-mail",
+    "attributes.recipient_email": "e-mail одержувача",
+    "attributes.save_for_future": "зберегти для майбутніх рахунків"
 }

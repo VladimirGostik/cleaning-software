@@ -49,6 +49,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $billing_street
  * @property string|null $billing_city
  * @property string|null $billing_postal_code
+ * @property string|null $billing_email
  * @property string|null $gps_lat
  * @property string|null $gps_lng
  * @property Carbon $created_at
@@ -72,7 +73,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'access_code', 'key_box_code', 'key_count', 'special_instructions',
     'area_sqm', 'floor', 'is_active', 'gps_lat', 'gps_lng',
     'billing_name', 'billing_ico', 'billing_dic', 'billing_vat_number',
-    'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code',
+    'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code', 'billing_email',
 ])]
 final class CleaningObject extends Model
 {
@@ -103,7 +104,7 @@ final class CleaningObject extends Model
                 'country', 'access_code', 'key_box_code', 'key_count',
                 'special_instructions', 'area_sqm', 'floor', 'is_active',
                 'billing_name', 'billing_ico', 'billing_dic', 'billing_vat_number',
-                'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code',
+                'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code', 'billing_email',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

@@ -9,6 +9,7 @@ const props = defineProps<{
     open: boolean;
     object?: App.Data.Objects.ObjectDetailData | null;
     clients: App.Data.Clients.ClientOptionData[];
+    focusSection?: 'billing';
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +23,12 @@ const title = computed(() => (props.object ? t('object_edit') : t('object_add'))
 
 <template>
     <SideDrawer :open="open" :title="title" @close="emit('close')">
-        <ObjectForm :object="object" :clients="clients" @saved="emit('close')" @cancel="emit('close')" />
+        <ObjectForm
+            :object="object"
+            :clients="clients"
+            :focus-section="focusSection"
+            @saved="emit('close')"
+            @cancel="emit('close')"
+        />
     </SideDrawer>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
 import NoSymbolIcon from '~icons/material-symbols/block-outline-rounded';
@@ -36,11 +36,15 @@ const breadcrumbs: Breadcrumb[] = [
     { label: props.object.name },
 ];
 
-const ui = reactive({
-    editOpen: false,
-});
-
 const canEdit = computed(() => allows('edit objects') && props.clients.length > 0);
+
+const page = usePage();
+const focusSection =
+    new URL(page.url, window.location.origin).searchParams.get('edit') === 'billing' ? 'billing' : undefined;
+
+const ui = reactive({
+    editOpen: focusSection === 'billing' && canEdit.value,
+});
 
 const reactivating = ref(false);
 
@@ -125,7 +129,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         <div class="space-y-6">
             <ObjectDetailCard :object="object" />
 
-            <ObjectBillingCard v-if="object.billing" :billing="object.billing" />
+            <ObjectBillingCard v-if="object.billing !== null" :billing="object.billing" />
 
             <ContactsList
                 v-if="object.contacts !== null"
@@ -136,7 +140,13 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         </div>
     </div>
 
-    <ObjectFormDrawer :open="ui.editOpen" :object="object" :clients="clients" @close="ui.editOpen = false" />
+    <ObjectFormDrawer
+        :open="ui.editOpen"
+        :object="object"
+        :clients="clients"
+        :focus-section="focusSection"
+        @close="ui.editOpen = false"
+    />
 
     <ConfirmDeleteModal
         :is-open="state.isOpen"

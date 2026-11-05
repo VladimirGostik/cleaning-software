@@ -223,4 +223,43 @@ final class ObjectBillingIdentityTest extends TestCase
 
         $this->assertNull(CleaningObject::where('name', 'Bytovy dom')->firstOrFail()->billing_name);
     }
+
+    public function test_billing_email_is_stored_without_a_billing_name(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('objects.store'), $this->payload($client->id, ['billing_email' => 'faktury@example.com']))
+            ->assertSessionHasNoErrors();
+
+        $object = CleaningObject::where('name', 'Bytovy dom')->firstOrFail();
+        $this->assertSame('faktury@example.com', $object->billing_email);
+        $this->assertFalse($object->hasBillingIdentity());
+        $this->get(route('objects.show', $object))->assertInertia(
+            fn (AssertableInertia $page) => $page->where('object.billing.name', null)->where('object.billing.email', 'faktury@example.com'),
+        );
+    }
+
+    public function test_invalid_billing_email_is_rejected(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('objects.store'), $this->payload($client->id, ['billing_email' => 'nope']))
+            ->assertSessionHasErrors('billing_email');
+    }
+
+    public function test_billing_email_is_stripped_without_view_all_objects(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Sekretárka', $tenant);
+        $this->revokeViewAllObjectsFromSekretarka($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('objects.store'), $this->payload($client->id, ['billing_email' => 'faktury@example.com']))->assertRedirect();
+
+        $this->assertNull(CleaningObject::where('name', 'Bytovy dom')->firstOrFail()->billing_email);
+    }
 }

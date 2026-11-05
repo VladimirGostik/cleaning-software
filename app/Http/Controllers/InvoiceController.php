@@ -7,10 +7,13 @@ namespace App\Http\Controllers;
 use App\Contracts\GeneratesPaymentQr;
 use App\Contracts\RendersInvoicePdf;
 use App\Data\Invoices\InvoiceBulkLimitsData;
+use App\Data\Invoices\InvoiceBuyerPreviewData;
+use App\Data\Invoices\InvoiceBuyerPreviewResultData;
 use App\Data\Invoices\InvoiceDetailData;
 use App\Data\Invoices\InvoiceFormContextData;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoicePaymentData;
+use App\Data\Invoices\InvoiceSendData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
@@ -18,8 +21,10 @@ use App\Http\Controllers\Concerns\ProvidesSubjectOptions;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\Efa\EInvoiceService;
+use App\Services\InvoiceRecipientService;
 use App\Services\InvoiceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,6 +56,15 @@ final class InvoiceController extends Controller
         ]);
     }
 
+    #[Authorize('previewBuyer', Invoice::class)]
+    public function buyerPreview(InvoiceBuyerPreviewData $data, Request $request, InvoiceRecipientService $recipients): InvoiceBuyerPreviewResultData
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return $recipients->previewBuyer($data, $actor);
+    }
+
     #[Authorize('create', Invoice::class)]
     public function create(): InertiaResponse
     {
@@ -70,12 +84,16 @@ final class InvoiceController extends Controller
     }
 
     #[Authorize('view', 'invoice')]
-    public function show(Invoice $invoice, GeneratesPaymentQr $qr, EInvoiceService $efa): InertiaResponse
+    public function show(Invoice $invoice, GeneratesPaymentQr $qr, EInvoiceService $efa, InvoiceRecipientService $recipients, Request $request): InertiaResponse
     {
+        /** @var User $actor */
+        $actor = $request->user();
+
         $invoice->load(['items', 'client', 'tenant', 'quote:id,number']);
 
         return Inertia::render('Invoices/Show', [
             'invoice' => InvoiceDetailData::fromModel($invoice, $qr->dataUri($invoice), $efa->status($invoice)),
+            'sendOptions' => $recipients->sendOptions($invoice, $actor),
         ]);
     }
 
@@ -153,9 +171,12 @@ final class InvoiceController extends Controller
     }
 
     #[Authorize('send', 'invoice')]
-    public function send(Invoice $invoice): RedirectResponse
+    public function send(InvoiceSendData $data, Invoice $invoice, Request $request, InvoiceRecipientService $recipients): RedirectResponse
     {
-        $this->invoices->send($invoice);
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $recipients->send($invoice, $data, $actor);
 
         return to_route('invoices.show', $invoice)->with('success', __('app.invoice_send_queued'));
     }

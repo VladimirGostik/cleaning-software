@@ -8,6 +8,7 @@ import InvoiceStatusBadge from '@/Components/Invoices/InvoiceStatusBadge.vue';
 import InvoiceTypeBadge from '@/Components/Invoices/InvoiceTypeBadge.vue';
 import InvoicePayModal from '@/Components/Invoices/InvoicePayModal.vue';
 import InvoicePaymentsCard from '@/Components/Invoices/InvoicePaymentsCard.vue';
+import InvoiceSendModal from '@/Components/Invoices/InvoiceSendModal.vue';
 import InvoiceIssueModal from '@/Components/Invoices/InvoiceIssueModal.vue';
 import InvoicePartiesBlock from '@/Components/Invoices/InvoicePartiesBlock.vue';
 import InvoiceMetaGrid from '@/Components/Invoices/InvoiceMetaGrid.vue';
@@ -27,6 +28,7 @@ import type { Breadcrumb } from '@/types';
 
 const props = defineProps<{
     invoice: App.Data.Invoices.InvoiceDetailData;
+    sendOptions: App.Data.Invoices.InvoiceSendOptionsData | null;
 }>();
 
 const { t } = useI18n();
@@ -40,6 +42,7 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 const ui = reactive({
     issueOpen: false,
     payOpen: false,
+    sendOpen: false,
 });
 
 const cancelConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
@@ -62,6 +65,14 @@ const deleteConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
     getTitle: () => t('delete'),
     getDescription: () => t('invoice_delete_confirm'),
 });
+
+function onSend(): void {
+    if (props.sendOptions !== null) {
+        ui.sendOpen = true;
+        return;
+    }
+    sendConfirm.openModal(props.invoice);
+}
 
 function duplicate(): void {
     router.post(`/invoices/${props.invoice.id}/duplicate`);
@@ -140,10 +151,11 @@ function onSettingsSaved(): void {
         <div class="space-y-6">
             <InvoiceActionsCard
                 :invoice="invoice"
+                :recipient-choosable="sendOptions !== null"
                 @issue="ui.issueOpen = true"
                 @pay="ui.payOpen = true"
                 @cancel="cancelConfirm.openModal(invoice)"
-                @send="sendConfirm.openModal(invoice)"
+                @send="onSend"
                 @duplicate="duplicate"
                 @delete="deleteConfirm.openModal(invoice)"
             />
@@ -154,6 +166,14 @@ function onSettingsSaved(): void {
     </div>
 
     <InvoiceIssueModal :open="ui.issueOpen" :invoice-id="invoice.id" @close="ui.issueOpen = false" />
+
+    <InvoiceSendModal
+        v-if="sendOptions !== null"
+        :open="ui.sendOpen"
+        :invoice-id="invoice.id"
+        :options="sendOptions"
+        @close="ui.sendOpen = false"
+    />
 
     <InvoicePayModal
         :open="ui.payOpen"

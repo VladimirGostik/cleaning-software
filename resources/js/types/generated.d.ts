@@ -1000,6 +1000,28 @@ readonly paid_on: string,
 export type InvoiceBulkPdfData = {
 readonly ids: string[],
 };
+export type InvoiceBuyerData = {
+readonly source: App.Enums.CustomerPartySourceEnum,
+readonly name: string | null,
+readonly represented_by: string | null,
+readonly representative: string | null,
+readonly ico: string | null,
+readonly dic: string | null,
+readonly vat_number: string | null,
+readonly street: string | null,
+readonly city: string | null,
+readonly postal_code: string | null,
+readonly country: string | null,
+readonly email: string | null,
+};
+export type InvoiceBuyerPreviewData = {
+readonly client_id: string,
+readonly cleaning_object_id: string | null,
+};
+export type InvoiceBuyerPreviewResultData = {
+readonly buyer: App.Data.Invoices.InvoiceBuyerData,
+readonly email_options: string[],
+};
 export type InvoiceDefaultsData = {
 readonly constant_symbol: string | null,
 readonly payment_type: App.Enums.PaymentTypeEnum,
@@ -1136,6 +1158,14 @@ readonly source: App.Enums.PaymentSourceEnum,
 readonly note: string | null,
 readonly recorded_by_name: string | null,
 readonly created_at: string,
+};
+export type InvoiceSendData = {
+readonly recipient_email: string | null,
+readonly save_for_future: boolean,
+};
+export type InvoiceSendOptionsData = {
+readonly email_options: string[],
+readonly save_target: App.Enums.InvoiceEmailSaveTargetEnum | null,
 };
 export type InvoiceSettingsData = {
 readonly name: string,
@@ -1287,7 +1317,7 @@ readonly preferences: App.Data.Notifications.NotificationPreferenceUpdateItemDat
 }
 namespace Objects {
 export type ObjectBillingData = {
-readonly name: string,
+readonly name: string | null,
 readonly ico: string | null,
 readonly dic: string | null,
 readonly vat_number: string | null,
@@ -1295,6 +1325,7 @@ readonly peppol_participant_id: string | null,
 readonly street: string | null,
 readonly city: string | null,
 readonly postal_code: string | null,
+readonly email: string | null,
 };
 export type ObjectDetailData = {
 readonly id: string,
@@ -1363,6 +1394,7 @@ readonly billing_peppol_participant_id: string | null,
 readonly billing_street: string | null,
 readonly billing_city: string | null,
 readonly billing_postal_code: string | null,
+readonly billing_email: string | null,
 };
 }
 namespace Profile {
@@ -1541,7 +1573,8 @@ readonly frequency: App.Enums.RecurringFrequencyEnum,
 readonly billed_month: App.Enums.RecurringBilledMonthEnum,
 readonly client_id: string | null,
 readonly customer_name: string | null,
-readonly customer_display_name: string | null,
+readonly buyer: App.Data.Invoices.InvoiceBuyerData,
+readonly cleaning_object_name: string | null,
 readonly day_of_month: number,
 readonly next_run_at: string | null,
 readonly occurrences_generated: number,
@@ -2000,6 +2033,7 @@ export type ContractStatusEnum = "draft" | "active" | "expired" | "terminated";
 export type ContractTermTypeEnum = "fixed" | "indefinite";
 export type ContractableTypeEnum = "cleaning_object" | "tenant_membership" | "client";
 export type CurrencyEnum = "EUR" | "CZK" | "USD";
+export type CustomerPartySourceEnum = "object_billing" | "client" | "entered";
 export type DashboardAlertTypeEnum = "overdue_invoice" | "supplier_incomplete" | "unassigned_job" | "contract_expiring" | "quote_expiring";
 export type DevicePlatformEnum = "android" | "ios";
 export type DocumentTemplateScopeEnum = "global" | "override" | "firm";
@@ -2017,6 +2051,7 @@ export type ExpenseSourceEnum = "manual" | "receipt" | "bank_statement" | "mcp";
 export type ExpenseStatusEnum = "draft" | "confirmed";
 export type InvitationAcceptStateEnum = "expired" | "wrong_user" | "existing_user" | "new_user";
 export type InvitationStatusEnum = "pending" | "accepted" | "revoked" | "expired";
+export type InvoiceEmailSaveTargetEnum = "recurring_invoice" | "object";
 export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cancelled";
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";

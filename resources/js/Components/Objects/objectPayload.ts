@@ -24,6 +24,7 @@ export interface ObjectFormData {
     billing_street: string;
     billing_city: string;
     billing_postal_code: string;
+    billing_email: string;
 }
 
 export type ObjectBillingFormData = Pick<
@@ -36,6 +37,7 @@ export type ObjectBillingFormData = Pick<
     | 'billing_street'
     | 'billing_city'
     | 'billing_postal_code'
+    | 'billing_email'
 >;
 
 export function emptyBillingFormData(): ObjectBillingFormData {
@@ -48,6 +50,7 @@ export function emptyBillingFormData(): ObjectBillingFormData {
         billing_street: '',
         billing_city: '',
         billing_postal_code: '',
+        billing_email: '',
     };
 }
 
@@ -55,7 +58,7 @@ export function billingToFormData(billing: App.Data.Objects.ObjectBillingData | 
     if (billing === null) return emptyBillingFormData();
 
     return {
-        billing_name: billing.name,
+        billing_name: billing.name ?? '',
         billing_ico: billing.ico ?? '',
         billing_dic: billing.dic ?? '',
         billing_vat_number: billing.vat_number ?? '',
@@ -63,6 +66,7 @@ export function billingToFormData(billing: App.Data.Objects.ObjectBillingData | 
         billing_street: billing.street ?? '',
         billing_city: billing.city ?? '',
         billing_postal_code: billing.postal_code ?? '',
+        billing_email: billing.email ?? '',
     };
 }
 

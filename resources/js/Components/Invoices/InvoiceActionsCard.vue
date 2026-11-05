@@ -15,6 +15,7 @@ import Can from '@/Components/Can.vue';
 
 const props = defineProps<{
     invoice: App.Data.Invoices.InvoiceDetailData;
+    recipientChoosable: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
+const canSend = computed(() => !!props.invoice.customer_email || props.recipientChoosable);
 const isDraft = computed(() => props.invoice.status === 'draft');
 const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || props.invoice.status === 'overdue');
 </script>
@@ -79,14 +81,14 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
                     <button
                         type="button"
                         class="btn btn-sm btn-primary w-full justify-start"
-                        :disabled="!props.invoice.customer_email"
-                        :title="!props.invoice.customer_email ? t('invoice_send_requires_email') : undefined"
+                        :disabled="!canSend"
+                        :title="!canSend ? t('invoice_send_requires_email') : undefined"
                         @click="emit('send')"
                     >
                         <EnvelopeIcon class="size-5" />
                         {{ t('invoice_action_send_email') }}
                     </button>
-                    <p v-if="!props.invoice.customer_email" class="mt-1 pl-1 text-xs text-base-content/50">
+                    <p v-if="!canSend" class="mt-1 pl-1 text-xs text-base-content/50">
                         {{ t('invoice_send_requires_email') }}
                     </p>
                 </div>

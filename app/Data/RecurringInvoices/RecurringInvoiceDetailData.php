@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\RecurringInvoices;
 
+use App\Data\Invoices\InvoiceBuyerData;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
@@ -13,6 +14,7 @@ use App\Enums\RecurringInvoiceStatusEnum;
 use App\Enums\RoundingModeEnum;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
+use App\Support\CustomerParty;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -28,7 +30,8 @@ final class RecurringInvoiceDetailData extends Data
         public readonly RecurringBilledMonthEnum $billed_month,
         public readonly ?string $client_id,
         public readonly ?string $customer_name,
-        public readonly ?string $customer_display_name,
+        public readonly InvoiceBuyerData $buyer,
+        public readonly ?string $cleaning_object_name,
         public readonly int $day_of_month,
         public readonly ?string $next_run_at,
         public readonly int $occurrences_generated,
@@ -89,7 +92,8 @@ final class RecurringInvoiceDetailData extends Data
             billed_month: $ri->billed_month,
             client_id: $ri->client_id,
             customer_name: $ri->customer_name,
-            customer_display_name: $ri->cleaningObject->billing_name ?? $ri->client->name ?? $ri->cleaningObject?->client->name ?? $ri->customer_name,
+            buyer: InvoiceBuyerData::fromParty(CustomerParty::forInvoice($ri->cleaningObject, $ri->client, CustomerParty::fromEntered($ri))),
+            cleaning_object_name: $ri->cleaningObject?->name,
             day_of_month: $ri->day_of_month,
             next_run_at: $ri->next_run_at?->toDateString(),
             occurrences_generated: $ri->occurrences_generated,

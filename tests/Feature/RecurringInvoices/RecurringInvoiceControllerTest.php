@@ -265,6 +265,15 @@ final class RecurringInvoiceControllerTest extends TestCase
         $this->get(route('recurring-invoices.show', $ri))->assertNotFound();
     }
 
+    public function test_store_rejects_a_malformed_customer_email(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('recurring-invoices.store'), $this->storePayload(['customer_email' => 'not-an-email']))
+            ->assertSessionHasErrors('customer_email');
+    }
+
     public function test_store_rejects_auto_send_without_auto_issue(): void
     {
         $tenant = Tenant::factory()->create();

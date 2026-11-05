@@ -7,6 +7,7 @@ namespace App\Support;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
+use App\Enums\CustomerPartySourceEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -28,6 +29,7 @@ final readonly class CustomerParty
         public ?string $postalCode = null,
         public ?string $country = null,
         public ?string $email = null,
+        public CustomerPartySourceEnum $source = CustomerPartySourceEnum::Entered,
     ) {}
 
     public static function fromEntered(InvoiceUpsertData|RecurringInvoiceUpsertData|Invoice|RecurringInvoice $source): self
@@ -75,6 +77,7 @@ final readonly class CustomerParty
                 postalCode: $ownAddress ? $object->billing_postal_code : $object->postal_code,
                 country: $object->country,
                 email: $entered->email,
+                source: CustomerPartySourceEnum::ObjectBilling,
             );
         }
 
@@ -91,6 +94,7 @@ final readonly class CustomerParty
                 postalCode: $client->postal_code,
                 country: $client->country,
                 email: $entered->email,
+                source: CustomerPartySourceEnum::Client,
             );
         }
 

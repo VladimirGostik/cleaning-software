@@ -128,7 +128,7 @@ final class RecurringInvoice extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'frequency', 'billed_month', 'next_run_at', 'occurrences_generated', 'auto_send'])
+            ->logOnly(['status', 'frequency', 'billed_month', 'next_run_at', 'occurrences_generated', 'auto_send', 'customer_email'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

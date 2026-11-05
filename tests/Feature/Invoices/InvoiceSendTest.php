@@ -92,7 +92,7 @@ final class InvoiceSendTest extends TestCase
         $this->actingAsTenantUser('Admin', $tenant);
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'customer_email' => null]);
 
-        $this->post(route('invoices.send', $invoice))->assertSessionHasErrors('customer_email');
+        $this->post(route('invoices.send', $invoice))->assertSessionHasErrors('recipient_email');
     }
 
     public function test_send_forbidden_without_edit_invoices_permission(): void

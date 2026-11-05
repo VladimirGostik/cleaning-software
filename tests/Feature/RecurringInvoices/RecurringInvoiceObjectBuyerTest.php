@@ -109,11 +109,11 @@ final class RecurringInvoiceObjectBuyerTest extends TestCase
         );
     }
 
-    public function test_detail_display_name_prefers_the_house_billing_name(): void
+    public function test_detail_buyer_name_prefers_the_house_billing_name(): void
     {
         $ri = $this->dueTemplate(['client_id' => $this->client->id, 'cleaning_object_id' => $this->house()->id]);
         $ri->load(['client', 'cleaningObject']);
 
-        $this->assertSame('Bytovy dom Lipova 5', RecurringInvoiceDetailData::fromModel($ri)->customer_display_name);
+        $this->assertSame('Bytovy dom Lipova 5', RecurringInvoiceDetailData::fromModel($ri)->buyer->name);
     }
 }

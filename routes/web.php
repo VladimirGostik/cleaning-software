@@ -224,6 +224,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::post('/invoices/bulk/send', [InvoiceBulkController::class, 'send'])->name('invoices.bulk.send');
         Route::post('/invoices/bulk/issue', [InvoiceBulkController::class, 'issue'])->name('invoices.bulk.issue');
     });
+    Route::get('/invoices/buyer-preview', [InvoiceController::class, 'buyerPreview'])->name('invoices.buyer-preview');
     Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->whereUuid('invoice');
     Route::get('/invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit')->whereUuid('invoice');

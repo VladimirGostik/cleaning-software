@@ -6,6 +6,7 @@ namespace Tests\Feature\RecurringInvoices;
 
 use App\Data\RecurringInvoices\RecurringInvoiceDetailData;
 use App\Data\RecurringInvoices\RecurringInvoiceListItemData;
+use App\Enums\CustomerPartySourceEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\RecurringInvoice;
@@ -37,7 +38,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
 
         $data = RecurringInvoiceDetailData::fromModel($ri);
 
-        $this->assertSame('ACME s.r.o.', $data->customer_display_name);
+        $this->assertSame('ACME s.r.o.', $data->buyer->name);
         $this->assertNull($data->customer_name);
     }
 
@@ -51,8 +52,9 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
 
         $data = RecurringInvoiceDetailData::fromModel($ri);
 
-        $this->assertSame('Beta Ltd', $data->customer_display_name);
+        $this->assertSame(CustomerPartySourceEnum::Entered, $data->buyer->source);
         $this->assertNull($data->customer_name);
+        $this->assertSame($obj->name, $data->cleaning_object_name);
     }
 
     public function test_detail_data_standalone_with_name_uses_customer_name(): void
@@ -63,7 +65,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
 
         $data = RecurringInvoiceDetailData::fromModel($ri);
 
-        $this->assertSame('Manual Name', $data->customer_display_name);
+        $this->assertSame('Manual Name', $data->buyer->name);
         $this->assertSame('Manual Name', $data->customer_name);
     }
 
@@ -75,7 +77,7 @@ final class RecurringInvoiceCustomerDisplayTest extends TestCase
 
         $data = RecurringInvoiceDetailData::fromModel($ri);
 
-        $this->assertNull($data->customer_display_name);
+        $this->assertSame('', $data->buyer->name);
     }
 
     // -------------------------------------------------------------------------

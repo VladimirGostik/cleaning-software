@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 import FormField from './FormField.vue';
 import { useFormContext } from './useFormContext';
 import { useFieldError, callValidate } from './useFieldError';
@@ -18,6 +18,7 @@ const props = withDefaults(
         disabled?: boolean;
         placeholder?: string;
         labelClass?: string;
+        suggestions?: readonly string[];
     }>(),
     { type: 'text', labelClass: undefined },
 );
@@ -27,6 +28,8 @@ const emit = defineEmits<{
 }>();
 
 const form = useFormContext();
+const listId = useId();
+const hasSuggestions = computed(() => (props.suggestions?.length ?? 0) > 0);
 
 const resolvedValue = computed(() => {
     if (props.field && form) return String((form as Record<string, unknown>)[props.field] ?? '');
@@ -60,10 +63,14 @@ function onNativeChange() {
             :autocomplete="autocomplete"
             :disabled="disabled"
             :placeholder="placeholder"
+            :list="hasSuggestions ? listId : undefined"
             :aria-required="required ? 'true' : undefined"
             :aria-invalid="resolvedError ? 'true' : undefined"
             @input="onInput"
             @change="onNativeChange"
         />
+        <datalist v-if="hasSuggestions" :id="listId">
+            <option v-for="suggestion in suggestions" :key="suggestion" :value="suggestion" />
+        </datalist>
     </FormField>
 </template>

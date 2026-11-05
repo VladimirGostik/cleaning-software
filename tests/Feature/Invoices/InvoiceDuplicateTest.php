@@ -126,6 +126,7 @@ final class InvoiceDuplicateTest extends TestCase
             'cancelled_at' => null,
             'sent_at' => null,
             'efa_status' => 'none',
+            'customer_email' => 'buyer@example.test',
         ], $this->createdActivityAttributes($copy));
     }
 

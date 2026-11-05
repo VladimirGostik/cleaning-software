@@ -152,6 +152,15 @@ final class InvoiceCrudTest extends TestCase
         $this->post(route('invoices.store'), $payload)->assertSessionHasErrors('customer_name');
     }
 
+    public function test_store_rejects_a_malformed_customer_email(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+
+        $this->post(route('invoices.store'), $this->storeHttpPayload(['customer_email' => 'not-an-email']))
+            ->assertSessionHasErrors('customer_email');
+    }
+
     public function test_store_object_of_another_client_fails_validation(): void
     {
         $tenant = Tenant::factory()->create();

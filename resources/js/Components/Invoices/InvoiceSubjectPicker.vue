@@ -7,6 +7,8 @@ import RadioGroup, { type RadioOption } from '@/Components/Forms/RadioGroup.vue'
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import TextInput from '@/Components/Forms/TextInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
+import CustomerPartyDetails from '@/Components/Invoices/CustomerPartyDetails.vue';
+import { useBuyerPreview } from '@/Composables/useBuyerPreview';
 
 export type SubjectMode = 'client' | 'object' | 'standalone';
 
@@ -43,19 +45,32 @@ const objectOptions = computed<SelectOption[]>(() => {
         .map((o) => ({ value: o.id, label: o.name }));
 });
 
-const billsTo = computed<string | null>(() => {
-    if (!form || props.mode !== 'object') return null;
-    const objectId = (form as Record<string, unknown>).cleaning_object_id as string | null;
-    const object = props.objects.find((o) => o.id === objectId);
-    if (!object?.billing_name) return null;
-    return t('invoice_subject_bills_to', { name: object.billing_name, client: object.client_name ?? '' });
+const selectedObjectId = computed<string | null>(() => {
+    if (!form) return null;
+    return ((form as Record<string, unknown>).cleaning_object_id as string | null) || null;
+});
+
+const { preview, loading, error } = useBuyerPreview(() => {
+    if (props.mode === 'standalone' || !selectedClientId.value) return null;
+    if (props.mode === 'object') {
+        return selectedObjectId.value
+            ? { client_id: selectedClientId.value, cleaning_object_id: selectedObjectId.value }
+            : null;
+    }
+    return { client_id: selectedClientId.value, cleaning_object_id: null };
+});
+
+const sourceNote = computed<string | null>(() => {
+    if (!preview.value) return null;
+    if (preview.value.buyer.source === 'object_billing') return t('invoice_buyer_preview_source_object_billing');
+    if (preview.value.buyer.source === 'client') return t('invoice_buyer_preview_source_client');
+    return null;
 });
 
 function clearCustomerFields(): void {
     if (!form) return;
     const f = form as Record<string, unknown>;
     f.customer_name = null;
-    f.customer_representative = null;
     f.customer_ico = null;
     f.customer_dic = null;
     f.customer_vat_number = null;
@@ -63,7 +78,6 @@ function clearCustomerFields(): void {
     f.customer_city = null;
     f.customer_postal_code = null;
     f.customer_country = null;
-    f.customer_email = null;
 }
 
 function onModeChange(mode: string): void {
@@ -123,23 +137,44 @@ if (form) {
             required
         />
 
-        <p v-if="billsTo" class="text-sm text-base-content/70">{{ billsTo }}</p>
+        <div v-if="props.mode !== 'standalone' && (loading || error || preview)" class="rounded-box bg-base-200 p-4">
+            <h3 class="text-sm font-semibold text-base-content/70">{{ t('invoice_buyer_preview_title') }}</h3>
+            <span v-if="loading" class="loading loading-spinner loading-sm" />
+            <div v-else-if="error" class="alert alert-warning mt-2">
+                <span>{{ t('invoice_buyer_preview_failed') }}</span>
+            </div>
+            <template v-else-if="preview">
+                <CustomerPartyDetails :party="preview.buyer" class="mt-2" />
+                <p v-if="sourceNote" class="mt-2 text-xs text-base-content/60">{{ sourceNote }}</p>
+            </template>
+        </div>
 
         <div v-if="props.mode === 'standalone'" class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextInput field="customer_name" :label="t('invoice_customer_name')" required />
+            <TextInput field="customer_ico" :label="t('client_ico')" />
+            <TextInput field="customer_dic" :label="t('client_dic')" />
+            <TextInput field="customer_vat_number" :label="t('client_vat_number')" />
+            <TextInput field="customer_street" :label="t('street')" />
+            <TextInput field="customer_city" :label="t('city')" />
+            <TextInput field="customer_postal_code" :label="t('postal_code')" />
+            <TextInput field="customer_country" :label="t('country')" />
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextInput
                 field="customer_representative"
                 :label="t('invoice_customer_representative')"
                 :placeholder="t('invoice_customer_representative_placeholder')"
             />
-            <TextInput field="customer_ico" :label="t('client_ico')" />
-            <TextInput field="customer_dic" :label="t('client_dic')" />
-            <TextInput field="customer_vat_number" :label="t('client_vat_number')" />
-            <TextInput field="customer_email" type="email" :label="t('email')" />
-            <TextInput field="customer_street" :label="t('street')" />
-            <TextInput field="customer_city" :label="t('city')" />
-            <TextInput field="customer_postal_code" :label="t('postal_code')" />
-            <TextInput field="customer_country" :label="t('country')" />
+            <div>
+                <TextInput
+                    field="customer_email"
+                    type="email"
+                    :label="t('email')"
+                    :suggestions="preview?.email_options"
+                />
+                <p class="mt-1 text-xs text-base-content/60">{{ t('invoice_customer_email_hint') }}</p>
+            </div>
         </div>
     </div>
 </template>

@@ -218,7 +218,7 @@ final class Invoice extends Model implements HasMedia
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'number', 'total', 'client_id', 'issued_at', 'paid_at', 'cancelled_at', 'sent_at', 'efa_status'])
+            ->logOnly(['status', 'number', 'total', 'client_id', 'issued_at', 'paid_at', 'cancelled_at', 'sent_at', 'efa_status', 'customer_email'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

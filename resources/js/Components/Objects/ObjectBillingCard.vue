@@ -13,7 +13,7 @@ const { t } = useI18n();
         <div class="card-body">
             <h2 class="card-title text-base">{{ t('object_billing') }}</h2>
 
-            <p class="font-medium">{{ billing.name }}</p>
+            <p v-if="billing.name" class="font-medium">{{ billing.name }}</p>
 
             <dl class="space-y-2 text-sm">
                 <div v-if="billing.ico" class="flex justify-between gap-4">
@@ -34,6 +34,11 @@ const { t } = useI18n();
                 <div v-if="billing.peppol_participant_id" class="flex justify-between gap-4">
                     <dt class="text-base-content/60">{{ t('peppol_participant_id') }}</dt>
                     <dd>{{ billing.peppol_participant_id }}</dd>
+                </div>
+
+                <div v-if="billing.email" class="flex justify-between gap-4">
+                    <dt class="text-base-content/60">{{ t('object_billing_email') }}</dt>
+                    <dd>{{ billing.email }}</dd>
                 </div>
 
                 <div v-if="billing.street || billing.city || billing.postal_code" class="flex justify-between gap-4">

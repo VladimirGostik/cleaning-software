@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
+use Spatie\LaravelData\Attributes\Validation\Email;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
@@ -60,7 +61,7 @@ final class InvoiceUpsertData extends Data
         public readonly ?string $customer_postal_code,
         #[Nullable]
         public readonly ?string $customer_country,
-        #[Nullable]
+        #[Nullable, Email, Max(255)]
         public readonly ?string $customer_email,
         #[Nullable]
         public readonly ?string $note,

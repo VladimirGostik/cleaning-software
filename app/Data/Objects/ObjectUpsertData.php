@@ -10,6 +10,7 @@ use App\Rules\AtMostOnePrimaryContact;
 use App\Rules\PeppolParticipantId;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Spatie\LaravelData\Attributes\Validation\Email;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
@@ -23,7 +24,7 @@ final class ObjectUpsertData extends Data
 {
     public const array BILLING_FIELDS = [
         'billing_name', 'billing_ico', 'billing_dic', 'billing_vat_number',
-        'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code',
+        'billing_peppol_participant_id', 'billing_street', 'billing_city', 'billing_postal_code', 'billing_email',
     ];
 
     public function __construct(
@@ -73,6 +74,8 @@ final class ObjectUpsertData extends Data
         public readonly ?string $billing_city = null,
         #[Nullable, Max(16)]
         public readonly ?string $billing_postal_code = null,
+        #[Nullable, Email, Max(255)]
+        public readonly ?string $billing_email = null,
     ) {}
 
     /** @return array<string, string> */
@@ -93,7 +96,7 @@ final class ObjectUpsertData extends Data
                 Rule::exists('clients', 'id')->where('tenant_id', current_tenant_id())->whereNull('deleted_at'),
             ],
             'contacts' => [new AtMostOnePrimaryContact('app.object_contacts_multiple_primary')],
-            'billing_name' => ['required_with:'.implode(',', array_slice(self::BILLING_FIELDS, 1))],
+            'billing_name' => ['required_with:'.implode(',', array_diff(array_slice(self::BILLING_FIELDS, 1), ['billing_email']))],
             'billing_peppol_participant_id' => [new PeppolParticipantId],
         ];
     }

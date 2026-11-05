@@ -18,6 +18,7 @@ describe('billingToFormData', () => {
             street: null,
             city: 'Žilina',
             postal_code: null,
+            email: 'fakt@dom.sk',
         });
 
         expect(form).toEqual({
@@ -29,6 +30,24 @@ describe('billingToFormData', () => {
             billing_street: '',
             billing_city: 'Žilina',
             billing_postal_code: '',
+            billing_email: 'fakt@dom.sk',
         });
+    });
+
+    it('maps a null billing name to an empty string', () => {
+        const form = billingToFormData({
+            name: null,
+            ico: null,
+            dic: null,
+            vat_number: null,
+            peppol_participant_id: null,
+            street: null,
+            city: null,
+            postal_code: null,
+            email: 'x@y.sk',
+        });
+
+        expect(form.billing_name).toBe('');
+        expect(form.billing_email).toBe('x@y.sk');
     });
 });
