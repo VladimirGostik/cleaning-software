@@ -140,7 +140,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     </label>
                 </div>
                 <div class="flex-1">
-                    <Link href="/" :aria-label="t('app_name')"><BrandLogo :size="24" /></Link>
+                    <Link href="/" :aria-label="t('app_name')"><BrandLogo :size="18" /></Link>
                 </div>
                 <div v-if="tenant.available.length > 0" class="flex-none">
                     <TenantSwitcher :tenant="tenant" compact @add-tenant="isAddTenantOpen = true" />
@@ -165,7 +165,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
             >
                 <!-- Brand -->
                 <div class="px-4 pt-4 pb-5">
-                    <Link href="/" class="inline-block" :aria-label="t('app_name')"><BrandLogo :size="28" /></Link>
+                    <Link href="/" class="inline-block" :aria-label="t('app_name')"><BrandLogo :size="22" /></Link>
                 </div>
 
                 <div v-if="tenant.available.length > 0" class="px-3 pb-3">

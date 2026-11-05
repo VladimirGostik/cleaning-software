@@ -31,8 +31,6 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:intent': [value: ImageIntent] }>();
 
-defineSlots<{ empty?: () => unknown }>();
-
 const showReplace = ref(false);
 
 const accept = computed(() => props.constraints.allowed_mimes.join(','));
@@ -71,7 +69,6 @@ watch(
 <template>
     <div class="space-y-4">
         <template v-if="intent.kind === 'keep' && image === null">
-            <slot name="empty" />
             <p class="text-sm text-base-content/60">{{ labels.empty }}</p>
             <FormField :label="labels.upload" :error="error">
                 <FileUploadInput

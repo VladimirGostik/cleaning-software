@@ -23,10 +23,10 @@
     <style>
         body { font-size: 10pt; }
         .q-top td { vertical-align: middle; padding: 0; }
-        .q-logo img, .q-logo svg { height: 11mm; width: auto; max-width: 60mm; display: block; object-fit: contain; object-position: left center; }
+        .q-logo svg { height: 5mm; width: auto; display: block; }
         .q-doctype { text-align: right; font-size: 8pt; letter-spacing: .22em; color: #5A6661; font-weight: 500; text-transform: uppercase; }
         .q-docno { text-align: right; font-size: 8.5pt; color: #5A6661; margin-top: 1mm; }
-        h1 { font-size: 28pt; font-weight: 600; letter-spacing: -0.03em; margin: 8mm 0 1.5mm; line-height: 1.1; }
+        h1 { font-size: 20pt; font-weight: 600; letter-spacing: -0.03em; margin: 6mm 0 1.5mm; line-height: 1.1; }
         .q-subtitle { font-size: 12.5pt; color: #5A6661; margin: 0 0 5mm; }
         .q-rule { border-top: 3pt solid #FF5A1F; width: 18mm; margin: 0 0 5mm; }
         .q-label { font-size: 7.5pt; letter-spacing: .2em; font-weight: 600; color: #FF5A1F; text-transform: uppercase; margin-bottom: 2.5mm; }
@@ -66,7 +66,7 @@
 
 <table class="q-top">
     <tr>
-        <td class="q-logo">@if(!empty($logoDataUri))<img src="{{ $logoDataUri }}" alt="{{ $tenant->name }}">@else{!! file_get_contents(resource_path('images/brand/kegos-logo.svg')) !!}@endif</td>
+        <td class="q-logo">{!! file_get_contents(resource_path('images/brand/kegos-logo.svg')) !!}</td>
         <td>
             <div class="q-doctype">{{ __('app.quote_pdf_title') }}</div>
             @if($quote->number)<div class="q-docno">{{ $quote->number }}</div>@endif

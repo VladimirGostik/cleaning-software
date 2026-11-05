@@ -195,6 +195,9 @@ final class InvoicePdfTest extends TestCase
 
         $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
 
+        $this->assertStringContainsString('viewBox="8 12 711.8 78"', $html);
+        $this->assertStringContainsString('height: 5mm', $html);
+        $this->assertStringContainsString('font-size: 14pt', $html);
         $this->assertStringContainsString('Hlavná 1', $html);
         $this->assertStringContainsString('811 01 Bratislava', $html);
         $this->assertStringContainsString('2012345678', $html);

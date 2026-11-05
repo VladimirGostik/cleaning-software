@@ -6,8 +6,8 @@
     h1, h2, h3 { font-weight: 600; letter-spacing: -0.02em; margin: 0; }
     .kg-header { width: 100%; }
     .kg-header td { vertical-align: bottom; padding: 0 0 5mm; }
-    .kg-logo svg { height: 12mm; width: auto; display: block; }
-    .kg-doc-title { text-align: right; font-size: 18pt; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+    .kg-logo svg { height: 5mm; width: auto; display: block; }
+    .kg-doc-title { text-align: right; font-size: 14pt; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
     .kg-rule { border-top: 3pt solid #FF5A1F; margin: 0 0 5mm; }
     .kg-label { font-size: 8.5pt; font-weight: 500; color: #5A6661; margin-bottom: 1mm; }
     .kg-name { font-size: 12pt; font-weight: 600; margin-bottom: 1mm; }

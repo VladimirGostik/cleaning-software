@@ -25,7 +25,13 @@ const MARKS: Record<Variant, string> = {
     mono: markMono,
 };
 
-const width = computed<number>(() => Math.round((props.size * (props.mark ? 84 : 342.4)) / 78));
+const WORDMARK_WIDTH = 711.8;
+const MARK_WIDTH = 84;
+const ART_HEIGHT = 78;
+
+const width = computed<number>(() =>
+    Math.round((props.size * (props.mark ? MARK_WIDTH : WORDMARK_WIDTH)) / ART_HEIGHT),
+);
 
 const src = computed<string>(() => {
     if (!props.mark) return LOGOS[props.variant];

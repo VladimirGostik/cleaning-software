@@ -12,14 +12,9 @@ use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Tenant;
 use App\Services\Documents\DocumentLocale;
-use App\Services\Pdf\TenantLogoResolver;
 use App\Services\QuoteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
-use Mockery;
 use Tests\TestCase;
 
 final class QuotePdfTest extends TestCase
@@ -195,9 +190,9 @@ final class QuotePdfTest extends TestCase
         );
     }
 
-    private function render(Quote $quote, Tenant $tenant, ?string $logo = null): string
+    private function render(Quote $quote, Tenant $tenant): string
     {
-        return app(DocumentLocale::class)->run(fn (): string => View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant, 'logoDataUri' => $logo])->render());
+        return app(DocumentLocale::class)->run(fn (): string => View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])->render());
     }
 
     private function text(string $html): string
@@ -303,41 +298,21 @@ final class QuotePdfTest extends TestCase
         $this->assertStringContainsString('DIČ: 2020905865', $text);
     }
 
-    public function test_default_quote_prints_kegos_logo_and_uploaded_logo_replaces_it(): void
+    public function test_default_quote_prints_the_system_logo(): void
     {
-        Storage::fake(config()->string('invoicing.logo.disk'));
         $tenant = Tenant::factory()->create();
         $quote = $this->makeQuote($tenant, $this->mixedItems());
 
-        $this->assertStringContainsString('aria-label="Kegos Clean"', $this->render($quote, $tenant));
+        $html = $this->render($quote, $tenant);
 
-        $tenant->addMedia(UploadedFile::fake()->image('logo.png', 120, 40))->toMediaCollection('logo');
-        $dataUri = app(TenantLogoResolver::class)->forTenant($tenant->refresh());
-
-        $this->assertNotNull($dataUri);
-        $html = $this->render($quote, $tenant, $dataUri);
-        $this->assertStringContainsString('<img src="data:image/png;base64,', $html);
-        $this->assertStringNotContainsString('aria-label="Kegos Clean"', $html);
+        $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
+        $this->assertStringContainsString('viewBox="8 12 711.8 78"', $html);
+        $this->assertStringNotContainsString('<img', $html);
     }
 
-    public function test_logo_of_another_tenant_is_never_resolved(): void
+    public function test_invoice_header_partial_prints_the_system_logo(): void
     {
-        Storage::fake(config()->string('invoicing.logo.disk'));
-        Log::shouldReceive('warning')->once()->with('quote.logo.tenant_mismatch', Mockery::type('array'));
-        $tenant = Tenant::factory()->create();
-        $other = Tenant::factory()->create();
-        $this->bindTenant($other);
-        $other->addMedia(UploadedFile::fake()->image('logo.png', 120, 40))->toMediaCollection('logo');
-        $foreign = $other->logoMedia();
-        $this->assertNotNull($foreign);
-        $foreign->forceFill(['tenant_id' => $tenant->id])->saveQuietly();
-
-        $this->assertNull(app(TenantLogoResolver::class)->forTenant($other->refresh()));
-    }
-
-    public function test_invoice_header_partial_never_prints_firm_logo(): void
-    {
-        $html = View::make('pdf.partials.kegos-header', ['documentType' => 'Faktúra', 'number' => '1', 'logoDataUri' => 'data:image/png;base64,AAAA'])->render();
+        $html = View::make('pdf.partials.kegos-header', ['documentType' => 'Faktúra', 'number' => '1'])->render();
 
         $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
         $this->assertStringNotContainsString('<img', $html);

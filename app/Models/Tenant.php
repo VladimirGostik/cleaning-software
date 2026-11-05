@@ -91,12 +91,6 @@ final class Tenant extends Model implements HasMedia
 
         $this->addMediaCollection('signature')
             ->useDisk(is_string($disk) ? $disk : 'local');
-
-        $logoDisk = config('invoicing.logo.disk', 'local');
-
-        $this->addMediaCollection('logo')
-            ->singleFile()
-            ->useDisk(is_string($logoDisk) ? $logoDisk : 'local');
     }
 
     public function getActivitylogOptions(): LogOptions
@@ -174,14 +168,6 @@ final class Tenant extends Model implements HasMedia
         return $this->belongsToMany(User::class, 'tenant_memberships')
             ->withPivot(['is_active', 'joined_at'])
             ->withTimestamps();
-    }
-
-    public function logoMedia(): ?Media
-    {
-        /** @var Media|null $media */
-        $media = $this->getFirstMedia('logo');
-
-        return $media;
     }
 
     /** @return BelongsTo<Media, $this> */

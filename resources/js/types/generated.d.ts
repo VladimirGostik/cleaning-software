@@ -1197,8 +1197,6 @@ readonly invoice_mail_subject: string | null,
 readonly invoice_mail_body: string | null,
 readonly peppol_participant_id: string | null,
 readonly representative_name: string | null,
-readonly logo_uuid: string | null,
-readonly remove_logo: boolean,
 readonly default_quote_included_text: string | null,
 readonly signing_place: string | null,
 };
@@ -1269,10 +1267,6 @@ readonly to: string,
 export type PohodaExportPreviewData = {
 readonly count: number,
 readonly skipped_non_eur: number,
-};
-export type TenantLogoConstraintsData = {
-readonly allowed_mimes: string[],
-readonly max_size_kb: number,
 };
 export type VatBreakdownLineData = {
 readonly rate: number,
@@ -1985,13 +1979,6 @@ readonly id: string,
 readonly name: string,
 readonly is_active: boolean,
 readonly color: App.Enums.TenantColorEnum | null,
-};
-export type TenantLogoData = {
-readonly url: string,
-readonly file_name: string,
-readonly mime_type: string,
-readonly size: number,
-readonly uploaded_at: string,
 };
 export type TenantSignatureData = {
 readonly url: string,

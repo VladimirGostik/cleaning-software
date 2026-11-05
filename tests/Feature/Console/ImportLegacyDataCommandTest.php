@@ -446,7 +446,6 @@ final class ImportLegacyDataCommandTest extends TestCase
         $existingTenant = $this->tenant('22222222');
         $existingTenant->forceFill(['contact_email' => 'own@example.com', 'name' => 'Configured Firm'])->save();
         app()->instance('current_tenant_id', $existingTenant->id);
-        $existingTenant->addMediaFromString('own-logo')->usingFileName('own.png')->toMediaCollection('logo');
         $this->interfaceOf($existingTenant)->forceFill(['default_header_text' => 'Own header'])->save();
         $existingTenant->forceFill(['representative_name' => 'Own Rep', 'signing_place' => 'Own Town', 'contact_phone' => '+421911111111'])->save();
         $this->interfaceOf($existingTenant)->forceFill([
@@ -474,28 +473,27 @@ final class ImportLegacyDataCommandTest extends TestCase
         $this->assertSame('Mail subject', $this->interfaceOf($target)->invoice_mail_subject);
         $this->assertSame('Mail body', $this->interfaceOf($target)->invoice_mail_body);
 
-        $copiedLogo = $target->logoMedia();
-        $this->assertNotNull($copiedLogo);
-        $this->assertSame($target->id, $copiedLogo->tenant_id);
         $this->assertNotNull($target->signature_media_id);
         $this->assertSame($target->id, $target->signatureMedia?->tenant_id);
         $this->assertNotSame($signature->id, $target->signature_media_id);
     }
 
-    public function test_existing_firm_keeps_filled_contact_and_own_logo(): void
+    public function test_existing_firm_keeps_filled_contact_and_own_signature(): void
     {
         $this->owner(ico: '77777770');
         $source = $this->tenant('77777770');
         $source->forceFill(['contact_email' => 'source@example.com', 'contact_phone' => '+421900000000'])->save();
         app()->instance('current_tenant_id', $source->id);
-        $source->addMediaFromString('source-logo')->usingFileName('source.png')->toMediaCollection('logo');
+        $sourceSignature = $source->addMediaFromString('source-sig')->usingFileName('source.png')->toMediaCollection('signature');
+        $source->update(['signature_media_id' => $sourceSignature->id]);
         app()->forgetInstance('current_tenant_id');
 
         $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
         $target = Tenant::create(['owner_id' => $owner->id, 'name' => 'Target Firm', 'ico' => '22222222', 'country' => 'SK', 'is_active' => true, 'contact_email' => 'own@example.com']);
         TenantMembership::create(['user_id' => $owner->id, 'tenant_id' => $target->id, 'is_active' => true, 'joined_at' => now()]);
         app()->instance('current_tenant_id', $target->id);
-        $target->addMediaFromString('own-logo')->usingFileName('own.png')->toMediaCollection('logo');
+        $ownSignature = $target->addMediaFromString('own-sig')->usingFileName('own.png')->toMediaCollection('signature');
+        $target->update(['signature_media_id' => $ownSignature->id]);
         app()->forgetInstance('current_tenant_id');
         $this->writeFile();
 
@@ -505,7 +503,7 @@ final class ImportLegacyDataCommandTest extends TestCase
         $target->refresh();
         $this->assertSame('own@example.com', $target->contact_email);
         $this->assertSame('+421900000000', $target->contact_phone);
-        $this->assertSame('own.png', $target->logoMedia()?->file_name);
+        $this->assertSame('own.png', $target->signatureMedia?->file_name);
     }
 
     public function test_copy_settings_media_is_skipped_on_dry_run_and_second_run(): void
@@ -513,7 +511,8 @@ final class ImportLegacyDataCommandTest extends TestCase
         $this->owner(ico: '77777770');
         $source = $this->tenant('77777770');
         app()->instance('current_tenant_id', $source->id);
-        $source->addMediaFromString('source-logo')->usingFileName('source.png')->toMediaCollection('logo');
+        $signature = $source->addMediaFromString('source-sig')->usingFileName('source.png')->toMediaCollection('signature');
+        $source->update(['signature_media_id' => $signature->id]);
         app()->forgetInstance('current_tenant_id');
         $this->writeFile();
 
@@ -663,7 +662,6 @@ final class ImportLegacyDataCommandTest extends TestCase
         $source = $this->tenant('77777770');
         $source->forceFill(['contact_email' => 'source@example.com'])->save();
         app()->instance('current_tenant_id', $source->id);
-        $source->addMediaFromString('logo-bytes')->usingFileName('logo.png')->toMediaCollection('logo');
         $signature = $source->addMediaFromString('sig-bytes')->usingFileName('sig.png')->toMediaCollection('signature');
         $source->update(['signature_media_id' => $signature->id]);
         app()->forgetInstance('current_tenant_id');
@@ -717,7 +715,8 @@ final class ImportLegacyDataCommandTest extends TestCase
         $this->owner(ico: '77777770');
         $source = $this->tenant('77777770');
         app()->instance('current_tenant_id', $source->id);
-        $source->addMediaFromString('logo-bytes')->usingFileName('logo.png')->toMediaCollection('logo');
+        $signature = $source->addMediaFromString('sig-bytes')->usingFileName('sig.png')->toMediaCollection('signature');
+        $source->update(['signature_media_id' => $signature->id]);
         app()->forgetInstance('current_tenant_id');
         $this->writeFile();
 
@@ -739,6 +738,21 @@ final class ImportLegacyDataCommandTest extends TestCase
         [$rerun] = $this->importLegacy(['--copy-settings-from' => '77777770']);
 
         $this->assertSame(0, $rerun);
-        $this->assertNotNull($this->tenant('22222222')->logoMedia());
+        $this->assertNotNull($this->tenant('22222222')->signature_media_id);
+    }
+
+    public function test_legacy_logo_media_is_not_copied(): void
+    {
+        $this->owner(ico: '77777770');
+        $source = $this->tenant('77777770');
+        app()->instance('current_tenant_id', $source->id);
+        $source->addMediaFromString('logo-bytes')->usingFileName('logo.png')->toMediaCollection('logo');
+        app()->forgetInstance('current_tenant_id');
+        $this->writeFile();
+
+        [$code] = $this->importLegacy(['--copy-settings-from' => '77777770']);
+
+        $this->assertSame(0, $code);
+        $this->assertSame(0, Media::query()->where('collection_name', 'logo')->where('model_id', '!=', $source->id)->count());
     }
 }

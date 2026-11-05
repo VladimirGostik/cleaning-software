@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Seeders;
 
+use App\Data\Tenants\AddTenantData;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Tenant;
@@ -111,6 +112,27 @@ final class LegacyImportSeederTest extends TestCase
         $beta = Tenant::query()->where('ico', '33333330')->firstOrFail();
         $this->assertSame('Invented footer', TenantInterface::query()->where('tenant_id', $beta->id)->value('default_footer_text'));
         $this->assertTrue(Tenant::query()->where('ico', '11111110')->firstOrFail()->owner?->hasActiveMembership($beta->id));
+    }
+
+    public function test_settings_source_prefers_a_firm_with_a_signature(): void
+    {
+        $alpha = $this->existingFirm();
+        TenantInterface::query()->where('tenant_id', $alpha->id)->update(['default_footer_text' => null]);
+        $owner = $alpha->owner;
+        $this->assertNotNull($owner);
+        $beta = app(RegistrationService::class)->addTenant($owner, new AddTenantData(name: 'Invented Beta', ico: '33333330'));
+        TenantInterface::query()->where('tenant_id', $beta->id)->update(['default_footer_text' => 'Beta footer']);
+        app()->instance('current_tenant_id', $beta->id);
+        $signature = $beta->addMediaFromString('sig-bytes')->usingFileName('sig.png')->toMediaCollection('signature');
+        $beta->update(['signature_media_id' => $signature->id]);
+        app()->forgetInstance('current_tenant_id');
+        $this->encrypt();
+
+        $this->seed(LegacyImportSeeder::class);
+
+        $alpha->refresh();
+        $this->assertNotNull($alpha->signature_media_id);
+        $this->assertSame('Beta footer', TenantInterface::query()->where('tenant_id', $alpha->id)->value('default_footer_text'));
     }
 
     public function test_second_run_creates_nothing(): void

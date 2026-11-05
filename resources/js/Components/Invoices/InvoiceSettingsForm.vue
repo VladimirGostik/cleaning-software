@@ -50,8 +50,6 @@ interface InvoiceSettingsFormData {
     default_rounding_mode: App.Enums.RoundingModeEnum;
     signature_uuid: string | null;
     remove_signature: boolean;
-    logo_uuid: string | null;
-    remove_logo: boolean;
     default_quote_included_text: string | null;
     signing_place: string | null;
 }
@@ -61,12 +59,10 @@ const props = withDefaults(
         settings: App.Data.Invoices.InvoiceSettingsData;
         signature: App.Data.Tenants.TenantSignatureData | null;
         signatureConstraints: App.Data.Invoices.InvoiceSignatureConstraintsData;
-        logo?: App.Data.Tenants.TenantLogoData | null;
-        logoConstraints?: App.Data.Invoices.TenantLogoConstraintsData | null;
         mailPlaceholders: App.Data.Invoices.InvoiceMailPlaceholderCatalogData;
         compact?: boolean;
     }>(),
-    { compact: false, logo: null, logoConstraints: null },
+    { compact: false },
 );
 
 const emit = defineEmits<{
@@ -80,8 +76,6 @@ const form = useForm<InvoiceSettingsFormData>('put', '/settings/invoicing', {
     ...props.settings,
     signature_uuid: null,
     remove_signature: false,
-    logo_uuid: null,
-    remove_logo: false,
 });
 
 form.transform((data: InvoiceSettingsFormData) => ({
@@ -115,18 +109,10 @@ const signatureImageIntent = computed<ImageIntent>(() =>
     fieldsToImageIntent(form.signature_uuid, form.remove_signature),
 );
 
-const logoIntent = computed<ImageIntent>(() => fieldsToImageIntent(form.logo_uuid, form.remove_logo));
-
 function onSignatureIntent(intent: ImageIntent): void {
     const fields = imageIntentToFields(intent);
     form.signature_uuid = fields.uuid;
     form.remove_signature = fields.remove;
-}
-
-function onLogoIntent(intent: ImageIntent): void {
-    const fields = imageIntentToFields(intent);
-    form.logo_uuid = fields.uuid;
-    form.remove_logo = fields.remove;
 }
 
 function submit(): void {
@@ -135,14 +121,10 @@ function submit(): void {
         onSuccess: () => {
             form.signature_uuid = null;
             form.remove_signature = false;
-            form.logo_uuid = null;
-            form.remove_logo = false;
             form.defaults({
                 ...form.data(),
                 signature_uuid: null,
                 remove_signature: false,
-                logo_uuid: null,
-                remove_logo: false,
             });
             emit('saved');
         },
@@ -173,14 +155,9 @@ function submit(): void {
                 />
 
                 <InvoiceSettingsQuoteCard
-                    v-if="logoConstraints"
+                    v-if="!compact"
                     v-model:included-text="form.default_quote_included_text"
-                    :logo="logo"
-                    :constraints="logoConstraints"
-                    :intent="logoIntent"
-                    :logo-error="form.errors.logo_uuid"
                     :included-error="form.errors.default_quote_included_text"
-                    @update:intent="onLogoIntent"
                 />
 
                 <InvoiceSettingsDefaultsCard :compact="compact" />

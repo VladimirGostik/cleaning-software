@@ -58,12 +58,6 @@ final readonly class InvoiceSettingsService
                 $tenant->update(['signature_media_id' => null]);
             }
 
-            if ($data->logo_uuid !== null) {
-                $this->uploads->moveToModel($tenant, 'logo', $data->logo_uuid, $actor, $sessionId);
-            } elseif ($data->remove_logo) {
-                $tenant->clearMediaCollection('logo');
-            }
-
             $interfaceFields = [
                 'recurring_default_state' => $data->recurring_default_state,
                 'default_constant_symbol' => $data->default_constant_symbol,
@@ -136,12 +130,6 @@ final readonly class InvoiceSettingsService
 
     public function copyMissingMedia(Tenant $source, Tenant $target): void
     {
-        $logo = $source->logoMedia();
-
-        if ($logo !== null && $target->logoMedia() === null) {
-            $logo->copy($target, 'logo', $this->diskFor('invoicing.logo.disk'));
-        }
-
         $signature = $source->signatureMedia;
 
         if ($signature !== null && $target->signature_media_id === null) {

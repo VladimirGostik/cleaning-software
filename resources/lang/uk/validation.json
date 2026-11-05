@@ -356,8 +356,6 @@
     "attributes.billing_postal_code": "платіжний поштовий індекс",
     "attributes.items.*.billing_period": "період оплати",
     "attributes.included_text": "включено в ціну",
-    "attributes.logo_uuid": "логотип",
-    "attributes.remove_logo": "видалити логотип",
     "attributes.default_quote_included_text": "типовий текст «У ціну включено»",
     "attributes.signing_place": "місце підписання",
     "attributes.billing_period": "період оплати",

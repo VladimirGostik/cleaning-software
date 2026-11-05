@@ -17,16 +17,11 @@
 <body>
 <div class="wrapper">
     <div class="header">
-        <img src="{{ isset($message) ? $message->embed(public_path('images/kegos-logo-email.png')) : asset('images/kegos-logo-email.png') }}" alt="Kegos Clean" width="180" style="display:block; width:180px; height:auto;" />
+        <img src="{{ isset($message) ? $message->embed(public_path('images/kegos-logo-email.png')) : asset('images/kegos-logo-email.png') }}" alt="Kegos Clean" width="240" style="display:block; width:240px; height:auto;" />
         <h1>{{ __('app.invoice_mail_heading') }}</h1>
     </div>
     <div class="body">
-        @if($bodyText !== null)
         <p>{!! nl2br(e($bodyText)) !!}</p>
-        @else
-        <p>{{ __('app.invoice_mail_greeting', ['name' => $invoice->customer_name]) }}</p>
-        <p>{{ __('app.invoice_mail_body') }}</p>
-        @endif
 
         <div class="amount">{{ $invoice->currency->format((float) $invoice->total) }}</div>
 

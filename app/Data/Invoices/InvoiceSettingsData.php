@@ -89,9 +89,6 @@ final class InvoiceSettingsData extends Data
         public readonly ?string $peppol_participant_id = null,
         #[Nullable, Max(255)]
         public readonly ?string $representative_name = null,
-        #[Nullable]
-        public readonly ?string $logo_uuid = null,
-        public readonly bool $remove_logo = false,
         #[Nullable, Max(2000)]
         public readonly ?string $default_quote_included_text = null,
         #[Nullable, Max(100)]
@@ -132,8 +129,6 @@ final class InvoiceSettingsData extends Data
             invoice_mail_body: $interface?->invoice_mail_body,
             peppol_participant_id: $tenant->peppol_participant_id,
             representative_name: $tenant->representative_name,
-            logo_uuid: null,
-            remove_logo: false,
             default_quote_included_text: $interface?->default_quote_included_text,
             signing_place: $tenant->signing_place,
         );
@@ -149,14 +144,6 @@ final class InvoiceSettingsData extends Data
         /** @var list<string> $allowedMimes */
         $allowedMimes = array_values(array_filter(
             (array) config('invoicing.signature.allowed_mimes', []),
-            static fn (mixed $mime): bool => is_string($mime),
-        ));
-
-        $logoMaxSizeKb = config('invoicing.logo.max_size_kb', 1024);
-
-        /** @var list<string> $logoMimes */
-        $logoMimes = array_values(array_filter(
-            (array) config('invoicing.logo.allowed_mimes', []),
             static fn (mixed $mime): bool => is_string($mime),
         ));
 
@@ -176,17 +163,6 @@ final class InvoiceSettingsData extends Data
                 ),
             ],
             'remove_signature' => ['boolean'],
-            'logo_uuid' => [
-                'nullable', 'string', 'prohibited_if:remove_logo,1,true',
-                new OwnedTemporaryMedia,
-                new TemporaryMediaConstraints(
-                    $logoMimes,
-                    is_numeric($logoMaxSizeKb) ? (int) $logoMaxSizeKb : 1024,
-                    'app.quote_logo_invalid_type',
-                    'app.quote_logo_too_large',
-                ),
-            ],
-            'remove_logo' => ['boolean'],
             'default_quote_included_text' => ['nullable', 'string', 'max:2000'],
             'signing_place' => ['nullable', 'string', 'max:100'],
             'peppol_participant_id' => ['nullable', 'string', 'max:64', new PeppolParticipantId],

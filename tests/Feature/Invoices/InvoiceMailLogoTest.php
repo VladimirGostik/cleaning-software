@@ -54,5 +54,6 @@ final class InvoiceMailLogoTest extends TestCase
         $html = view('mail.invoice', ['invoice' => $invoice, 'bodyText' => null, 'mailSubject' => 'x'])->render();
 
         $this->assertStringContainsString('images/kegos-logo-email.png', $html);
+        $this->assertStringContainsString('width="240"', $html);
     }
 }

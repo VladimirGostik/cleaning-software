@@ -411,8 +411,7 @@ final readonly class LegacyImportService
             return false;
         }
 
-        return ($source->logoMedia() !== null && $target->logoMedia() === null)
-            || ($source->signature_media_id !== null && $target->signature_media_id === null);
+        return $source->signature_media_id !== null && $target->signature_media_id === null;
     }
 
     /**

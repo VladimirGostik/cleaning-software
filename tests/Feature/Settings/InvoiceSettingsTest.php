@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -103,8 +104,16 @@ final class InvoiceSettingsTest extends TestCase
         $response->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('Settings/Invoicing')
-                ->where('settings.name', $tenant->name),
+                ->where('settings.name', $tenant->name)
+                ->missing('logo')
+                ->missing('logo_constraints')
+                ->missing('settings.logo_uuid'),
         );
+    }
+
+    public function test_logo_route_is_gone(): void
+    {
+        $this->assertFalse(Route::has('settings.invoicing.logo'));
     }
 
     public function test_update_persists_settings(): void

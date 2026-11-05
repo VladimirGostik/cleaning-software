@@ -100,7 +100,7 @@ final class LegacyImportSeeder extends Seeder
         }
 
         foreach ($firms as $firm) {
-            if ($firm->logoMedia() !== null) {
+            if ($firm->signature_media_id !== null) {
                 return $firm;
             }
         }
