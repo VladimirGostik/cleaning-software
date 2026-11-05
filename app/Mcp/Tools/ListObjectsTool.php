@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
+use App\Enums\ObjectTypeEnum;
 use App\Models\CleaningObject;
 use App\Models\User;
 use App\Services\ObjectService;
@@ -51,7 +52,7 @@ final class ListObjectsTool extends ListTool
         return [
             ...$this->companyProperty($schema),
             'search' => $schema->string()->description('Object name, street or city contains.'),
-            'type' => $schema->string()->description('Object type.'),
+            'type' => $schema->string()->enum(array_map(fn (ObjectTypeEnum $case): string => $case->value, ObjectTypeEnum::cases()))->description('Object type.'),
             'client_id' => $schema->string()->format('uuid')->description('Only objects of this client.'),
             'is_active' => $schema->boolean()->description('true for active, false for deactivated objects.'),
             'city' => $schema->string()->description('City equals.'),

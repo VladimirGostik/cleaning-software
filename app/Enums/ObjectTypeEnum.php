@@ -12,6 +12,7 @@ enum ObjectTypeEnum: string
     case Office = 'office';
     case Apartment = 'apartment';
     case House = 'house';
+    case ResidentialBuilding = 'residential_building';
     case CommonAreas = 'common_areas';
 
     public function label(): string

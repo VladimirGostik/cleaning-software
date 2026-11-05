@@ -59,11 +59,11 @@ final readonly class RegistrationService
         });
     }
 
-    public function addTenant(User $user, AddTenantData $data): Tenant
+    public function addTenant(User $user, AddTenantData $data, ?Tenant $copyFrom = null): Tenant
     {
-        return $this->db->transaction(function () use ($user, $data): Tenant {
-            $source = $data->copy_settings ? $this->activeTenant() : null;
-            $color = $data->color ?? $source?->interface?->color;
+        return $this->db->transaction(function () use ($user, $data, $copyFrom): Tenant {
+            $source = $copyFrom ?? ($data->copy_settings ? $this->activeTenant() : null);
+            $color = $data->color ?? ($copyFrom === null ? $source?->interface?->color : null);
 
             $tenant = $this->bootstrapTenant($user, $data->name, $data->ico, $color, $data->toSupplierProfile());
 

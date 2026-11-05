@@ -363,6 +363,7 @@
     "object_type_office": "Kancelária",
     "object_type_apartment": "Byt",
     "object_type_house": "Dom",
+    "object_type_residential_building": "Bytový dom",
     "object_type_common_areas": "Spoločné priestory",
     "client_contact_invalid": "Kontaktná osoba nepatrí tomuto klientovi.",
     "client_contacts_multiple_primary": "Iba jedna kontaktná osoba môže byť hlavná.",

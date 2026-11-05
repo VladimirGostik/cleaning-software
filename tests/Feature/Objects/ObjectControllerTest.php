@@ -307,6 +307,17 @@ final class ObjectControllerTest extends TestCase
         ]);
     }
 
+    public function test_store_accepts_residential_building_type(): void
+    {
+        $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('objects.store'), $this->storePayload($client->id, ['type' => ObjectTypeEnum::ResidentialBuilding->value]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('objects', ['name' => 'Test Office', 'type' => 'residential_building']);
+    }
+
     public function test_store_activity_logged(): void
     {
         $tenant = $this->actingAsTenantUserWithObjectsFeature('Admin');

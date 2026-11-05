@@ -5,7 +5,13 @@
 
 export const CLIENT_TYPES: readonly App.Enums.ClientTypeEnum[] = ['corporate', 'private'];
 
-export const OBJECT_TYPES: readonly App.Enums.ObjectTypeEnum[] = ['office', 'apartment', 'house', 'common_areas'];
+export const OBJECT_TYPES: readonly App.Enums.ObjectTypeEnum[] = [
+    'office',
+    'apartment',
+    'house',
+    'residential_building',
+    'common_areas',
+];
 
 export function clientTypeKey(type: App.Enums.ClientTypeEnum): string {
     return `client_type_${type}`;

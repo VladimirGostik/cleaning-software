@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Invoices\InvoiceSettingsData;
+use App\Data\Tenants\TenantSupplierProfileData;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Eloquent\Model;
+use Throwable;
 
 final readonly class InvoiceSettingsService
 {
@@ -80,6 +83,93 @@ final readonly class InvoiceSettingsService
                 TenantInterface::create(array_merge(['tenant_id' => $tenant->id], $interfaceFields));
             }
         });
+    }
+
+    public function fillBlanks(Tenant $target, TenantSupplierProfileData $profile, ?Tenant $source): void
+    {
+        $this->db->transaction(function () use ($target, $profile, $source): void {
+            $values = [
+                'address_line' => $profile->address_line,
+                'city' => $profile->city,
+                'postal_code' => $profile->postal_code,
+                'dic' => $profile->dic,
+                'iban' => $profile->iban,
+            ];
+
+            if ($source !== null) {
+                $values += [
+                    'contact_email' => $source->contact_email,
+                    'contact_phone' => $source->contact_phone,
+                    'representative_name' => $source->representative_name,
+                    'signing_place' => $source->signing_place,
+                ];
+            }
+
+            $target->update($this->onlyBlankTargets($target, $values));
+
+            if ($source?->interface === null) {
+                return;
+            }
+
+            $interface = $target->interface ?? TenantInterface::create(['tenant_id' => $target->id]);
+
+            $interface->update($this->onlyBlankTargets($interface, [
+                'default_header_text' => $source->interface->default_header_text,
+                'default_footer_text' => $source->interface->default_footer_text,
+                'default_quote_included_text' => $source->interface->default_quote_included_text,
+                'invoice_mail_subject' => $source->interface->invoice_mail_subject,
+                'invoice_mail_body' => $source->interface->invoice_mail_body,
+            ]));
+        });
+    }
+
+    public function copyMissingMedia(Tenant $source, Tenant $target): void
+    {
+        $logo = $source->logoMedia();
+
+        if ($logo !== null && $target->logoMedia() === null) {
+            $logo->copy($target, 'logo', $this->diskFor('invoicing.logo.disk'));
+        }
+
+        $signature = $source->signatureMedia;
+
+        if ($signature !== null && $target->signature_media_id === null) {
+            $copy = $signature->copy($target, 'signature', $this->diskFor('invoicing.signature.disk'));
+
+            try {
+                $target->update(['signature_media_id' => $copy->id]);
+            } catch (Throwable $e) {
+                $copy->delete();
+
+                throw $e;
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, string|null>  $values
+     * @return array<string, string>
+     */
+    private function onlyBlankTargets(Model $target, array $values): array
+    {
+        $fill = [];
+
+        foreach ($values as $column => $value) {
+            $current = $target->getAttribute($column);
+
+            if ($value !== null && $value !== '' && ($current === null || (is_string($current) && trim($current) === ''))) {
+                $fill[$column] = $value;
+            }
+        }
+
+        return $fill;
+    }
+
+    private function diskFor(string $key): string
+    {
+        $disk = config($key, 'local');
+
+        return is_string($disk) ? $disk : 'local';
     }
 
     private function blankToNull(?string $value): ?string

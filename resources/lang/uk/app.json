@@ -363,6 +363,7 @@
     "object_type_office": "Офіс",
     "object_type_apartment": "Квартира",
     "object_type_house": "Будинок",
+    "object_type_residential_building": "Житловий будинок",
     "object_type_common_areas": "Спільні приміщення",
     "client_contact_invalid": "Ця контактна особа не належить клієнту.",
     "client_contacts_multiple_primary": "Лише одна контактна особа може бути основною.",

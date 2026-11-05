@@ -363,6 +363,7 @@
     "object_type_office": "Office",
     "object_type_apartment": "Apartment",
     "object_type_house": "House",
+    "object_type_residential_building": "Residential building",
     "object_type_common_areas": "Common areas",
     "client_contact_invalid": "This contact does not belong to the client.",
     "client_contacts_multiple_primary": "Only one contact can be marked as primary.",
