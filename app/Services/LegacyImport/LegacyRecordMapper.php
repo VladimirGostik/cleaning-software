@@ -7,6 +7,9 @@ namespace App\Services\LegacyImport;
 use App\Data\Tenants\TenantSupplierProfileData;
 use App\Enums\ClientTypeEnum;
 use App\Enums\ObjectTypeEnum;
+use App\Enums\RecurringFrequencyEnum;
+use Carbon\CarbonImmutable;
+use RuntimeException;
 
 final readonly class LegacyRecordMapper
 {
@@ -15,8 +18,6 @@ final readonly class LegacyRecordMapper
     public const string DEFAULT_CITY = 'Bratislava';
 
     private const string STAND_SUFFIX = '/\s*kont\.\s*stojisko\s*$/iu';
-
-    private const string HEADER_POSTAL_CITY = '/^\s*(\d{3})\s?(\d{2})\s+(.+?)\s*$/u';
 
     /**
      * @param  array<string, mixed>  $firm
@@ -87,14 +88,90 @@ final readonly class LegacyRecordMapper
 
     /**
      * @param  list<array<string, mixed>>  $templates
-     * @return list<array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, postal_code: ?string, billing_name: ?string}>
+     * @return list<array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, billing_name: ?string}>
      */
     public function objects(array $templates): array
+    {
+        return $this->plan($templates)['objects'];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, billing_name: ?string}>
+     */
+    public function manualObjects(array $rows): array
+    {
+        $objects = [];
+
+        foreach ($rows as $row) {
+            if (! $this->isImportedFirm($row)) {
+                continue;
+            }
+
+            $name = trim($this->text($row['object_name'] ?? null)) ?: trim($this->text($row['name'] ?? null));
+            $type = ObjectTypeEnum::tryFrom($this->text($row['object_type'] ?? null))
+                ?? throw new RuntimeException('manual recurring #'.$this->legacyId($row['id'] ?? null).': invalid object_type.');
+
+            $objects[] = [...$this->object($row, $name, $name, $type), 'merged_template_ids' => []];
+        }
+
+        return $objects;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $templates
+     * @param  list<array<string, mixed>>  $manual
+     * @return list<array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}>
+     */
+    public function recurringRows(array $templates, array $manual): array
+    {
+        $targets = $this->plan($templates)['targets'];
+        $rows = [];
+
+        foreach ($templates as $template) {
+            if (! $this->isImportedFirm($template)) {
+                continue;
+            }
+
+            $id = $this->legacyId($template['id']);
+            $name = trim($this->text($template['name'] ?? null));
+            $rows[] = $this->recurringRow($template, $id, $targets[$id] ?? $name, $name, false);
+        }
+
+        foreach ($manual as $row) {
+            if (! $this->isImportedFirm($row)) {
+                continue;
+            }
+
+            $name = trim($this->text($row['name'] ?? null));
+            $objectName = trim($this->text($row['object_name'] ?? null)) ?: $name;
+            $rows[] = $this->recurringRow($row, $this->legacyId($row['id'] ?? null), $objectName, $name, true);
+        }
+
+        return $rows;
+    }
+
+    /** @return array{year: int, last: int} */
+    public function legacyNumber(string $value): array
+    {
+        if (preg_match('/^(\d{4})(\d{4})$/', $value, $match) !== 1) {
+            throw new RuntimeException('Invalid legacy invoice number (expected YYYYNNNN).');
+        }
+
+        return ['year' => (int) $match[1], 'last' => (int) $match[2]];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $templates
+     * @return array{objects: list<array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, billing_name: ?string}>, targets: array<int, string>}
+     */
+    private function plan(array $templates): array
     {
         $objects = [];
         $index = [];
         $stands = [];
         $merged = [];
+        $targets = [];
 
         foreach ($templates as $template) {
             if (! $this->isImportedFirm($template)) {
@@ -112,6 +189,7 @@ final readonly class LegacyRecordMapper
 
             $index[$this->objectKey($template, $name)] ??= count($objects);
             $objects[] = $this->object($template, $name, $name, $this->houseType($name));
+            $targets[$this->legacyId($template['id'])] = $name;
         }
 
         foreach ($stands as [$template, $name, $base]) {
@@ -119,30 +197,98 @@ final readonly class LegacyRecordMapper
 
             if ($target !== null) {
                 $merged[$target][] = $this->legacyId($template['id']);
+                $targets[$this->legacyId($template['id'])] = $objects[$target]['name'];
 
                 continue;
             }
 
             $objects[] = $this->object($template, $name, $base, ObjectTypeEnum::CommonAreas);
+            $targets[$this->legacyId($template['id'])] = $name;
         }
 
-        return array_map(
-            fn (array $object, int $position): array => [...$object, 'merged_template_ids' => $merged[$position] ?? []],
-            $objects,
-            array_keys($objects),
-        );
+        return [
+            'objects' => array_map(
+                fn (array $object, int $position): array => [...$object, 'merged_template_ids' => $merged[$position] ?? []],
+                $objects,
+                array_keys($objects),
+            ),
+            'targets' => $targets,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $source
+     * @return array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}
+     */
+    private function recurringRow(array $source, int $ref, string $objectName, string $name, bool $manual): array
+    {
+        $items = [];
+
+        foreach (is_array($source['items'] ?? null) ? $source['items'] : [] as $item) {
+            if (is_array($item) && trim($this->text($item['name'] ?? null)) !== '') {
+                $items[] = [
+                    'description' => trim($this->text($item['name'])),
+                    'quantity' => is_numeric($item['quantity'] ?? null) ? (float) $item['quantity'] : 1.0,
+                    'unit_price' => is_numeric($item['price'] ?? null) ? (float) $item['price'] : 0.0,
+                ];
+            }
+        }
+
+        return [
+            'ref' => $ref,
+            'firm' => $this->legacyId($source['firm']),
+            'client' => $this->legacyId($source['client']),
+            'object_name' => $objectName,
+            'name' => $name,
+            'frequency' => $this->frequency($source['frequency'] ?? null, $ref, $manual),
+            'last_billed_month' => $this->billedMonth($source['last_billed_month'] ?? null),
+            'header_text' => $this->headerText($this->text($source['above'] ?? null), $this->text($source['services'] ?? null)),
+            'items' => $items,
+        ];
+    }
+
+    private function frequency(mixed $value, int $ref, bool $manual): RecurringFrequencyEnum
+    {
+        if (! $manual && ($value === null || $value === '')) {
+            return RecurringFrequencyEnum::Monthly;
+        }
+
+        return RecurringFrequencyEnum::tryFrom($this->text($value))
+            ?? throw new RuntimeException("recurring #{$ref}: invalid frequency.");
+    }
+
+    private function billedMonth(mixed $value): ?CarbonImmutable
+    {
+        if (! is_string($value) || preg_match('/^(\d{4})-(0[1-9]|1[0-2])$/', $value, $match) !== 1) {
+            return null;
+        }
+
+        return CarbonImmutable::createFromDate((int) $match[1], (int) $match[2], 1)->startOfDay();
+    }
+
+    private function headerText(string $above, string $services): ?string
+    {
+        $above = rtrim($above);
+        $services = trim($services);
+
+        if ($services !== '' && ! str_contains(mb_strtolower($above), mb_strtolower($services))) {
+            $above = $above === '' ? $services : $above."\n".$services;
+        }
+
+        return $above === '' ? null : $above;
     }
 
     /**
      * @param  list<array<string, mixed>>  $templates
      * @param  list<array<string, mixed>>  $firmClients2026
+     * @param  list<array<string, mixed>>  $manual
      * @return list<array{firm: int, client: int}>
      */
-    public function clientPairs(array $templates, array $firmClients2026): array
+    public function clientPairs(array $templates, array $firmClients2026, array $manual = []): array
     {
         $pairs = [];
 
-        foreach ([...$templates, ...$firmClients2026] as $row) {
+        foreach ([...$templates, ...$firmClients2026, ...$manual] as $row) {
             if (! $this->isImportedFirm($row)) {
                 continue;
             }
@@ -155,7 +301,7 @@ final readonly class LegacyRecordMapper
 
     /**
      * @param  array<string, mixed>  $template
-     * @return array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, postal_code: ?string, billing_name: ?string}
+     * @return array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, billing_name: ?string}
      */
     private function object(array $template, string $name, string $base, ObjectTypeEnum $type): array
     {
@@ -166,18 +312,6 @@ final readonly class LegacyRecordMapper
             $headers[$position] = is_string($value) && trim($value) !== '' ? trim($value) : null;
         }
 
-        $postal = null;
-        $city = self::DEFAULT_CITY;
-
-        foreach ($headers as $header) {
-            if ($header !== null && preg_match(self::HEADER_POSTAL_CITY, $header, $match) === 1) {
-                $postal = $match[1].' '.$match[2];
-                $city = $match[3];
-
-                break;
-            }
-        }
-
         return [
             'template_id' => $this->legacyId($template['id']),
             'merged_template_ids' => [],
@@ -186,8 +320,7 @@ final readonly class LegacyRecordMapper
             'name' => $name,
             'type' => $type,
             'street' => $this->street($base),
-            'city' => $city,
-            'postal_code' => $postal,
+            'city' => self::DEFAULT_CITY,
             'billing_name' => $this->billingName($headers),
         ];
     }

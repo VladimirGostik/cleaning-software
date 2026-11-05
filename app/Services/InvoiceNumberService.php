@@ -44,6 +44,28 @@ final readonly class InvoiceNumberService
         return $formatted;
     }
 
+    public function continueSeries(Tenant $tenant, int $year, int $lastNumber): bool
+    {
+        InvoiceNumberSequence::withoutGlobalScopes()->firstOrCreate(
+            ['tenant_id' => $tenant->id, 'year' => $year],
+            ['last_number' => 0],
+        );
+
+        $sequence = InvoiceNumberSequence::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->where('year', $year)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($sequence->last_number >= $lastNumber) {
+            return false;
+        }
+
+        $sequence->update(['last_number' => $lastNumber]);
+
+        return true;
+    }
+
     public function variableSymbol(string $number): ?string
     {
         $digits = preg_replace('/\D/', '', $number);

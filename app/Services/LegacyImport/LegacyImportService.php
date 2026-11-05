@@ -36,6 +36,7 @@ final readonly class LegacyImportService
         private InvoiceSettingsService $settings,
         private ToolContext $context,
         private LegacyRecordMapper $mapper,
+        private LegacyRecurringInvoiceImporter $recurringInvoices,
         private PermissionRegistrar $permissions,
     ) {}
 
@@ -104,9 +105,14 @@ final readonly class LegacyImportService
         /** @var array<int|string, mixed> $icDph */
         $icDph = is_array($payload['client_ic_dph'] ?? null) ? $payload['client_ic_dph'] : [];
 
+        /** @var list<array<string, mixed>> $manual */
+        $manual = is_array($payload['manual_recurring'] ?? null) ? array_values($payload['manual_recurring']) : [];
+        $lastNumbers = is_array($payload['last_invoice_number_2026'] ?? null) ? $payload['last_invoice_number_2026'] : [];
+
         $postalCodes = $this->postalCodeMap($payload);
-        $pairs = $this->mapper->clientPairs($templates, $firmClients);
-        $objects = $this->mapper->objects($templates);
+        $pairs = $this->mapper->clientPairs($templates, $firmClients, $manual);
+        $objects = [...$this->mapper->objects($templates), ...$this->mapper->manualObjects($manual)];
+        $recurringRows = $this->mapper->recurringRows($templates, $manual);
         $tenants = [];
 
         /** @var list<array<string, mixed>> $firms */
@@ -123,11 +129,14 @@ final readonly class LegacyImportService
             $tenants[$firmId] = $tenant;
             $source = $settingsSource?->is($tenant) === true ? null : $settingsSource;
 
-            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report, $postalCodes): void {
+            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report, $postalCodes, $recurringRows, $lastNumbers): void {
                 $this->settings->fillBlanks($tenant, $this->mapper->supplierProfile($firm), $source);
 
                 $clientIds = $this->importClients($firmId, $pairs, $legacyClients, $icDph, $report);
                 $this->importObjects($firmId, $objects, $clientIds, $postalCodes, $owner, $report);
+
+                $lastNumber = $lastNumbers[(string) $firmId] ?? null;
+                $this->recurringInvoices->import($firmId, $tenant, $recurringRows, is_string($lastNumber) ? $lastNumber : null, $report);
             });
         }
 
@@ -220,7 +229,7 @@ final readonly class LegacyImportService
     }
 
     /**
-     * @param  list<array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, postal_code: ?string, billing_name: ?string}>  $objects
+     * @param  list<array{template_id: int, merged_template_ids: list<int>, firm: int, client: int, name: string, type: ObjectTypeEnum, street: ?string, city: string, billing_name: ?string}>  $objects
      * @param  array<int, string|null>  $clientIds
      * @param  array<string, string>  $postalCodes
      */
@@ -232,9 +241,10 @@ final readonly class LegacyImportService
             }
 
             $clientId = $clientIds[$object['client']] ?? null;
+            $mappedPostalCode = $this->mappedPostalCode($object['name'], $postalCodes);
             $warnings = array_values(array_filter([
                 $object['billing_name'] === null ? 'no billing name' : null,
-                $object['postal_code'] === null ? 'no postal code' : null,
+                $mappedPostalCode === null ? 'no postal code' : null,
             ]));
 
             if ($clientId === null) {
@@ -244,12 +254,13 @@ final readonly class LegacyImportService
             }
 
             $existing = CleaningObject::withTrashed()
+                ->with('client')
                 ->whereRaw('lower(trim(name)) = lower(trim(?))', [$object['name']])
                 ->first();
 
             if ($existing !== null) {
                 $report->add('object', $object['template_id'], $firmId, 'existing', $object['name']);
-                $this->fillPostalCode($existing, $object['template_id'], $firmId, $postalCodes, $report);
+                $this->correctPostalCode($existing, $object['template_id'], $firmId, $postalCodes, $report);
             } else {
                 $data = $this->validated(ObjectUpsertData::class, [
                     'client_id' => $clientId,
@@ -257,7 +268,7 @@ final readonly class LegacyImportService
                     'name' => $object['name'],
                     'street' => $object['street'],
                     'city' => $object['city'],
-                    'postal_code' => $object['postal_code'] ?? $this->mappedPostalCode($object['name'], $postalCodes),
+                    'postal_code' => $mappedPostalCode,
                     'country' => 'SK',
                     'access_code' => null,
                     'key_box_code' => null,
@@ -273,7 +284,7 @@ final readonly class LegacyImportService
                 $created = $this->objects->create($data, $owner);
                 $report->add('object', $object['template_id'], $firmId, 'created', $object['name'], $warnings);
 
-                if ($object['postal_code'] === null && $created->postal_code !== null) {
+                if ($created->postal_code !== null) {
                     $report->add('postal_code', $object['template_id'], $firmId, 'filled', $object['name']);
                 }
             }
@@ -321,11 +332,9 @@ final readonly class LegacyImportService
     }
 
     /** @param  array<string, string>  $postalCodes */
-    private function fillPostalCode(CleaningObject $object, int $templateId, int $firmId, array $postalCodes, LegacyImportReport $report): void
+    private function correctPostalCode(CleaningObject $object, int $templateId, int $firmId, array $postalCodes, LegacyImportReport $report): void
     {
-        $raw = $postalCodes[mb_strtolower(trim($object->name))] ?? null;
-
-        if ($raw === null || trim((string) $object->postal_code) !== '') {
+        if (! isset($postalCodes[mb_strtolower(trim($object->name))])) {
             return;
         }
 
@@ -337,8 +346,27 @@ final readonly class LegacyImportService
             return;
         }
 
-        $this->objects->fillBlankPostalCode($object, $code);
-        $report->add('postal_code', $templateId, $firmId, 'filled', $object->name);
+        $current = $this->digits($object->postal_code);
+
+        if ($current === $this->digits($code)) {
+            return;
+        }
+
+        if ($current === '') {
+            $action = 'filled';
+        } elseif ($current === $this->digits($object->client?->postal_code)) {
+            $action = 'corrected';
+        } else {
+            return;
+        }
+
+        $this->objects->updatePostalCode($object, $code);
+        $report->add('postal_code', $templateId, $firmId, $action, $object->name);
+    }
+
+    private function digits(?string $value): string
+    {
+        return (string) preg_replace('/\D/', '', (string) $value);
     }
 
     /** @param  array<int, Tenant>  $tenants */

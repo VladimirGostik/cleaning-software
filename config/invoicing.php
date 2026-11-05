@@ -9,6 +9,10 @@ return [
 
     'default_due_days' => 14,
 
+    'issue_reminder' => [
+        'day' => 30,
+    ],
+
     'signature' => [
         'disk' => env('DOCUMENTS_DISK', 'local'),
         'max_size_kb' => 1024,

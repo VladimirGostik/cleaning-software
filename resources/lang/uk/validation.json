@@ -224,6 +224,7 @@
     "attributes.floor": "поверх",
     "attributes.footer_text": "текст нижнього колонтитула",
     "attributes.frequency": "періодичність",
+    "attributes.billed_month": "розрахунковий місяць",
     "attributes.from": "від",
     "attributes.has_app_access": "доступ до застосунку",
     "attributes.header_text": "текст верхнього колонтитула",

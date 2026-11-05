@@ -131,7 +131,7 @@ final class LegacyImportSeederTest extends TestCase
         $this->encrypt([...$this->payload(), 'object_postal_codes' => ['invented street č.1' => '82107']]);
 
         $this->artisanCommand('db:seed', ['--class' => LegacyImportSeeder::class])
-            ->expectsOutputToContain('Postal codes: 1 filled, 0 invalid.')
+            ->expectsOutputToContain('Postal codes: 1 filled, 0 corrected, 0 invalid. Firms with auto-issue default: 0.')
             ->assertSuccessful();
 
         $this->assertSame('821 07', CleaningObject::withoutGlobalScopes()->firstOrFail()->postal_code);

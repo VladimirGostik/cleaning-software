@@ -161,7 +161,7 @@ final class ImportLegacyDataCommandTest extends TestCase
         [$code, $output] = $this->importLegacy();
 
         $this->assertSame(0, $code);
-        $this->assertStringContainsString('Created: 3 firms, 5 clients, 5 objects.', $output);
+        $this->assertStringContainsString('Created: 3 firms, 5 clients, 5 objects, 0 recurring invoices, 0 drafts.', $output);
         $this->assertSame(4, Tenant::query()->count());
         $this->assertNull(Tenant::query()->where('ico', '55555550')->first());
 
@@ -260,8 +260,8 @@ final class ImportLegacyDataCommandTest extends TestCase
         $this->assertSame(ObjectTypeEnum::ResidentialBuilding, $house->type);
         $this->assertSame('Test Street 13,15', $house->street);
         $this->assertSame('Spoločenstvo vlastníkov bytov Test Street 13', $house->billing_name);
-        $this->assertSame('811 03', $house->postal_code);
-        $this->assertSame('Bratislava-Test', $house->city);
+        $this->assertNull($house->postal_code);
+        $this->assertSame('Bratislava', $house->city);
         $this->assertTrue($house->is_active);
 
         $office = $this->objectNamed('Kancelária Test');
@@ -276,8 +276,8 @@ final class ImportLegacyDataCommandTest extends TestCase
         $this->assertSame('Beta Street 7a', $bare->street);
 
         $kosice = $this->objectNamed('Beta Street č.1-3');
-        $this->assertSame('040 01', $kosice->postal_code);
-        $this->assertSame('Košice', $kosice->city);
+        $this->assertNull($kosice->postal_code);
+        $this->assertSame('Bratislava', $kosice->city);
     }
 
     public function test_second_run_creates_nothing(): void
@@ -290,7 +290,7 @@ final class ImportLegacyDataCommandTest extends TestCase
         [$code, $output] = $this->importLegacy();
 
         $this->assertSame(0, $code);
-        $this->assertStringContainsString('Created: 0 firms, 0 clients, 0 objects.', $output);
+        $this->assertStringContainsString('Created: 0 firms, 0 clients, 0 objects, 0 recurring invoices, 0 drafts.', $output);
         $this->assertSame($before, $this->counts());
     }
 
@@ -311,7 +311,6 @@ final class ImportLegacyDataCommandTest extends TestCase
         $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
         $this->writeFile($this->withPostalCodes([
             '  beta street č.7A ' => '821 07',
-            'Test Street č.13,15' => '999 99',
             'Kancelária Test' => '82107',
         ]));
         $before = Activity::query()->count();
@@ -319,15 +318,15 @@ final class ImportLegacyDataCommandTest extends TestCase
         [$code, $output] = $this->importLegacy();
 
         $this->assertSame(0, $code);
-        $this->assertStringContainsString('Postal codes filled: 2, skipped invalid: 0.', $output);
+        $this->assertStringContainsString('Postal codes filled: 2, corrected: 0, skipped invalid: 0.', $output);
         $this->assertSame('821 07', $this->objectNamed('Beta Street č.7a')->postal_code);
         $this->assertSame('821 07', $this->objectNamed('Kancelária Test')->postal_code);
-        $this->assertSame('811 03', $this->objectNamed('Test Street č.13,15')->postal_code);
+        $this->assertNull($this->objectNamed('Test Street č.13,15')->postal_code);
         $this->assertGreaterThan($before, Activity::query()->count());
 
         [, $output] = $this->importLegacy();
 
-        $this->assertStringContainsString('Postal codes filled: 0, skipped invalid: 0.', $output);
+        $this->assertStringContainsString('Postal codes filled: 0, corrected: 0, skipped invalid: 0.', $output);
     }
 
     public function test_postal_code_is_set_when_the_object_is_created(): void
@@ -337,7 +336,7 @@ final class ImportLegacyDataCommandTest extends TestCase
 
         [, $output] = $this->importLegacy();
 
-        $this->assertStringContainsString('Postal codes filled: 1, skipped invalid: 0.', $output);
+        $this->assertStringContainsString('Postal codes filled: 1, corrected: 0, skipped invalid: 0.', $output);
         $this->assertSame('821 07', $this->objectNamed('Beta Street č.7a')->postal_code);
     }
 
@@ -350,7 +349,7 @@ final class ImportLegacyDataCommandTest extends TestCase
 
         [, $output] = $this->importLegacy();
 
-        $this->assertStringContainsString('Postal codes filled: 0, skipped invalid: 2.', $output);
+        $this->assertStringContainsString('Postal codes filled: 0, corrected: 0, skipped invalid: 2.', $output);
         $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
     }
 
@@ -363,7 +362,7 @@ final class ImportLegacyDataCommandTest extends TestCase
 
         [, $output] = $this->importLegacy(['--dry-run' => true]);
 
-        $this->assertStringContainsString('Postal codes filled: 1, skipped invalid: 0.', $output);
+        $this->assertStringContainsString('Postal codes filled: 1, corrected: 0, skipped invalid: 0.', $output);
         $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
     }
 
@@ -375,7 +374,7 @@ final class ImportLegacyDataCommandTest extends TestCase
 
         [, $output] = $this->importLegacy();
 
-        $this->assertStringContainsString('Postal codes filled: 0, skipped invalid: 0.', $output);
+        $this->assertStringContainsString('Postal codes filled: 0, corrected: 0, skipped invalid: 0.', $output);
         $this->assertNull($this->objectNamed('Beta Street č.7a')->postal_code);
     }
 
@@ -389,7 +388,7 @@ final class ImportLegacyDataCommandTest extends TestCase
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('DRY RUN', $output);
-        $this->assertStringContainsString('Created: 3 firms, 5 clients, 5 objects.', $output);
+        $this->assertStringContainsString('Created: 3 firms, 5 clients, 5 objects, 0 recurring invoices, 0 drafts.', $output);
         $this->assertSame($before, $this->counts());
     }
 
@@ -404,7 +403,7 @@ final class ImportLegacyDataCommandTest extends TestCase
         [$code, $output] = $this->importLegacy();
 
         $this->assertSame(0, $code);
-        $this->assertStringContainsString('Created: 0 firms, 0 clients, 0 objects.', $output);
+        $this->assertStringContainsString('Created: 0 firms, 0 clients, 0 objects, 0 recurring invoices, 0 drafts.', $output);
         $this->assertSame($before, $this->counts());
     }
 

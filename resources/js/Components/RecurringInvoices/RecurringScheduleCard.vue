@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n';
 import CheckIcon from '~icons/material-symbols/check-outline-rounded';
 import { formatDate, formatDatetime } from '@/utils/date';
-import { recurringFrequencyKey } from '@/utils/enums';
+import { recurringBilledMonthKey, recurringFrequencyKey } from '@/utils/enums';
 
 const props = defineProps<{
     recurringInvoice: App.Data.RecurringInvoices.RecurringInvoiceDetailData;
@@ -24,6 +24,10 @@ const { t } = useI18n();
                 <div>
                     <p class="text-xs text-base-content/50">{{ t('recurring_invoice_day_of_month') }}</p>
                     <p>{{ props.recurringInvoice.day_of_month }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/50">{{ t('recurring_invoice_billed_month') }}</p>
+                    <p>{{ t(recurringBilledMonthKey(props.recurringInvoice.billed_month)) }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-base-content/50">{{ t('recurring_invoice_next_run') }}</p>

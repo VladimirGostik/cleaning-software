@@ -22,7 +22,7 @@ final class NotificationPreferencesTest extends TestCase
 
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Settings/Notifications')
-            ->has('preferences.items', 12)
+            ->has('preferences.items', 13)
             ->where('preferences.items.2.type', 'invoice.overdue')
             ->where('preferences.items.2.mail', true)
             ->where('preferences.items.1.type', 'invoice.issued')
@@ -30,8 +30,8 @@ final class NotificationPreferencesTest extends TestCase
             ->where('preferences.items.1.mail', true)
             ->where('preferences.items.1.push', false)
             ->where('preferences.items.2.push', true)
-            ->where('preferences.items.8.type', 'task.due')
-            ->where('preferences.items.8.push', true));
+            ->where('preferences.items.9.type', 'task.due')
+            ->where('preferences.items.9.push', true));
     }
 
     public function test_update_requires_the_push_flag(): void
@@ -49,8 +49,8 @@ final class NotificationPreferencesTest extends TestCase
         $admin->update(['notification_preferences' => ['quote.sent' => ['mail' => false, 'push' => false]]]);
 
         $this->get(route('settings.notifications'))->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('preferences.items.5.type', 'quote.sent')
-            ->where('preferences.items.5.push', false));
+            ->where('preferences.items.6.type', 'quote.sent')
+            ->where('preferences.items.6.push', false));
     }
 
     public function test_update_merges_preferences_and_preserves_untouched_keys(): void

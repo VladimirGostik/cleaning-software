@@ -32,6 +32,8 @@ import {
     PAYMENT_TYPES,
     paymentTypeKey,
     RECURRING_FREQUENCIES,
+    RECURRING_BILLED_MONTHS,
+    recurringBilledMonthKey,
     recurringDefaultStateKey,
     recurringFrequencyKey,
     ROUNDING_MODES,
@@ -47,6 +49,7 @@ interface RecurringInvoiceFormData {
     type: App.Enums.InvoiceTypeEnum;
     frequency: App.Enums.RecurringFrequencyEnum;
     day_of_month: number;
+    billed_month: App.Enums.RecurringBilledMonthEnum;
     auto_issue: boolean;
     auto_send: boolean;
     start_date: string;
@@ -123,6 +126,7 @@ function initialData(): RecurringInvoiceFormData {
             type: ri.type,
             frequency: ri.frequency,
             day_of_month: ri.day_of_month,
+            billed_month: ri.billed_month,
             auto_issue: ri.auto_issue,
             auto_send: ri.auto_send,
             start_date: toDateInputValue(ri.start_date),
@@ -160,6 +164,7 @@ function initialData(): RecurringInvoiceFormData {
         type: 'monthly',
         frequency: prefill?.frequency ?? 'monthly',
         day_of_month: 1,
+        billed_month: 'none',
         auto_issue: false,
         auto_send: false,
         start_date: toDateInputValue(new Date()),
@@ -224,6 +229,9 @@ const totals = useInvoiceTotals(
 
 const typeOptions = computed<RadioOption[]>(() => enumOptions(INVOICE_TYPES, invoiceTypeKey, t));
 const frequencyOptions = computed<SelectOption[]>(() => enumOptions(RECURRING_FREQUENCIES, recurringFrequencyKey, t));
+const billedMonthOptions = computed<SelectOption[]>(() =>
+    enumOptions(RECURRING_BILLED_MONTHS, recurringBilledMonthKey, t),
+);
 const paymentTypeOptions = computed<SelectOption[]>(() => enumOptions(PAYMENT_TYPES, paymentTypeKey, t));
 const currencyOptions = computed<SelectOption[]>(() => enumOptions(CURRENCIES, currencyKey, t));
 const roundingModeOptions = computed<SelectOption[]>(() => enumOptions(ROUNDING_MODES, roundingModeKey, t));
@@ -322,6 +330,17 @@ function submit(): void {
                                     callValidate(form, 'day_of_month');
                                 "
                             />
+
+                            <div>
+                                <SelectInput
+                                    field="billed_month"
+                                    :label="t('recurring_invoice_billed_month')"
+                                    :options="billedMonthOptions"
+                                />
+                                <p class="mt-1 text-sm text-base-content/60">
+                                    {{ t('recurring_invoice_billed_month_hint') }}
+                                </p>
+                            </div>
 
                             <DateInput
                                 :model-value="form.start_date"

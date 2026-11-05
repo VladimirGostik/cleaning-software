@@ -85,6 +85,17 @@ final readonly class InvoiceSettingsService
         });
     }
 
+    public function adoptNumberFormat(Tenant $tenant, string $format): bool
+    {
+        if ($tenant->refresh()->invoice_number_format !== config('invoicing.default_number_format')) {
+            return false;
+        }
+
+        $tenant->update(['invoice_number_format' => $format]);
+
+        return true;
+    }
+
     public function fillBlanks(Tenant $target, TenantSupplierProfileData $profile, ?Tenant $source): void
     {
         $this->db->transaction(function () use ($target, $profile, $source): void {

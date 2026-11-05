@@ -1538,6 +1538,7 @@ readonly id: string,
 readonly name: string,
 readonly status: App.Enums.RecurringInvoiceStatusEnum,
 readonly frequency: App.Enums.RecurringFrequencyEnum,
+readonly billed_month: App.Enums.RecurringBilledMonthEnum,
 readonly client_id: string | null,
 readonly customer_name: string | null,
 readonly customer_display_name: string | null,
@@ -1644,6 +1645,7 @@ readonly auto_send: boolean,
 readonly payment_type: App.Enums.PaymentTypeEnum,
 readonly currency: App.Enums.CurrencyEnum,
 readonly rounding_mode: App.Enums.RoundingModeEnum,
+readonly billed_month: App.Enums.RecurringBilledMonthEnum,
 };
 }
 namespace Schedule {
@@ -2021,7 +2023,7 @@ export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "complete
 export type JobTypeEnum = "regular" | "one_off" | "special";
 export type MobileSessionRevokeReasonEnum = "logout" | "password_changed" | "password_reset" | "access_lost" | "reuse_detected" | "expired" | "membership_lost";
 export type NavIconEnum = "dashboard" | "buildings" | "team" | "clients" | "quotes" | "invoices" | "recurring_invoices" | "contracts" | "documents" | "schedule" | "tasks" | "expenses" | "notifications" | "notification_settings" | "pending_actions" | "users" | "roles" | "audit_logs" | "media" | "profile" | "invoice_settings" | "settings";
-export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned" | "task.commented" | "task.ai_run";
+export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "invoice.issue_reminder" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned" | "task.commented" | "task.ai_run";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "residential_building" | "common_areas";
 export type PaymentSourceEnum = "manual" | "bank_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
@@ -2031,6 +2033,7 @@ export type PermissionEnum = "view employees" | "create employees" | "edit emplo
 export type QuoteBillingPeriodEnum = "one_off" | "monthly" | "quarterly" | "yearly";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";
+export type RecurringBilledMonthEnum = "none" | "current" | "previous";
 export type RecurringDefaultStateEnum = "draft" | "issued";
 export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" | "semi_annually" | "annually";
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";

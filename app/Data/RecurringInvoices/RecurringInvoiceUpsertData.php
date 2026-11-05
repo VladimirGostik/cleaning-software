@@ -7,6 +7,7 @@ namespace App\Data\RecurringInvoices;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
+use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RoundingModeEnum;
 use App\Rules\ObjectBelongsToClient;
@@ -89,6 +90,7 @@ final class RecurringInvoiceUpsertData extends Data
         public readonly PaymentTypeEnum $payment_type = PaymentTypeEnum::Transfer,
         public readonly CurrencyEnum $currency = CurrencyEnum::EUR,
         public readonly RoundingModeEnum $rounding_mode = RoundingModeEnum::None,
+        public readonly RecurringBilledMonthEnum $billed_month = RecurringBilledMonthEnum::None,
     ) {}
 
     /**
@@ -140,6 +142,7 @@ final class RecurringInvoiceUpsertData extends Data
             'payment_type' => ['required', Rule::enum(PaymentTypeEnum::class)],
             'currency' => ['required', Rule::enum(CurrencyEnum::class)],
             'rounding_mode' => ['required', Rule::enum(RoundingModeEnum::class)],
+            'billed_month' => ['sometimes', Rule::enum(RecurringBilledMonthEnum::class)],
         ];
     }
 

@@ -7,6 +7,7 @@ namespace App\Data\RecurringInvoices;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
+use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Enums\RoundingModeEnum;
@@ -24,6 +25,7 @@ final class RecurringInvoiceDetailData extends Data
         public readonly string $name,
         public readonly RecurringInvoiceStatusEnum $status,
         public readonly RecurringFrequencyEnum $frequency,
+        public readonly RecurringBilledMonthEnum $billed_month,
         public readonly ?string $client_id,
         public readonly ?string $customer_name,
         public readonly ?string $customer_display_name,
@@ -84,6 +86,7 @@ final class RecurringInvoiceDetailData extends Data
             name: $ri->name,
             status: $ri->status,
             frequency: $ri->frequency,
+            billed_month: $ri->billed_month,
             client_id: $ri->client_id,
             customer_name: $ri->customer_name,
             customer_display_name: $ri->cleaningObject->billing_name ?? $ri->client->name ?? $ri->cleaningObject?->client->name ?? $ri->customer_name,

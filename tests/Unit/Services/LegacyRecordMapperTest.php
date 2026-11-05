@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Services;
 
 use App\Enums\ObjectTypeEnum;
+use App\Enums\RecurringFrequencyEnum;
 use App\Services\LegacyImport\LegacyRecordMapper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class LegacyRecordMapperTest extends TestCase
 {
@@ -21,7 +23,7 @@ final class LegacyRecordMapperTest extends TestCase
     }
 
     /**
-     * @param  array<string, string>  $headers
+     * @param  array<string, mixed>  $headers
      * @return array<string, mixed>
      */
     private function template(int $id, string $name, array $headers = [], int $firm = 2, int $client = 1): array
@@ -205,20 +207,12 @@ final class LegacyRecordMapperTest extends TestCase
         $this->assertSame(255, mb_strlen((string) $object['billing_name']));
     }
 
-    public function test_postal_code_and_city_come_from_first_matching_header(): void
+    public function test_header_lines_never_set_postal_code_or_city(): void
     {
-        $object = $this->mapper->objects([$this->template(1, 'A', ['header1' => 'Owner', 'header2' => 'Street 1', 'header3' => '81101 Košice', 'header4' => '040 01 Other'])])[0];
+        $object = $this->mapper->objects([$this->template(1, 'A', ['header1' => 'Owner', 'header2' => 'Street 1', 'header3' => '81101 Košice'])])[0];
 
-        $this->assertSame('811 01', $object['postal_code']);
-        $this->assertSame('Košice', $object['city']);
-    }
-
-    public function test_default_city_without_matching_header(): void
-    {
-        $object = $this->mapper->objects([$this->template(1, 'A', ['header1' => 'Owner'])])[0];
-
+        $this->assertArrayNotHasKey('postal_code', $object);
         $this->assertSame('Bratislava', $object['city']);
-        $this->assertNull($object['postal_code']);
     }
 
     public function test_client_pairs_are_a_union_without_duplicates(): void
@@ -235,5 +229,98 @@ final class LegacyRecordMapperTest extends TestCase
     {
         $this->assertSame([], $this->mapper->objects([$this->template(1, 'A', firm: 99)]));
         $this->assertSame([], $this->mapper->clientPairs([], [['firm' => 99, 'client' => 1]]));
+    }
+
+    public function test_recurring_rows_target_the_house_for_a_merged_stand_and_the_own_object_for_a_standalone_stand(): void
+    {
+        $rows = $this->mapper->recurringRows([
+            $this->template(1, 'House č.1'),
+            $this->template(2, 'House č.1 kont. stojisko'),
+            $this->template(3, 'Lonely č.2 kont. stojisko'),
+        ], []);
+
+        $this->assertSame(['House č.1', 'House č.1', 'Lonely č.2 kont. stojisko'], array_column($rows, 'object_name'));
+        $this->assertSame(['House č.1', 'House č.1 kont. stojisko', 'Lonely č.2 kont. stojisko'], array_column($rows, 'name'));
+    }
+
+    public function test_recurring_row_texts_items_and_month(): void
+    {
+        $row = $this->mapper->recurringRows([$this->template(1, 'A', [
+            'above' => "Cleaning {mesiac/rok}\n\n", 'services' => 'Stairs',
+            'items' => [['name' => ' Cleaning ', 'quantity' => 1, 'price' => 30.5], ['name' => '', 'quantity' => 1, 'price' => 1]],
+            'last_billed_month' => '2026-09',
+        ])], [])[0];
+
+        $this->assertSame("Cleaning {mesiac/rok}\nStairs", $row['header_text']);
+        $this->assertSame([['description' => 'Cleaning', 'quantity' => 1.0, 'unit_price' => 30.5]], $row['items']);
+        $this->assertSame('2026-09-01', $row['last_billed_month']?->toDateString());
+        $this->assertSame(RecurringFrequencyEnum::Monthly, $row['frequency']);
+    }
+
+    public function test_services_already_in_above_are_not_repeated_and_blank_texts_become_null(): void
+    {
+        $contained = $this->mapper->recurringRows([$this->template(1, 'A', ['above' => 'Clean STAIRS monthly', 'services' => 'stairs'])], [])[0];
+        $blank = $this->mapper->recurringRows([$this->template(2, 'B', ['above' => " \n", 'services' => ''])], [])[0];
+
+        $this->assertSame('Clean STAIRS monthly', $contained['header_text']);
+        $this->assertNull($blank['header_text']);
+    }
+
+    public function test_invalid_or_missing_last_billed_month_is_null(): void
+    {
+        foreach ([null, '2026-13', '2026-9', 'abc'] as $value) {
+            $this->assertNull($this->mapper->recurringRows([$this->template(1, 'A', ['last_billed_month' => $value])], [])[0]['last_billed_month']);
+        }
+    }
+
+    public function test_manual_rows_keep_their_frequency_object_type_and_never_merge_stands(): void
+    {
+        $manual = [
+            ['id' => 5, 'firm' => 2, 'client' => 1, 'name' => 'Group kont.stojisko', 'object_name' => 'Group Object', 'object_type' => 'office', 'frequency' => 'every_2_months', 'last_billed_month' => '2026-08', 'items' => []],
+        ];
+
+        $objects = $this->mapper->manualObjects($manual);
+        $rows = $this->mapper->recurringRows([], $manual);
+
+        $this->assertSame('Group Object', $objects[0]['name']);
+        $this->assertSame(ObjectTypeEnum::Office, $objects[0]['type']);
+        $this->assertSame('Group Object', $rows[0]['object_name']);
+        $this->assertSame('Group kont.stojisko', $rows[0]['name']);
+        $this->assertSame(RecurringFrequencyEnum::EveryTwoMonths, $rows[0]['frequency']);
+        $this->assertSame([['firm' => 2, 'client' => 1]], $this->mapper->clientPairs([], [], $manual));
+    }
+
+    public function test_manual_row_with_an_unknown_object_type_throws(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $this->mapper->manualObjects([['id' => 5, 'firm' => 2, 'client' => 1, 'name' => 'X', 'object_type' => 'castle']]);
+    }
+
+    public function test_legacy_number_is_parsed_and_a_bad_shape_throws(): void
+    {
+        $this->assertSame(['year' => 2026, 'last' => 41], $this->mapper->legacyNumber('20260041'));
+
+        $this->expectException(RuntimeException::class);
+        $this->mapper->legacyNumber('2026-41');
+    }
+
+    public function test_manual_row_without_or_with_an_unknown_frequency_throws_but_a_template_defaults_to_monthly(): void
+    {
+        $manual = ['id' => 5, 'firm' => 2, 'client' => 1, 'name' => 'X', 'items' => []];
+
+        $this->assertSame(RecurringFrequencyEnum::Monthly, $this->mapper->recurringRows([$this->template(1, 'A')], [])[0]['frequency']);
+
+        foreach ([$manual, [...$manual, 'frequency' => 'weekly']] as $row) {
+            try {
+                $this->mapper->recurringRows([], [$row]);
+                $this->fail('Expected an invalid frequency to throw.');
+            } catch (RuntimeException $e) {
+                $this->assertStringContainsString('recurring #5', $e->getMessage());
+            }
+        }
+
+        $this->expectException(RuntimeException::class);
+        $this->mapper->recurringRows([$this->template(2, 'B', ['frequency' => 'weekly'])], []);
     }
 }

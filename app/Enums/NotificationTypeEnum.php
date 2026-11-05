@@ -12,6 +12,7 @@ enum NotificationTypeEnum: string
     case InvitationCreated = 'invitation.created';
     case InvoiceIssued = 'invoice.issued';
     case InvoiceOverdue = 'invoice.overdue';
+    case InvoiceIssueReminder = 'invoice.issue_reminder';
     case ContractExpiring = 'contract.expiring';
     case ContractExpired = 'contract.expired';
     case QuoteSent = 'quote.sent';
@@ -30,7 +31,7 @@ enum NotificationTypeEnum: string
     /** Whether mail delivery is on by default when the user has no stored preference. */
     public function defaultMailEnabled(): bool
     {
-        return $this === self::InvoiceOverdue;
+        return in_array($this, [self::InvoiceOverdue, self::InvoiceIssueReminder], true);
     }
 
     /** Whether the user may toggle mail delivery for this type in Settings. */

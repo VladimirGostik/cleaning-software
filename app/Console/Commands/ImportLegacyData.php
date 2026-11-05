@@ -141,21 +141,37 @@ final class ImportLegacyData extends Command
             $report->count('object', 'merged', $firm),
             $report->count('object', 'skipped', $firm),
             $report->count('media', 'copied', $firm) + $report->count('media', 'would_copy', $firm),
+            $report->count('recurring', 'created', $firm),
+            $report->count('recurring', 'existing', $firm),
+            $report->count('recurring', 'skipped', $firm),
+            $report->count('draft', 'created', $firm),
+            $report->count('postal_code', 'corrected', $firm),
+            $report->count('numbering', 'raised', $firm),
+            $report->count('number_format', 'set', $firm).'/'.$report->count('number_format', 'kept', $firm),
         ], $report->firms());
 
         $this->table(
-            ['Firm #', 'Firm new', 'Firm existing', 'Clients new', 'Clients existing', 'Objects new', 'Objects existing', 'Merged', 'Skipped', 'Media'],
+            ['Firm #', 'Firm new', 'Firm existing', 'Clients new', 'Clients existing', 'Objects new', 'Objects existing', 'Merged', 'Skipped', 'Media', 'Recurring new', 'Recurring existing', 'Recurring skipped', 'Drafts new', 'Postal corrected', 'Numbering raised', 'Format set/kept'],
             $perFirm,
         );
 
         $this->info(sprintf(
-            'Created: %d firms, %d clients, %d objects. Postal codes filled: %d, skipped invalid: %d.',
+            'Created: %d firms, %d clients, %d objects, %d recurring invoices, %d drafts. Postal codes filled: %d, corrected: %d, skipped invalid: %d.',
             $report->count('firm', 'created'),
             $report->count('client', 'created'),
             $report->count('object', 'created'),
+            $report->count('recurring', 'created'),
+            $report->count('draft', 'created'),
             $report->count('postal_code', 'filled'),
+            $report->count('postal_code', 'corrected'),
             $report->count('postal_code', 'invalid'),
         ));
+
+        $issuedFirms = $report->count('auto_issue_firm', 'issued_default');
+
+        if ($issuedFirms > 0) {
+            $this->warn(sprintf('%d imported firm(s) have recurring_default_state = issued: generated recurring invoices will be auto-issued.', $issuedFirms));
+        }
 
         $warnings = [];
 

@@ -9,6 +9,7 @@ use App\Concerns\HasUuids;
 use App\Enums\CurrencyEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
+use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Enums\RoundingModeEnum;
@@ -31,6 +32,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $name
  * @property RecurringInvoiceStatusEnum $status
  * @property RecurringFrequencyEnum $frequency
+ * @property RecurringBilledMonthEnum $billed_month
  * @property InvoiceTypeEnum $type
  * @property PaymentTypeEnum $payment_type
  * @property CurrencyEnum $currency
@@ -57,6 +59,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'name',
     'type',
     'frequency',
+    'billed_month',
     'day_of_month',
     'status',
     'auto_issue',
@@ -92,6 +95,9 @@ final class RecurringInvoice extends Model
     /** @use HasFactory<RecurringInvoiceFactory> */
     use BelongsToTenant, HasFactory, HasUuids, LogsActivity, SoftDeletes;
 
+    /** @var array<string, string> */
+    protected $attributes = ['billed_month' => 'none'];
+
     /**
      * @return array<string, string>
      */
@@ -100,6 +106,7 @@ final class RecurringInvoice extends Model
         return [
             'type' => InvoiceTypeEnum::class,
             'frequency' => RecurringFrequencyEnum::class,
+            'billed_month' => RecurringBilledMonthEnum::class,
             'status' => RecurringInvoiceStatusEnum::class,
             'payment_type' => PaymentTypeEnum::class,
             'currency' => CurrencyEnum::class,
@@ -121,7 +128,7 @@ final class RecurringInvoice extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'frequency', 'next_run_at', 'occurrences_generated', 'auto_send'])
+            ->logOnly(['status', 'frequency', 'billed_month', 'next_run_at', 'occurrences_generated', 'auto_send'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

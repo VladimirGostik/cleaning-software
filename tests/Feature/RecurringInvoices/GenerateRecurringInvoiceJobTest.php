@@ -6,6 +6,7 @@ namespace Tests\Feature\RecurringInvoices;
 
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
@@ -20,6 +21,7 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -344,5 +346,107 @@ final class GenerateRecurringInvoiceJobTest extends TestCase
 
         Notification::assertNothingSent();
         $this->assertSame(InvoiceStatusEnum::Draft, Invoice::where('recurring_invoice_id', $ri->id)->firstOrFail()->status);
+    }
+
+    // -------------------------------------------------------------------------
+    // billed month
+    // -------------------------------------------------------------------------
+
+    /** @param  array<string, mixed>  $overrides */
+    private function createBilledTemplate(string $runDate, array $overrides = []): RecurringInvoice
+    {
+        $this->travelTo(Carbon::parse($runDate.' 10:00'));
+
+        return $this->createDueTemplate(array_merge([
+            'billed_month' => RecurringBilledMonthEnum::Previous,
+            'day_of_month' => 1,
+            'next_run_at' => $runDate,
+            'due_days' => 30,
+            'header_text' => 'Cleaning for {mesiac/rok}',
+            'footer_text' => 'Footer {mesiac/rok}',
+            'note' => 'Note {mesiac/rok}',
+        ], $overrides));
+    }
+
+    public function test_previous_billed_month_sets_period_dates_and_replaces_the_token(): void
+    {
+        $ri = $this->createBilledTemplate('2026-12-01');
+        RecurringInvoiceItem::query()->where('recurring_invoice_id', $ri->id)->update(['description' => 'Cleaning {mesiac/rok}']);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $invoice = Invoice::query()->where('recurring_invoice_id', $ri->id)->with('items')->firstOrFail();
+        $this->assertSame('2026-11-01', $invoice->period_from?->toDateString());
+        $this->assertSame('2026-11-30', $invoice->period_to?->toDateString());
+        $this->assertSame('2026-11-30', $invoice->delivery_date->toDateString());
+        $this->assertSame('2026-12-01', $invoice->issue_date->toDateString());
+        $this->assertSame('2026-12-31', $invoice->due_date->toDateString());
+        $this->assertSame('Cleaning for 11/2026', $invoice->header_text);
+        $this->assertSame('Footer 11/2026', $invoice->footer_text);
+        $this->assertSame('Note 11/2026', $invoice->note);
+        $this->assertSame('Cleaning 11/2026', $invoice->items->firstOrFail()->description);
+        $this->assertSame(InvoiceStatusEnum::Draft, $invoice->status);
+    }
+
+    public function test_previous_billed_month_of_march_is_february_in_a_normal_and_a_leap_year(): void
+    {
+        $ri = $this->createBilledTemplate('2027-03-01');
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+        $this->assertSame('2027-02-28', Invoice::query()->where('recurring_invoice_id', $ri->id)->firstOrFail()->period_to?->toDateString());
+
+        $leap = $this->createBilledTemplate('2028-03-01');
+        GenerateRecurringInvoiceJob::dispatchSync($leap->id);
+        $this->assertSame('2028-02-29', Invoice::query()->where('recurring_invoice_id', $leap->id)->firstOrFail()->period_to?->toDateString());
+    }
+
+    public function test_late_run_bills_the_month_of_next_run_at_not_of_today(): void
+    {
+        $ri = $this->createBilledTemplate('2026-12-01');
+        $this->travelTo(Carbon::parse('2026-12-04 10:00'));
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $invoice = Invoice::query()->where('recurring_invoice_id', $ri->id)->firstOrFail();
+        $this->assertSame('2026-11-01', $invoice->period_from?->toDateString());
+        $this->assertSame('2026-12-04', $invoice->issue_date->toDateString());
+    }
+
+    public function test_every_two_months_advances_two_months_but_bills_one_month(): void
+    {
+        $ri = $this->createBilledTemplate('2026-12-01', ['frequency' => RecurringFrequencyEnum::EveryTwoMonths]);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $invoice = Invoice::query()->where('recurring_invoice_id', $ri->id)->firstOrFail();
+        $this->assertSame('2026-11-01', $invoice->period_from?->toDateString());
+        $this->assertSame('2026-11-30', $invoice->period_to?->toDateString());
+        $this->assertSame('2027-02-01', $ri->refresh()->next_run_at?->toDateString());
+    }
+
+    public function test_billed_month_none_keeps_the_legacy_behaviour(): void
+    {
+        $ri = $this->createBilledTemplate('2026-12-01', ['billed_month' => RecurringBilledMonthEnum::None]);
+
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $invoice = Invoice::query()->where('recurring_invoice_id', $ri->id)->firstOrFail();
+        $this->assertNull($invoice->period_from);
+        $this->assertNull($invoice->period_to);
+        $this->assertSame('2026-12-01', $invoice->delivery_date->toDateString());
+        $this->assertSame('Cleaning for {mesiac/rok}', $invoice->header_text);
+    }
+
+    public function test_second_generation_for_the_same_billed_month_creates_nothing_even_after_the_draft_was_deleted(): void
+    {
+        $ri = $this->createBilledTemplate('2026-12-01', ['auto_issue' => true]);
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+        Invoice::query()->where('recurring_invoice_id', $ri->id)->firstOrFail()->delete();
+        $ri->refresh()->update(['next_run_at' => '2026-12-01']);
+        GenerateRecurringInvoiceJob::dispatchSync($ri->id);
+
+        $this->assertSame(1, Invoice::withTrashed()->where('recurring_invoice_id', $ri->id)->count());
+        $ri->refresh();
+        $this->assertSame('2027-01-01', $ri->next_run_at?->toDateString());
+        $this->assertSame(1, $ri->occurrences_generated);
     }
 }

@@ -224,6 +224,7 @@
     "attributes.floor": "floor",
     "attributes.footer_text": "footer text",
     "attributes.frequency": "frequency",
+    "attributes.billed_month": "billed month",
     "attributes.from": "from",
     "attributes.has_app_access": "app access",
     "attributes.header_text": "header text",

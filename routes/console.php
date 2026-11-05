@@ -11,6 +11,7 @@ use App\Console\Commands\GenerateScheduledJobs;
 use App\Console\Commands\MarkOverdueInvoices;
 use App\Console\Commands\PruneMobileSessions;
 use App\Console\Commands\PurgeTemporaryUploadsCommand;
+use App\Console\Commands\RemindInvoiceIssue;
 use App\Console\Commands\RemindTasks;
 use App\Enums\TaskReminderSlotEnum;
 use Illuminate\Console\Scheduling\Event;
@@ -30,6 +31,7 @@ $atSlovakHour = static fn (Event $event, int $hour): Event => $event
 $atSlovakHour(Schedule::command(PurgeTemporaryUploadsCommand::class), 12);
 $atSlovakHour(Schedule::command(MarkOverdueInvoices::class), 12);
 $atSlovakHour(Schedule::command(GenerateRecurringInvoices::class), 12);
+$atSlovakHour(Schedule::command(RemindInvoiceIssue::class), 12);
 $atSlovakHour(Schedule::command(ExpireQuotes::class), 12);
 $atSlovakHour(Schedule::command(CheckContractExpiry::class), 12);
 $atSlovakHour(Schedule::command(GenerateScheduledJobs::class), 12);

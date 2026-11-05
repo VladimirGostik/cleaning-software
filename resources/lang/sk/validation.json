@@ -224,6 +224,7 @@
     "attributes.floor": "podlažie",
     "attributes.footer_text": "text pätičky",
     "attributes.frequency": "frekvencia",
+    "attributes.billed_month": "fakturovaný mesiac",
     "attributes.from": "od",
     "attributes.has_app_access": "prístup do aplikácie",
     "attributes.header_text": "text hlavičky",

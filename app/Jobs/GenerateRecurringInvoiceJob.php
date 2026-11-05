@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
+use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\Tenant;
 use App\Scopes\TenantScope;
@@ -59,7 +60,9 @@ final class GenerateRecurringInvoiceJob implements ShouldBeUnique, ShouldQueue
             ->findOrFail($this->recurringInvoiceId);
 
         // Idempotency guard — state may have changed since dispatch
-        if (! $ri->isRunnable() || ! $ri->next_run_at?->lte(now()->startOfDay())) {
+        $runAt = $ri->next_run_at;
+
+        if (! $ri->isRunnable() || $runAt === null || ! $runAt->lte(now()->startOfDay())) {
             return;
         }
 
@@ -67,41 +70,25 @@ final class GenerateRecurringInvoiceJob implements ShouldBeUnique, ShouldQueue
         app()->instance('current_tenant_id', $ri->tenant_id);
         app(PermissionRegistrar::class)->setPermissionsTeamId($ri->tenant_id);
 
-        $db->transaction(function () use ($ri, $service, $invoiceService): void {
+        $db->transaction(function () use ($ri, $runAt, $service, $invoiceService): void {
             $invoice = $service->generateInvoiceFromTemplate($ri);
 
-            $tenantDefault = $service->resolveTenantDefaultState($ri->tenant_id);
-            $shouldAutoIssue = $ri->auto_issue || $tenantDefault === RecurringDefaultStateEnum::Issued;
-
-            $tenant = Tenant::withoutGlobalScopes()->findOrFail($ri->tenant_id);
-            $missingSupplierFields = $tenant->missingSupplierFields();
-
-            if ($shouldAutoIssue && $missingSupplierFields === []) {
-                $invoiceService->issue($invoice, new InvoiceIssueData(number: null), null);
-
-                if ($ri->auto_send) {
-                    if ($invoice->customer_email !== null) {
-                        $invoiceService->send($invoice);
-                    } else {
-                        Log::warning('recurring_invoice.auto_send.skipped_no_email', [
-                            'recurring_invoice_id' => $ri->id,
-                            'invoice_id' => $invoice->id,
-                            'tenant_id' => $ri->tenant_id,
-                        ]);
-                    }
-                }
-            } elseif ($shouldAutoIssue) {
-                Log::warning('recurring_invoice.auto_issue.skipped_supplier_incomplete', [
+            if ($invoice === null) {
+                Log::info('recurring_invoice.generate.skipped_existing_period', [
                     'recurring_invoice_id' => $ri->id,
                     'tenant_id' => $ri->tenant_id,
-                    'missing' => $missingSupplierFields,
                 ]);
+            } else {
+                $this->issueAndSend($ri, $invoice, $service, $invoiceService);
             }
 
             // Compute next_run_at from current next_run_at before refresh to avoid drift
-            $candidateNext = $ri->frequency->nextRunDate($ri->next_run_at, $ri->day_of_month);
+            $candidateNext = $ri->frequency->nextRunDate($runAt, $ri->day_of_month);
 
-            $ri->increment('occurrences_generated');
+            if ($invoice !== null) {
+                $ri->increment('occurrences_generated');
+            }
+
             $ri->refresh();
 
             if ($ri->hasReachedLimit() || $ri->hasReachedEndDate($candidateNext)) {
@@ -114,6 +101,37 @@ final class GenerateRecurringInvoiceJob implements ShouldBeUnique, ShouldQueue
             $ri->last_generated_at = now();
             $ri->save();
         });
+    }
+
+    private function issueAndSend(RecurringInvoice $ri, Invoice $invoice, RecurringInvoiceService $service, InvoiceService $invoiceService): void
+    {
+        $tenantDefault = $service->resolveTenantDefaultState($ri->tenant_id);
+        $shouldAutoIssue = $ri->auto_issue || $tenantDefault === RecurringDefaultStateEnum::Issued;
+
+        $tenant = Tenant::withoutGlobalScopes()->findOrFail($ri->tenant_id);
+        $missingSupplierFields = $tenant->missingSupplierFields();
+
+        if ($shouldAutoIssue && $missingSupplierFields === []) {
+            $invoiceService->issue($invoice, new InvoiceIssueData(number: null), null);
+
+            if ($ri->auto_send) {
+                if ($invoice->customer_email !== null) {
+                    $invoiceService->send($invoice);
+                } else {
+                    Log::warning('recurring_invoice.auto_send.skipped_no_email', [
+                        'recurring_invoice_id' => $ri->id,
+                        'invoice_id' => $invoice->id,
+                        'tenant_id' => $ri->tenant_id,
+                    ]);
+                }
+            }
+        } elseif ($shouldAutoIssue) {
+            Log::warning('recurring_invoice.auto_issue.skipped_supplier_incomplete', [
+                'recurring_invoice_id' => $ri->id,
+                'tenant_id' => $ri->tenant_id,
+                'missing' => $missingSupplierFields,
+            ]);
+        }
     }
 
     public function failed(?Throwable $e): void

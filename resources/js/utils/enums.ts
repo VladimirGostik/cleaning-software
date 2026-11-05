@@ -75,6 +75,8 @@ export const RECURRING_STATUSES: readonly App.Enums.RecurringInvoiceStatusEnum[]
     'cancelled',
 ];
 
+export const RECURRING_BILLED_MONTHS: readonly App.Enums.RecurringBilledMonthEnum[] = ['none', 'current', 'previous'];
+
 export const RECURRING_DEFAULT_STATES: readonly App.Enums.RecurringDefaultStateEnum[] = ['draft', 'issued'];
 
 export const QUOTE_STATUSES: readonly App.Enums.QuoteStatusEnum[] = [
@@ -113,6 +115,10 @@ export function recurringFrequencyKey(frequency: App.Enums.RecurringFrequencyEnu
 
 export function recurringStatusKey(status: App.Enums.RecurringInvoiceStatusEnum): string {
     return `recurring_status_${status}`;
+}
+
+export function recurringBilledMonthKey(month: App.Enums.RecurringBilledMonthEnum): string {
+    return `recurring_billed_month_${month}`;
 }
 
 export function recurringDefaultStateKey(state: App.Enums.RecurringDefaultStateEnum): string {

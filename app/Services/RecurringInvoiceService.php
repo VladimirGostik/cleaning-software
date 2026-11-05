@@ -8,18 +8,25 @@ use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Data\RecurringInvoices\RecurringInvoiceListItemData;
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
+use App\Enums\PermissionEnum;
+use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
+use App\Models\Tenant;
 use App\Models\TenantInterface;
+use App\Notifications\InvoiceIssueReminder;
+use App\Scopes\TenantScope;
 use App\Support\CustomerParty;
 use App\Utils\AllowedFilter;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -29,6 +36,7 @@ final readonly class RecurringInvoiceService
         private InvoiceService $invoices,
         private DocumentItemService $items,
         private DatabaseManager $db,
+        private NotificationRecipientResolver $recipients,
     ) {}
 
     /**
@@ -65,6 +73,7 @@ final readonly class RecurringInvoiceService
                 'name' => $data->name,
                 'type' => $data->type,
                 'frequency' => $data->frequency,
+                'billed_month' => $data->billed_month,
                 'day_of_month' => $data->day_of_month,
                 'status' => RecurringInvoiceStatusEnum::Active,
                 'auto_issue' => $data->auto_issue,
@@ -109,6 +118,7 @@ final readonly class RecurringInvoiceService
                 'name' => $data->name,
                 'type' => $data->type,
                 'frequency' => $data->frequency,
+                'billed_month' => $data->billed_month,
                 'day_of_month' => $data->day_of_month,
                 'auto_issue' => $data->auto_issue,
                 'auto_send' => $data->auto_send,
@@ -186,19 +196,28 @@ final readonly class RecurringInvoiceService
         $ri->delete();
     }
 
-    public function generateInvoiceFromTemplate(RecurringInvoice $ri): Invoice
+    public function generateInvoiceFromTemplate(RecurringInvoice $ri, ?CarbonImmutable $billedMonth = null): ?Invoice
     {
         $ri->loadMissing('items');
 
+        $billedMonth ??= $ri->billed_month->billedMonth($ri->next_run_at ?? now());
+
+        if ($billedMonth !== null && $this->periodAlreadyGenerated($ri, $billedMonth)) {
+            return null;
+        }
+
         $today = now()->toDateString();
         $dueDate = now()->addDays($ri->due_days)->toDateString();
+        $periodFrom = $billedMonth?->startOfMonth()->toDateString();
+        $periodTo = $billedMonth?->endOfMonth()->toDateString();
+        $label = $billedMonth === null ? null : RecurringBilledMonthEnum::formatMonth($billedMonth);
 
         $items = [];
         /** @var RecurringInvoiceItem $item */
         foreach ($ri->items as $item) {
             $items[] = InvoiceItemData::from([
                 'id' => null,
-                'description' => $item->description,
+                'description' => $this->replaceToken($item->description, $label) ?? $item->description,
                 'quantity' => (float) $item->quantity,
                 'unit' => $item->unit,
                 'unit_price' => (float) $item->unit_price,
@@ -215,20 +234,20 @@ final readonly class RecurringInvoiceService
             'cleaning_object_id' => $ri->cleaning_object_id,
             'type' => $ri->type->value,
             'issue_date' => $today,
-            'delivery_date' => $today,
+            'delivery_date' => $periodTo ?? $today,
             'due_date' => $dueDate,
-            'period_from' => null,
-            'period_to' => null,
+            'period_from' => $periodFrom,
+            'period_to' => $periodTo,
             ...CustomerParty::fromEntered($ri)->toEnteredAttributes(),
-            'note' => $ri->note,
+            'note' => $this->replaceToken($ri->note, $label),
             'deposit' => (float) $ri->deposit,
             'constant_symbol' => $ri->constant_symbol,
             'specific_symbol' => null,
             'payment_type' => $ri->payment_type->value,
             'currency' => $ri->currency->value,
             'rounding_mode' => $ri->rounding_mode->value,
-            'header_text' => $ri->header_text,
-            'footer_text' => $ri->footer_text,
+            'header_text' => $this->replaceToken($ri->header_text, $label),
+            'footer_text' => $this->replaceToken($ri->footer_text, $label),
             'items' => $items,
         ]);
 
@@ -236,6 +255,49 @@ final readonly class RecurringInvoiceService
         $invoice->update(['recurring_invoice_id' => $ri->id]);
 
         return $invoice;
+    }
+
+    private function periodAlreadyGenerated(RecurringInvoice $ri, CarbonImmutable $billedMonth): bool
+    {
+        return Invoice::withTrashed()
+            ->where('recurring_invoice_id', $ri->id)
+            ->whereDate('period_from', $billedMonth->startOfMonth()->toDateString())
+            ->exists();
+    }
+
+    private function replaceToken(?string $text, ?string $label): ?string
+    {
+        return $text === null || $label === null ? $text : str_replace(RecurringBilledMonthEnum::TOKEN, $label, $text);
+    }
+
+    public function sendIssueReminders(CarbonImmutable $today): int
+    {
+        $day = min(config()->integer('invoicing.issue_reminder.day'), $today->daysInMonth);
+
+        if ($today->day !== $day) {
+            return 0;
+        }
+
+        $month = RecurringBilledMonthEnum::formatMonth($today);
+        $sent = 0;
+
+        $tenants = Tenant::withoutGlobalScopes()->whereIn('id', RecurringInvoice::withoutGlobalScope(TenantScope::class)
+            ->where('status', RecurringInvoiceStatusEnum::Active->value)
+            ->where('billed_month', '!=', RecurringBilledMonthEnum::None->value)
+            ->select('tenant_id'))->get();
+
+        foreach ($tenants as $tenant) {
+            $users = $this->recipients->usersWithPermission($tenant->id, PermissionEnum::EditInvoices);
+
+            if ($users->isEmpty()) {
+                continue;
+            }
+
+            Notification::send($users, new InvoiceIssueReminder($tenant->id, $month, $tenant->name));
+            $sent++;
+        }
+
+        return $sent;
     }
 
     public function resolveTenantDefaultState(string $tenantId): RecurringDefaultStateEnum

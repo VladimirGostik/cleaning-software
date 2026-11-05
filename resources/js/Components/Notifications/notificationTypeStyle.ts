@@ -3,6 +3,7 @@ import type { StatusTone } from '@/Components/statusTone';
 export const NOTIFICATION_TYPE_STYLE: Record<App.Enums.NotificationTypeEnum, { tone: StatusTone; dot: string }> = {
     'invitation.created': { tone: 'neutral', dot: 'bg-base-300' },
     'invoice.issued': { tone: 'planned', dot: 'bg-primary' },
+    'invoice.issue_reminder': { tone: 'warning', dot: 'bg-warning' },
     'invoice.overdue': { tone: 'danger', dot: 'bg-error' },
     'contract.expiring': { tone: 'warning', dot: 'bg-warning' },
     'contract.expired': { tone: 'danger', dot: 'bg-error' },

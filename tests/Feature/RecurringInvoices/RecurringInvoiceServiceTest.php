@@ -6,6 +6,7 @@ namespace Tests\Feature\RecurringInvoices;
 
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
 use App\Enums\InvoiceTypeEnum;
+use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringFrequencyEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\CleaningObject;
@@ -82,6 +83,21 @@ final class RecurringInvoiceServiceTest extends TestCase
         $this->assertSame(RecurringInvoiceStatusEnum::Active, $ri->status);
         $this->assertNotNull($ri->next_run_at);
         $this->assertCount(1, $ri->items);
+    }
+
+    public function test_billed_month_defaults_to_none_and_is_stored_and_updated(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+
+        $default = $this->service->create($this->makeUpsertData());
+        $this->assertSame(RecurringBilledMonthEnum::None, $default->refresh()->billed_month);
+
+        $ri = $this->service->create($this->makeUpsertData(['billed_month' => 'previous']));
+        $this->assertSame(RecurringBilledMonthEnum::Previous, $ri->refresh()->billed_month);
+
+        $this->service->update($ri, $this->makeUpsertData(['billed_month' => 'current']));
+        $this->assertSame(RecurringBilledMonthEnum::Current, $ri->refresh()->billed_month);
     }
 
     public function test_create_with_future_start_date_uses_start_date_as_next_run(): void
@@ -477,6 +493,7 @@ final class RecurringInvoiceServiceTest extends TestCase
         $ri = $this->service->create($this->makeUpsertData($this->standaloneCustomer()));
 
         $invoice = $this->service->generateInvoiceFromTemplate($ri);
+        $this->assertNotNull($invoice);
 
         $row = Invoice::query()->findOrFail($invoice->id);
         $this->assertSame($ri->id, $row->recurring_invoice_id);
@@ -492,6 +509,7 @@ final class RecurringInvoiceServiceTest extends TestCase
         $ri = $this->service->create($this->makeUpsertData(['customer_country' => null]));
 
         $invoice = $this->service->generateInvoiceFromTemplate($ri);
+        $this->assertNotNull($invoice);
 
         $this->assertNull($ri->fresh()?->customer_country);
         $this->assertSame('SK', Invoice::query()->findOrFail($invoice->id)->customer_country);
@@ -518,6 +536,7 @@ final class RecurringInvoiceServiceTest extends TestCase
         ]));
 
         $invoice = $this->service->generateInvoiceFromTemplate($ri);
+        $this->assertNotNull($invoice);
 
         $row = Invoice::query()->findOrFail($invoice->id);
         $this->assertSame([

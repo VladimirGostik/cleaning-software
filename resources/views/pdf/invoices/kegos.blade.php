@@ -51,7 +51,7 @@
 @endif
 
 @if($invoice->header_text)
-<div class="muted" style="margin-bottom:5mm;">{{ $invoice->header_text }}</div>
+<div class="muted" style="margin-bottom:5mm; white-space:pre-line;">{{ $invoice->header_text }}</div>
 @endif
 
 <table class="parties">
