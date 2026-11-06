@@ -151,6 +151,31 @@ final readonly class LegacyRecordMapper
         return $rows;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array{ref: int, firm: int, object_name: string, name: string}>
+     */
+    public function retiredRows(array $rows): array
+    {
+        $retired = [];
+
+        foreach ($rows as $row) {
+            if (! $this->isImportedFirm($row)) {
+                continue;
+            }
+
+            $name = trim($this->text($row['name'] ?? null));
+            $retired[] = [
+                'ref' => $this->legacyId($row['id'] ?? null),
+                'firm' => $this->legacyId($row['firm']),
+                'object_name' => trim($this->text($row['object_name'] ?? null)) ?: $name,
+                'name' => $name,
+            ];
+        }
+
+        return $retired;
+    }
+
     /** @return array{year: int, last: int} */
     public function legacyNumber(string $value): array
     {

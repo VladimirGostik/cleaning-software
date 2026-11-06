@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Console;
 
+use App\Enums\InvoiceStatusEnum;
 use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringFrequencyEnum;
+use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Invoice;
 use App\Models\InvoiceNumberSequence;
@@ -36,21 +38,22 @@ final class ImportLegacyRecurringTest extends TestCase
 
     /**
      * @param  array<string, mixed>  $overrides
+     * @param  array<int, string>  $billedMonths  legacy id => last billed month
      * @return array<string, mixed>
      */
-    private function payload(array $overrides = []): array
+    private function payload(array $overrides = [], array $billedMonths = []): array
     {
         $template = fn (int $id, string $name, array $extra = []): array => [
             'id' => $id, 'firm' => 2, 'client' => 1, 'name' => $name,
             'header1' => 'Owner Association', 'header2' => null, 'header3' => '811 03 Elsewhere', 'header4' => null,
             'above' => "Cleaning for {mesiac/rok}\n\n", 'services' => 'Stairs and halls',
             'items' => [['name' => 'Regular cleaning', 'quantity' => 1, 'price' => 30.0]],
-            'last_billed_month' => '2026-09', ...$extra,
+            'last_billed_month' => $billedMonths[$id] ?? '2026-09', ...$extra,
         ];
         $manual = fn (int $id, string $name, string $frequency, string $last, array $extra = []): array => [
             'id' => $id, 'firm' => 2, 'client' => 1, 'name' => $name, 'object_type' => 'residential_building',
             'header1' => 'Manual Association', 'header2' => null, 'header3' => null, 'header4' => null,
-            'above' => 'Manual {mesiac/rok}', 'services' => '', 'frequency' => $frequency, 'last_billed_month' => $last,
+            'above' => 'Manual {mesiac/rok}', 'services' => '', 'frequency' => $frequency, 'last_billed_month' => $billedMonths[$id] ?? $last,
             'items' => [['name' => 'Manual cleaning', 'quantity' => 1, 'price' => 45.5]], ...$extra,
         ];
 
@@ -324,5 +327,53 @@ final class ImportLegacyRecurringTest extends TestCase
         $this->assertStringContainsString('recurring #11: invalid frequency.', $output);
         $this->assertSame(0, Tenant::query()->where('ico', '22222222')->count());
         $this->assertSame(0, RecurringInvoice::withoutGlobalScopes()->count());
+    }
+
+    public function test_rerun_removes_drafts_for_months_the_legacy_app_already_billed(): void
+    {
+        $this->runImport();
+        $house = $this->recurring('Test Street č.13,15');
+        $stand = $this->recurring('Test Street č.13,15 kont.stojisko');
+        $monthly = $this->recurring('Manual Monthly');
+        $issued = Invoice::withoutGlobalScopes()->where('recurring_invoice_id', $monthly->id)->firstOrFail();
+        $issued->forceFill(['status' => InvoiceStatusEnum::Issued, 'number' => '20260042'])->save();
+
+        $payload = $this->payload(billedMonths: [1 => '2026-10', 13 => '2026-10']);
+
+        $output = $this->runImport($payload);
+
+        $this->assertStringContainsString('Removed drafts already billed in the legacy app: 1.', $output);
+        $this->assertSoftDeleted(Invoice::withoutGlobalScopes()->withTrashed()->where('recurring_invoice_id', $house->id)->firstOrFail());
+        $this->assertSame(1, Invoice::withoutGlobalScopes()->whereNull('deleted_at')->where('recurring_invoice_id', $stand->id)->count());
+        $this->assertSame(InvoiceStatusEnum::Issued, $issued->refresh()->status);
+        $this->assertNull($issued->deleted_at);
+        $this->assertSame(RecurringInvoiceStatusEnum::Active, $house->refresh()->status);
+
+        $again = $this->runImport($payload);
+
+        $this->assertStringContainsString('0 recurring invoices, 0 drafts. Removed drafts already billed in the legacy app: 0.', $again);
+        $this->assertSame(0, Invoice::withoutGlobalScopes()->whereNull('deleted_at')->where('recurring_invoice_id', $house->id)->count());
+    }
+
+    public function test_retired_recurring_invoice_is_cancelled_and_its_drafts_removed(): void
+    {
+        $this->runImport();
+        $monthly = $this->recurring('Manual Monthly');
+        $retired = $this->payload(['retired_recurring' => [
+            ['id' => 13, 'firm' => 2, 'name' => 'Manual Monthly'],
+            ['id' => 99, 'firm' => 2, 'name' => 'Never Imported'],
+        ]]);
+
+        $output = $this->runImport($retired);
+
+        $this->assertStringContainsString('Retired recurring invoices: 1.', $output);
+        $this->assertStringContainsString('1 x retired recurring invoice missing', $output);
+        $monthly->refresh();
+        $this->assertSame(RecurringInvoiceStatusEnum::Cancelled, $monthly->status);
+        $this->assertNull($monthly->next_run_at);
+        $this->assertSame(0, Invoice::withoutGlobalScopes()->whereNull('deleted_at')->where('recurring_invoice_id', $monthly->id)->count());
+        $this->assertSame(RecurringInvoiceStatusEnum::Active, $this->recurring('Recurring On Shared Object')->status);
+
+        $this->assertStringContainsString('Retired recurring invoices: 0.', $this->runImport($retired));
     }
 }

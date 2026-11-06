@@ -107,12 +107,15 @@ final readonly class LegacyImportService
 
         /** @var list<array<string, mixed>> $manual */
         $manual = is_array($payload['manual_recurring'] ?? null) ? array_values($payload['manual_recurring']) : [];
+        /** @var list<array<string, mixed>> $retired */
+        $retired = is_array($payload['retired_recurring'] ?? null) ? array_values($payload['retired_recurring']) : [];
         $lastNumbers = is_array($payload['last_invoice_number_2026'] ?? null) ? $payload['last_invoice_number_2026'] : [];
 
         $postalCodes = $this->postalCodeMap($payload);
         $pairs = $this->mapper->clientPairs($templates, $firmClients, $manual);
         $objects = [...$this->mapper->objects($templates), ...$this->mapper->manualObjects($manual)];
         $recurringRows = $this->mapper->recurringRows($templates, $manual);
+        $retiredRows = $this->mapper->retiredRows($retired);
         $tenants = [];
 
         /** @var list<array<string, mixed>> $firms */
@@ -129,14 +132,14 @@ final readonly class LegacyImportService
             $tenants[$firmId] = $tenant;
             $source = $settingsSource?->is($tenant) === true ? null : $settingsSource;
 
-            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report, $postalCodes, $recurringRows, $lastNumbers): void {
+            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report, $postalCodes, $recurringRows, $retiredRows, $lastNumbers): void {
                 $this->settings->fillBlanks($tenant, $this->mapper->supplierProfile($firm), $source);
 
                 $clientIds = $this->importClients($firmId, $pairs, $legacyClients, $icDph, $report);
                 $this->importObjects($firmId, $objects, $clientIds, $postalCodes, $owner, $report);
 
                 $lastNumber = $lastNumbers[(string) $firmId] ?? null;
-                $this->recurringInvoices->import($firmId, $tenant, $recurringRows, is_string($lastNumber) ? $lastNumber : null, $report);
+                $this->recurringInvoices->import($firmId, $tenant, $recurringRows, $retiredRows, is_string($lastNumber) ? $lastNumber : null, $report);
             });
         }
 

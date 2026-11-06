@@ -145,23 +145,27 @@ final class ImportLegacyData extends Command
             $report->count('recurring', 'existing', $firm),
             $report->count('recurring', 'skipped', $firm),
             $report->count('draft', 'created', $firm),
+            $report->count('draft', 'removed', $firm),
+            $report->count('recurring', 'retired', $firm),
             $report->count('postal_code', 'corrected', $firm),
             $report->count('numbering', 'raised', $firm),
             $report->count('number_format', 'set', $firm).'/'.$report->count('number_format', 'kept', $firm),
         ], $report->firms());
 
         $this->table(
-            ['Firm #', 'Firm new', 'Firm existing', 'Clients new', 'Clients existing', 'Objects new', 'Objects existing', 'Merged', 'Skipped', 'Media', 'Recurring new', 'Recurring existing', 'Recurring skipped', 'Drafts new', 'Postal corrected', 'Numbering raised', 'Format set/kept'],
+            ['Firm #', 'Firm new', 'Firm existing', 'Clients new', 'Clients existing', 'Objects new', 'Objects existing', 'Merged', 'Skipped', 'Media', 'Recurring new', 'Recurring existing', 'Recurring skipped', 'Drafts new', 'Drafts removed', 'Recurring retired', 'Postal corrected', 'Numbering raised', 'Format set/kept'],
             $perFirm,
         );
 
         $this->info(sprintf(
-            'Created: %d firms, %d clients, %d objects, %d recurring invoices, %d drafts. Postal codes filled: %d, corrected: %d, skipped invalid: %d.',
+            'Created: %d firms, %d clients, %d objects, %d recurring invoices, %d drafts. Removed drafts already billed in the legacy app: %d. Retired recurring invoices: %d. Postal codes filled: %d, corrected: %d, skipped invalid: %d.',
             $report->count('firm', 'created'),
             $report->count('client', 'created'),
             $report->count('object', 'created'),
             $report->count('recurring', 'created'),
             $report->count('draft', 'created'),
+            $report->count('draft', 'removed'),
+            $report->count('recurring', 'retired'),
             $report->count('postal_code', 'filled'),
             $report->count('postal_code', 'corrected'),
             $report->count('postal_code', 'invalid'),

@@ -90,6 +90,7 @@ docker compose logs -f queue-ai                           # AI task run worker; 
 docker compose exec app php artisan db:seed --class=LegacyImportSeeder --force   # LEGACY_IMPORT_DRY_RUN=true = dry run (rolls back)
 # Production: deploy with the .enc committed, app:create-owner for the legacy owner, configure one firm, then Cloud Command
 #   `php artisan db:seed --class=LegacyImportSeeder --force`. Prints counts only. Second run must report 0 recurring invoices and 0 drafts created.
+#   Sync (2026-11-06): a newer payload also soft-deletes drafts for months the legacy app already billed and cancels `retired_recurring` rows (issued invoices untouched). Re-encrypt with the key in `~/.config/kegos-legacy-import.key` (owner's Mac), never a new key unless Cloud's LEGACY_IMPORT_KEY is changed too.
 #   Before the next 1st-of-month cron: "Firms with auto-issue default: N" must be 0 (else set that firm's recurring default to draft in Settings → Invoicing).
 #   Backfill caps at 3 billed months per template; legacy number series only raised; format becomes `{YYYY}{XXXX}` only while the firm keeps `FA-{YYYY}-{XXXX}`.
 #   Daily 12:00 `app:remind-invoice-issue` acts on day min(30, days in month); it only notifies.

@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace App\Services\LegacyImport;
 
 use App\Data\RecurringInvoices\RecurringInvoiceUpsertData;
+use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RecurringFrequencyEnum;
+use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\CleaningObject;
+use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\Tenant;
 use App\Services\InvoiceNumberService;
+use App\Services\InvoiceService;
 use App\Services\InvoiceSettingsService;
 use App\Services\RecurringInvoiceService;
 use Carbon\CarbonImmutable;
@@ -31,19 +35,29 @@ final readonly class LegacyRecurringInvoiceImporter
 
     public function __construct(
         private RecurringInvoiceService $recurring,
+        private InvoiceService $invoices,
         private InvoiceNumberService $numbers,
         private InvoiceSettingsService $settings,
         private LegacyRecordMapper $mapper,
     ) {}
 
-    /** @param  list<array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}>  $rows */
-    public function import(int $firmId, Tenant $tenant, array $rows, ?string $lastNumber, LegacyImportReport $report): void
+    /**
+     * @param  list<array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}>  $rows
+     * @param  list<array{ref: int, firm: int, object_name: string, name: string}>  $retired
+     */
+    public function import(int $firmId, Tenant $tenant, array $rows, array $retired, ?string $lastNumber, LegacyImportReport $report): void
     {
         $legacyNumber = $lastNumber === null ? null : $this->mapper->legacyNumber($lastNumber);
 
         foreach ($rows as $row) {
             if ($row['firm'] === $firmId) {
                 $this->importRow($firmId, $row, $report);
+            }
+        }
+
+        foreach ($retired as $row) {
+            if ($row['firm'] === $firmId) {
+                $this->retire($firmId, $row, $report);
             }
         }
 
@@ -73,13 +87,14 @@ final readonly class LegacyRecurringInvoiceImporter
             return;
         }
 
-        $exists = RecurringInvoice::withTrashed()
-            ->where('cleaning_object_id', $object->id)
-            ->whereRaw('lower(trim(name)) = lower(trim(?))', [$row['name']])
-            ->exists();
+        $existing = $this->findRecurring($object, $row['name'], withTrashed: true);
 
-        if ($exists) {
+        if ($existing !== null) {
             $report->add('recurring', $row['ref'], $firmId, 'existing', $row['name']);
+
+            if ($row['last_billed_month'] !== null && ! $existing->trashed()) {
+                $this->removeDrafts($existing, $row['last_billed_month'], $row['ref'], $firmId, $report);
+            }
 
             return;
         }
@@ -111,6 +126,52 @@ final readonly class LegacyRecurringInvoiceImporter
             if ($this->recurring->generateInvoiceFromTemplate($ri, $billedMonth) !== null) {
                 $report->add('draft', $row['ref'], $firmId, 'created', $row['name'].' '.RecurringBilledMonthEnum::formatMonth($billedMonth));
             }
+        }
+    }
+
+    /** @param  array{ref: int, firm: int, object_name: string, name: string}  $row */
+    private function retire(int $firmId, array $row, LegacyImportReport $report): void
+    {
+        $object = CleaningObject::query()
+            ->whereRaw('lower(trim(name)) = lower(trim(?))', [$row['object_name']])
+            ->first();
+        $ri = $object === null ? null : $this->findRecurring($object, $row['name'], withTrashed: false);
+
+        if ($ri === null) {
+            $report->add('recurring', $row['ref'], $firmId, 'skipped', $row['name'], ['retired recurring invoice missing']);
+
+            return;
+        }
+
+        if (in_array($ri->status, [RecurringInvoiceStatusEnum::Active, RecurringInvoiceStatusEnum::Paused], true)) {
+            $this->recurring->cancel($ri);
+            $report->add('recurring', $row['ref'], $firmId, 'retired', $row['name']);
+        }
+
+        $this->removeDrafts($ri, null, $row['ref'], $firmId, $report);
+    }
+
+    private function findRecurring(CleaningObject $object, string $name, bool $withTrashed): ?RecurringInvoice
+    {
+        return RecurringInvoice::query()
+            ->when($withTrashed, fn ($query) => $query->withTrashed())
+            ->where('cleaning_object_id', $object->id)
+            ->whereRaw('lower(trim(name)) = lower(trim(?))', [$name])
+            ->first();
+    }
+
+    // The legacy app already invoiced these months, so our drafts for them would bill the customer twice.
+    private function removeDrafts(RecurringInvoice $ri, ?CarbonImmutable $billedUntil, int $ref, int $firmId, LegacyImportReport $report): void
+    {
+        $drafts = Invoice::query()
+            ->where('recurring_invoice_id', $ri->id)
+            ->where('status', InvoiceStatusEnum::Draft)
+            ->when($billedUntil !== null, fn ($query) => $query->whereDate('period_from', '<=', $billedUntil?->endOfMonth()->toDateString()))
+            ->get();
+
+        foreach ($drafts as $draft) {
+            $this->invoices->delete($draft);
+            $report->add('draft', $ref, $firmId, 'removed', trim($ri->name.' '.($draft->period_from === null ? '' : RecurringBilledMonthEnum::formatMonth($draft->period_from))));
         }
     }
 
