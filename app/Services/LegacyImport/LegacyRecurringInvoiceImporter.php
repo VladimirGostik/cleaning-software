@@ -23,6 +23,8 @@ final readonly class LegacyRecurringInvoiceImporter
 {
     private const string LEGACY_NUMBER_FORMAT = '{YYYY}{XXXX}';
 
+    private const string LEGACY_UNIT = 'mes.';
+
     private const int DUE_DAYS = 30;
 
     private const int MAX_BACKFILL_MONTHS = 3;
@@ -159,7 +161,7 @@ final readonly class LegacyRecurringInvoiceImporter
                 'items' => array_map(fn (array $item): array => [
                     'description' => $item['description'],
                     'quantity' => $item['quantity'],
-                    'unit' => null,
+                    'unit' => self::LEGACY_UNIT,
                     'unit_price' => $item['unit_price'],
                     'discount_percent' => 0,
                     'vat_rate' => 0,

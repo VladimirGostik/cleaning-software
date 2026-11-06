@@ -1,12 +1,12 @@
 import { onUnmounted, ref } from 'vue';
-import { HttpError, postBlob } from '@/utils/http';
+import { HttpError } from '@/utils/http';
 
 export interface PdfPreviewError {
     kind: 'throttled' | 'failed';
     message: string | null;
 }
 
-export function useDocumentPdfPreview(options: { url: string; payload: () => unknown }) {
+export function useDocumentPdfPreview(options: { load: (signal: AbortSignal) => Promise<Blob> }) {
     const pdfUrl = ref<string | null>(null);
     const loading = ref(false);
     const error = ref<PdfPreviewError | null>(null);
@@ -32,7 +32,7 @@ export function useDocumentPdfPreview(options: { url: string; payload: () => unk
         error.value = null;
 
         try {
-            const blob = await postBlob(options.url, options.payload(), { signal: controller.signal });
+            const blob = await options.load(controller.signal);
             if (controller.signal.aborted) return;
             pdfUrl.value = URL.createObjectURL(blob);
         } catch (err) {

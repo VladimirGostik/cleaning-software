@@ -15,7 +15,11 @@ vi.mock('@inertiajs/vue3', () => ({
 }));
 
 const messages = {
-    en: { invoice_action_send_email: 'Send by e-mail', invoice_send_requires_email: 'E-mail required' },
+    en: {
+        invoice_action_preview: 'Preview',
+        invoice_action_send_email: 'Send by e-mail',
+        invoice_send_requires_email: 'E-mail required',
+    },
 };
 
 function render(customerEmail: string | null, recipientChoosable: boolean, status = 'issued'): HTMLElement {
@@ -64,5 +68,32 @@ describe('InvoiceActionsCard send', () => {
 
         expect(sendButton(host).disabled).toBe(true);
         expect(host.textContent).toContain('E-mail required');
+    });
+});
+
+describe('InvoiceActionsCard preview', () => {
+    it.each(['draft', 'issued', 'paid'])('emits preview for a %s invoice', (status) => {
+        const host = document.createElement('div');
+        const onPreview = vi.fn();
+        createApp({
+            render: () =>
+                h(InvoiceActionsCard, {
+                    invoice: {
+                        id: 'i1',
+                        status,
+                        customer_email: null,
+                        is_credit_note: false,
+                    } as App.Data.Invoices.InvoiceDetailData,
+                    recipientChoosable: false,
+                    onPreview,
+                }),
+        })
+            .use(createI18n({ legacy: false, locale: 'en', messages, missingWarn: false, fallbackWarn: false }))
+            .mount(host);
+
+        const button = [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Preview'));
+        button?.click();
+
+        expect(onPreview).toHaveBeenCalledTimes(1);
     });
 });

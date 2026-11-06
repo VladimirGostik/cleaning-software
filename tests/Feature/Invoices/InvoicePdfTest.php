@@ -189,6 +189,96 @@ final class InvoicePdfTest extends TestCase
         $this->assertMatchesRegularExpression('/white-space:\s*pre-line;[^>]*>\s*Line A\nLine B/', $html);
     }
 
+    public function test_preview_streams_inline_without_caching(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
+        $this->mockPdfRenderer();
+
+        $response = $this->get(route('invoices.preview', $invoice));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('inline', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_download_pdf_is_attachment_and_not_cached(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id]);
+        $this->mockPdfRenderer();
+
+        $response = $this->get(route('invoices.pdf', $invoice));
+
+        $this->assertStringStartsWith('attachment', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_preview_unauthenticated_redirects_to_login(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->get(route('invoices.preview', $invoice))->assertRedirect(route('login'));
+    }
+
+    public function test_preview_without_permission_forbidden(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Interná upratovačka', $tenant);
+        $invoice = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->get(route('invoices.preview', $invoice))->assertForbidden();
+    }
+
+    public function test_preview_cross_tenant_returns_404(): void
+    {
+        $tenantA = Tenant::factory()->create();
+        $tenantB = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenantA);
+        $invoiceB = Invoice::factory()->create(['tenant_id' => $tenantB->id]);
+
+        $this->get(route('invoices.preview', $invoiceB->id))->assertNotFound();
+    }
+
+    public function test_kegos_layout_prints_country_names_and_keeps_unknown_codes(): void
+    {
+        app()->setLocale('sk');
+        $invoice = $this->boundInvoice(['supplier_country' => 'SK', 'customer_country' => 'XX']);
+
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
+
+        $this->assertStringContainsString('Slovensko<br>', $html);
+        $this->assertStringContainsString('XX<br>', $html);
+    }
+
+    public function test_kegos_layout_places_pay_block_above_header_text_and_items(): void
+    {
+        $invoice = $this->boundInvoice(['header_text' => 'Line A', 'supplier_iban' => 'SK8975000000000123456789']);
+
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
+
+        $payPos = strpos($html, 'pay-cell"><div class="l">');
+        $this->assertNotFalse($payPos);
+        $this->assertGreaterThan(strrpos(substr($html, 0, (int) strpos($html, 'class="kg-items')), __('app.invoice_pdf_due_date').':'), $payPos);
+        $this->assertLessThan(strpos($html, 'Line A'), $payPos);
+        $this->assertLessThan(strpos($html, 'class="kg-items'), strpos($html, 'Line A'));
+    }
+
+    public function test_kegos_layout_always_shows_unit_column_and_prints_unit(): void
+    {
+        $invoice = $this->boundInvoice();
+        InvoiceItem::factory()->create(['invoice_id' => $invoice->id, 'tenant_id' => $invoice->tenant_id, 'unit' => 'mes.']);
+
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice->load('items'), 'qrDataUri' => null])->render();
+
+        $this->assertStringContainsString('<th>'.__('app.invoice_pdf_item_unit').'</th>', $html);
+        $this->assertStringContainsString('<td>mes.</td>', $html);
+    }
+
     public function test_kegos_layout_renders_full_supplier_snapshot(): void
     {
         $invoice = $this->invoiceWithFullSupplierSnapshot();
@@ -615,7 +705,6 @@ final class InvoicePdfTest extends TestCase
 
         $this->assertStringContainsString('<th class="num">'.__('app.invoice_pdf_item_total').'</th>', $html);
         $this->assertStringContainsString('.kg-items th.num, .kg-items td.num { text-align: right; }', $html);
-        $this->assertStringContainsString('.kg-items th:first-child, .kg-items td:first-child { padding-inline-start: 0; }', $html);
-        $this->assertStringContainsString('.kg-items th:last-child, .kg-items td:last-child { padding-inline-end: 0; }', $html);
+        $this->assertStringContainsString('.kg-items th:first-child, .kg-items td:first-child, .kg-items th:last-child, .kg-items td:last-child { padding-inline: 8px; }', $html);
     }
 }

@@ -234,6 +234,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::post('/invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate')->whereUuid('invoice');
     Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send')->whereUuid('invoice');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf')->whereUuid('invoice');
+    Route::get('/invoices/{invoice}/preview', [InvoiceController::class, 'preview'])->name('invoices.preview')->whereUuid('invoice')->middleware('throttle:document-preview');
     Route::get('/invoices/{invoice}/efa-xml', [EInvoiceController::class, 'xml'])->name('invoices.efa.xml')->whereUuid('invoice');
     Route::post('/invoices/{invoice}/efa-submit', [EInvoiceController::class, 'submit'])->name('invoices.efa.submit')->whereUuid('invoice');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {

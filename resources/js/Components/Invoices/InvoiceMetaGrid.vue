@@ -47,14 +47,5 @@ const { t } = useI18n();
             <p class="text-xs text-base-content/50">{{ t('invoice_pdf_period') }}</p>
             <p>{{ formatDate(props.invoice.period_from) }} – {{ formatDate(props.invoice.period_to) }}</p>
         </div>
-
-        <div v-if="props.invoice.object_name" class="col-span-2 sm:col-span-4">
-            <p class="text-xs text-base-content/50">{{ t('invoice_section_object') }}</p>
-            <p>{{ props.invoice.object_name }}</p>
-            <p v-if="props.invoice.object_street" class="text-base-content/70">{{ props.invoice.object_street }}</p>
-            <p v-if="props.invoice.object_postal_code || props.invoice.object_city" class="text-base-content/70">
-                {{ [props.invoice.object_postal_code, props.invoice.object_city].filter(Boolean).join(' ') }}
-            </p>
-        </div>
     </div>
 </template>

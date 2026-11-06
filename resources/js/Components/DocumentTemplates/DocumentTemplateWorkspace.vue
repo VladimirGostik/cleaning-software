@@ -15,6 +15,7 @@ import DocumentTemplateMetaFields from '@/Components/DocumentTemplates/DocumentT
 import DocumentTemplatePreview from '@/Components/DocumentTemplates/DocumentTemplatePreview.vue';
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { useDocumentPdfPreview } from '@/Composables/useDocumentPdfPreview';
+import { postBlob } from '@/utils/http';
 import { useDocumentTemplatePreview } from '@/Composables/useDocumentTemplatePreview';
 import { useFullscreenWorkspace } from '@/Composables/useFullscreenWorkspace';
 
@@ -108,7 +109,9 @@ const editorRef = ref<InstanceType<typeof DocumentTokenEditor> | null>(null);
 
 const { preview, loading, error } = useDocumentTemplatePreview({ payload: previewPayload, enabled: previewEnabled });
 
-const pdf = useDocumentPdfPreview({ url: `${BASE_URL}/preview-pdf`, payload: previewPayload });
+const pdf = useDocumentPdfPreview({
+    load: (signal) => postBlob(`${BASE_URL}/preview-pdf`, previewPayload(), { signal }),
+});
 
 const { fullscreen } = useFullscreenWorkspace(() => {
     if (!pdf.isOpen.value) return false;

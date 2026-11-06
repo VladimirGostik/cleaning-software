@@ -553,6 +553,7 @@
     "invoice_mail_attachment_note": "The invoice PDF is attached to this e-mail.",
     "invoice_action_cancel": "Cancel",
     "invoice_action_download_pdf": "Download PDF",
+    "invoice_action_preview": "Preview",
     "invoice_action_duplicate": "Duplicate",
     "invoice_action_issue": "Issue",
     "invoice_action_send_email": "Send by email",
@@ -584,7 +585,6 @@
     "invoice_item_unit_placeholder": "pcs, hr, m²…",
     "invoice_items_empty": "No items yet. Add at least one.",
     "invoice_link_client": "Client",
-    "invoice_link_object": "Object",
     "invoice_link_recurring": "Recurring invoice",
     "invoice_not_sent": "Not sent yet",
     "invoice_paid_at": "Paid at",
@@ -596,7 +596,6 @@
     "invoice_section_details": "Invoice details",
     "invoice_section_items": "Items",
     "invoice_section_links": "Related records",
-    "invoice_section_object": "Object",
     "invoice_section_payment": "Payment details",
     "invoice_section_subject": "Subject",
     "invoice_section_summary": "Summary",
@@ -2113,5 +2112,7 @@
     "task_filter_due_today": "Today",
     "task_filter_due_week": "Next 7 days",
     "task_filter_due_none": "No due date",
-    "task_change_status": "Change status: {status}"
+    "task_change_status": "Change status: {status}",
+    "country_sk": "Slovakia",
+    "country_cz": "Czechia"
 }

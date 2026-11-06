@@ -8,6 +8,7 @@ import CheckBadgeIcon from '~icons/material-symbols/verified-outline-rounded';
 import DocumentDuplicateIcon from '~icons/material-symbols/content-copy-outline-rounded';
 import EnvelopeIcon from '~icons/material-symbols/mail-outline-rounded';
 import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 
@@ -25,6 +26,7 @@ const emit = defineEmits<{
     send: [];
     duplicate: [];
     delete: [];
+    preview: [];
 }>();
 
 const { t } = useI18n();
@@ -65,6 +67,11 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
                     }}
                 </button>
             </Can>
+
+            <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('preview')">
+                <EyeIcon class="size-5" />
+                {{ t('invoice_action_preview') }}
+            </button>
 
             <a
                 :href="`/invoices/${props.invoice.id}/pdf`"

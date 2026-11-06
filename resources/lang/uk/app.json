@@ -553,6 +553,7 @@
     "invoice_mail_attachment_note": "PDF-файл рахунку додано до цього листа.",
     "invoice_action_cancel": "Скасувати",
     "invoice_action_download_pdf": "Завантажити PDF",
+    "invoice_action_preview": "Перегляд",
     "invoice_action_duplicate": "Дублювати",
     "invoice_action_issue": "Виставити",
     "invoice_action_send_email": "Надіслати електронною поштою",
@@ -584,7 +585,6 @@
     "invoice_item_unit_placeholder": "шт, год, м²…",
     "invoice_items_empty": "Немає позицій. Додайте хоча б одну.",
     "invoice_link_client": "Клієнт",
-    "invoice_link_object": "Об'єкт",
     "invoice_link_recurring": "Опакована фактура",
     "invoice_not_sent": "Ще не надіслано",
     "invoice_paid_at": "Сплачено",
@@ -596,7 +596,6 @@
     "invoice_section_details": "Деталі фактури",
     "invoice_section_items": "Позиції",
     "invoice_section_links": "Пов'язані записи",
-    "invoice_section_object": "Об'єкт",
     "invoice_section_payment": "Платіжні дані",
     "invoice_section_subject": "Одержувач",
     "invoice_section_summary": "Підсумок",
@@ -2113,5 +2112,7 @@
     "task_filter_due_today": "Сьогодні",
     "task_filter_due_week": "Найближчі 7 днів",
     "task_filter_due_none": "Без терміну",
-    "task_change_status": "Змінити статус: {status}"
+    "task_change_status": "Змінити статус: {status}",
+    "country_sk": "Словаччина",
+    "country_cz": "Чехія"
 }

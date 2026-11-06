@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Support\Formats;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Lang;
 
 if (! function_exists('get_client_ip')) {
     function get_client_ip(): string
@@ -51,6 +52,21 @@ if (! function_exists('format_date')) {
     function format_date(?CarbonInterface $date): string
     {
         return $date?->format(Formats::DATE) ?? '—';
+    }
+}
+
+if (! function_exists('format_country')) {
+    function format_country(?string $code): ?string
+    {
+        $trimmed = trim((string) $code);
+
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $key = 'app.country_'.strtolower($trimmed);
+
+        return Lang::has($key) ? __($key) : $trimmed;
     }
 }
 

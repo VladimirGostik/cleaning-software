@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { countryName } from '@/utils/country';
 
 const props = defineProps<{
     invoice: App.Data.Invoices.InvoiceDetailData;
 }>();
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 </script>
 
 <template>
@@ -17,7 +18,7 @@ const { t } = useI18n();
             <p v-if="props.invoice.supplier.postal_code || props.invoice.supplier.city">
                 {{ [props.invoice.supplier.postal_code, props.invoice.supplier.city].filter(Boolean).join(' ') }}
             </p>
-            <p v-if="props.invoice.supplier.country">{{ props.invoice.supplier.country }}</p>
+            <p v-if="props.invoice.supplier.country">{{ countryName(props.invoice.supplier.country, { t, te }) }}</p>
             <p v-if="props.invoice.supplier.ico" class="text-sm text-base-content/60">
                 {{ t('invoice_pdf_ico') }}: {{ props.invoice.supplier.ico }}
             </p>
@@ -46,7 +47,7 @@ const { t } = useI18n();
             <p v-if="props.invoice.customer_postal_code || props.invoice.customer_city">
                 {{ [props.invoice.customer_postal_code, props.invoice.customer_city].filter(Boolean).join(' ') }}
             </p>
-            <p v-if="props.invoice.customer_country">{{ props.invoice.customer_country }}</p>
+            <p v-if="props.invoice.customer_country">{{ countryName(props.invoice.customer_country, { t, te }) }}</p>
             <p v-if="props.invoice.customer_ico" class="text-sm text-base-content/60">
                 {{ t('invoice_pdf_ico') }}: {{ props.invoice.customer_ico }}
             </p>

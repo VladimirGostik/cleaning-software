@@ -184,17 +184,23 @@ final class InvoiceController extends Controller
     #[Authorize('downloadPdf', 'invoice')]
     public function pdf(Invoice $invoice, RendersInvoicePdf $pdfService): Response
     {
-        $pdfContent = $pdfService->render($invoice);
+        return $this->pdfResponse($invoice, $pdfService, HeaderUtils::DISPOSITION_ATTACHMENT);
+    }
 
+    #[Authorize('downloadPdf', 'invoice')]
+    public function preview(Invoice $invoice, RendersInvoicePdf $pdfService): Response
+    {
+        return $this->pdfResponse($invoice, $pdfService, HeaderUtils::DISPOSITION_INLINE);
+    }
+
+    private function pdfResponse(Invoice $invoice, RendersInvoicePdf $pdfService, string $disposition): Response
+    {
         $filename = $invoice->pdfFilenameBase().'.pdf';
 
-        return response($pdfContent, 200, [
+        return response($pdfService->render($invoice), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => HeaderUtils::makeDisposition(
-                HeaderUtils::DISPOSITION_ATTACHMENT,
-                $filename,
-                Str::ascii($filename),
-            ),
+            'Content-Disposition' => HeaderUtils::makeDisposition($disposition, $filename, Str::ascii($filename)),
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 }

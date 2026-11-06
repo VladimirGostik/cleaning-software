@@ -143,6 +143,7 @@ final class InvoiceApiTest extends TestCase
         $response->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('inline', (string) $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('.pdf', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
     }
 
     public function test_pdf_of_a_draft_renders_like_the_web_route(): void

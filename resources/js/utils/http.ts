@@ -95,6 +95,24 @@ export async function getJson<T>(url: string, opts?: { signal?: AbortSignal }): 
     return (await response.json()) as T;
 }
 
+export async function getBlob(url: string, opts?: { signal?: AbortSignal }): Promise<Blob> {
+    const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json, application/pdf;q=0.9', 'X-Requested-With': 'XMLHttpRequest' },
+        signal: opts?.signal,
+    });
+
+    if (!response.ok) {
+        throw await failureOf(response);
+    }
+
+    if (!(response.headers.get('Content-Type') ?? '').includes('application/pdf')) {
+        throw new HttpError(response.status);
+    }
+
+    return await response.blob();
+}
+
 export async function postJson<T>(url: string, body: unknown, opts?: { signal?: AbortSignal }): Promise<T> {
     const response = await send(url, body, 'application/json', opts?.signal);
 

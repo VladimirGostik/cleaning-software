@@ -24,6 +24,7 @@ return [
         'm2' => 'MTK',
         'm' => 'MTR',
         'mesiac' => 'MON',
+        'mes.' => 'MON',
         'deň' => 'DAY',
         'bal' => 'PK',
         'l' => 'LTR',

@@ -116,7 +116,10 @@ final class ImportLegacyRecurringTest extends TestCase
         $this->assertSame("Cleaning for {mesiac/rok}\nStairs and halls", $house->header_text);
         $this->assertSame(CleaningObject::withoutGlobalScopes()->where('name', 'Test Street č.13,15')->value('id'), $house->cleaning_object_id);
 
+        $this->assertSame('mes.', $house->items()->firstOrFail()->unit);
+
         $draft = Invoice::withoutGlobalScopes()->where('recurring_invoice_id', $house->id)->with('items')->firstOrFail();
+        $this->assertSame('mes.', $draft->items->firstOrFail()->unit);
         $this->assertSame('2026-10-01', $draft->period_from?->toDateString());
         $this->assertSame('2026-10-31', $draft->delivery_date->toDateString());
         $this->assertSame("Cleaning for 10/2026\nStairs and halls", $draft->header_text);

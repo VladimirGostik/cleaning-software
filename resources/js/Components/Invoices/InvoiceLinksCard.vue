@@ -22,11 +22,6 @@ const { t } = useI18n();
                 </Link>
             </p>
 
-            <p v-if="props.invoice.object_name">
-                <span class="text-base-content/60">{{ t('invoice_link_object') }}:</span>
-                <span class="ml-1">{{ props.invoice.object_name }}</span>
-            </p>
-
             <p v-if="props.invoice.recurring_invoice_id">
                 <span class="text-base-content/60">{{ t('invoice_link_recurring') }}:</span>
                 <Link :href="`/recurring-invoices/${props.invoice.recurring_invoice_id}`" class="link link-hover ml-1">

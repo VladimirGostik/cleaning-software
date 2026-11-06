@@ -21,6 +21,9 @@ import InvoiceLinksCard from '@/Components/Invoices/InvoiceLinksCard.vue';
 import SupplierIncompleteAlert from '@/Components/Invoices/SupplierIncompleteAlert.vue';
 import InvoiceSettingsDrawer from '@/Components/Invoices/InvoiceSettingsDrawer.vue';
 
+import DocumentPdfPreviewModal from '@/Components/Documents/DocumentPdfPreviewModal.vue';
+import { useDocumentPdfPreview } from '@/Composables/useDocumentPdfPreview';
+import { getBlob } from '@/utils/http';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { useInvoiceSettingsDrawer } from '@/Composables/useInvoiceSettingsDrawer';
 import { toNumber } from '@/utils/money';
@@ -32,6 +35,10 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+
+const pdf = useDocumentPdfPreview({
+    load: (signal) => getBlob(`/invoices/${props.invoice.id}/preview`, { signal }),
+});
 
 const breadcrumbs = computed<Breadcrumb[]>(() => [
     { label: t('dashboard'), url: '/' },
@@ -158,12 +165,21 @@ function onSettingsSaved(): void {
                 @send="onSend"
                 @duplicate="duplicate"
                 @delete="deleteConfirm.openModal(invoice)"
+                @preview="pdf.open"
             />
             <InvoiceEfaCard v-if="invoice.status !== 'draft'" :invoice="invoice" />
             <InvoicePaymentsCard v-if="invoice.status !== 'draft'" :invoice="invoice" />
             <InvoiceLinksCard :invoice="invoice" />
         </div>
     </div>
+
+    <DocumentPdfPreviewModal
+        :is-open="pdf.isOpen.value"
+        :pdf-url="pdf.pdfUrl.value"
+        :loading="pdf.loading.value"
+        :error="pdf.error.value"
+        @close="pdf.close"
+    />
 
     <InvoiceIssueModal :open="ui.issueOpen" :invoice-id="invoice.id" @close="ui.issueOpen = false" />
 

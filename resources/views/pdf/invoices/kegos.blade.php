@@ -57,7 +57,7 @@
             <div class="kg-name">{{ $invoice->supplier_name }}</div>
             @if($invoice->supplier_address_line){{ $invoice->supplier_address_line }}<br>@endif
             @if($invoice->supplier_postal_code || $invoice->supplier_city){{ implode(' ', array_filter([$invoice->supplier_postal_code, $invoice->supplier_city])) }}<br>@endif
-            @if($invoice->supplier_country){{ $invoice->supplier_country }}<br>@endif
+            @if($invoice->supplier_country){{ format_country($invoice->supplier_country) }}<br>@endif
             <div style="margin-top:2mm;">
                 @if($invoice->supplier_ico){{ __('app.invoice_pdf_ico') }}: {{ $invoice->supplier_ico }}<br>@endif
                 @if($invoice->supplier_dic){{ __('app.invoice_pdf_dic') }}: {{ $invoice->supplier_dic }}<br>@endif
@@ -73,7 +73,7 @@
             @if($invoice->customer_represented_by)<div class="muted">{{ __('app.invoice_pdf_represented_by') }}: {{ $invoice->customer_represented_by }}</div>@endif
             @if($invoice->customer_street){{ $invoice->customer_street }}<br>@endif
             @if($invoice->customer_postal_code || $invoice->customer_city){{ implode(' ', array_filter([$invoice->customer_postal_code, $invoice->customer_city])) }}<br>@endif
-            @if($invoice->customer_country){{ $invoice->customer_country }}<br>@endif
+            @if($invoice->customer_country){{ format_country($invoice->customer_country) }}<br>@endif
             <div style="margin-top:2mm;">
                 @if($invoice->customer_ico){{ __('app.invoice_pdf_ico') }}: {{ $invoice->customer_ico }}<br>@endif
                 @if($invoice->customer_dic){{ __('app.invoice_pdf_dic') }}: {{ $invoice->customer_dic }}<br>@endif
@@ -109,6 +109,35 @@
     </tr>
 </table>
 
+@if($qrDataUri || $invoice->supplier_iban)
+<div class="block pay panel" style="padding:10px;">
+    <table>
+        <tr>
+            @if($qrDataUri)
+            <td style="width:130px;">
+                <div class="muted" style="font-size:8pt; font-weight:500; margin-bottom:3px;">PAY by square</div>
+                <img src="{{ $qrDataUri }}" width="112" height="112" alt="PAY by square QR" />
+            </td>
+            @endif
+            @if($invoice->supplier_iban)
+            <td>
+                <table>
+                    <tr>
+                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_iban') }}</div><div class="v">{{ $invoice->supplier_iban }}</div></td>
+                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_variable_symbol') }}</div><div class="v">{{ $invoice->variable_symbol ?? '—' }}</div></td>
+                    </tr>
+                    <tr>
+                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_due_date') }}</div><div class="v">{{ format_date($invoice->due_date) }}</div></td>
+                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_amount_due') }}</div><div class="v">{{ $currencyEnum->format($amountDue) }}</div></td>
+                    </tr>
+                </table>
+            </td>
+            @endif
+        </tr>
+    </table>
+</div>
+@endif
+
 @if($invoice->header_text)
 <div class="muted" style="margin-top:5mm; margin-bottom:2mm; white-space:pre-line;">{{ $invoice->header_text }}</div>
 @endif
@@ -130,7 +159,7 @@
         <tr>
             <td>{{ $item->description }}</td>
             <td class="num">{{ format_quantity((float) $item->quantity) }}</td>
-            <td>{{ $item->unit ?? '' }}</td>
+            <td>{{ $item->unit }}</td>
             <td class="num">{{ $currencyEnum->format((float) $item->unit_price) }}</td>
             @if($hasDiscount)<td class="num">{{ (float) $item->discount_percent > 0 ? number_format((float) $item->discount_percent, 0)."\u{00A0}%" : '—' }}</td>@endif
             @if($invoice->is_vat_payer)<td class="num">{{ number_format((float) $item->vat_rate, 0) }}&nbsp;%</td>@endif
@@ -190,35 +219,6 @@
         </td>
     </tr>
 </table>
-
-@if($qrDataUri || $invoice->supplier_iban)
-<div class="block pay panel" style="padding:10px;">
-    <table>
-        <tr>
-            @if($qrDataUri)
-            <td style="width:130px;">
-                <div class="muted" style="font-size:8pt; font-weight:500; margin-bottom:3px;">PAY by square</div>
-                <img src="{{ $qrDataUri }}" width="112" height="112" alt="PAY by square QR" />
-            </td>
-            @endif
-            @if($invoice->supplier_iban)
-            <td>
-                <table>
-                    <tr>
-                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_iban') }}</div><div class="v">{{ $invoice->supplier_iban }}</div></td>
-                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_variable_symbol') }}</div><div class="v">{{ $invoice->variable_symbol ?? '—' }}</div></td>
-                    </tr>
-                    <tr>
-                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_due_date') }}</div><div class="v">{{ format_date($invoice->due_date) }}</div></td>
-                        <td class="pay-cell"><div class="l">{{ __('app.invoice_pdf_amount_due') }}</div><div class="v">{{ $currencyEnum->format($amountDue) }}</div></td>
-                    </tr>
-                </table>
-            </td>
-            @endif
-        </tr>
-    </table>
-</div>
-@endif
 
 @if(!$invoice->is_vat_payer)
 <p class="muted" style="font-size:9.5pt; margin-top:5mm;">{{ __('app.invoice_pdf_non_vat_payer_clause') }}</p>

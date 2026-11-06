@@ -553,6 +553,7 @@
     "invoice_mail_attachment_note": "Faktúra vo formáte PDF je priložená k tomuto e-mailu.",
     "invoice_action_cancel": "Stornovať",
     "invoice_action_download_pdf": "Stiahnuť PDF",
+    "invoice_action_preview": "Náhľad",
     "invoice_action_duplicate": "Duplikovať",
     "invoice_action_issue": "Vystaviť",
     "invoice_action_send_email": "Odoslať e-mailom",
@@ -584,7 +585,6 @@
     "invoice_item_unit_placeholder": "ks, hod, m²…",
     "invoice_items_empty": "Žiadne položky. Pridajte aspoň jednu.",
     "invoice_link_client": "Klient",
-    "invoice_link_object": "Objekt",
     "invoice_link_recurring": "Opakovaná faktúra",
     "invoice_not_sent": "Zatiaľ neodoslaná",
     "invoice_paid_at": "Uhradená",
@@ -596,7 +596,6 @@
     "invoice_section_details": "Detaily faktúry",
     "invoice_section_items": "Položky",
     "invoice_section_links": "Súvisiace záznamy",
-    "invoice_section_object": "Objekt",
     "invoice_section_payment": "Platobné údaje",
     "invoice_section_subject": "Odberateľ",
     "invoice_section_summary": "Súhrn",
@@ -2113,5 +2112,7 @@
     "task_filter_due_today": "Dnes",
     "task_filter_due_week": "Najbližších 7 dní",
     "task_filter_due_none": "Bez termínu",
-    "task_change_status": "Zmeniť stav: {status}"
+    "task_change_status": "Zmeniť stav: {status}",
+    "country_sk": "Slovensko",
+    "country_cz": "Česko"
 }

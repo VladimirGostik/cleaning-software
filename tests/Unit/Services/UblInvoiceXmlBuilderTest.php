@@ -35,6 +35,17 @@ final class UblInvoiceXmlBuilderTest extends TestCase
         return app(UblInvoiceXmlBuilder::class);
     }
 
+    public function test_legacy_month_unit_maps_to_mon(): void
+    {
+        $invoice = $this->efaInvoice($this->tenant, ['payment_type' => PaymentTypeEnum::Transfer], [
+            ['description' => 'Paušál', 'quantity' => 1, 'unit' => 'mes.', 'unit_price' => 30, 'line_base' => 30, 'line_vat' => 0, 'line_total' => 30],
+        ]);
+
+        $xp = $this->loadUbl($this->builder()->build($invoice));
+
+        $this->assertSame('MON', $this->xv($xp, '//cac:InvoiceLine[1]/cbc:InvoicedQuantity/@unitCode'));
+    }
+
     public function test_non_vat_payer_invoice_uses_category_o_and_validates(): void
     {
         $invoice = $this->efaInvoice($this->tenant, ['payment_type' => PaymentTypeEnum::Transfer], [

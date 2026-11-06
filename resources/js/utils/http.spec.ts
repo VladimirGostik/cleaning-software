@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, getJson, getXsrfToken, postBlob, postJson } from './http';
+import { HttpError, getBlob, getJson, getXsrfToken, postBlob, postJson } from './http';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -110,5 +110,36 @@ describe('postBlob', () => {
 
         await expect(postBlob('/pdf', {})).rejects.toBeInstanceOf(HttpError);
         await expect(postBlob('/pdf', {})).rejects.toMatchObject({ status: 500, serverMessage: 'x' });
+    });
+});
+
+describe('getBlob', () => {
+    it('returns the pdf blob', async () => {
+        fetchMock.mockResolvedValue(response('%PDF', 200, { 'Content-Type': 'application/pdf' }));
+
+        const blob = await getBlob('/pdf');
+
+        expect(blob.size).toBe(4);
+        expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({
+            Accept: 'application/json, application/pdf;q=0.9',
+        });
+    });
+
+    it('throws HttpError with the server message on a json failure', async () => {
+        fetchMock.mockResolvedValue(response('{"message":"boom"}', 500, { 'Content-Type': 'application/json' }));
+
+        await expect(getBlob('/pdf')).rejects.toMatchObject({ status: 500, serverMessage: 'boom' });
+    });
+
+    it('keeps status 429', async () => {
+        fetchMock.mockResolvedValue(response(null, 429, { 'Retry-After': '5' }));
+
+        await expect(getBlob('/pdf')).rejects.toMatchObject({ status: 429, retryAfterSeconds: 5 });
+    });
+
+    it('throws for a non-pdf 200', async () => {
+        fetchMock.mockResolvedValue(response('<html>', 200, { 'Content-Type': 'text/html' }));
+
+        await expect(getBlob('/pdf')).rejects.toBeInstanceOf(HttpError);
     });
 });

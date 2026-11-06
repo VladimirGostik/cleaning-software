@@ -11,6 +11,7 @@ import FormActions from '@/Components/Forms/FormActions.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { useDocumentPdfPreview } from '@/Composables/useDocumentPdfPreview';
+import { postBlob } from '@/utils/http';
 import { GENERATE_PDF_URL } from '@/Composables/useContractDocument';
 
 const props = defineProps<{
@@ -35,7 +36,9 @@ const showFooter = defineModel<boolean>('showFooter', { required: true });
 const { t } = useI18n();
 const { allows } = useAuthorization();
 
-const pdf = useDocumentPdfPreview({ url: GENERATE_PDF_URL, payload: () => props.pdfPayload() });
+const pdf = useDocumentPdfPreview({
+    load: (signal) => postBlob(GENERATE_PDF_URL, props.pdfPayload(), { signal }),
+});
 
 const settingsUrl = computed(() => (allows('manage billing settings') ? '/settings/invoicing' : null));
 const missingSummary = computed(() =>

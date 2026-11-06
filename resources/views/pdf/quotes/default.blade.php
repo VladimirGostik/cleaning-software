@@ -22,8 +22,8 @@
     @include('pdf.partials.kegos-base')
     <style>
         body { font-size: 10pt; }
-        .q-top td { vertical-align: middle; padding: 0; }
-        .q-logo svg { height: 5mm; width: auto; display: block; }
+        .q-top td { vertical-align: middle; padding: 1mm 0 0; }
+        .q-logo svg { display: block; height: 5mm; width: 45.63mm; overflow: visible; }
         .q-doctype { text-align: right; font-size: 8pt; letter-spacing: .22em; color: #5A6661; font-weight: 500; text-transform: uppercase; }
         .q-docno { text-align: right; font-size: 8.5pt; color: #5A6661; margin-top: 1mm; }
         h1 { font-size: 20pt; font-weight: 600; letter-spacing: -0.03em; margin: 6mm 0 1.5mm; line-height: 1.1; }
