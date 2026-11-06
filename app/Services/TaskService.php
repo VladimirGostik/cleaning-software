@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Data\Auth\MobileCompanyData;
 use App\Data\Tasks\TaskAssignData;
+use App\Data\Tasks\TaskBoardColumnData;
+use App\Data\Tasks\TaskBoardData;
 use App\Data\Tasks\TaskCanData;
 use App\Data\Tasks\TaskDetailData;
 use App\Data\Tasks\TaskFormContextData;
@@ -14,6 +16,7 @@ use App\Data\Tasks\TaskMemberOptionData;
 use App\Data\Tasks\TaskReminderSlotData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Enums\PermissionEnum;
+use App\Enums\TaskCommentAuthorEnum;
 use App\Enums\TaskReminderSlotEnum;
 use App\Enums\TaskRunStatusEnum;
 use App\Enums\TaskStatusEnum;
@@ -23,11 +26,13 @@ use App\Models\Task;
 use App\Models\TenantMembership;
 use App\Models\User;
 use App\Policies\TaskPolicy;
+use App\Scopes\TaskCommentScope;
 use App\Scopes\TenantScope;
 use App\Services\Dashboard\TenantVisibility;
 use App\Services\Tenancy\TenantPermissionSnapshot;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Closure;
 use Illuminate\Database\DatabaseManager;
@@ -36,14 +41,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\PermissionRegistrar;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\Sorts\Sort;
 
 final readonly class TaskService
 {
+    public const string PRIORITY_RANK = "CASE tasks.priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END";
+
     public function __construct(
         private DatabaseManager $db,
         private TenantPermissionSnapshot $snapshot,
@@ -55,54 +66,29 @@ final readonly class TaskService
      */
     public function paginate(Request $request, User $actor): LengthAwarePaginator
     {
-        $viewAll = [current_tenant_id() => $actor->can(PermissionEnum::ViewAllTasks->value)];
-
-        return $this->page(Task::query()->visibleTo($actor), $request, $actor, $viewAll);
+        return $this->page(Task::query()->visibleTo($actor), $request, $actor, $this->boundRights($actor));
     }
 
     /**
-     * The scope only knows the bound tenant, so the visibility predicate is re-applied per snapshot tenant.
-     *
      * @return LengthAwarePaginator<int, TaskListItemData>
      */
     public function listAcrossCompanies(Request $request, User $actor): LengthAwarePaginator
     {
-        $visibilities = array_filter(
-            $this->snapshot->forRequest($actor),
-            fn (TenantVisibility $visibility): bool => $visibility->tasks,
-        );
+        $visibilities = $this->taskVisibilities($actor);
 
-        $base = Task::unscopedForSystem()->where(function (Builder $query) use ($visibilities, $actor): void {
-            foreach ($visibilities as $visibility) {
-                $query->orWhere(function (Builder $firm) use ($visibility, $actor): void {
-                    $firm->where('tasks.tenant_id', $visibility->tenant->id);
+        return $this->page($this->acrossCompaniesBase($visibilities, $actor), $request, $actor, $this->rightsOf($visibilities));
+    }
 
-                    if ($visibility->tasksAll) {
-                        return;
-                    }
+    public function board(Request $request, User $actor): TaskBoardData
+    {
+        return $this->buildBoard(Task::query()->visibleTo($actor), $request, $actor, $this->boundRights($actor));
+    }
 
-                    $firm->where(function (Builder $own) use ($visibility, $actor): void {
-                        $own->where('tasks.created_by_user_id', $actor->id);
+    public function boardAcrossCompanies(Request $request, User $actor): TaskBoardData
+    {
+        $visibilities = $this->taskVisibilities($actor);
 
-                        if ($visibility->membershipId !== null) {
-                            $own->orWhere('tasks.assigned_membership_id', $visibility->membershipId);
-                        }
-                    });
-                });
-            }
-
-            $query->orWhere(function (Builder $global) use ($actor): void {
-                $global->whereNull('tasks.tenant_id')->where('tasks.created_by_user_id', $actor->id);
-            });
-        });
-
-        $viewAll = [];
-
-        foreach ($visibilities as $visibility) {
-            $viewAll[$visibility->tenant->id] = $visibility->tasksAll;
-        }
-
-        return $this->page($base, $request, $actor, $viewAll);
+        return $this->buildBoard($this->acrossCompaniesBase($visibilities, $actor), $request, $actor, $this->rightsOf($visibilities));
     }
 
     public function formContext(User $actor): TaskFormContextData
@@ -187,7 +173,7 @@ final readonly class TaskService
                 'assigned_membership_id' => $data->assigned_membership_id,
                 'title' => $data->title,
                 'description' => $data->description,
-                'status' => TaskStatusEnum::Open,
+                'status' => $data->status ?? TaskStatusEnum::Open,
                 'priority' => $data->priority,
                 'due_at' => $data->dueAtUtc(),
                 'remind_at' => $data->remindAtUtc(),
@@ -255,25 +241,34 @@ final readonly class TaskService
 
     public function complete(Task $task): Task
     {
-        if (! $task->isOpen()) {
+        if (! $task->isActive()) {
             throw ValidationException::withMessages(['status' => [__('app.task_not_open')]]);
         }
 
-        return $this->db->transaction(function () use ($task): Task {
-            $task->update(['status' => TaskStatusEnum::Done, 'completed_at' => now()]);
-
-            return $this->hydrate($task);
-        });
+        return $this->changeStatus($task, TaskStatusEnum::Done);
     }
 
     public function reopen(Task $task): Task
     {
-        if ($task->isOpen()) {
+        if ($task->isActive()) {
             throw ValidationException::withMessages(['status' => [__('app.task_not_closed')]]);
         }
 
-        return $this->db->transaction(function () use ($task): Task {
-            $task->update(['status' => TaskStatusEnum::Open, 'completed_at' => null]);
+        return $this->changeStatus($task, TaskStatusEnum::Open);
+    }
+
+    /** The same status writes nothing; a reminder already sent is not re-armed. */
+    public function changeStatus(Task $task, TaskStatusEnum $status): Task
+    {
+        if ($task->status === $status) {
+            return $this->hydrate($task);
+        }
+
+        return $this->db->transaction(function () use ($task, $status): Task {
+            $task->update([
+                'status' => $status,
+                'completed_at' => $status === TaskStatusEnum::Done ? now() : null,
+            ]);
 
             return $this->hydrate($task);
         });
@@ -318,7 +313,7 @@ final readonly class TaskService
             ->when(! $onlyOpen, fn (Builder $query) => $query->withTrashed())
             ->where('tenant_id', $membership->tenant_id)
             ->where('assigned_membership_id', $membership->id)
-            ->when($onlyOpen, fn (Builder $query) => $query->where('status', TaskStatusEnum::Open->value))
+            ->when($onlyOpen, fn (Builder $query) => $query->whereIn('status', TaskStatusEnum::activeValues()))
             ->update(['assigned_membership_id' => null]);
     }
 
@@ -328,7 +323,7 @@ final readonly class TaskService
             $claimed = Task::unscopedForSystem()
                 ->whereKey($task->id)
                 ->whereNull('reminded_at')
-                ->where('status', TaskStatusEnum::Open->value)
+                ->whereIn('status', TaskStatusEnum::activeValues())
                 ->update(['reminded_at' => now()]);
 
             if ($claimed === 1) {
@@ -339,12 +334,93 @@ final readonly class TaskService
 
     /**
      * @param  Builder<Task>  $base
-     * @param  array<string, bool>  $viewAllByTenant  Whether the viewer holds `view all tasks` per company, for the AI status audience.
+     * @param  array<string, array{view_all: bool, edit: bool}>  $rights
      * @return LengthAwarePaginator<int, TaskListItemData>
      */
-    private function page(Builder $base, Request $request, User $actor, array $viewAllByTenant): LengthAwarePaginator
+    private function page(Builder $base, Request $request, User $actor, array $rights): LengthAwarePaginator
     {
-        return QueryBuilder::for($base)
+        return $this->filtered($base, $request, $actor)
+            ->allowedSorts('due_at', 'created_at', 'status', 'title', $this->prioritySort())
+            ->defaultSort('due_at', '-created_at')
+            ->with([...$this->listRelations(), 'latestAiRunStatus'])
+            ->withCount($this->listCounts())
+            ->paginate($request->integer('per_page', 25))
+            ->withQueryString()
+            ->through(fn (Task $task) => $this->listItem($task, $actor, $rights));
+    }
+
+    /**
+     * Columns are the statuses, so `filter[status]`, `sort` and paging are dropped from the request.
+     *
+     * @param  Builder<Task>  $base
+     * @param  array<string, array{view_all: bool, edit: bool}>  $rights
+     */
+    private function buildBoard(Builder $base, Request $request, User $actor, array $rights): TaskBoardData
+    {
+        $query = Arr::except($request->query(), ['sort', 'page', 'per_page']);
+
+        if (isset($query['filter']) && is_array($query['filter'])) {
+            unset($query['filter']['status']);
+        }
+
+        $filtered = $this->filtered($base, $request->duplicate($query), $actor)->getEloquentBuilder();
+        $limit = max(1, config()->integer('tasks.board.column_limit', 50));
+
+        $totals = (clone $filtered)->toBase()
+            ->select('tasks.status')
+            ->selectRaw('count(*) as total')
+            ->groupBy('tasks.status')
+            ->pluck('total', 'status');
+
+        $columns = [];
+
+        foreach (TaskStatusEnum::boardOrder() as $status) {
+            $column = (clone $filtered)
+                ->where('tasks.status', $status->value)
+                ->with([...$this->listRelations(), 'latestAiRunStatus'])
+                ->withCount($this->listCounts());
+
+            $this->orderColumn($column, $status);
+
+            $tasks = $column->limit($limit + 1)->get();
+
+            $columns[] = new TaskBoardColumnData(
+                status: $status,
+                total: $this->intOf($totals->get($status->value)),
+                tasks: array_values($tasks->take($limit)->map(fn (Task $task): TaskListItemData => $this->listItem($task, $actor, $rights))->all()),
+                has_more: $tasks->count() > $limit,
+            );
+        }
+
+        return new TaskBoardData(columns: $columns);
+    }
+
+    private function intOf(mixed $value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
+    }
+
+    /** @param  Builder<Task>  $column */
+    private function orderColumn(Builder $column, TaskStatusEnum $status): void
+    {
+        if ($status === TaskStatusEnum::Done) {
+            $column->orderByRaw('tasks.completed_at DESC NULLS LAST')->orderByDesc('tasks.updated_at');
+
+            return;
+        }
+
+        $column->orderByRaw(self::PRIORITY_RANK.' ASC')
+            ->orderByRaw('tasks.due_at ASC NULLS LAST')
+            ->orderByDesc('tasks.created_at');
+    }
+
+    /**
+     * @param  Builder<Task>  $base
+     * @return QueryBuilder<Task>
+     */
+    private function filtered(Builder $base, Request $request, User $actor): QueryBuilder
+    {
+        return QueryBuilder::for($base, $request)
             ->allowedFilters(
                 AllowedFilter::callbackClean('search', function (Builder $query, mixed $value): void {
                     if (blank($value) || ! is_scalar($value)) {
@@ -365,22 +441,84 @@ final readonly class TaskService
                         default => null,
                     };
                 }),
-                AllowedFilter::dynamic('status'),
+                AllowedFilter::callback('status', function (Builder $query, mixed $value): void {
+                    $values = array_values(array_filter(Arr::wrap($value), is_string(...)));
+
+                    if ($values !== []) {
+                        $query->whereIn('tasks.status', $values);
+                    }
+                }),
                 AllowedFilter::dynamic('priority'),
                 AllowedFilter::dynamic('tenant_id')->uuid(),
                 AllowedFilter::dynamic('assigned_membership_id')->uuid(),
                 AllowedFilter::dynamic('due_at')->date(),
-            )
-            ->allowedSorts('due_at', 'created_at', 'status', 'title')
-            ->defaultSort('due_at', '-created_at')
-            ->with([...$this->listRelations(), 'latestAiRunStatus'])
-            ->paginate($request->integer('per_page', 25))
-            ->withQueryString()
-            ->through(fn (Task $task) => TaskListItemData::fromModel($task, $this->aiRunStatus($task, $actor, $viewAllByTenant)));
+                AllowedFilter::callbackClean('assignee', function (Builder $query, mixed $value) use ($actor): void {
+                    if ($value === 'me') {
+                        $query->whereIn('tasks.assigned_membership_id', TenantMembership::query()
+                            ->where('user_id', $actor->id)
+                            ->where('is_active', true)
+                            ->select('id'));
+                    } elseif ($value === 'none') {
+                        $query->whereNull('tasks.assigned_membership_id');
+                    } elseif (is_string($value) && Str::isUuid($value)) {
+                        $query->where('tasks.assigned_membership_id', $value);
+                    }
+                }),
+                AllowedFilter::callbackClean('due', function (Builder $query, mixed $value): void {
+                    $this->applyDue($query, $value);
+                }),
+            );
     }
 
-    /** @param  array<string, bool>  $viewAllByTenant */
-    private function aiRunStatus(Task $task, User $actor, array $viewAllByTenant): ?TaskRunStatusEnum
+    /** @param  Builder<Task>  $query */
+    private function applyDue(Builder $query, mixed $value): void
+    {
+        $today = CarbonImmutable::now(TaskReminderSlotEnum::TIMEZONE)->startOfDay();
+
+        match ($value) {
+            'overdue' => $query->where('tasks.due_at', '<', now())->whereIn('tasks.status', TaskStatusEnum::activeValues()),
+            'today' => $query->where('tasks.due_at', '>=', $today->utc())->where('tasks.due_at', '<', $today->addDay()->startOfDay()->utc()),
+            'week' => $query->where('tasks.due_at', '>=', $today->utc())->where('tasks.due_at', '<', $today->addDays(7)->startOfDay()->utc()),
+            'none' => $query->whereNull('tasks.due_at'),
+            default => null,
+        };
+    }
+
+    private function prioritySort(): AllowedSort
+    {
+        return AllowedSort::custom('priority', new class implements Sort
+        {
+            /** @param  Builder<Model>  $query */
+            public function __invoke(Builder $query, bool $descending, string $property): void
+            {
+                $query->orderByRaw(TaskService::PRIORITY_RANK.($descending ? ' DESC' : ' ASC'));
+                $query->orderBy('tasks.created_at', 'desc')->orderBy('tasks.id');
+            }
+        });
+    }
+
+    /** @return array<string, Closure> */
+    private function listCounts(): array
+    {
+        return [
+            'comments as comments_count' => fn (Builder $query) => $query
+                ->withoutGlobalScope(TaskCommentScope::class)
+                ->where('author_kind', TaskCommentAuthorEnum::User->value),
+            'media as attachments_count' => fn (Builder $query) => $query->where('collection_name', Task::ATTACHMENTS_COLLECTION),
+        ];
+    }
+
+    /** @param  array<string, array{view_all: bool, edit: bool}>  $rights */
+    private function listItem(Task $task, User $actor, array $rights): TaskListItemData
+    {
+        $tenantRights = $task->tenant_id === null ? null : ($rights[$task->tenant_id] ?? null);
+
+        $canUpdate = TaskPolicy::changeAllowed($task->isGlobal(), $task->created_by_user_id === $actor->id, $tenantRights['edit'] ?? false);
+
+        return TaskListItemData::fromModel($task, $canUpdate, $this->aiRunStatus($task, $actor, $tenantRights['view_all'] ?? false));
+    }
+
+    private function aiRunStatus(Task $task, User $actor, bool $holdsViewAll): ?TaskRunStatusEnum
     {
         $run = $task->latestAiRunStatus;
 
@@ -391,11 +529,80 @@ final readonly class TaskService
         $audience = TaskPolicy::aiOutputAudienceIncludes(
             $task->isGlobal(),
             $task->created_by_user_id === $actor->id,
-            $task->tenant_id !== null && ($viewAllByTenant[$task->tenant_id] ?? false),
+            $task->tenant_id !== null && $holdsViewAll,
             $run->started_by_user_id === $actor->id,
         );
 
         return $audience ? $run->status : null;
+    }
+
+    /** @return array<string, array{view_all: bool, edit: bool}> */
+    private function boundRights(User $actor): array
+    {
+        return [current_tenant_id() => [
+            'view_all' => $actor->can(PermissionEnum::ViewAllTasks->value),
+            'edit' => $actor->can(PermissionEnum::EditTasks->value),
+        ]];
+    }
+
+    /**
+     * @param  list<TenantVisibility>  $visibilities
+     * @return array<string, array{view_all: bool, edit: bool}>
+     */
+    private function rightsOf(array $visibilities): array
+    {
+        $rights = [];
+
+        foreach ($visibilities as $visibility) {
+            $rights[$visibility->tenant->id] = [
+                'view_all' => $visibility->tasksAll,
+                'edit' => in_array(PermissionEnum::EditTasks, $visibility->permissions, true),
+            ];
+        }
+
+        return $rights;
+    }
+
+    /** @return list<TenantVisibility> */
+    private function taskVisibilities(User $actor): array
+    {
+        return array_values(array_filter(
+            $this->snapshot->forRequest($actor),
+            fn (TenantVisibility $visibility): bool => $visibility->tasks,
+        ));
+    }
+
+    /**
+     * The scope only knows the bound tenant, so the visibility predicate is re-applied per snapshot tenant.
+     *
+     * @param  list<TenantVisibility>  $visibilities
+     * @return Builder<Task>
+     */
+    private function acrossCompaniesBase(array $visibilities, User $actor): Builder
+    {
+        return Task::unscopedForSystem()->where(function (Builder $query) use ($visibilities, $actor): void {
+            foreach ($visibilities as $visibility) {
+                $query->orWhere(function (Builder $firm) use ($visibility, $actor): void {
+                    $firm->where('tasks.tenant_id', $visibility->tenant->id);
+
+                    if ($visibility->tasksAll) {
+                        return;
+                    }
+
+                    $firm->where(function (Builder $own) use ($visibility, $actor): void {
+                        $own->where('tasks.created_by_user_id', $actor->id);
+
+                        if ($visibility->membershipId !== null) {
+                            $own->orWhere('tasks.assigned_membership_id', $visibility->membershipId);
+                        }
+                    });
+                });
+            }
+
+            $query->orWhere(function (Builder $global) use ($actor): void {
+                $global->whereNull('tasks.tenant_id')->where('tasks.created_by_user_id', $actor->id);
+            });
+        });
     }
 
     private function hydrate(Task $task): Task

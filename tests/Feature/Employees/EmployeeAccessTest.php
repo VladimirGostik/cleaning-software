@@ -383,6 +383,22 @@ final class EmployeeAccessTest extends TestCase
         $this->assertSame(TaskStatusEnum::Done, Task::unscopedForSystem()->findOrFail($done->id)->status);
     }
 
+    public function test_revoke_releases_tasks_in_every_unfinished_status(): void
+    {
+        $employee = $this->employeeWithLogin();
+        $ids = [];
+
+        foreach (['in_progress', 'waiting', 'nice_to_have'] as $status) {
+            $ids[] = Task::factory()->assignedTo($employee)->createdBy($this->admin)->create(['status' => $status])->id;
+        }
+
+        $this->asAdmin()->delete(route('employees.access.destroy', $employee))->assertRedirect();
+
+        foreach ($ids as $id) {
+            $this->assertNull(Task::unscopedForSystem()->findOrFail($id)->assigned_membership_id);
+        }
+    }
+
     public function test_revoke_keeps_display_name_and_email_for_someone_without_first_and_last_name(): void
     {
         $user = User::factory()->create(['name' => 'Eva Kráľová', 'email' => 'eva@example.com']);

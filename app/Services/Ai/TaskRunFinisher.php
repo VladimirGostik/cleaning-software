@@ -124,7 +124,7 @@ final readonly class TaskRunFinisher
             return false;
         }
 
-        if (! $fresh->isOpen() || ! Gate::forUser($starter)->allows('update', $fresh)) {
+        if (! $fresh->isActive() || ! Gate::forUser($starter)->allows('update', $fresh)) {
             return false;
         }
 

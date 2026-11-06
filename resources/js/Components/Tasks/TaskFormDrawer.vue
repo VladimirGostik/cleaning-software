@@ -9,6 +9,7 @@ const props = defineProps<{
     open: boolean;
     context: App.Data.Tasks.TaskFormContextData;
     task?: App.Data.Tasks.TaskDetailData | null;
+    initialStatus?: App.Enums.TaskStatusEnum | null;
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +23,12 @@ const title = computed(() => (props.task ? t('task_edit') : t('task_add')));
 
 <template>
     <SideDrawer :open="open" :title="title" @close="emit('close')">
-        <TaskForm :context="context" :task="task" @saved="emit('close')" @cancel="emit('close')" />
+        <TaskForm
+            :context="context"
+            :task="task"
+            :initial-status="initialStatus"
+            @saved="emit('close')"
+            @cancel="emit('close')"
+        />
     </SideDrawer>
 </template>

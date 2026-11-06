@@ -57,6 +57,15 @@ import WarningRounded from '~icons/material-symbols/warning-rounded';
 import ErrorRounded from '~icons/material-symbols/error-rounded';
 import EditNoteRounded from '~icons/material-symbols/edit-note-rounded';
 import BlockRounded from '~icons/material-symbols/block';
+import FilterAltOutline from '~icons/material-symbols/filter-alt-outline-rounded';
+import MoreHorizRounded from '~icons/material-symbols/more-horiz-rounded';
+import ChatBubbleOutline from '~icons/material-symbols/chat-bubble-outline-rounded';
+import AttachFileRounded from '~icons/material-symbols/attach-file-rounded';
+import KeyboardArrowDownRounded from '~icons/material-symbols/keyboard-arrow-down-rounded';
+import TableRowsOutline from '~icons/material-symbols/table-rows-outline-rounded';
+import ViewKanbanOutline from '~icons/material-symbols/view-kanban-outline-rounded';
+import AddRounded from '~icons/material-symbols/add-rounded';
+import CheckRounded from '~icons/material-symbols/check-rounded';
 
 interface NavIcon {
     outline: Component;
@@ -108,5 +117,16 @@ export const KG_ICONS = {
         sortNone: UnfoldMore,
         link: LinkRounded,
         image: ImageOutline,
+        filter: FilterAltOutline,
+        more: MoreHorizRounded,
+        caretDown: KeyboardArrowDownRounded,
+        add: AddRounded,
+        check: CheckRounded,
+    },
+    task: {
+        comment: ChatBubbleOutline,
+        attachment: AttachFileRounded,
+        viewTable: TableRowsOutline,
+        viewBoard: ViewKanbanOutline,
     },
 };

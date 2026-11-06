@@ -49,7 +49,7 @@ final readonly class TaskRunService
 
         Gate::forUser($actor)->authorize('startAiRun', [$task, $data->company_id]);
 
-        if (! $task->isOpen()) {
+        if (! $task->isActive()) {
             throw ValidationException::withMessages(['status' => [__('app.task_not_open_for_run')]]);
         }
 

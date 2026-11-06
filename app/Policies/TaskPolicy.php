@@ -124,13 +124,18 @@ final class TaskPolicy
         return $personalTask ? $isCreator : ($holdsViewAll || $isStarter);
     }
 
+    public static function changeAllowed(bool $personalTask, bool $isCreator, bool $holdsPermission): bool
+    {
+        return $personalTask ? $isCreator : $holdsPermission;
+    }
+
     private function mayChange(User $user, Task $task, PermissionEnum $permission): bool
     {
-        if ($task->isGlobal()) {
-            return $task->created_by_user_id === $user->id;
-        }
-
-        return $task->isVisibleTo($user) && $user->can($permission->value);
+        return self::changeAllowed(
+            $task->isGlobal(),
+            $task->created_by_user_id === $user->id,
+            $task->isVisibleTo($user) && $user->can($permission->value),
+        );
     }
 
     private function holds(User $user, PermissionEnum $permission, ?string $tenantId): bool

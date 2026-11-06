@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\TenantInterface;
 use App\Notifications\InvoiceIssued;
 use App\Services\InvoiceService;
+use App\Services\PlaceholderResolverService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -168,5 +169,77 @@ final class InvoiceMailTextTest extends TestCase
         app(InvoiceService::class)->send($invoice);
 
         Notification::assertSentOnDemand(InvoiceIssued::class);
+    }
+
+    public function test_override_replaces_template_and_resolves_tokens(): void
+    {
+        $invoice = $this->invoiceWithTexts([
+            'invoice_mail_subject' => 'Firm {{invoice.number}}',
+            'invoice_mail_body' => 'Firm body',
+        ], ['object_name' => 'Budova A']);
+
+        $content = app(PlaceholderResolverService::class)->invoiceMailContent(
+            $invoice,
+            'Custom {{invoice.number}}',
+            "Objekt {{object.name}}\nSpolu {{invoice.total}} / {{invoice.subtotal}} / {{invoice.vat_amount}}",
+        );
+
+        $this->assertSame('Custom '.$invoice->number, $content['subject']);
+        $this->assertStringContainsString('Objekt Budova A', $content['body']);
+        $this->assertStringContainsString($invoice->currency->format((float) $invoice->total), $content['body']);
+        $this->assertStringContainsString($invoice->currency->format((float) $invoice->subtotal), $content['body']);
+        $this->assertStringContainsString($invoice->currency->format((float) $invoice->vat_amount), $content['body']);
+    }
+
+    public function test_blank_override_falls_back_to_template_then_default(): void
+    {
+        $withTemplate = $this->invoiceWithTexts(['invoice_mail_subject' => 'Firm {{invoice.number}}', 'invoice_mail_body' => 'Firm body']);
+        $service = app(PlaceholderResolverService::class);
+
+        $content = $service->invoiceMailContent($withTemplate, '   ', '');
+        $this->assertSame('Firm '.$withTemplate->number, $content['subject']);
+        $this->assertSame('Firm body', $content['body']);
+
+        $plain = $this->invoiceWithTexts(['invoice_mail_subject' => null, 'invoice_mail_body' => null]);
+        $content = $service->invoiceMailContent($plain);
+        $this->assertSame(__('app.invoice_mail_subject', ['number' => $plain->number]), $content['subject']);
+        $this->assertSame(__('app.invoice_mail_greeting', ['name' => 'Acme s.r.o.'])."\n\n".__('app.invoice_mail_body'), $content['body']);
+    }
+
+    public function test_notification_uses_override_and_escapes_html(): void
+    {
+        $invoice = $this->invoiceWithTexts([]);
+        /** @var Expectation $expectation */
+        $expectation = $this->mock(RendersInvoicePdf::class)->shouldReceive('render');
+        $expectation->andReturn('%PDF-1.4 fake');
+
+        $message = (new InvoiceIssued($invoice->id, 'Vlastný predmet', '<b>x</b> {{customer.name}}'))->toMail(new AnonymousNotifiable);
+        $html = $this->html($message);
+
+        $this->assertSame('Vlastný predmet', $message->subject);
+        $this->assertStringContainsString('&lt;b&gt;x&lt;/b&gt; Acme s.r.o.', $html);
+    }
+
+    public function test_default_mail_renders_greeting_and_body_paragraphs(): void
+    {
+        $invoice = $this->invoiceWithTexts([]);
+
+        $html = $this->html($this->mail($invoice));
+
+        $this->assertStringContainsString('Acme s.r.o.', $html);
+        $this->assertStringContainsString(e(__('app.invoice_mail_body')), $html);
+    }
+
+    public function test_service_send_forwards_override_to_notification(): void
+    {
+        Notification::fake();
+        $invoice = $this->invoiceWithTexts([]);
+
+        app(InvoiceService::class)->send($invoice, 'S', 'B');
+
+        Notification::assertSentOnDemand(
+            InvoiceIssued::class,
+            fn (InvoiceIssued $n) => $n->subject === 'S' && $n->body === 'B',
+        );
     }
 }

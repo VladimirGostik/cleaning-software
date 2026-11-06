@@ -43,8 +43,8 @@ function clear() {
 </script>
 
 <template>
-    <div v-if="!disabled" class="join">
-        <label class="input input-sm join-item flex w-72 items-center gap-2">
+    <div v-if="!disabled" class="join w-full sm:w-auto">
+        <label class="input input-sm join-item flex w-full items-center gap-2 sm:w-72">
             <KG_ICONS.adminAction.search class="size-5 opacity-50" />
             <input
                 :value="value"

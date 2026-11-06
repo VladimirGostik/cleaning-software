@@ -1032,6 +1032,7 @@ readonly footer_text: string | null,
 };
 export type InvoiceDetailData = {
 readonly id: string,
+readonly tenant_id: string,
 readonly client_id: string | null,
 readonly client_name: string | null,
 readonly cleaning_object_id: string | null,
@@ -1095,6 +1096,8 @@ readonly efa: App.Data.Invoices.EInvoiceStatusData,
 readonly qr_available: boolean,
 readonly qr_data_uri: string | null,
 readonly supplier_missing_fields: string[],
+readonly can_be_issued: boolean,
+readonly can_be_sent: boolean,
 };
 export type InvoiceFormContextData = {
 readonly clients: App.Data.Clients.ClientOptionData[],
@@ -1139,6 +1142,7 @@ readonly payment_type: App.Enums.PaymentTypeEnum,
 readonly issue_date: string,
 readonly due_date: string,
 readonly is_credit_note: boolean,
+readonly sent_at: string | null,
 };
 export type InvoiceMailPlaceholderCatalogData = {
 readonly tokens: App.Data.Contracts.PlaceholderTokenData[],
@@ -1162,6 +1166,16 @@ readonly created_at: string,
 export type InvoiceSendData = {
 readonly recipient_email: string | null,
 readonly save_for_future: boolean,
+readonly subject: string | null,
+readonly body: string | null,
+};
+export type InvoiceSendDraftData = {
+readonly recipient_email: string | null,
+readonly email_options: string[],
+readonly save_target: App.Enums.InvoiceEmailSaveTargetEnum | null,
+readonly subject: string,
+readonly body: string,
+readonly attachment_name: string,
 };
 export type InvoiceSendOptionsData = {
 readonly email_options: string[],
@@ -1812,6 +1826,15 @@ readonly constraints: App.Data.Tasks.TaskAttachmentConstraintsData,
 export type TaskAttachmentUploadData = {
 readonly file: File,
 };
+export type TaskBoardColumnData = {
+readonly status: App.Enums.TaskStatusEnum,
+readonly total: number,
+readonly tasks: App.Data.Tasks.TaskListItemData[],
+readonly has_more: boolean,
+};
+export type TaskBoardData = {
+readonly columns: App.Data.Tasks.TaskBoardColumnData[],
+};
 export type TaskCanData = {
 readonly update: boolean,
 readonly delete: boolean,
@@ -1853,6 +1876,7 @@ readonly assigned_membership_id: string | null,
 readonly created_by_name: string,
 readonly can: App.Data.Tasks.TaskCanData,
 readonly attachments_count: number,
+readonly is_active: boolean,
 };
 export type TaskDraftData = {
 readonly title: string,
@@ -1882,6 +1906,10 @@ readonly assignee_name: string | null,
 readonly subject: App.Data.Tasks.TaskSubjectData | null,
 readonly is_global: boolean,
 readonly created_at: string,
+readonly comments_count: number,
+readonly attachments_count: number,
+readonly can_update: boolean,
+readonly is_active: boolean,
 readonly ai_run_status: App.Enums.TaskRunStatusEnum | null,
 };
 export type TaskMemberOptionData = {
@@ -1924,6 +1952,9 @@ readonly latest_run_id: string | null,
 readonly status: App.Enums.TaskRunStatusEnum | null,
 readonly is_active: boolean,
 };
+export type TaskStatusChangeData = {
+readonly status: App.Enums.TaskStatusEnum,
+};
 export type TaskSubjectData = {
 readonly type: string,
 readonly id: string,
@@ -1954,6 +1985,7 @@ readonly assigned_membership_id: string | null,
 readonly taskable_type: string | null,
 readonly taskable_id: string | null,
 readonly source: App.Enums.TaskSourceEnum,
+readonly status: App.Enums.TaskStatusEnum | null,
 };
 }
 namespace Tenants {
@@ -2063,12 +2095,13 @@ export type RoundingModeEnum = "none" | "document" | "cash_005";
 export type SupportedLanguage = "sk" | "en" | "uk";
 export type TaskCommentAuthorEnum = "user" | "ai";
 export type TaskFrequencyEnum = "one_time" | "weekly_1x" | "weekly_2x" | "weekly_3x" | "biweekly" | "monthly" | "bimonthly" | "seasonal";
+export type TaskIndexViewEnum = "table" | "board";
 export type TaskPriorityEnum = "low" | "normal" | "high";
 export type TaskReminderSlotEnum = "morning" | "noon" | "evening";
 export type TaskRunOutcomeEnum = "done" | "question" | "cannot";
 export type TaskRunStatusEnum = "queued" | "running" | "done" | "needs_input" | "awaiting_confirmation" | "could_not_finish" | "blocked" | "failed";
 export type TaskSourceEnum = "manual" | "voice" | "assistant" | "mcp";
-export type TaskStatusEnum = "open" | "done" | "cancelled";
+export type TaskStatusEnum = "open" | "in_progress" | "waiting" | "nice_to_have" | "done";
 export type TenantColorEnum = "#A16207" | "#D97706" | "#2563EB" | "#4F46E5" | "#0D9488" | "#059669" | "#7C3AED" | "#475569";
 }
 }

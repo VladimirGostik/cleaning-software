@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import StatusChip from '@/Components/StatusChip.vue';
 import type { StatusTone } from '@/Components/statusTone';
-import { KG_ICONS } from '@/icons/kegosIcons';
 import { taskStatusKey } from '@/utils/enums';
 
 const props = defineProps<{
@@ -12,15 +11,17 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const STATUS: Record<App.Enums.TaskStatusEnum, { tone: StatusTone; icon?: Component }> = {
+const STATUS: Record<App.Enums.TaskStatusEnum, { tone: StatusTone }> = {
     open: { tone: 'planned' },
+    in_progress: { tone: 'in_progress' },
+    waiting: { tone: 'warning' },
+    nice_to_have: { tone: 'neutral' },
     done: { tone: 'done' },
-    cancelled: { tone: 'neutral', icon: KG_ICONS.status.cancelled },
 };
 
 const entry = computed(() => STATUS[props.status]);
 </script>
 
 <template>
-    <StatusChip :tone="entry.tone" :icon="entry.icon" :label="t(taskStatusKey(props.status))" size="sm" />
+    <StatusChip :tone="entry.tone" :label="t(taskStatusKey(props.status))" size="sm" />
 </template>

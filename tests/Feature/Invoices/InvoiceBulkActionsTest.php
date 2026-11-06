@@ -65,7 +65,7 @@ final class InvoiceBulkActionsTest extends TestCase
         return $map;
     }
 
-    public function test_bulk_send_processes_only_issued_with_email_and_reports_the_rest(): void
+    public function test_bulk_send_processes_issued_and_overdue_with_email_and_reports_the_rest(): void
     {
         Notification::fake();
         $this->actingAsTenantUser('Admin', $this->tenant);
@@ -83,16 +83,15 @@ final class InvoiceBulkActionsTest extends TestCase
 
         $result = $this->bulkResult();
         $this->assertSame('send', $result['action']);
-        $this->assertSame(1, $result['processed']);
+        $this->assertSame(2, $result['processed']);
         $this->assertSame([
-            $overdue->id => BulkSkipReasonEnum::NotIssued->value,
             $noEmail->id => BulkSkipReasonEnum::NoEmail->value,
             $draft->id => BulkSkipReasonEnum::NotIssued->value,
             $paid->id => BulkSkipReasonEnum::NotIssued->value,
             $other->id => BulkSkipReasonEnum::NotFound->value,
             $missing => BulkSkipReasonEnum::NotFound->value,
         ], $this->reasonsById($result['skipped']));
-        Notification::assertSentOnDemandTimes(InvoiceIssued::class, 1);
+        Notification::assertSentOnDemandTimes(InvoiceIssued::class, 2);
     }
 
     public function test_bulk_pay_records_full_balance_with_shared_date_and_own_payment_type(): void

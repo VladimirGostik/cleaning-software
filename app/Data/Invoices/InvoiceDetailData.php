@@ -21,6 +21,7 @@ final class InvoiceDetailData extends Data
 {
     public function __construct(
         public readonly string $id,
+        public readonly string $tenant_id,
         public readonly ?string $client_id,
         public readonly ?string $client_name,
         public readonly ?string $cleaning_object_id,
@@ -91,6 +92,8 @@ final class InvoiceDetailData extends Data
         public readonly ?string $qr_data_uri = null,
         /** @var string[] */
         public readonly array $supplier_missing_fields = [],
+        public readonly bool $can_be_issued = false,
+        public readonly bool $can_be_sent = false,
     ) {}
 
     public static function fromModel(Invoice $invoice, ?string $qrDataUri, ?EInvoiceStatusData $efa = null): self
@@ -103,6 +106,7 @@ final class InvoiceDetailData extends Data
 
         return new self(
             id: $invoice->id,
+            tenant_id: $invoice->tenant_id,
             client_id: $invoice->client_id,
             client_name: $invoice->client?->name,
             cleaning_object_id: $invoice->cleaning_object_id,
@@ -168,6 +172,8 @@ final class InvoiceDetailData extends Data
             qr_data_uri: $qrDataUri,
             supplier_missing_fields: $supplierMissingFields,
             efa: $efa ?? EInvoiceStatusData::fromInvoice($invoice, []),
+            can_be_issued: $invoice->status === InvoiceStatusEnum::Draft && $supplierMissingFields === [],
+            can_be_sent: $invoice->canBeSent(),
         );
     }
 }

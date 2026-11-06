@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Data\Tasks\TaskAssignData;
+use App\Data\Tasks\TaskBoardData;
 use App\Data\Tasks\TaskDetailData;
 use App\Data\Tasks\TaskFormContextData;
 use App\Data\Tasks\TaskListItemData;
+use App\Data\Tasks\TaskStatusChangeData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
@@ -33,13 +35,15 @@ final class TaskController extends Controller
 
     #[Endpoint('List tasks', 'Tasks across all companies (scope=all) or the active company plus own global tasks (scope=company, default).')]
     #[QueryParam('scope', 'string', 'all or company.', required: false, example: 'all')]
-    #[QueryParam('filter[status]', 'string', 'open, done or cancelled.', required: false, example: 'open')]
+    #[QueryParam('filter[status]', 'string', 'open, in_progress, waiting, nice_to_have or done; comma separated for several. Unfinished = open,in_progress,waiting,nice_to_have.', required: false, example: 'open')]
     #[QueryParam('filter[priority]', 'string', 'low, normal or high.', required: false, example: 'high')]
     #[QueryParam('filter[kind]', 'string', 'firm or global.', required: false, example: 'firm')]
     #[QueryParam('filter[tenant_id]', 'string', 'Restrict to one company.', required: false)]
     #[QueryParam('filter[assigned_membership_id]', 'string', 'Restrict to one assignee.', required: false)]
+    #[QueryParam('filter[assignee]', 'string', 'me (any of the caller\'s memberships), none (unassigned) or a membership id.', required: false, example: 'me')]
+    #[QueryParam('filter[due]', 'string', 'overdue, today, week or none (local days, Europe/Bratislava).', required: false, example: 'today')]
     #[QueryParam('filter[search]', 'string', 'Title or description contains.', required: false)]
-    #[QueryParam('sort', 'string', 'due_at, created_at, status, title; prefix - for descending.', required: false, example: 'due_at')]
+    #[QueryParam('sort', 'string', 'due_at, created_at, status, title, priority; prefix - for descending.', required: false, example: 'due_at')]
     #[ResponseFromSpatieData(TaskListItemData::class, User::class, paginated: true)]
     public function index(Request $request): JsonResponse
     {
@@ -57,6 +61,27 @@ final class TaskController extends Controller
         }
 
         return response()->json($this->tasks->paginate($request, $actor));
+    }
+
+    #[Endpoint('Task board', 'One column per status in board order, at most 50 cards each. Same filters as the list except filter[status]; sort and paging are ignored.')]
+    #[QueryParam('scope', 'string', 'all or company.', required: false, example: 'all')]
+    #[QueryParam('filter[priority]', 'string', 'low, normal or high.', required: false, example: 'high')]
+    #[QueryParam('filter[kind]', 'string', 'firm or global.', required: false, example: 'firm')]
+    #[QueryParam('filter[tenant_id]', 'string', 'Restrict to one company.', required: false)]
+    #[QueryParam('filter[assignee]', 'string', 'me, none or a membership id.', required: false, example: 'me')]
+    #[QueryParam('filter[due]', 'string', 'overdue, today, week or none.', required: false, example: 'today')]
+    #[QueryParam('filter[search]', 'string', 'Title or description contains.', required: false)]
+    #[ResponseFromSpatieData(TaskBoardData::class, User::class)]
+    public function board(Request $request): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $acrossCompanies = $request->query('scope') === 'all';
+
+        Gate::forUser($actor)->authorize($acrossCompanies ? 'viewAnyAcrossCompanies' : 'viewAny', Task::class);
+
+        return response()->json($acrossCompanies ? $this->tasks->boardAcrossCompanies($request, $actor) : $this->tasks->board($request, $actor));
     }
 
     #[Authorize('create', Task::class)]
@@ -136,6 +161,17 @@ final class TaskController extends Controller
         $actor = $request->user();
 
         return response()->json($this->tasks->detail($this->tasks->reopen($task), $actor));
+    }
+
+    #[Authorize('update', 'task')]
+    #[Endpoint('Change task status', 'Any of the five statuses; moving to done sets completed_at, moving out clears it. The same status is a no-op.')]
+    #[ResponseFromSpatieData(TaskDetailData::class, User::class)]
+    public function status(TaskStatusChangeData $data, Task $task, Request $request): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return response()->json($this->tasks->detail($this->tasks->changeStatus($task, $data->status), $actor));
     }
 
     #[Authorize('assign', 'task')]

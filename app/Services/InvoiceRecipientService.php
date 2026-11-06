@@ -8,14 +8,15 @@ use App\Data\Invoices\InvoiceBuyerData;
 use App\Data\Invoices\InvoiceBuyerPreviewData;
 use App\Data\Invoices\InvoiceBuyerPreviewResultData;
 use App\Data\Invoices\InvoiceSendData;
+use App\Data\Invoices\InvoiceSendDraftData;
 use App\Data\Invoices\InvoiceSendOptionsData;
 use App\Enums\InvoiceEmailSaveTargetEnum;
-use App\Enums\InvoiceStatusEnum;
 use App\Enums\RecurringInvoiceStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Services\Documents\DocumentLocale;
 use App\Support\CustomerParty;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -23,7 +24,7 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class InvoiceRecipientService
 {
-    public function __construct(private InvoiceService $invoices) {}
+    public function __construct(private InvoiceService $invoices, private PlaceholderResolverService $placeholders, private DocumentLocale $locale) {}
 
     public function previewBuyer(InvoiceBuyerPreviewData $data, User $actor): InvoiceBuyerPreviewResultData
     {
@@ -40,7 +41,7 @@ final readonly class InvoiceRecipientService
 
     public function sendOptions(Invoice $invoice, User $actor): ?InvoiceSendOptionsData
     {
-        if ($invoice->status !== InvoiceStatusEnum::Issued
+        if (! $invoice->canBeSent()
             || $invoice->customer_email !== null
             || ! Gate::forUser($actor)->allows('send', $invoice)) {
             return null;
@@ -55,12 +56,12 @@ final readonly class InvoiceRecipientService
     public function send(Invoice $invoice, InvoiceSendData $data, User $actor): void
     {
         if ($invoice->customer_email !== null) {
-            $this->invoices->send($invoice);
+            $this->invoices->send($invoice, $data->subject, $data->body);
 
             return;
         }
 
-        if ($invoice->status !== InvoiceStatusEnum::Issued) {
+        if (! $invoice->canBeSent()) {
             throw ValidationException::withMessages(['status' => [__('app.invoice_not_issued_to_send')]]);
         }
 
@@ -84,7 +85,29 @@ final readonly class InvoiceRecipientService
             };
         });
 
-        $this->invoices->send($invoice);
+        $this->invoices->send($invoice, $data->subject, $data->body);
+    }
+
+    public function sendDraft(Invoice $invoice, User $actor): InvoiceSendDraftData
+    {
+        if (! $invoice->canBeSent()) {
+            throw ValidationException::withMessages(['status' => [__('app.invoice_not_issued_to_send')]]);
+        }
+
+        $invoice->loadMissing(['client', 'cleaningObject', 'recurringInvoice']);
+
+        $content = $this->locale->run(fn (): array => $this->placeholders->invoiceMailContent($invoice));
+
+        $options = $invoice->customer_email === null ? $this->sendOptions($invoice, $actor) : null;
+
+        return new InvoiceSendDraftData(
+            recipient_email: $invoice->customer_email,
+            email_options: $options->email_options ?? [],
+            save_target: $options?->save_target,
+            subject: $content['subject'],
+            body: $content['body'],
+            attachment_name: $invoice->pdfFilenameBase().'.pdf',
+        );
     }
 
     /** @return list<string> */

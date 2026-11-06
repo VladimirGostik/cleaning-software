@@ -307,6 +307,11 @@ final class Invoice extends Model implements HasMedia
         return $this->status === InvoiceStatusEnum::Draft;
     }
 
+    public function canBeSent(): bool
+    {
+        return in_array($this->status, [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue], true);
+    }
+
     public function canBeCancelled(): bool
     {
         return in_array($this->status, [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue], true);

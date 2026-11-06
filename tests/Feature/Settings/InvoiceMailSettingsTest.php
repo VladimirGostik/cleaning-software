@@ -66,7 +66,7 @@ final class InvoiceMailSettingsTest extends TestCase
             fn (AssertableInertia $page) => $page
                 ->where('settings.invoice_mail_subject', 'Faktúra {{invoice.number}}')
                 ->where('settings.invoice_mail_body', "Dobrý deň\n{{customer.name}}")
-                ->has('mailPlaceholders.tokens', 12)
+                ->has('mailPlaceholders.tokens', 15)
                 ->where('mailPlaceholders.tokens.0.token', '{{invoice.number}}')
                 ->where('mailPlaceholders.tokens.0.label', __('app.invoice_mail_token_invoice_number')),
         );

@@ -10,6 +10,10 @@ $office = [
 ];
 
 return [
+    'board' => [
+        'column_limit' => 50,
+    ],
+
     'attachments' => [
         'disk' => env('DOCUMENTS_DISK', 'local'),
         'max_size_kb' => 10240,

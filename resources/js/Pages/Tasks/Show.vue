@@ -7,7 +7,8 @@ import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
 import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
-import TaskStatusBadge from '@/Components/Tasks/TaskStatusBadge.vue';
+import AnchoredPopover from '@/Components/AnchoredPopover.vue';
+import TaskStatusMenu from '@/Components/Tasks/TaskStatusMenu.vue';
 import TaskPriorityBadge from '@/Components/Tasks/TaskPriorityBadge.vue';
 import TaskSubjectLink from '@/Components/Tasks/TaskSubjectLink.vue';
 import TaskFormDrawer from '@/Components/Tasks/TaskFormDrawer.vue';
@@ -18,8 +19,10 @@ import TaskCommentsCard from '@/Components/Tasks/TaskCommentsCard.vue';
 
 import { useTaskAttachmentUpload } from '@/Composables/useTaskAttachmentUpload';
 import { useTaskAiRun } from '@/Composables/useTaskAiRun';
+import { useTaskStatusChange } from '@/Composables/useTaskStatusChange';
 import { useTaskTransition } from '@/Composables/useTaskTransition';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
+import { KG_ICONS } from '@/icons/kegosIcons';
 import { formatDate, formatDatetime } from '@/utils/date';
 import { taskReminderSlotKey } from '@/utils/enums';
 import { findReminderSlot, formatSlotTime } from '@/utils/taskReminder';
@@ -53,9 +56,11 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 
 const ui = reactive({
     editOpen: false,
+    moreOpen: false,
 });
 
 const { processingId, transition } = useTaskTransition();
+const { pending, change } = useTaskStatusChange();
 const {
     items: uploadItems,
     uploading,
@@ -76,7 +81,7 @@ const {
 });
 const processing = computed(() => processingId.value !== null || uploading.value);
 
-const isOpen = computed(() => props.task.status === 'open');
+const shownStatus = computed(() => pending.value[props.task.id] ?? props.task.status);
 const assignMembers = computed(() => (props.task.tenant_id ? (props.context.members[props.task.tenant_id] ?? []) : []));
 const canAssign = computed(() => props.task.can.assign && !props.task.is_global && assignMembers.value.length > 0);
 
@@ -92,7 +97,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
     <Header :title="task.title" :breadcrumbs="breadcrumbs">
         <template #actions>
             <button
-                v-if="task.can.update && isOpen"
+                v-if="task.can.update && task.is_active"
                 type="button"
                 class="btn btn-secondary btn-sm"
                 :disabled="processing"
@@ -103,7 +108,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             </button>
 
             <button
-                v-if="task.can.update && !isOpen"
+                v-if="task.can.update && !task.is_active"
                 type="button"
                 class="btn btn-ghost btn-sm"
                 :disabled="processing"
@@ -116,7 +121,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="task.can.update"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-ghost btn-sm hidden sm:inline-flex"
                 :disabled="uploading"
                 @click="ui.editOpen = true"
             >
@@ -127,13 +132,56 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="task.can.delete"
                 type="button"
-                class="btn btn-error btn-sm"
+                class="btn btn-error btn-sm hidden sm:inline-flex"
                 :disabled="uploading"
                 @click="openModal(task)"
             >
                 <TrashIcon class="size-5" />
                 {{ t('delete') }}
             </button>
+
+            <div v-if="task.can.update || task.can.delete" class="sm:hidden">
+                <AnchoredPopover v-model:open="ui.moreOpen" class="p-1">
+                    <template #trigger="{ toggle, open }">
+                        <button
+                            type="button"
+                            class="btn btn-ghost btn-sm btn-square"
+                            aria-haspopup="menu"
+                            :aria-expanded="open"
+                            :aria-label="t('more_actions')"
+                            :title="t('more_actions')"
+                            @click="toggle"
+                        >
+                            <KG_ICONS.adminAction.more class="size-5" />
+                        </button>
+                    </template>
+
+                    <div role="menu" class="flex min-w-40 flex-col">
+                        <button
+                            v-if="task.can.update"
+                            type="button"
+                            role="menuitem"
+                            class="flex items-center gap-2 rounded-field px-2 py-2 text-left hover:bg-base-200"
+                            :disabled="uploading"
+                            @click="((ui.moreOpen = false), (ui.editOpen = true))"
+                        >
+                            <PencilSquareIcon class="size-5" />
+                            {{ t('edit') }}
+                        </button>
+                        <button
+                            v-if="task.can.delete"
+                            type="button"
+                            role="menuitem"
+                            class="flex items-center gap-2 rounded-field px-2 py-2 text-left text-error hover:bg-base-200"
+                            :disabled="uploading"
+                            @click="((ui.moreOpen = false), openModal(task))"
+                        >
+                            <TrashIcon class="size-5" />
+                            {{ t('delete') }}
+                        </button>
+                    </div>
+                </AnchoredPopover>
+            </div>
         </template>
     </Header>
 
@@ -170,13 +218,19 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <TaskCommentsCard :task-id="task.id" :thread="thread" :uploading="uploading" />
         </div>
 
-        <div class="space-y-6">
+        <div class="order-first space-y-6 lg:order-none">
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body">
                     <h2 class="card-title text-base">{{ t('task_details') }}</h2>
 
                     <div class="flex flex-wrap gap-2">
-                        <TaskStatusBadge :status="task.status" />
+                        <TaskStatusMenu
+                            variant="chip"
+                            :status="shownStatus"
+                            :editable="task.can.update"
+                            :disabled="pending[task.id] !== undefined"
+                            @select="change(task, $event)"
+                        />
                         <TaskPriorityBadge :priority="task.priority" />
                     </div>
 

@@ -283,6 +283,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->whereUuid('task');
     Route::post('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->whereUuid('task');
     Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->whereUuid('task');
+    Route::post('/tasks/{task}/status', [TaskController::class, 'status'])->name('tasks.status')->whereUuid('task');
     Route::get('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'show'])->name('tasks.attachments.show')->whereUuid(['task', 'attachment']);
     Route::delete('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('tasks.attachments.destroy')->whereUuid(['task', 'attachment']);
     Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:task-attachments')->name('tasks.attachments.store')->whereUuid('task');

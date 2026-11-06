@@ -18,7 +18,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Name('create_task')]
-#[Description('Creates an open task in the company. Optionally link it to a record (taskable_type + taskable_id) and assign it to a member.')]
+#[Description('Creates an unfinished task in the company. Optionally link it to a record (taskable_type + taskable_id) and assign it to a member.')]
 #[IsDestructive(false)]
 final class CreateTaskTool extends TenantTool
 {

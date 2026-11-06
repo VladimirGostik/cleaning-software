@@ -236,6 +236,21 @@ final class McpToolsReadTest extends TestCase
         $this->assertFalse($this->callTool($this->token, 'get_task', ['company_id' => $this->alpha->id, 'task_id' => $own->id])->isError);
     }
 
+    public function test_list_tasks_filters_by_new_statuses_assignee_and_due(): void
+    {
+        $waiting = Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create(['title' => 'Waiting one', 'status' => 'waiting', 'due_at' => now()->subDay()]);
+        Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create(['title' => 'Plain open']);
+
+        $byStatus = $this->callTool($this->token, 'list_tasks', ['company_id' => $this->alpha->id, 'status' => 'waiting']);
+        $this->assertSame([$waiting->id], $byStatus->ids());
+
+        $overdue = $this->callTool($this->token, 'list_tasks', ['company_id' => $this->alpha->id, 'due' => 'overdue']);
+        $this->assertSame([$waiting->id], $overdue->ids());
+
+        $unassigned = $this->callTool($this->token, 'list_tasks', ['company_id' => $this->alpha->id, 'assignee' => 'none']);
+        $this->assertCount(2, $unassigned->ids());
+    }
+
     public function test_get_task_reports_the_attachment_count_but_never_names_or_urls(): void
     {
         $task = Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create();

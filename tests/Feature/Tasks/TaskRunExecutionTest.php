@@ -183,6 +183,20 @@ final class TaskRunExecutionTest extends TestCase
         $this->assertStringContainsString($this->notice('task_run_notice_not_closed'), $this->aiCommentOf($run)->body);
     }
 
+    public function test_a_clean_done_closes_an_in_progress_or_waiting_task(): void
+    {
+        foreach (['in_progress', 'waiting'] as $status) {
+            $task = $this->firmTask();
+            $task->update(['status' => $status]);
+            $this->runner->result = new TaskRunResult(TaskRunOutcomeEnum::Done, 'Finished.');
+
+            $run = $this->execute($this->queuedRun($task, $this->admin));
+
+            $this->assertTrue($run->closed_task);
+            $this->assertSame(TaskStatusEnum::Done, $task->refresh()->status);
+        }
+    }
+
     public function test_a_task_closed_meanwhile_is_not_an_error(): void
     {
         $task = $this->firmTask();

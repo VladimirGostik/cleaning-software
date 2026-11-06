@@ -26,11 +26,15 @@ final class TaskListItemData extends Data
         public readonly ?TaskSubjectData $subject,
         public readonly bool $is_global,
         public readonly string $created_at,
+        public readonly int $comments_count,
+        public readonly int $attachments_count,
+        public readonly bool $can_update,
+        public readonly bool $is_active,
         public readonly ?TaskRunStatusEnum $ai_run_status = null,
     ) {}
 
-    /** Expects `tenant`, `assignedMembership.user` and `taskable` eager loaded. */
-    public static function fromModel(Task $task, ?TaskRunStatusEnum $aiRunStatus = null): self
+    /** Expects `tenant`, `assignedMembership.user` and `taskable` eager loaded; the counts come from `withCount` on list queries. */
+    public static function fromModel(Task $task, bool $canUpdate, ?TaskRunStatusEnum $aiRunStatus = null): self
     {
         return new self(
             id: $task->id,
@@ -44,6 +48,10 @@ final class TaskListItemData extends Data
             subject: TaskSubjectData::fromTask($task),
             is_global: $task->isGlobal(),
             created_at: $task->created_at->toIso8601String(),
+            comments_count: $task->comments_count ?? 0,
+            attachments_count: $task->attachments_count ?? 0,
+            can_update: $canUpdate,
+            is_active: $task->isActive(),
             ai_run_status: $aiRunStatus,
         );
     }

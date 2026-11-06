@@ -52,6 +52,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property User|null $creator
  * @property TenantMembership|null $assignedMembership
  * @property Model|null $taskable
+ * @property int|null $comments_count
+ * @property int|null $attachments_count
  */
 #[Fillable([
     'tenant_id', 'created_by_user_id', 'assigned_membership_id', 'title', 'description', 'status',
@@ -218,9 +220,9 @@ final class Task extends Model implements HasMedia
         return $this->tenant_id === null;
     }
 
-    public function isOpen(): bool
+    public function isActive(): bool
     {
-        return $this->status === TaskStatusEnum::Open;
+        return $this->status->isActive();
     }
 
     /**

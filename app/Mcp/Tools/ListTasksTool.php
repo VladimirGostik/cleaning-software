@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
+use App\Enums\TaskStatusEnum;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\TaskService;
@@ -22,7 +23,7 @@ final class ListTasksTool extends ListTool
 {
     protected function filterKeys(): array
     {
-        return ['search', 'status', 'priority', 'kind', 'assigned_membership_id'];
+        return ['search', 'status', 'priority', 'kind', 'assigned_membership_id', 'assignee', 'due'];
     }
 
     public function execute(User $user, TaskService $tasks): Response
@@ -38,10 +39,12 @@ final class ListTasksTool extends ListTool
         return [
             ...$this->companyProperty($schema),
             'search' => $schema->string()->description('Title or description contains.'),
-            'status' => $schema->string()->enum(['open', 'done', 'cancelled'])->description('Task status.'),
+            'status' => $schema->string()->enum(array_column(TaskStatusEnum::cases(), 'value'))->description('Task status.'),
             'priority' => $schema->string()->enum(['low', 'normal', 'high'])->description('Task priority.'),
             'kind' => $schema->string()->enum(['firm', 'global'])->description('Firm tasks or the user\'s global tasks only.'),
             'assigned_membership_id' => $schema->string()->format('uuid')->description('Only tasks of this assignee.'),
+            'assignee' => $schema->string()->description('me, none (unassigned) or a membership id.'),
+            'due' => $schema->string()->enum(['overdue', 'today', 'week', 'none'])->description('Due date window in local days; overdue covers unfinished tasks only.'),
             ...$this->pagingProperties($schema),
         ];
     }

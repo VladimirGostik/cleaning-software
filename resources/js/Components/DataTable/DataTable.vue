@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3';
 import { KG_ICONS } from '@/icons/kegosIcons';
 import TableFilters from './TableFilters.vue';
+import TableHeaderFilter from './TableHeaderFilter.vue';
 import TablePagination from './TablePagination.vue';
 import { useRowLink } from '@/Composables/useRowLink';
 import { readSpatieQuery, visitSpatieQuery } from '@/Composables/useSpatieTableQuery';
@@ -167,6 +168,10 @@ function changeFilter(property: string, value: string | null) {
     visitSpatieQuery({ [`filter[${property}]`]: value }, { routeUrl: props.routeUrl, only: props.reloadOnly });
 }
 
+function headerFilter(column: TableColumn<TRow>): FilterConfig | undefined {
+    return column.filter ? props.filters.find((filter) => filter.property === column.filter) : undefined;
+}
+
 function clearFilters() {
     const changes: Record<string, null> = { 'filter[search]': null };
     Object.keys(query.value.filters).forEach((key) => {
@@ -233,7 +238,20 @@ function confirmDelete(row: TRow, id: string | number) {
             @clear="clearFilters"
         />
 
-        <div class="kg-table-bleed overflow-x-auto bg-base-100">
+        <div v-if="$slots.card" class="flex flex-col gap-2 md:hidden">
+            <div
+                v-for="(row, index) in rows?.data ?? []"
+                :key="rowIdentifier(row, index)"
+                class="rounded-box border border-base-300 bg-base-100 p-3"
+            >
+                <slot name="card" :row="row" :index="index" />
+            </div>
+            <p v-if="!rows?.data?.length" class="py-8 text-center text-base-content/50">
+                {{ Object.keys(query.filters).length ? $t('no_records_filters') : $t('no_results') }}
+            </p>
+        </div>
+
+        <div class="kg-table-bleed overflow-x-auto bg-base-100" :class="{ 'hidden md:block': $slots.card }">
             <table class="table w-full">
                 <thead>
                     <tr>
@@ -263,6 +281,13 @@ function confirmDelete(row: TRow, id: string | number) {
                                 :class="{ 'justify-end': column.align === 'right' }"
                             >
                                 {{ column.label }}
+                                <TableHeaderFilter
+                                    v-if="headerFilter(column)"
+                                    :filter="headerFilter(column)!"
+                                    :query-value="query.filters[column.filter!]"
+                                    :column-label="column.label"
+                                    @change="changeFilter"
+                                />
                                 <template v-if="column.sortable">
                                     <component
                                         :is="

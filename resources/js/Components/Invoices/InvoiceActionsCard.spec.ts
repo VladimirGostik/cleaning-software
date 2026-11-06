@@ -18,9 +18,9 @@ const messages = {
     en: { invoice_action_send_email: 'Send by e-mail', invoice_send_requires_email: 'E-mail required' },
 };
 
-function render(customerEmail: string | null, recipientChoosable: boolean): HTMLElement {
+function render(customerEmail: string | null, recipientChoosable: boolean, status = 'issued'): HTMLElement {
     const host = document.createElement('div');
-    const invoice = { id: 'i1', status: 'issued', customer_email: customerEmail, is_credit_note: false };
+    const invoice = { id: 'i1', status, customer_email: customerEmail, is_credit_note: false };
     createApp({
         render: () =>
             h(InvoiceActionsCard, {
@@ -49,6 +49,14 @@ describe('InvoiceActionsCard send', () => {
 
     it('is enabled with a customer e-mail', () => {
         expect(sendButton(render('a@b.sk', false)).disabled).toBe(false);
+    });
+
+    it('is shown for an overdue invoice', () => {
+        expect(sendButton(render('a@b.sk', false, 'overdue'))).toBeDefined();
+    });
+
+    it('is hidden for a paid invoice', () => {
+        expect(sendButton(render('a@b.sk', false, 'paid'))).toBeUndefined();
     });
 
     it('is disabled with a hint when there is neither', () => {

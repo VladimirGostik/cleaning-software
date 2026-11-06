@@ -37,6 +37,7 @@ final class TaskDetailData extends Data
         public readonly string $created_by_name,
         public readonly TaskCanData $can,
         public readonly int $attachments_count,
+        public readonly bool $is_active,
     ) {}
 
     /** Expects `tenant`, `creator`, `assignedMembership.user` and `taskable` eager loaded. */
@@ -66,6 +67,7 @@ final class TaskDetailData extends Data
             created_by_name: $task->creator->name ?? '',
             can: $can,
             attachments_count: $attachmentsCount,
+            is_active: $task->isActive(),
         );
     }
 }

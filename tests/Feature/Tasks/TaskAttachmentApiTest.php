@@ -190,9 +190,9 @@ final class TaskAttachmentApiTest extends TestCase
         $this->assertStringContainsString("filename*=utf-8''", $disposition);
     }
 
-    public function test_an_editor_adds_files_to_open_done_and_cancelled_tasks(): void
+    public function test_an_editor_adds_files_to_open_done_and_nice_to_have_tasks(): void
     {
-        foreach (['open' => [], 'done' => ['status' => 'done'], 'cancelled' => ['status' => 'cancelled']] as $attributes) {
+        foreach (['open' => [], 'done' => ['status' => 'done'], 'nice_to_have' => ['status' => 'nice_to_have']] as $attributes) {
             $task = Task::factory()->forTenant($this->alpha)->createdBy($this->editor)->create($attributes);
 
             $this->upload($this->editor, $task, 'photo.jpg')->assertCreated();

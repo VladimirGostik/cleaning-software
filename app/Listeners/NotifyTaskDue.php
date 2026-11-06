@@ -25,7 +25,7 @@ final class NotifyTaskDue
             return;
         }
 
-        if (! $task->isOpen()) {
+        if (! $task->isActive()) {
             return;
         }
 

@@ -187,6 +187,54 @@ final class InvoiceApiTest extends TestCase
         $this->withHeaders(['X-Tenant-Id' => $this->alpha->id])->getJson('/api/invoices')->assertForbidden();
     }
 
+    public function test_list_items_carry_sent_at(): void
+    {
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id, 'sent_at' => now()]);
+
+        $response = $this->apiAs($this->accountant, $this->alpha)->getJson('/api/invoices')->assertOk();
+
+        $response->assertJsonPath('data.0.id', $invoice->id);
+        $this->assertNotNull($response->json('data.0.sent_at'));
+    }
+
+    public function test_detail_carries_tenant_id_and_state_flags(): void
+    {
+        $api = $this->apiAs($this->accountant, $this->alpha);
+        $draft = Invoice::factory()->create(['tenant_id' => $this->alpha->id]);
+        $issued = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);
+        $overdue = Invoice::factory()->overdue()->create(['tenant_id' => $this->alpha->id]);
+        $paid = Invoice::factory()->paid()->create(['tenant_id' => $this->alpha->id]);
+
+        $api->getJson('/api/invoices/'.$draft->id)->assertOk()
+            ->assertJsonPath('tenant_id', $this->alpha->id)
+            ->assertJsonPath('can_be_issued', true)
+            ->assertJsonPath('can_be_sent', false);
+        $api->getJson('/api/invoices/'.$issued->id)->assertJsonPath('can_be_issued', false)->assertJsonPath('can_be_sent', true);
+        $api->getJson('/api/invoices/'.$overdue->id)->assertJsonPath('can_be_sent', true);
+        $api->getJson('/api/invoices/'.$paid->id)->assertJsonPath('can_be_sent', false);
+    }
+
+    public function test_draft_with_incomplete_supplier_cannot_be_issued(): void
+    {
+        $tenant = $this->firm('Gamma');
+        $tenant->update(['address_line' => null]);
+        $user = $this->member($tenant, 'Účtovníčka');
+        $draft = Invoice::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->apiAs($user, $tenant)->getJson('/api/invoices/'.$draft->id)->assertOk()->assertJsonPath('can_be_issued', false);
+    }
+
+    public function test_stats_counts_only_the_active_firm(): void
+    {
+        Invoice::factory()->overdue()->create(['tenant_id' => $this->alpha->id]);
+        Invoice::factory()->overdue()->count(3)->create(['tenant_id' => $this->beta->id]);
+
+        $this->apiAs($this->accountant, $this->alpha)->getJson('/api/invoices/stats')
+            ->assertOk()
+            ->assertJsonStructure(['issued_this_month', 'overdue', 'pending', 'recurring_monthly', 'currency'])
+            ->assertJsonPath('overdue.count', 1);
+    }
+
     private function fakeRenderer(): void
     {
         /** @var Expectation $expectation */

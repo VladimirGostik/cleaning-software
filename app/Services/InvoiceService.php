@@ -161,6 +161,12 @@ final readonly class InvoiceService
         }
 
         return $this->db->transaction(function () use ($invoice, $data, $tenant, $actor): Invoice {
+            $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+
+            if ($locked->status !== InvoiceStatusEnum::Draft) {
+                throw ValidationException::withMessages(['status' => [__('app.invoice_not_draft')]]);
+            }
+
             if ($data->number !== null) {
                 $taken = Invoice::withoutGlobalScope(TenantScope::class)
                     ->where('tenant_id', $invoice->tenant_id)
@@ -365,9 +371,9 @@ final readonly class InvoiceService
         });
     }
 
-    public function send(Invoice $invoice): void
+    public function send(Invoice $invoice, ?string $subject = null, ?string $body = null): void
     {
-        if ($invoice->status !== InvoiceStatusEnum::Issued) {
+        if (! $invoice->canBeSent()) {
             throw ValidationException::withMessages(['status' => [__('app.invoice_not_issued_to_send')]]);
         }
 
@@ -375,7 +381,7 @@ final readonly class InvoiceService
             throw ValidationException::withMessages(['customer_email' => [__('app.invoice_no_customer_email')]]);
         }
 
-        Notification::route('mail', $invoice->customer_email)->notify(new InvoiceIssued($invoice->id));
+        Notification::route('mail', $invoice->customer_email)->notify((new InvoiceIssued($invoice->id, $subject, $body))->locale(config()->string('documents.locale')));
     }
 
     /**

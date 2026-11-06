@@ -43,7 +43,7 @@ final readonly class TaskRunLookup
         return new TaskQuestionData(
             comment_id: $questionId,
             answered: $answered,
-            can_answer: ! $answered && $task->isOpen() && $commentCount < TaskComment::MAX_PER_TASK,
+            can_answer: ! $answered && $task->isActive() && $commentCount < TaskComment::MAX_PER_TASK,
         );
     }
 

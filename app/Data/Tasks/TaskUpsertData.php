@@ -7,6 +7,7 @@ namespace App\Data\Tasks;
 use App\Enums\TaskPriorityEnum;
 use App\Enums\TaskReminderSlotEnum;
 use App\Enums\TaskSourceEnum;
+use App\Enums\TaskStatusEnum;
 use App\Models\Task;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\Validator;
@@ -52,6 +53,8 @@ final class TaskUpsertData extends Data
         #[Nullable, Uuid]
         public readonly ?string $taskable_id = null,
         public readonly TaskSourceEnum $source = TaskSourceEnum::Manual,
+        #[Nullable]
+        public readonly ?TaskStatusEnum $status = null,
     ) {}
 
     public function dueAtUtc(): ?CarbonImmutable
@@ -112,6 +115,7 @@ final class TaskUpsertData extends Data
         }
 
         return [
+            'status' => [Rule::in(TaskStatusEnum::activeValues())],
             'assigned_membership_id' => $isGlobal ? ['prohibited'] : [$assignee],
             'taskable_type' => [Rule::in(array_keys(Task::TASKABLE_TYPES)), 'required_with:taskable_id'],
             'taskable_id' => ['required_with:taskable_type'],

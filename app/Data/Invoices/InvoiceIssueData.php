@@ -14,6 +14,6 @@ final class InvoiceIssueData extends Data
 {
     public function __construct(
         #[Nullable, Max(50)]
-        public readonly ?string $number,
+        public readonly ?string $number = null,
     ) {}
 }

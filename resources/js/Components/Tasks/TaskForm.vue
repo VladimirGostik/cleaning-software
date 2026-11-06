@@ -17,11 +17,18 @@ import type { RadioOption } from '@/Components/Forms/RadioGroup.vue';
 
 import { usePageProps } from '@/Composables/usePageProps';
 import { toDatetimeInputValue } from '@/utils/date';
-import { TASK_PRIORITIES, taskPriorityKey, taskReminderSlotKey } from '@/utils/enums';
+import {
+    TASK_ACTIVE_STATUSES,
+    TASK_PRIORITIES,
+    taskPriorityKey,
+    taskReminderSlotKey,
+    taskStatusKey,
+} from '@/utils/enums';
 import { buildReminderPayload, formatSlotTime, initialReminderState } from '@/utils/taskReminder';
 
 interface TaskFormData {
     title: string;
+    status: App.Enums.TaskStatusEnum;
     priority: App.Enums.TaskPriorityEnum;
     description: string;
     due_at: string;
@@ -40,6 +47,7 @@ const GLOBAL_CHOICE = '__global';
 const props = defineProps<{
     context: App.Data.Tasks.TaskFormContextData;
     task?: App.Data.Tasks.TaskDetailData | null;
+    initialStatus?: App.Enums.TaskStatusEnum | null;
 }>();
 
 const emit = defineEmits<{
@@ -68,6 +76,7 @@ const form = useForm<TaskFormData>(
     isEdit.value ? `/tasks/${props.task!.id}` : '/tasks',
     {
         title: props.task?.title ?? '',
+        status: props.initialStatus ?? 'open',
         priority: props.task?.priority ?? 'normal',
         description: props.task?.description ?? '',
         due_at: toDatetimeInputValue(props.task?.due_at),
@@ -78,6 +87,10 @@ const form = useForm<TaskFormData>(
         taskable_id: props.task?.subject?.id ?? null,
         source: props.task?.source ?? 'manual',
     },
+);
+
+const statusOptions = computed<SelectOption[]>(() =>
+    TASK_ACTIVE_STATUSES.map((v) => ({ value: v, label: t(taskStatusKey(v)) })),
 );
 
 const priorityOptions = computed<SelectOption[]>(() =>
@@ -142,6 +155,7 @@ function buildPayload(data: TaskFormData): Record<string, unknown> {
     };
 
     if (isEdit.value) {
+        delete payload.status;
         delete payload.tenant_id;
         delete payload.assigned_membership_id;
     }
@@ -169,6 +183,8 @@ function submit(): void {
                     :error="form.errors.description"
                     :rows="4"
                 />
+
+                <SelectInput v-if="!isEdit" field="status" :label="t('status')" :options="statusOptions" required />
 
                 <SelectInput field="priority" :label="t('task_priority')" :options="priorityOptions" required />
 

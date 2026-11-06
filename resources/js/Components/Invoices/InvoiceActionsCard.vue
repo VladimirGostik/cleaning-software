@@ -76,7 +76,7 @@ const isIssuedOrOverdue = computed(() => props.invoice.status === 'issued' || pr
                 {{ t('invoice_action_download_pdf') }}
             </a>
 
-            <Can v-if="props.invoice.status === 'issued'" permission="edit invoices">
+            <Can v-if="isIssuedOrOverdue" permission="edit invoices">
                 <div>
                     <button
                         type="button"

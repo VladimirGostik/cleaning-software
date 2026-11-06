@@ -13,14 +13,14 @@ final class RemindTasks extends Command
 {
     protected $signature = 'app:remind-tasks';
 
-    protected $description = 'Send reminders for open tasks whose remind_at has passed';
+    protected $description = 'Send reminders for unfinished tasks whose remind_at has passed';
 
     public function handle(TaskService $tasks): int
     {
         $sent = 0;
 
         Task::unscopedForSystem()
-            ->where('status', TaskStatusEnum::Open->value)
+            ->whereIn('status', TaskStatusEnum::activeValues())
             ->whereNotNull('remind_at')
             ->where('remind_at', '<=', now())
             ->whereNull('reminded_at')

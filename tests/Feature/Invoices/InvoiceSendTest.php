@@ -68,11 +68,28 @@ final class InvoiceSendTest extends TestCase
         $this->post(route('invoices.send', $invoice))->assertSessionHasErrors('status');
     }
 
-    public function test_send_overdue_invoice_returns_422(): void
+    public function test_send_overdue_invoice_queues_notification_with_null_overrides(): void
     {
+        Notification::fake();
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
         $invoice = Invoice::factory()->overdue()->create(['tenant_id' => $tenant->id, 'customer_email' => 'client@example.com']);
+
+        $this->post(route('invoices.send', $invoice))->assertSessionDoesntHaveErrors();
+
+        Notification::assertSentOnDemand(
+            InvoiceIssued::class,
+            fn (InvoiceIssued $notification) => $notification->invoiceId === $invoice->id
+                && $notification->subject === null
+                && $notification->body === null,
+        );
+    }
+
+    public function test_send_paid_invoice_returns_422(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->paid()->create(['tenant_id' => $tenant->id, 'customer_email' => 'client@example.com']);
 
         $this->post(route('invoices.send', $invoice))->assertSessionHasErrors('status');
     }

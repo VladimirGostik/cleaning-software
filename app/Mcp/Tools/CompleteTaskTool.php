@@ -17,7 +17,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Name('complete_task')]
-#[Description('Marks an open task as done.')]
+#[Description('Marks an unfinished task as done.')]
 #[IsDestructive(false)]
 final class CompleteTaskTool extends TenantTool
 {

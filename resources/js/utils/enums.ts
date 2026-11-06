@@ -327,7 +327,20 @@ export function dashboardAlertTypeKey(type: App.Enums.DashboardAlertTypeEnum): s
     return `dashboard_alert_${type}`;
 }
 
-export const TASK_STATUSES: readonly App.Enums.TaskStatusEnum[] = ['open', 'done', 'cancelled'];
+export const TASK_STATUSES: readonly App.Enums.TaskStatusEnum[] = [
+    'open',
+    'in_progress',
+    'waiting',
+    'nice_to_have',
+    'done',
+];
+
+export const TASK_ACTIVE_STATUSES: readonly App.Enums.TaskStatusEnum[] = [
+    'open',
+    'in_progress',
+    'waiting',
+    'nice_to_have',
+];
 
 export const TASK_PRIORITIES: readonly App.Enums.TaskPriorityEnum[] = ['low', 'normal', 'high'];
 

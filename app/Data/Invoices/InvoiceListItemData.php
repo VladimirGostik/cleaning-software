@@ -33,6 +33,7 @@ final class InvoiceListItemData extends Data
         public readonly string $issue_date,
         public readonly string $due_date,
         public readonly bool $is_credit_note,
+        public readonly ?string $sent_at,
     ) {}
 
     public static function fromModel(Invoice $invoice): self
@@ -55,6 +56,7 @@ final class InvoiceListItemData extends Data
             issue_date: $invoice->issue_date->toDateString(),
             due_date: $invoice->due_date->toDateString(),
             is_credit_note: $invoice->isCreditNote(),
+            sent_at: $invoice->sent_at?->toIso8601String(),
         );
     }
 }

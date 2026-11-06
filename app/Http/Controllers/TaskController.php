@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Tasks\TaskAssignData;
+use App\Data\Tasks\TaskStatusChangeData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
+use App\Enums\TaskIndexViewEnum;
 use App\Models\Task;
 use App\Models\User;
 use App\Navigation\NavItem;
@@ -35,8 +37,12 @@ final class TaskController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
+        $view = $this->resolveView($request);
+
         return Inertia::render('Tasks/Index', [
-            'tasks' => $this->tasks->paginate($request, $actor),
+            'view' => $view,
+            'tasks' => $view === TaskIndexViewEnum::Table ? $this->tasks->paginate($request, $actor) : null,
+            'board' => $view === TaskIndexViewEnum::Board ? $this->tasks->board($request, $actor) : null,
             'filters' => $request->query(),
             'context' => $this->tasks->formContext($actor),
         ]);
@@ -106,6 +112,14 @@ final class TaskController extends Controller
         return back()->with('success', __('app.task_reopened'));
     }
 
+    #[Authorize('update', 'task')]
+    public function status(TaskStatusChangeData $data, Task $task): RedirectResponse
+    {
+        $this->tasks->changeStatus($task, $data->status);
+
+        return back()->with('success', __('app.task_status_changed'));
+    }
+
     #[Authorize('assign', 'task')]
     public function assign(TaskAssignData $data, Task $task, Request $request): RedirectResponse
     {
@@ -115,5 +129,20 @@ final class TaskController extends Controller
         $this->tasks->assign($task, $data, $actor);
 
         return back()->with('success', __('app.task_assigned'));
+    }
+
+    private function resolveView(Request $request): TaskIndexViewEnum
+    {
+        $requested = TaskIndexViewEnum::tryFrom($request->string('view')->toString());
+
+        if ($requested !== null) {
+            $request->session()->put('tasks.index_view', $requested->value);
+
+            return $requested;
+        }
+
+        $stored = $request->session()->get('tasks.index_view');
+
+        return (is_string($stored) ? TaskIndexViewEnum::tryFrom($stored) : null) ?? TaskIndexViewEnum::Table;
     }
 }

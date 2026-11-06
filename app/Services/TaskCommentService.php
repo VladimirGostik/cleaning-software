@@ -80,7 +80,7 @@ final readonly class TaskCommentService
 
     private function assertAnswerable(Task $task, string $questionId, User $actor, int $commentCount): void
     {
-        if (! $task->isOpen()) {
+        if (! $task->isActive()) {
             throw ValidationException::withMessages(['status' => [__('app.task_not_open_for_answer')]]);
         }
 

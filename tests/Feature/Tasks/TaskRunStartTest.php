@@ -67,6 +67,18 @@ final class TaskRunStartTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_a_run_starts_on_every_unfinished_status(): void
+    {
+        foreach (['in_progress', 'waiting', 'nice_to_have'] as $status) {
+            $task = $this->firmTask();
+            $task->update(['status' => $status]);
+
+            $this->apiAs($this->admin, $this->alpha)->postJson("/api/tasks/{$task->id}/ai-runs")->assertSuccessful();
+        }
+
+        $this->assertSame(3, TaskRun::query()->count());
+    }
+
     public function test_a_closed_task_and_a_second_start_while_active_are_status_errors(): void
     {
         $closed = $this->firmTask();

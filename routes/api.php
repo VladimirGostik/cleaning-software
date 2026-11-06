@@ -45,8 +45,12 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('api.notifications.read')->whereUuid('notification');
 
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('api.invoices.index');
+    Route::get('/invoices/stats', [InvoiceController::class, 'stats'])->name('api.invoices.stats');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('api.invoices.show')->whereUuid('invoice');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('api.invoices.pdf')->whereUuid('invoice');
+    Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('api.invoices.issue')->whereUuid('invoice');
+    Route::get('/invoices/{invoice}/send-draft', [InvoiceController::class, 'sendDraft'])->name('api.invoices.send-draft')->whereUuid('invoice');
+    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->middleware('throttle:invoice-send')->name('api.invoices.send')->whereUuid('invoice');
 
     Route::get('/quotes', [QuoteController::class, 'index'])->name('api.quotes.index');
     Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->name('api.quotes.show')->whereUuid('quote');
@@ -61,6 +65,7 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::post('/tasks/parse', TaskParseController::class)->middleware('throttle:ai-analyze')->name('api.tasks.parse');
 
     Route::get('/tasks', [TaskController::class, 'index'])->name('api.tasks.index');
+    Route::get('/tasks/board', [TaskController::class, 'board'])->name('api.tasks.board');
     Route::get('/tasks/form-context', [TaskController::class, 'formContext'])->name('api.tasks.form-context');
     Route::post('/tasks', [TaskController::class, 'store'])->name('api.tasks.store');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('api.tasks.show')->whereUuid('task');
@@ -68,6 +73,7 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('api.tasks.destroy')->whereUuid('task');
     Route::post('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('api.tasks.complete')->whereUuid('task');
     Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('api.tasks.reopen')->whereUuid('task');
+    Route::post('/tasks/{task}/status', [TaskController::class, 'status'])->name('api.tasks.status')->whereUuid('task');
     Route::post('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('api.tasks.assign')->whereUuid('task');
     Route::get('/tasks/{task}/attachments', [TaskAttachmentController::class, 'index'])->name('api.tasks.attachments.index')->whereUuid('task');
     Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->middleware('throttle:task-attachments')->name('api.tasks.attachments.store')->whereUuid('task');

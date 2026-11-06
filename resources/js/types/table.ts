@@ -9,6 +9,7 @@ export interface TableColumn<TRow extends object = Record<string, unknown>> {
     primary?: boolean;
     nowrap?: boolean;
     hideBelow?: 1440 | 1600;
+    filter?: string;
     headerClass?: string;
     cellClass?: string | ((row: TRow) => string | undefined);
     value?: (row: TRow) => unknown;

@@ -48,7 +48,7 @@ final readonly class TaskThreadService
             pending_actions: $this->pendingActions($task, $viewer),
             ai_available: $this->runner->isAvailable(),
             can_comment: $commentCount < TaskComment::MAX_PER_TASK && $this->policy->comment($viewer, $task),
-            can_start_run: $task->isOpen()
+            can_start_run: $task->isActive()
                 && ! ($latest?->isActive() ?? false)
                 && ! $this->lookup->livePendingActions($task)->where('user_id', $viewer->id)->exists()
                 && $this->policy->startAiRun($viewer, $task, $task->isGlobal() ? ($runCompanies[0]->id ?? null) : null),

@@ -72,6 +72,22 @@ final class TaskReminderTest extends TestCase
         NotificationFacade::assertNothingSent();
     }
 
+    public function test_command_reminds_every_unfinished_status_but_not_done(): void
+    {
+        NotificationFacade::fake();
+        $statuses = ['open', 'in_progress', 'waiting', 'nice_to_have'];
+
+        foreach ($statuses as $status) {
+            Task::factory()->forTenant($this->alpha)->createdBy($this->creator)->dueReminder()->create(['status' => $status]);
+        }
+
+        Task::factory()->forTenant($this->alpha)->createdBy($this->creator)->done()->dueReminder()->create();
+
+        $this->artisanCommand('app:remind-tasks')->assertSuccessful();
+
+        NotificationFacade::assertSentToTimes($this->creator, TaskDueNotification::class, count($statuses));
+    }
+
     public function test_reminder_goes_to_the_assignee_when_assigned_else_the_creator(): void
     {
         NotificationFacade::fake();
