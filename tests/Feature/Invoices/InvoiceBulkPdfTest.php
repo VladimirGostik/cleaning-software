@@ -44,8 +44,18 @@ final class InvoiceBulkPdfTest extends TestCase
     private function mockRenderer(): void
     {
         /** @var Expectation $expectation */
-        $expectation = $this->mock(RendersInvoicePdf::class)->shouldReceive('render');
-        $expectation->andReturnUsing(fn (Invoice $invoice): string => 'PDF:'.$invoice->id);
+        $expectation = $this->mock(RendersInvoicePdf::class)->shouldReceive('renderMany');
+        $expectation->once();
+        $expectation->andReturnUsing(function (array $invoices): array {
+            /** @var list<Invoice> $invoices */
+            $pdfs = [];
+
+            foreach ($invoices as $invoice) {
+                $pdfs[] = 'PDF:'.$invoice->id;
+            }
+
+            return $pdfs;
+        });
     }
 
     /** @param  list<string>|null  $with */
@@ -92,6 +102,39 @@ final class InvoiceBulkPdfTest extends TestCase
         $this->get(route('invoices.bulk.pdf', ['ids' => [$a->id]]))->assertOk()->assertSee('PDF:'.$a->id, false);
     }
 
+    public function test_the_full_chunk_size_is_accepted(): void
+    {
+        $cap = config()->integer('invoicing.bulk.pdf_max_ids');
+        $this->assertSame(25, $cap);
+        $ids = array_map(fn (Invoice $invoice): string => $invoice->id, $this->invoices($cap));
+        $this->mockRenderer();
+        $this->mockMerger(1);
+
+        $this->get(route('invoices.bulk.pdf', ['ids' => $ids]))->assertOk();
+    }
+
+    public function test_render_many_receives_all_requested_invoices_in_request_order(): void
+    {
+        [$a, $b, $c] = $this->invoices(3);
+        $received = [];
+        /** @var Expectation $expectation */
+        $expectation = $this->mock(RendersInvoicePdf::class)->shouldReceive('renderMany');
+        $expectation->once();
+        $expectation->andReturnUsing(
+            function (array $invoices) use (&$received): array {
+                /** @var list<Invoice> $invoices */
+                $received = array_map(fn (Invoice $invoice): string => $invoice->id, $invoices);
+
+                return array_map(fn (Invoice $invoice): string => 'PDF:'.$invoice->id, $invoices);
+            },
+        );
+        $this->mockMerger(1);
+
+        $this->get(route('invoices.bulk.pdf', ['ids' => [$b->id, $c->id, $a->id]]))->assertOk();
+
+        $this->assertSame([$b->id, $c->id, $a->id], $received);
+    }
+
     public function test_draft_invoices_are_allowed(): void
     {
         [$a, $b] = $this->invoices(2, 'draft');
@@ -103,10 +146,11 @@ final class InvoiceBulkPdfTest extends TestCase
 
     public function test_more_than_cap_is_rejected(): void
     {
-        $this->mock(RendersInvoicePdf::class)->shouldNotReceive('render');
+        $this->mock(RendersInvoicePdf::class)->shouldNotReceive('renderMany');
         $ids = array_map(fn (): string => (string) fake()->uuid(), range(1, config()->integer('invoicing.bulk.pdf_max_ids') + 1));
 
         $this->get(route('invoices.bulk.pdf', ['ids' => $ids]))->assertSessionHasErrors('ids');
+        $this->getJson(route('invoices.bulk.pdf', ['ids' => $ids]))->assertUnprocessable()->assertJsonValidationErrors('ids');
     }
 
     public function test_empty_non_uuid_and_duplicate_ids_are_rejected(): void
@@ -122,7 +166,7 @@ final class InvoiceBulkPdfTest extends TestCase
     {
         [$a] = $this->invoices(1);
         $other = Invoice::factory()->issued()->create(['tenant_id' => Tenant::factory()->create()->id]);
-        $this->mock(RendersInvoicePdf::class)->shouldNotReceive('render');
+        $this->mock(RendersInvoicePdf::class)->shouldNotReceive('renderMany');
 
         $this->get(route('invoices.bulk.pdf', ['ids' => [$a->id, $other->id]]))->assertNotFound();
     }

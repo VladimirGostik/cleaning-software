@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\Invoices\InvoiceBulkIdsData;
 use App\Data\Invoices\InvoiceIssueData;
 use App\Data\Invoices\InvoiceListItemData;
 use App\Data\Invoices\InvoicePaymentData;
@@ -54,7 +55,28 @@ final readonly class InvoiceService
      */
     public function paginate(Request $request): LengthAwarePaginator
     {
-        return QueryBuilder::for(Invoice::query())
+        return $this->listQuery($request)
+            ->with('client:id,name')
+            ->paginate($request->integer('per_page', 25))
+            ->withQueryString()
+            ->through(fn (Invoice $invoice) => InvoiceListItemData::fromModel($invoice));
+    }
+
+    public function matchingIds(Request $request, int $max): InvoiceBulkIdsData
+    {
+        $query = $this->listQuery($request);
+        $total = (clone $query)->toBase()->getCountForPagination();
+
+        /** @var list<string> $ids */
+        $ids = $query->limit($max)->pluck('id')->all();
+
+        return new InvoiceBulkIdsData($ids, $total, $total > $max);
+    }
+
+    /** @return QueryBuilder<Invoice> */
+    private function listQuery(Request $request): QueryBuilder
+    {
+        $query = QueryBuilder::for(Invoice::query())
             ->allowedFilters(
                 AllowedFilter::search(['number', 'customer_name']),
                 AllowedFilter::dynamic('number'),
@@ -68,11 +90,11 @@ final readonly class InvoiceService
                 AllowedFilter::dynamic('created_at')->date(),
             )
             ->allowedSorts('number', 'customer_name', 'status', 'type', 'issue_date', 'due_date', 'total', 'created_at')
-            ->defaultSort('-created_at')
-            ->with('client:id,name')
-            ->paginate($request->integer('per_page', 25))
-            ->withQueryString()
-            ->through(fn (Invoice $invoice) => InvoiceListItemData::fromModel($invoice));
+            ->defaultSort('-created_at');
+
+        $query->orderByDesc('id');
+
+        return $query;
     }
 
     public function stats(): InvoiceStatsData

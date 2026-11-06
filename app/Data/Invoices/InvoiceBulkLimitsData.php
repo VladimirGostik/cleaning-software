@@ -13,6 +13,7 @@ final class InvoiceBulkLimitsData extends Data
     public function __construct(
         public readonly int $max_ids,
         public readonly int $pdf_max_ids,
+        public readonly int $print_all_max,
     ) {}
 
     public static function fromConfig(): self
@@ -20,6 +21,7 @@ final class InvoiceBulkLimitsData extends Data
         return new self(
             max_ids: config()->integer('invoicing.bulk.max_ids'),
             pdf_max_ids: config()->integer('invoicing.bulk.pdf_max_ids'),
+            print_all_max: config()->integer('invoicing.bulk.print_all_max'),
         );
     }
 }

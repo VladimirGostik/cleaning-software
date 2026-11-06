@@ -395,6 +395,11 @@ final class McpToolsWriteTest extends TestCase
             {
                 return '%PDF-invoice';
             }
+
+            public function renderMany(array $invoices): array
+            {
+                return array_map(fn (Invoice $invoice): string => $this->render($invoice), $invoices);
+            }
         });
         $this->app->instance(RendersQuotePdf::class, new class implements RendersQuotePdf
         {
@@ -428,6 +433,11 @@ final class McpToolsWriteTest extends TestCase
             public function render(Invoice $invoice): string
             {
                 throw new RuntimeException('chromium crashed');
+            }
+
+            public function renderMany(array $invoices): array
+            {
+                return array_map(fn (Invoice $invoice): string => $this->render($invoice), $invoices);
             }
         });
         $invoice = Invoice::factory()->issued()->create(['tenant_id' => $this->alpha->id]);

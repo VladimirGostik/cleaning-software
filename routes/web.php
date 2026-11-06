@@ -218,6 +218,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/export/pohoda', [InvoiceExportController::class, 'pohoda'])->name('invoices.export.pohoda');
     Route::get('/invoices/export/pohoda/preview', [InvoiceExportController::class, 'pohodaPreview'])->name('invoices.export.pohoda.preview');
+    Route::get('/invoices/bulk/ids', [InvoiceBulkController::class, 'ids'])->name('invoices.bulk.ids');
     Route::get('/invoices/bulk/pdf', [InvoiceBulkController::class, 'pdf'])->name('invoices.bulk.pdf');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/invoices/bulk/pay', [InvoiceBulkController::class, 'pay'])->name('invoices.bulk.pay');

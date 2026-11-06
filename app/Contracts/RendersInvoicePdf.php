@@ -9,4 +9,10 @@ use App\Models\Invoice;
 interface RendersInvoicePdf
 {
     public function render(Invoice $invoice): string;
+
+    /**
+     * @param  list<Invoice>  $invoices
+     * @return list<string>
+     */
+    public function renderMany(array $invoices): array;
 }

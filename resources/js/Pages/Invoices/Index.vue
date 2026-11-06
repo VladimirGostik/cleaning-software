@@ -17,6 +17,7 @@ import InvoiceTypeBadge from '@/Components/Invoices/InvoiceTypeBadge.vue';
 import InvoiceStatsCards from '@/Components/Invoices/InvoiceStatsCards.vue';
 import InvoicePayModal from '@/Components/Invoices/InvoicePayModal.vue';
 import InvoiceBulkActionsBar from '@/Components/Invoices/InvoiceBulkActionsBar.vue';
+import InvoiceBulkPdfProgress from '@/Components/Invoices/InvoiceBulkPdfProgress.vue';
 import InvoiceBulkResultModal from '@/Components/Invoices/InvoiceBulkResultModal.vue';
 import InvoiceIssueModal from '@/Components/Invoices/InvoiceIssueModal.vue';
 import InvoicePohodaExportModal from '@/Components/Invoices/InvoicePohodaExportModal.vue';
@@ -24,6 +25,7 @@ import InvoiceSettingsDrawer from '@/Components/Invoices/InvoiceSettingsDrawer.v
 import Can from '@/Components/Can.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
+import { useInvoiceBulkPdf } from '@/Composables/useInvoiceBulkPdf';
 import { useInvoiceSettingsDrawer } from '@/Composables/useInvoiceSettingsDrawer';
 import { usePageProps } from '@/Composables/usePageProps';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
@@ -53,6 +55,9 @@ const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label:
 const pageProps = usePageProps();
 const selectedIds = ref<string[]>([]);
 const bulkResult = ref<App.Data.Invoices.BulkActionResultData | null>(null);
+
+const bulkPdf = useInvoiceBulkPdf(() => props.bulkLimits);
+const printAllTooMany = computed(() => props.invoices.total > props.bulkLimits.print_all_max);
 
 watch(
     () => pageProps.value.flash?.bulk_result ?? null,
@@ -182,6 +187,19 @@ function onSettingsSaved(): void {
                     {{ t('invoicing_settings') }}
                 </button>
             </Can>
+            <div v-if="allows('view invoices') && invoices.total > 0" class="flex flex-col items-end gap-1">
+                <button
+                    type="button"
+                    class="btn btn-neutral btn-sm"
+                    :disabled="printAllTooMany || bulkPdf.active.value"
+                    @click="bulkPdf.downloadAllMatching()"
+                >
+                    {{ t('invoice_bulk_download_all', { count: invoices.total }) }}
+                </button>
+                <span v-if="printAllTooMany" class="text-xs text-base-content/60">
+                    {{ t('invoice_bulk_download_all_limit', { max: bulkLimits.print_all_max }) }}
+                </span>
+            </div>
             <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-secondary btn-sm">
                 {{ t('invoice_add') }}
             </Link>
@@ -205,11 +223,21 @@ function onSettingsSaved(): void {
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body">
+            <InvoiceBulkPdfProgress
+                :phase="bulkPdf.state.phase"
+                :done="bulkPdf.state.done"
+                :total="bulkPdf.state.total"
+                :error="bulkPdf.state.error"
+                @cancel="bulkPdf.cancel"
+                @dismiss="bulkPdf.dismiss"
+            />
+
             <InvoiceBulkActionsBar
                 v-if="selectedIds.length"
                 :ids="selectedIds"
                 :limits="bulkLimits"
                 @clear="selectedIds = []"
+                @download-pdf="bulkPdf.downloadIds(selectedIds)"
             />
 
             <DataTable

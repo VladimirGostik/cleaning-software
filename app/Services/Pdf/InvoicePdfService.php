@@ -9,6 +9,7 @@ use App\Contracts\RendersInvoicePdf;
 use App\Contracts\ResolvesSupplierSignature;
 use App\Models\Invoice;
 use Spatie\LaravelPdf\Facades\Pdf;
+use Spatie\LaravelPdf\PdfBuilder;
 
 final readonly class InvoicePdfService implements RendersInvoicePdf
 {
@@ -19,6 +20,29 @@ final readonly class InvoicePdfService implements RendersInvoicePdf
 
     /** Returns raw PDF bytes via the `chrome` driver. All display values come from snapshot columns. */
     public function render(Invoice $invoice): string
+    {
+        return $this->builder($invoice)->generatePdfContent();
+    }
+
+    public function renderMany(array $invoices): array
+    {
+        if (config('laravel-pdf.driver') !== 'chrome') {
+            return array_map(fn (Invoice $invoice): string => $this->render($invoice), $invoices);
+        }
+
+        $driver = new ReusableChromeDriver(config()->array('laravel-pdf.chrome'));
+
+        try {
+            return array_map(
+                fn (Invoice $invoice): string => $this->builder($invoice)->setDriver($driver)->generatePdfContent(),
+                $invoices,
+            );
+        } finally {
+            $driver->close();
+        }
+    }
+
+    private function builder(Invoice $invoice): PdfBuilder
     {
         $invoice->loadMissing(['items', 'creditedInvoice']);
 
@@ -32,7 +56,6 @@ final readonly class InvoicePdfService implements RendersInvoicePdf
             // An explicit empty header stops Chrome stamping its default date/title header once the footer enables displayHeaderFooter.
             ->headerHtml('<div></div>')
             ->footerView('pdf.invoices.kegos-footer', ['invoice' => $invoice, 'preview' => false])
-            ->margins(18, 18, 26, 18)
-            ->generatePdfContent();
+            ->margins(18, 18, 26, 18);
     }
 }

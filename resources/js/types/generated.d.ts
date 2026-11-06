@@ -989,9 +989,15 @@ readonly can_submit: boolean,
 export type InvoiceBulkActionData = {
 readonly ids: string[],
 };
+export type InvoiceBulkIdsData = {
+readonly ids: string[],
+readonly total: number,
+readonly truncated: boolean,
+};
 export type InvoiceBulkLimitsData = {
 readonly max_ids: number,
 readonly pdf_max_ids: number,
+readonly print_all_max: number,
 };
 export type InvoiceBulkPayData = {
 readonly ids: string[],

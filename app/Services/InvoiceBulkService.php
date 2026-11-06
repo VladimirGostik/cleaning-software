@@ -65,7 +65,7 @@ final readonly class InvoiceBulkService
             $ids,
         );
 
-        $binaries = array_map(fn (Invoice $invoice): string => $this->pdf->render($invoice), $invoices);
+        $binaries = $this->pdf->renderMany($invoices);
 
         return count($binaries) === 1 ? $binaries[0] : $this->merger->merge($binaries);
     }

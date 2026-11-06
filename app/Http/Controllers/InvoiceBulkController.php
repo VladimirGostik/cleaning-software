@@ -6,11 +6,13 @@ namespace App\Http\Controllers;
 
 use App\Data\Invoices\BulkActionResultData;
 use App\Data\Invoices\InvoiceBulkActionData;
+use App\Data\Invoices\InvoiceBulkIdsData;
 use App\Data\Invoices\InvoiceBulkPayData;
 use App\Data\Invoices\InvoiceBulkPdfData;
 use App\Exceptions\PdfMergeFailedException;
 use App\Models\Invoice;
 use App\Services\InvoiceBulkService;
+use App\Services\InvoiceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,7 +22,7 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 
 final class InvoiceBulkController extends Controller
 {
-    public function __construct(private readonly InvoiceBulkService $bulk) {}
+    public function __construct(private readonly InvoiceBulkService $bulk, private readonly InvoiceService $invoices) {}
 
     #[Authorize('bulkPay', Invoice::class)]
     public function pay(InvoiceBulkPayData $data, Request $request): RedirectResponse
@@ -57,6 +59,12 @@ final class InvoiceBulkController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $filename),
         ]);
+    }
+
+    #[Authorize('bulkPdf', Invoice::class)]
+    public function ids(Request $request): InvoiceBulkIdsData
+    {
+        return $this->invoices->matchingIds($request, config()->integer('invoicing.bulk.print_all_max'));
     }
 
     private function respond(BulkActionResultData $result, InvoiceBulkActionData|InvoiceBulkPayData $data): RedirectResponse

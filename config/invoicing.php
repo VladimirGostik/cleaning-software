@@ -21,7 +21,8 @@ return [
 
     'bulk' => [
         'max_ids' => 100,
-        'pdf_max_ids' => 10,
+        'pdf_max_ids' => 25,
+        'print_all_max' => 200,
         'merge_timeout_seconds' => 60,
         'qpdf_binary' => env('QPDF_BINARY', 'qpdf'),
     ],

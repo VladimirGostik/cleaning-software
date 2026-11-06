@@ -53,6 +53,7 @@
         "@tiptap/starter-kit": "^3.23.4",
         "@tiptap/vue-3": "^3.23.4",
         "date-fns": "^4.1.0",
+        "pdf-lib": "^1.17.1",
         "vue": "^3.5.33",
         "vue-i18n": "^11.4.0"
     }

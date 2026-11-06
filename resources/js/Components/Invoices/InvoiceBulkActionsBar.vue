@@ -14,6 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     clear: [];
+    'download-pdf': [];
 }>();
 
 const { t } = useI18n();
@@ -26,13 +27,7 @@ const ui = reactive({
     error: null as string | null,
 });
 
-const pdfTooMany = computed(() => props.ids.length > props.limits.pdf_max_ids);
 const tooMany = computed(() => props.ids.length > props.limits.max_ids);
-const pdfHref = computed(() => {
-    const params = new URLSearchParams();
-    props.ids.forEach((id) => params.append('ids[]', id));
-    return `/invoices/bulk/pdf?${params.toString()}`;
-});
 
 function runConfirmed(): void {
     const action = ui.confirm;
@@ -68,16 +63,9 @@ function runConfirmed(): void {
 
         <div class="ml-auto flex flex-wrap items-center gap-2">
             <template v-if="allows('view invoices')">
-                <span
-                    v-if="pdfTooMany"
-                    class="tooltip"
-                    :data-tip="t('invoice_bulk_pdf_limit', { max: limits.pdf_max_ids })"
-                >
-                    <button type="button" class="btn btn-sm" disabled>{{ t('invoice_bulk_download_pdf') }}</button>
-                </span>
-                <a v-else :href="pdfHref" target="_blank" rel="noopener" class="btn btn-sm">
+                <button type="button" class="btn btn-sm" @click="emit('download-pdf')">
                     {{ t('invoice_bulk_download_pdf') }}
-                </a>
+                </button>
             </template>
 
             <template v-if="allows('edit invoices')">
