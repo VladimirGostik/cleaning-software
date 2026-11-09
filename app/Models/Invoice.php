@@ -32,6 +32,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 /**
  * @property string $id
  * @property string $tenant_id
+ * @property int|null $legacy_id
  * @property string|null $client_id
  * @property string|null $cleaning_object_id
  * @property string|null $credited_invoice_id
@@ -81,6 +82,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  */
 #[Fillable([
     'tenant_id',
+    'legacy_id',
     'client_id',
     'cleaning_object_id',
     'credited_invoice_id',
@@ -167,6 +169,7 @@ final class Invoice extends Model implements HasMedia
     protected function casts(): array
     {
         return [
+            'legacy_id' => 'integer',
             'type' => InvoiceTypeEnum::class,
             'status' => InvoiceStatusEnum::class,
             'payment_type' => PaymentTypeEnum::class,

@@ -37,6 +37,7 @@ final readonly class LegacyImportService
         private ToolContext $context,
         private LegacyRecordMapper $mapper,
         private LegacyRecurringInvoiceImporter $recurringInvoices,
+        private LegacyInvoiceHistoryImporter $invoiceHistory,
         private PermissionRegistrar $permissions,
     ) {}
 
@@ -47,6 +48,10 @@ final readonly class LegacyImportService
             if (! isset($payload[$key]) || ! is_array($payload[$key])) {
                 throw new RuntimeException("Invalid legacy file: key \"{$key}\" must be an array.");
             }
+        }
+
+        if (isset($payload['invoices']) && ! is_array($payload['invoices'])) {
+            throw new RuntimeException('Invalid legacy file: key "invoices" must be an array.');
         }
 
         $previousTeam = $this->permissions->getPermissionsTeamId();
@@ -111,6 +116,7 @@ final readonly class LegacyImportService
         $retired = is_array($payload['retired_recurring'] ?? null) ? array_values($payload['retired_recurring']) : [];
         $lastNumbers = is_array($payload['last_invoice_number_2026'] ?? null) ? $payload['last_invoice_number_2026'] : [];
 
+        $invoiceRows = $this->mapper->invoiceRows(is_array($payload['invoices'] ?? null) ? array_values($payload['invoices']) : []);
         $postalCodes = $this->postalCodeMap($payload);
         $pairs = $this->mapper->clientPairs($templates, $firmClients, $manual);
         $objects = [...$this->mapper->objects($templates), ...$this->mapper->manualObjects($manual)];
@@ -132,14 +138,16 @@ final readonly class LegacyImportService
             $tenants[$firmId] = $tenant;
             $source = $settingsSource?->is($tenant) === true ? null : $settingsSource;
 
-            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report, $postalCodes, $recurringRows, $retiredRows, $lastNumbers): void {
+            $this->context->run($owner, $tenant->id, function () use ($firm, $firmId, $tenant, $source, $pairs, $objects, $legacyClients, $icDph, $owner, $report, $postalCodes, $recurringRows, $retiredRows, $lastNumbers, $invoiceRows): void {
                 $this->settings->fillBlanks($tenant, $this->mapper->supplierProfile($firm), $source);
 
                 $clientIds = $this->importClients($firmId, $pairs, $legacyClients, $icDph, $report);
                 $this->importObjects($firmId, $objects, $clientIds, $postalCodes, $owner, $report);
 
                 $lastNumber = $lastNumbers[(string) $firmId] ?? null;
-                $this->recurringInvoices->import($firmId, $tenant, $recurringRows, $retiredRows, is_string($lastNumber) ? $lastNumber : null, $report);
+                $recurringIds = $this->recurringInvoices->import($firmId, $tenant, $recurringRows, $retiredRows, is_string($lastNumber) ? $lastNumber : null, $report);
+
+                $this->invoiceHistory->import($firmId, $tenant, $invoiceRows, $clientIds, $recurringIds, $report);
             });
         }
 

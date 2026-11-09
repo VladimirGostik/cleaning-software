@@ -323,4 +323,122 @@ final class LegacyRecordMapperTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->mapper->recurringRows([$this->template(2, 'B', ['frequency' => 'weekly'])], []);
     }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    private function invoiceRow(array $row = []): array
+    {
+        return [
+            'id' => 7, 'firm' => 2, 'client' => 1, 'monthly_template' => null, 'number' => '20260143', 'status' => 'sent', 'name' => 'Invoice Name',
+            'issue_date' => '2026-02-03', 'due_date' => '2026-03-03', 'delivery_date' => null, 'billing_month' => 1, 'payment_date' => null,
+            'supplier' => ['name' => 'Alpha', 'street' => 'Street 1', 'postal_code' => '81101', 'city' => 'Town', 'ico' => '22 222 222', 'dic' => '2020 202 020', 'ic_dph' => null, 'iban' => 'sk89 7500'],
+            'buyer' => ['name' => null, 'street' => null, 'postal_code' => null, 'city' => null, 'ico' => '11 000 001', 'dic' => null, 'ic_dph' => null],
+            'header1' => null, 'header2' => null, 'header3' => null, 'header4' => null, 'above' => '', 'services' => '',
+            'items' => [['name' => 'Cleaning', 'quantity' => 1, 'price' => 10]],
+            ...$row,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array{0: ?string, 1: ?string, 2: ?string, 3: ?string, 4: ?string, 5: ?string}
+     */
+    private function buyer(array $row): array
+    {
+        $buyer = $this->mapper->invoiceBuyer($this->invoiceRow($row));
+
+        return [$buyer->name, $buyer->representedBy, $buyer->street, $buyer->postalCode, $buyer->city, $buyer->ico];
+    }
+
+    public function test_buyer_with_owners_line_and_represented_by_in_header2(): void
+    {
+        $this->assertSame(
+            ['Vlastníci bytov a NP Test 1', 'ZELENÝ DOM, s.r.o.', null, null, null, '11000001'],
+            $this->buyer(['header1' => 'Vlastníci bytov a NP Test 1', 'header2' => 'v zast. ZELENÝ DOM, s.r.o.']),
+        );
+    }
+
+    public function test_buyer_with_company_in_header2_and_address_in_headers_3_and_4(): void
+    {
+        $this->assertSame(
+            ['Správa domov s.r.o.', null, 'Hlavná 5', '821 07', 'Bratislava', '11000001'],
+            $this->buyer(['header2' => 'Správa domov s.r.o.', 'header3' => 'Hlavná 5', 'header4' => '82107 Bratislava']),
+        );
+    }
+
+    public function test_buyer_with_represented_by_in_the_residential_name(): void
+    {
+        $this->assertSame(
+            ['Vlastníci Test 3', 'Vzorová správa s.r.o.', 'Client Street 1', '811 02', 'Client City', '11000001'],
+            $this->buyer([
+                'header1' => 'Vlastníci Test 3',
+                'buyer' => ['name' => 'v.z. Vzorová správa s.r.o.', 'street' => 'Client Street 1', 'postal_code' => '81102', 'city' => 'Client City', 'ico' => '11 000 001', 'dic' => null, 'ic_dph' => null],
+            ]),
+        );
+    }
+
+    public function test_buyer_name_comes_from_header4_when_the_residential_name_is_the_represented_line(): void
+    {
+        $this->assertSame(
+            ['Vlastníci NP Vymyslená 2', 'Ukážková správa s.r.o.', null, null, null, '11000001'],
+            $this->buyer([
+                'header4' => 'Vlastníci NP Vymyslená 2',
+                'buyer' => ['name' => 'V zastúpení: Ukážková správa s.r.o.', 'street' => null, 'postal_code' => null, 'city' => null, 'ico' => '11 000 001', 'dic' => null, 'ic_dph' => null],
+            ]),
+        );
+    }
+
+    public function test_buyer_name_joins_a_lowercase_header2_continuation_and_falls_back_to_the_invoice_name(): void
+    {
+        $this->assertSame('Vlastníci bytov a NP.', $this->buyer(['header1' => 'Vlastníci bytov a NP.', 'header2' => 'Test 9'])[0]);
+        $this->assertSame('Vlastníci bytov a NP. test 9', $this->buyer(['header1' => 'Vlastníci bytov a NP.', 'header2' => 'test 9'])[0]);
+        $this->assertSame('Invoice Name', $this->buyer([])[0]);
+    }
+
+    public function test_supplier_is_normalised(): void
+    {
+        $supplier = $this->mapper->invoiceSupplier($this->invoiceRow());
+
+        $this->assertSame('22222222', $supplier['supplier_ico']);
+        $this->assertSame('2020202020', $supplier['supplier_dic']);
+        $this->assertSame('SK897500', $supplier['supplier_iban']);
+        $this->assertSame('811 01', $supplier['supplier_postal_code']);
+    }
+
+    public function test_invoice_rows_compute_the_billed_month_and_replace_the_month_token(): void
+    {
+        $row = $this->mapper->invoiceRows([$this->invoiceRow(['billing_month' => 12, 'above' => 'For {mesiac/rok}'])])[0];
+
+        $this->assertSame('2025-12-01', $row['billed_month']->toDateString());
+        $this->assertSame('For 12/2025', $row['header_text']);
+        $this->assertSame('2026-02-03', $row['delivery_date']->toDateString());
+
+        $this->assertSame('2026-02-01', $this->mapper->invoiceRows([$this->invoiceRow(['billing_month' => 2])])[0]['billed_month']->toDateString());
+    }
+
+    /** @return array<string, array{0: array<string, mixed>}> */
+    public static function invalidInvoiceRows(): array
+    {
+        return [
+            'no items' => [['items' => []]],
+            'bad status' => [['status' => 'void']],
+            'paid without date' => [['status' => 'paid']],
+            'bad billing month' => [['billing_month' => 13]],
+            'missing number' => [['number' => ' ']],
+            'bad due date' => [['due_date' => 'tomorrow']],
+            'empty buyer name' => [['name' => ' ']],
+        ];
+    }
+
+    /** @param  array<string, mixed>  $override */
+    #[DataProvider('invalidInvoiceRows')]
+    public function test_invalid_invoice_rows_throw_with_the_legacy_id(array $override): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('invoice #7');
+
+        $this->mapper->invoiceRows([$this->invoiceRow($override)]);
+    }
 }

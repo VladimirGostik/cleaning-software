@@ -206,6 +206,7 @@ final class InvoiceCancelTest extends TestCase
             'efa_submitted_at' => null,
             'efa_last_error' => null,
             'deleted_at' => null,
+            'legacy_id' => null,
         ]);
     }
 

@@ -39,7 +39,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 final readonly class InvoiceService
 {
     private const COPY_EXCEPT = [
-        'number', 'variable_symbol', 'credited_invoice_id', 'recurring_invoice_id', 'quote_id',
+        'legacy_id', 'number', 'variable_symbol', 'credited_invoice_id', 'recurring_invoice_id', 'quote_id',
         'period_from', 'period_to', 'issued_at', 'issued_by_name', 'sent_at', 'paid_at', 'cancelled_at',
         'supplier_signature_media_id', 'efa_id', 'efa_submitted_at', 'efa_last_error', 'deleted_at',
     ];
@@ -219,13 +219,13 @@ final readonly class InvoiceService
         });
     }
 
-    public function recordPayment(Invoice $invoice, InvoicePaymentData $data, ?User $actor): InvoicePayment
+    public function recordPayment(Invoice $invoice, InvoicePaymentData $data, ?User $actor, PaymentSourceEnum $source = PaymentSourceEnum::Manual): InvoicePayment
     {
         if (! $invoice->status->canTransitionTo(InvoiceStatusEnum::Paid)) {
             throw ValidationException::withMessages(['status' => [__('app.invoice_cannot_mark_paid')]]);
         }
 
-        return $this->db->transaction(function () use ($invoice, $data, $actor): InvoicePayment {
+        return $this->db->transaction(function () use ($invoice, $data, $actor, $source): InvoicePayment {
             $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
 
             if (! $locked->status->canTransitionTo(InvoiceStatusEnum::Paid)) {
@@ -248,7 +248,7 @@ final readonly class InvoiceService
                 'amount' => $balance < 0 ? -$data->amount : $data->amount,
                 'paid_on' => $data->paid_on,
                 'payment_type' => $data->payment_type,
-                'source' => PaymentSourceEnum::Manual,
+                'source' => $source,
                 'note' => $data->note,
                 'recorded_by_user_id' => $actor?->id,
             ]);
@@ -469,7 +469,7 @@ final readonly class InvoiceService
     }
 
     /** @return array<string, mixed> */
-    private function supplierAttributes(Tenant $tenant): array
+    public function supplierAttributes(Tenant $tenant): array
     {
         return [
             'supplier_peppol_participant_id' => $tenant->peppol_participant_id,
@@ -490,7 +490,7 @@ final readonly class InvoiceService
     }
 
     /** @return array<string, mixed> */
-    private function objectAttributes(?CleaningObject $object): array
+    public function objectAttributes(?CleaningObject $object): array
     {
         return [
             'object_name' => $object?->name,

@@ -27,7 +27,7 @@ final readonly class LegacyRecurringInvoiceImporter
 {
     private const string LEGACY_NUMBER_FORMAT = '{YYYY}{XXXX}';
 
-    private const string LEGACY_UNIT = 'mes.';
+    public const string LEGACY_UNIT = 'mes.';
 
     private const int DUE_DAYS = 30;
 
@@ -42,16 +42,24 @@ final readonly class LegacyRecurringInvoiceImporter
     ) {}
 
     /**
-     * @param  list<array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}>  $rows
+     * @param  list<array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, manual: bool, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}>  $rows
      * @param  list<array{ref: int, firm: int, object_name: string, name: string}>  $retired
+     * @return array<int, string> legacy template id => recurring invoice id, live rows of monthly templates only
      */
-    public function import(int $firmId, Tenant $tenant, array $rows, array $retired, ?string $lastNumber, LegacyImportReport $report): void
+    public function import(int $firmId, Tenant $tenant, array $rows, array $retired, ?string $lastNumber, LegacyImportReport $report): array
     {
         $legacyNumber = $lastNumber === null ? null : $this->mapper->legacyNumber($lastNumber);
+        $recurringIds = [];
 
         foreach ($rows as $row) {
-            if ($row['firm'] === $firmId) {
-                $this->importRow($firmId, $row, $report);
+            if ($row['firm'] !== $firmId) {
+                continue;
+            }
+
+            $recurringId = $this->importRow($firmId, $row, $report);
+
+            if ($recurringId !== null && ! $row['manual']) {
+                $recurringIds[$row['ref']] = $recurringId;
             }
         }
 
@@ -72,10 +80,12 @@ final readonly class LegacyRecurringInvoiceImporter
             $adopted = $this->settings->adoptNumberFormat($tenant, self::LEGACY_NUMBER_FORMAT);
             $report->add('number_format', $firmId, $firmId, $adopted ? 'set' : 'kept', $tenant->name);
         }
+
+        return $recurringIds;
     }
 
-    /** @param  array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}  $row */
-    private function importRow(int $firmId, array $row, LegacyImportReport $report): void
+    /** @param  array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, manual: bool, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}  $row */
+    private function importRow(int $firmId, array $row, LegacyImportReport $report): ?string
     {
         $object = CleaningObject::withTrashed()
             ->whereRaw('lower(trim(name)) = lower(trim(?))', [$row['object_name']])
@@ -84,7 +94,7 @@ final readonly class LegacyRecurringInvoiceImporter
         if ($object === null || $object->trashed()) {
             $report->add('recurring', $row['ref'], $firmId, 'skipped', $row['name'], [$object === null ? 'object missing' : 'object deleted']);
 
-            return;
+            return null;
         }
 
         $existing = $this->findRecurring($object, $row['name'], withTrashed: true);
@@ -96,19 +106,19 @@ final readonly class LegacyRecurringInvoiceImporter
                 $this->removeDrafts($existing, $row['last_billed_month'], $row['ref'], $firmId, $report);
             }
 
-            return;
+            return $existing->trashed() ? null : $existing->id;
         }
 
         if ($row['last_billed_month'] === null) {
             $report->add('recurring', $row['ref'], $firmId, 'skipped', $row['name'], ['no last_billed_month']);
 
-            return;
+            return null;
         }
 
         if ($row['items'] === []) {
             $report->add('recurring', $row['ref'], $firmId, 'skipped', $row['name'], ['no items']);
 
-            return;
+            return null;
         }
 
         $months = $this->dueMonths($row['last_billed_month'], $row['frequency']);
@@ -116,7 +126,7 @@ final readonly class LegacyRecurringInvoiceImporter
         if (count($months['billed']) > self::MAX_BACKFILL_MONTHS) {
             $report->add('recurring', $row['ref'], $firmId, 'skipped', $row['name'], ['backfill over cap']);
 
-            return;
+            return null;
         }
 
         $ri = $this->recurring->create($this->data($row, $object, $months['start']));
@@ -127,6 +137,8 @@ final readonly class LegacyRecurringInvoiceImporter
                 $report->add('draft', $row['ref'], $firmId, 'created', $row['name'].' '.RecurringBilledMonthEnum::formatMonth($billedMonth));
             }
         }
+
+        return $ri->id;
     }
 
     /** @param  array{ref: int, firm: int, object_name: string, name: string}  $row */
@@ -190,7 +202,7 @@ final readonly class LegacyRecurringInvoiceImporter
         return ['billed' => $billed, 'start' => RecurringBilledMonthEnum::Previous->runDate($next, 1)];
     }
 
-    /** @param  array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}  $row */
+    /** @param  array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, manual: bool, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}  $row */
     private function data(array $row, CleaningObject $object, CarbonImmutable $start): RecurringInvoiceUpsertData
     {
         try {

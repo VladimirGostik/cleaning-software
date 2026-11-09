@@ -1164,6 +1164,7 @@
     "invoice_payment_recorded_by": "Зареєстрував",
     "invoice_payment_source_manual": "Вручну",
     "invoice_payment_source_bank_import": "Імпорт з банку",
+    "invoice_payment_source_legacy_import": "Перенесено зі старої системи",
     "invoice_paid_amount": "Сплачено",
     "invoice_balance_due_label": "Залишок до сплати",
     "invoice_status_partially_paid": "Частково сплачено",

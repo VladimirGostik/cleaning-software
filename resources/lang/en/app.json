@@ -1164,6 +1164,7 @@
     "invoice_payment_recorded_by": "Recorded by",
     "invoice_payment_source_manual": "Manual",
     "invoice_payment_source_bank_import": "Bank import",
+    "invoice_payment_source_legacy_import": "Imported from legacy system",
     "invoice_paid_amount": "Paid so far",
     "invoice_balance_due_label": "Balance due",
     "invoice_status_partially_paid": "Partially paid",

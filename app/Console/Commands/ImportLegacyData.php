@@ -150,15 +150,19 @@ final class ImportLegacyData extends Command
             $report->count('postal_code', 'corrected', $firm),
             $report->count('numbering', 'raised', $firm),
             $report->count('number_format', 'set', $firm).'/'.$report->count('number_format', 'kept', $firm),
+            $report->count('invoice', 'created', $firm),
+            $report->count('invoice', 'existing', $firm),
+            $report->count('invoice', 'skipped', $firm),
+            $report->count('invoice', 'payment_synced', $firm),
         ], $report->firms());
 
         $this->table(
-            ['Firm #', 'Firm new', 'Firm existing', 'Clients new', 'Clients existing', 'Objects new', 'Objects existing', 'Merged', 'Skipped', 'Media', 'Recurring new', 'Recurring existing', 'Recurring skipped', 'Drafts new', 'Drafts removed', 'Recurring retired', 'Postal corrected', 'Numbering raised', 'Format set/kept'],
+            ['Firm #', 'Firm new', 'Firm existing', 'Clients new', 'Clients existing', 'Objects new', 'Objects existing', 'Merged', 'Skipped', 'Media', 'Recurring new', 'Recurring existing', 'Recurring skipped', 'Drafts new', 'Drafts removed', 'Recurring retired', 'Postal corrected', 'Numbering raised', 'Format set/kept', 'Invoices new', 'Invoices existing', 'Invoices skipped', 'Payments synced'],
             $perFirm,
         );
 
         $this->info(sprintf(
-            'Created: %d firms, %d clients, %d objects, %d recurring invoices, %d drafts. Removed drafts already billed in the legacy app: %d. Retired recurring invoices: %d. Postal codes filled: %d, corrected: %d, skipped invalid: %d.',
+            'Created: %d firms, %d clients, %d objects, %d recurring invoices, %d drafts. Removed drafts already billed in the legacy app: %d. Retired recurring invoices: %d. Postal codes filled: %d, corrected: %d, skipped invalid: %d. Invoices: %d created, %d existing, %d skipped, %d payments synced.',
             $report->count('firm', 'created'),
             $report->count('client', 'created'),
             $report->count('object', 'created'),
@@ -169,6 +173,10 @@ final class ImportLegacyData extends Command
             $report->count('postal_code', 'filled'),
             $report->count('postal_code', 'corrected'),
             $report->count('postal_code', 'invalid'),
+            $report->count('invoice', 'created'),
+            $report->count('invoice', 'existing'),
+            $report->count('invoice', 'skipped'),
+            $report->count('invoice', 'payment_synced'),
         ));
 
         $issuedFirms = $report->count('auto_issue_firm', 'issued_default');

@@ -1164,6 +1164,7 @@
     "invoice_payment_recorded_by": "Zaevidoval",
     "invoice_payment_source_manual": "Ručne",
     "invoice_payment_source_bank_import": "Import z banky",
+    "invoice_payment_source_legacy_import": "Prevzaté zo starého systému",
     "invoice_paid_amount": "Uhradené",
     "invoice_balance_due_label": "Zostáva uhradiť",
     "invoice_status_partially_paid": "Čiastočne uhradená",

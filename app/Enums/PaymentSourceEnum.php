@@ -11,4 +11,5 @@ enum PaymentSourceEnum: string
 {
     case Manual = 'manual';
     case BankImport = 'bank_import';
+    case LegacyImport = 'legacy_import';
 }

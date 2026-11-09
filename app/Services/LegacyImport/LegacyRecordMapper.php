@@ -6,8 +6,11 @@ namespace App\Services\LegacyImport;
 
 use App\Data\Tenants\TenantSupplierProfileData;
 use App\Enums\ClientTypeEnum;
+use App\Enums\CustomerPartySourceEnum;
 use App\Enums\ObjectTypeEnum;
+use App\Enums\RecurringBilledMonthEnum;
 use App\Enums\RecurringFrequencyEnum;
+use App\Support\CustomerParty;
 use Carbon\CarbonImmutable;
 use RuntimeException;
 
@@ -16,6 +19,10 @@ final readonly class LegacyRecordMapper
     public const array IMPORTED_FIRM_IDS = [2, 3, 23, 25, 100];
 
     public const string DEFAULT_CITY = 'Bratislava';
+
+    private const string REPRESENTED_LINE = '/^\s*(v\s*zast|v\.\s*z\.|zast[uú]pen)/iu';
+
+    private const string REPRESENTED_PREFIX = '/^\s*(?:v\s*zast\p{L}*\.?|v\.\s*z\.|zast[uú]pen\p{L}*\.?)\s*[:.]?\s*/iu';
 
     private const string STAND_SUFFIX = '/\s*kont\.\s*stojisko\s*$/iu';
 
@@ -121,7 +128,7 @@ final readonly class LegacyRecordMapper
     /**
      * @param  list<array<string, mixed>>  $templates
      * @param  list<array<string, mixed>>  $manual
-     * @return list<array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}>
+     * @return list<array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, manual: bool, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}>
      */
     public function recurringRows(array $templates, array $manual): array
     {
@@ -174,6 +181,214 @@ final readonly class LegacyRecordMapper
         }
 
         return $retired;
+    }
+
+    /**
+     * @param  list<mixed>  $rows
+     * @return list<array{id: int, firm: int, client: ?int, monthly_template: ?int, number: string, status: 'created'|'sent'|'paid', name: string, issue_date: CarbonImmutable, due_date: CarbonImmutable, delivery_date: CarbonImmutable, billed_month: CarbonImmutable, payment_date: ?CarbonImmutable, header_text: ?string, buyer: CustomerParty, supplier: array<string, ?string>, items: list<array{description: string, quantity: float, unit_price: float}>}>
+     */
+    public function invoiceRows(array $rows): array
+    {
+        $invoices = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                throw new RuntimeException('invoice: row must be an object.');
+            }
+
+            /** @var array<string, mixed> $row */
+            $id = $this->legacyId($row['id'] ?? null);
+            $label = "invoice #{$id}";
+            $number = trim($this->text($row['number'] ?? null));
+            $status = $this->text($row['status'] ?? null);
+
+            if ($id <= 0 || $number === '' || $this->legacyId($row['firm'] ?? null) <= 0) {
+                throw new RuntimeException("{$label}: id, firm and number are required.");
+            }
+
+            if (! in_array($status, ['created', 'sent', 'paid'], true)) {
+                throw new RuntimeException("{$label}: invalid status.");
+            }
+
+            $issueDate = $this->invoiceDate($row['issue_date'] ?? null) ?? throw new RuntimeException("{$label}: invalid issue_date.");
+            $dueDate = $this->invoiceDate($row['due_date'] ?? null) ?? throw new RuntimeException("{$label}: invalid due_date.");
+            $paymentDate = $this->invoiceDate($row['payment_date'] ?? null);
+
+            if ($status === 'paid' && $paymentDate === null) {
+                throw new RuntimeException("{$label}: paid without payment_date.");
+            }
+
+            $billingMonth = $this->legacyId($row['billing_month'] ?? null);
+
+            if ($billingMonth < 1 || $billingMonth > 12) {
+                throw new RuntimeException("{$label}: invalid billing_month.");
+            }
+
+            $billedMonth = $issueDate->startOfMonth()->setMonth($billingMonth);
+
+            if ($billingMonth > $issueDate->month) {
+                $billedMonth = $billedMonth->subYear();
+            }
+
+            $buyer = $this->invoiceBuyer($row);
+
+            if ($buyer->name === null) {
+                throw new RuntimeException("{$label}: buyer name is empty.");
+            }
+
+            $items = $this->invoiceItems($row['items'] ?? null, $label);
+            $name = trim($this->text($row['name'] ?? null));
+            $headerText = $this->headerText($this->text($row['above'] ?? null), $this->text($row['services'] ?? null));
+
+            $invoices[] = [
+                'id' => $id,
+                'firm' => $this->legacyId($row['firm']),
+                'client' => $this->legacyId($row['client'] ?? null) ?: null,
+                'monthly_template' => $this->legacyId($row['monthly_template'] ?? null) ?: null,
+                'number' => $number,
+                'status' => $status,
+                'name' => $name,
+                'issue_date' => $issueDate,
+                'due_date' => $dueDate,
+                'delivery_date' => $this->invoiceDate($row['delivery_date'] ?? null) ?? $issueDate,
+                'billed_month' => $billedMonth,
+                'payment_date' => $paymentDate,
+                'header_text' => $headerText === null ? null : str_replace(RecurringBilledMonthEnum::TOKEN, RecurringBilledMonthEnum::formatMonth($billedMonth), $headerText),
+                'buyer' => $buyer,
+                'supplier' => $this->invoiceSupplier($row),
+                'items' => $items,
+            ];
+        }
+
+        return $invoices;
+    }
+
+    /** @param  array<string, mixed>  $row */
+    public function invoiceBuyer(array $row): CustomerParty
+    {
+        $buyer = is_array($row['buyer'] ?? null) ? $row['buyer'] : [];
+        $header = [];
+
+        foreach ([1, 2, 3, 4] as $position) {
+            $header[$position] = $this->line($row['header'.$position] ?? null);
+        }
+
+        $residential = $this->line($buyer['name'] ?? null);
+        $represented = null;
+
+        foreach ([$header[2], $residential, $header[3]] as $candidate) {
+            if ($candidate !== null && preg_match(self::REPRESENTED_LINE, $candidate) === 1) {
+                $represented = $candidate;
+
+                break;
+            }
+        }
+
+        if ($header[1] !== null) {
+            $billingHeaders = $header;
+            $billingHeaders[2] = $header[2] === $represented ? null : $header[2];
+            $name = $this->billingName($billingHeaders);
+        } elseif ($header[4] !== null && $residential !== null && $residential === $represented) {
+            $name = $header[4];
+        } elseif ($residential !== null && $residential !== $represented) {
+            $name = $residential;
+        } elseif ($header[2] !== null && $header[2] !== $represented) {
+            $name = $header[2];
+        } else {
+            $name = trim($this->text($row['name'] ?? null));
+        }
+
+        $street = $this->line($buyer['street'] ?? null);
+        $postalCode = null;
+        $city = null;
+
+        if ($street !== null) {
+            $postalCode = $this->postalCode($this->line($buyer['postal_code'] ?? null));
+            $city = $this->line($buyer['city'] ?? null);
+        } else {
+            $street = $header[3] === $represented ? null : $header[3];
+
+            if ($header[4] !== null && preg_match('/^(\d{3})\s?(\d{2})\s+(\S.*)$/u', $header[4], $match) === 1) {
+                $postalCode = $match[1].' '.$match[2];
+                $city = trim($match[3]);
+            }
+        }
+
+        return new CustomerParty(
+            name: $name === null || $name === '' ? null : mb_substr($name, 0, 255),
+            representedBy: $represented === null ? null : $this->line(preg_replace(self::REPRESENTED_PREFIX, '', $represented)),
+            ico: $this->compact($buyer['ico'] ?? null),
+            dic: $this->compact($buyer['dic'] ?? null),
+            vatNumber: $this->compact($buyer['ic_dph'] ?? null),
+            street: $street,
+            city: $city,
+            postalCode: $postalCode,
+            country: 'SK',
+            source: CustomerPartySourceEnum::Entered,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array<string, ?string>
+     */
+    public function invoiceSupplier(array $row): array
+    {
+        $supplier = is_array($row['supplier'] ?? null) ? $row['supplier'] : [];
+
+        return [
+            'supplier_name' => $this->line($supplier['name'] ?? null),
+            'supplier_address_line' => $this->line($supplier['street'] ?? null),
+            'supplier_city' => $this->line($supplier['city'] ?? null),
+            'supplier_postal_code' => $this->postalCode($this->line($supplier['postal_code'] ?? null)),
+            'supplier_ico' => $this->compact($supplier['ico'] ?? null),
+            'supplier_dic' => $this->compact($supplier['dic'] ?? null),
+            'supplier_vat_number' => $this->compact($supplier['ic_dph'] ?? null),
+            'supplier_iban' => $this->iban($supplier['iban'] ?? null),
+            'supplier_country' => 'SK',
+        ];
+    }
+
+    /** @return list<array{description: string, quantity: float, unit_price: float}> */
+    private function invoiceItems(mixed $raw, string $label): array
+    {
+        $items = [];
+
+        foreach (is_array($raw) ? $raw : [] as $item) {
+            $description = is_array($item) ? trim($this->text($item['name'] ?? null)) : '';
+
+            if (! is_array($item) || $description === '') {
+                throw new RuntimeException("{$label}: item without a name.");
+            }
+
+            $items[] = [
+                'description' => mb_substr($description, 0, 255),
+                'quantity' => is_numeric($item['quantity'] ?? null) ? (float) $item['quantity'] : 1.0,
+                'unit_price' => is_numeric($item['price'] ?? null) ? (float) $item['price'] : 0.0,
+            ];
+        }
+
+        if ($items === []) {
+            throw new RuntimeException("{$label}: no items.");
+        }
+
+        return $items;
+    }
+
+    private function invoiceDate(mixed $value): ?CarbonImmutable
+    {
+        if (! is_string($value) || preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $value, $match) !== 1 || ! checkdate((int) $match[2], (int) $match[3], (int) $match[1])) {
+            return null;
+        }
+
+        return CarbonImmutable::createFromDate((int) $match[1], (int) $match[2], (int) $match[3])->startOfDay();
+    }
+
+    private function line(mixed $value): ?string
+    {
+        $text = is_string($value) ? trim($value) : '';
+
+        return $text === '' ? null : $text;
     }
 
     /** @return array{year: int, last: int} */
@@ -243,7 +458,7 @@ final readonly class LegacyRecordMapper
 
     /**
      * @param  array<string, mixed>  $source
-     * @return array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}
+     * @return array{ref: int, firm: int, client: int, object_name: string, name: string, frequency: RecurringFrequencyEnum, manual: bool, last_billed_month: ?CarbonImmutable, header_text: ?string, items: list<array{description: string, quantity: float, unit_price: float}>}
      */
     private function recurringRow(array $source, int $ref, string $objectName, string $name, bool $manual): array
     {
@@ -266,6 +481,7 @@ final readonly class LegacyRecordMapper
             'object_name' => $objectName,
             'name' => $name,
             'frequency' => $this->frequency($source['frequency'] ?? null, $ref, $manual),
+            'manual' => $manual,
             'last_billed_month' => $this->billedMonth($source['last_billed_month'] ?? null),
             'header_text' => $this->headerText($this->text($source['above'] ?? null), $this->text($source['services'] ?? null)),
             'items' => $items,
@@ -383,7 +599,7 @@ final readonly class LegacyRecordMapper
         return preg_match('/č\./iu', $name) === 1 ? ObjectTypeEnum::ResidentialBuilding : ObjectTypeEnum::Office;
     }
 
-    private function standBase(string $name): ?string
+    public function standBase(string $name): ?string
     {
         if (preg_match(self::STAND_SUFFIX, $name) !== 1) {
             return null;
