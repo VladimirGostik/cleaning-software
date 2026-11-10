@@ -8,7 +8,6 @@ use App\Contracts\Ai\AnalyzesExpenses;
 use App\Data\Expenses\ExpenseAnalysisContextData;
 use App\Data\Expenses\ExpenseCategoryProposalData;
 use App\Data\Expenses\ExpenseCompanyContextData;
-use App\Data\Expenses\ExpenseImportAccountCheckData;
 use App\Data\Expenses\ExpenseImportData;
 use App\Data\Expenses\ExpenseImportPreviewData;
 use App\Data\Expenses\ExpenseImportResultData;
@@ -20,6 +19,7 @@ use App\Enums\ExpenseImportAccountStatusEnum;
 use App\Enums\ExpenseImportRowStateEnum;
 use App\Enums\ExpenseSourceEnum;
 use App\Enums\ExpenseStatusEnum;
+use App\Enums\PermissionEnum;
 use App\Exceptions\AiUnavailableException;
 use App\Models\Expense;
 use App\Models\Tenant;
@@ -27,8 +27,8 @@ use App\Models\User;
 use App\Services\Ai\Guard\PromptGuard;
 use App\Services\Expenses\CamtStatement;
 use App\Services\Expenses\CamtStatementParser;
+use App\Services\Expenses\StatementAccountCheck;
 use App\Services\Expenses\StatementRow;
-use App\Services\Tenancy\TenantPermissionSnapshot;
 use App\Support\SafeText;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,7 +48,7 @@ final readonly class ExpenseImportService
         private AnalyzesExpenses $analyzer,
         private CamtStatementParser $parser,
         private PromptGuard $promptGuard,
-        private TenantPermissionSnapshot $snapshot,
+        private StatementAccountCheck $accountCheck,
     ) {}
 
     public function preview(UploadedFile $file, User $actor): ExpenseImportPreviewData
@@ -58,7 +58,7 @@ final readonly class ExpenseImportService
 
     public function inspect(CamtStatement $statement, User $actor, bool $categorize): ExpenseImportPreviewData
     {
-        $check = $this->accountCheck($statement->iban, $actor);
+        $check = $this->accountCheck->check($statement->iban, $actor, PermissionEnum::ManageExpenses);
 
         if ($check->status !== ExpenseImportAccountStatusEnum::Matched) {
             return new ExpenseImportPreviewData($check, [], $statement->skippedCreditRows, $statement->skippedOtherRows);
@@ -206,37 +206,6 @@ final readonly class ExpenseImportService
 
             return new ExpenseImportResultData($created, $imported, $excluded);
         });
-    }
-
-    private function accountCheck(string $iban, User $actor): ExpenseImportAccountCheckData
-    {
-        $active = Tenant::query()->findOrFail(current_tenant_id());
-
-        if ($this->sameIban($active->iban, $iban)) {
-            return new ExpenseImportAccountCheckData(ExpenseImportAccountStatusEnum::Matched, $iban);
-        }
-
-        foreach ($this->snapshot->forRequest($actor) as $visibility) {
-            if ($visibility->manageExpenses && $visibility->tenant->is_active && $this->sameIban($visibility->tenant->iban, $iban)) {
-                return new ExpenseImportAccountCheckData(
-                    ExpenseImportAccountStatusEnum::OtherCompany,
-                    $iban,
-                    $visibility->tenant->id,
-                    $visibility->tenant->name,
-                );
-            }
-        }
-
-        $status = trim((string) $active->iban) === ''
-            ? ExpenseImportAccountStatusEnum::CompanyIbanMissing
-            : ExpenseImportAccountStatusEnum::UnknownAccount;
-
-        return new ExpenseImportAccountCheckData($status, $iban);
-    }
-
-    private function sameIban(?string $firmIban, string $statementIban): bool
-    {
-        return $firmIban !== null && CamtStatementParser::normalizeIban($firmIban) === $statementIban;
     }
 
     /**

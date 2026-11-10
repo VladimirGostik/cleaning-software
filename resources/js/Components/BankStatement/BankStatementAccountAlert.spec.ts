@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, createApp, defineComponent, h, ref } from 'vue';
 import { createI18n } from 'vue-i18n';
 import sk from '../../../lang/sk/app.json';
-import ExpenseImportAccountAlert from './ExpenseImportAccountAlert.vue';
+import BankStatementAccountAlert from './BankStatementAccountAlert.vue';
 
 const navigate = vi.fn();
 const can = { manageBillingSettings: true };
@@ -23,7 +23,10 @@ vi.mock('@/Composables/useTenantSwitchVisit', () => ({
     useTenantSwitchVisit: () => ({ switchingTo: ref<string | null>(null), navigate }),
 }));
 
-function render(check: Partial<App.Data.Expenses.ExpenseImportAccountCheckData>): HTMLElement {
+function render(
+    check: Partial<App.Data.Expenses.ExpenseImportAccountCheckData>,
+    returnUrl = '/expenses/import',
+): HTMLElement {
     const host = document.createElement('div');
     const full: App.Data.Expenses.ExpenseImportAccountCheckData = {
         status: 'unknown_account',
@@ -32,14 +35,14 @@ function render(check: Partial<App.Data.Expenses.ExpenseImportAccountCheckData>)
         owner_tenant_name: null,
         ...check,
     };
-    createApp(defineComponent({ render: () => h(ExpenseImportAccountAlert, { check: full }) }))
+    createApp(defineComponent({ render: () => h(BankStatementAccountAlert, { check: full, returnUrl }) }))
         .use(createI18n({ legacy: false, locale: 'sk', messages: { sk }, missingWarn: false, fallbackWarn: false }))
         .mount(host);
 
     return host;
 }
 
-describe('ExpenseImportAccountAlert', () => {
+describe('BankStatementAccountAlert', () => {
     beforeEach(() => {
         navigate.mockReset();
         can.manageBillingSettings = true;
@@ -52,6 +55,16 @@ describe('ExpenseImportAccountAlert', () => {
         expect(host.textContent).toContain('SK1111111111111111111111');
         host.querySelector('button')!.click();
         expect(navigate).toHaveBeenCalledWith('t2', '/expenses/import');
+    });
+
+    it('switch returns to the page given by returnUrl', () => {
+        const host = render(
+            { status: 'other_company', owner_tenant_id: 't2', owner_tenant_name: 'Druha s.r.o.' },
+            '/invoices/payment-import',
+        );
+
+        host.querySelector('button')!.click();
+        expect(navigate).toHaveBeenCalledWith('t2', '/invoices/payment-import');
     });
 
     it('unknown_account has no button and shows the active firm', () => {

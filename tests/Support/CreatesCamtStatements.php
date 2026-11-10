@@ -45,8 +45,9 @@ trait CreatesCamtStatements
 
     /**
      * @param  list<array<string, mixed>>  $entries
+     * @param  array{0: string, 1: string}|null  $period
      */
-    protected function camtXml(array $entries, string $iban = self::STATEMENT_IBAN, string $namespace = self::CAMT_NAMESPACE, string $prolog = ''): string
+    protected function camtXml(array $entries, string $iban = self::STATEMENT_IBAN, string $namespace = self::CAMT_NAMESPACE, string $prolog = '', ?array $period = null): string
     {
         $body = '';
 
@@ -56,13 +57,16 @@ trait CreatesCamtStatements
 
         return '<?xml version="1.0" encoding="UTF-8"?>'.$prolog
             .'<Document xmlns="'.$namespace.'"><BkToCstmrStmt><GrpHdr><MsgId>M1</MsgId></GrpHdr>'
-            .$this->camtStatement($iban, $body)
+            .$this->camtStatement($iban, $body, $period)
             .'</BkToCstmrStmt></Document>';
     }
 
-    protected function camtStatement(string $iban, string $entriesXml): string
+    /** @param  array{0: string, 1: string}|null  $period */
+    protected function camtStatement(string $iban, string $entriesXml, ?array $period = null): string
     {
-        return '<Stmt><Id>S1</Id><Acct><Id><IBAN>'.$iban.'</IBAN></Id><Ccy>EUR</Ccy></Acct>'.$entriesXml.'</Stmt>';
+        $range = $period === null ? '' : '<FrToDt><FrDtTm>'.$period[0].'</FrDtTm><ToDtTm>'.$period[1].'</ToDtTm></FrToDt>';
+
+        return '<Stmt><Id>S1</Id>'.$range.'<Acct><Id><IBAN>'.$iban.'</IBAN></Id><Ccy>EUR</Ccy></Acct>'.$entriesXml.'</Stmt>';
     }
 
     /** @param  array<string, mixed>  $entry */
@@ -73,9 +77,12 @@ trait CreatesCamtStatements
         $booking = array_key_exists('datetime', $entry)
             ? '<BookgDt><DtTm>'.$e($entry['datetime']).'</DtTm></BookgDt>'
             : '<BookgDt><Dt>'.$e($entry['date']).'</Dt></BookgDt>';
-        $counterparty = $entry['counterparty'] === null ? '' : '<RltdPties><Cdtr><Nm>'.$e($entry['counterparty']).'</Nm></Cdtr></RltdPties>';
+        $parties = ($entry['counterparty'] === null ? '' : '<Cdtr><Nm>'.$e($entry['counterparty']).'</Nm></Cdtr>')
+            .(isset($entry['payer']) ? '<Dbtr><Nm>'.$e($entry['payer']).'</Nm></Dbtr>' : '')
+            .(isset($entry['payer_iban']) ? '<DbtrAcct><Id><IBAN>'.$e($entry['payer_iban']).'</IBAN></Id></DbtrAcct>' : '');
+        $counterparty = $parties === '' ? '' : '<RltdPties>'.$parties.'</RltdPties>';
         $note = $entry['note'] === null ? '' : '<RmtInf><Ustrd>'.$e($entry['note']).'</Ustrd></RmtInf>';
-        $details = '<TxDtls><Refs><EndToEndId>NOTPROVIDED</EndToEndId></Refs>'.$counterparty.$note.'</TxDtls>';
+        $details = '<TxDtls><Refs><EndToEndId>'.$e($entry['end_to_end'] ?? 'NOTPROVIDED').'</EndToEndId></Refs>'.$counterparty.$note.'</TxDtls>';
 
         if (($entry['tx_details'] ?? 1) === 2) {
             $details .= $details;

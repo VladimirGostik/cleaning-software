@@ -3,11 +3,11 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
 import EmptyState from '@/Components/EmptyState.vue';
-import ExpenseImportAccountAlert from '@/Components/Expenses/ExpenseImportAccountAlert.vue';
+import BankStatementAccountAlert from '@/Components/BankStatement/BankStatementAccountAlert.vue';
+import BankStatementUploadForm from '@/Components/BankStatement/BankStatementUploadForm.vue';
 import ExpenseImportResultCard from '@/Components/Expenses/ExpenseImportResultCard.vue';
 import ExpenseImportSummary from '@/Components/Expenses/ExpenseImportSummary.vue';
 import ExpenseImportTable from '@/Components/Expenses/ExpenseImportTable.vue';
-import ExpenseImportUploadForm from '@/Components/Expenses/ExpenseImportUploadForm.vue';
 import { useExpenseImport } from '@/Composables/useExpenseImport';
 import type { Breadcrumb } from '@/types';
 
@@ -33,18 +33,19 @@ const breadcrumbs: Breadcrumb[] = [
 
     <div v-else class="card bg-base-100 shadow-sm">
         <div class="card-body space-y-4">
-            <ExpenseImportUploadForm
+            <BankStatementUploadForm
                 :loading="flow.loading.value"
                 :disabled="flow.submitting.value"
                 :error="flow.error.value"
-                @preview="flow.load"
+                @preview="(files) => flow.load(files[0])"
                 @change="flow.clear"
             />
 
             <template v-if="flow.preview.value">
-                <ExpenseImportAccountAlert
+                <BankStatementAccountAlert
                     v-if="flow.preview.value.account_check.status !== 'matched'"
                     :check="flow.preview.value.account_check"
+                    return-url="/expenses/import"
                 />
 
                 <template v-else>

@@ -100,4 +100,19 @@ final class InvoiceListFilterTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 2));
     }
+
+    public function test_filter_open_returns_issued_and_overdue_only(): void
+    {
+        $tenant = $this->tenantAdmin();
+        Invoice::factory()->count(2)->create(['tenant_id' => $tenant->id]);
+        Invoice::factory()->issued()->count(2)->create(['tenant_id' => $tenant->id]);
+        Invoice::factory()->overdue()->count(3)->create(['tenant_id' => $tenant->id]);
+        Invoice::factory()->paid()->create(['tenant_id' => $tenant->id]);
+        Invoice::factory()->cancelled()->create(['tenant_id' => $tenant->id]);
+
+        $response = $this->get(route('invoices.index', ['filter[open]' => '1']));
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Invoices/Index')->has('invoices.data', 5));
+    }
 }

@@ -136,6 +136,8 @@ final class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('devices', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
         RateLimiter::for('ai-analyze', fn (Request $request) => Limit::perMinute(config()->integer('ai.throttle.analyze', 20))->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
+        RateLimiter::for('payment-import', fn (Request $request) => Limit::perMinute(config()->integer('invoicing.payment_import.throttle', 20))->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
+        RateLimiter::for('payment-import-search', fn (Request $request) => Limit::perMinute(config()->integer('invoicing.payment_import.search_throttle', 120))->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
         RateLimiter::for('mcp', function (Request $request): Limit {
             $token = $request->user()?->currentAccessToken();
             $tokenId = $token instanceof PersonalAccessToken ? (string) $token->id : null;

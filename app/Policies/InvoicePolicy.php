@@ -40,6 +40,11 @@ final class InvoicePolicy
         ]);
     }
 
+    public function importPayments(User $user): bool
+    {
+        return $user->can(PermissionEnum::EditInvoices->value);
+    }
+
     public function issue(User $user, Invoice $invoice): bool
     {
         return $user->can(PermissionEnum::EditInvoices->value);

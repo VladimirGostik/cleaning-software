@@ -1280,6 +1280,99 @@ readonly payment_type: App.Enums.PaymentTypeEnum,
 readonly currency: App.Enums.CurrencyEnum,
 readonly rounding_mode: App.Enums.RoundingModeEnum,
 };
+export type PaymentImportData = {
+readonly files: File[],
+readonly rows: App.Data.Invoices.PaymentImportRowInputData[],
+};
+export type PaymentImportFileData = {
+readonly index: number,
+readonly name: string,
+readonly iban: string,
+readonly period_from: string | null,
+readonly period_to: string | null,
+readonly credit_rows: number,
+readonly account: App.Data.Expenses.ExpenseImportAccountCheckData,
+};
+export type PaymentImportInvoiceData = {
+readonly id: string,
+readonly number: string,
+readonly customer_name: string | null,
+readonly status: App.Enums.InvoiceStatusEnum,
+readonly issue_date: string,
+readonly due_date: string,
+readonly total: string,
+readonly balance_due: string,
+};
+export type PaymentImportInvoiceLinkData = {
+readonly id: string,
+readonly number: string,
+readonly balance_due: string,
+};
+export type PaymentImportInvoiceSearchData = {
+readonly search: string | null,
+readonly amount: string | null,
+};
+export type PaymentImportLimitsData = {
+readonly max_files: number,
+readonly max_file_kb: number,
+readonly max_rows: number,
+};
+export type PaymentImportOverpaymentData = {
+readonly reference: string,
+readonly invoice_id: string,
+readonly invoice_number: string,
+readonly payer_name: string | null,
+readonly excess: string,
+};
+export type PaymentImportPreviewData = {
+readonly files: App.Data.Invoices.PaymentImportFileData[],
+readonly rows: App.Data.Invoices.PaymentImportRowData[],
+readonly ignored_debit_rows: number,
+readonly unreadable_credit_rows: number,
+readonly overlapping_rows: number,
+};
+export type PaymentImportResultData = {
+readonly recorded_count: number,
+readonly recorded_total: string,
+readonly already_imported: number,
+readonly excluded: number,
+readonly settled_invoices: App.Data.Invoices.PaymentImportInvoiceLinkData[],
+readonly partly_paid_invoices: App.Data.Invoices.PaymentImportInvoiceLinkData[],
+readonly overpayments: App.Data.Invoices.PaymentImportOverpaymentData[],
+readonly skipped: App.Data.Invoices.PaymentImportSkippedRowData[],
+};
+export type PaymentImportRowData = {
+readonly reference: string,
+readonly file_index: number,
+readonly date: string,
+readonly amount: string,
+readonly payer_name: string | null,
+readonly payer_iban: string | null,
+readonly variable_symbol: string | null,
+readonly note: string | null,
+readonly state: App.Enums.PaymentImportRowStateEnum,
+readonly invoice: App.Data.Invoices.PaymentImportInvoiceData | null,
+readonly balance_before: string | null,
+readonly amount_to_record: string | null,
+readonly excess: string | null,
+readonly instalment_position: number | null,
+readonly instalment_count: number | null,
+readonly existing_payment_id: string | null,
+readonly include: boolean,
+};
+export type PaymentImportRowInputData = {
+readonly reference: string,
+readonly include: boolean,
+readonly invoice_id: string | null,
+};
+export type PaymentImportSkippedRowData = {
+readonly reference: string,
+readonly state: App.Enums.PaymentImportRowStateEnum,
+readonly invoice_number: string | null,
+};
+export type PaymentImportUploadData = {
+readonly files: File[],
+};
 export type PohodaExportData = {
 readonly from: string,
 readonly to: string,
@@ -2085,6 +2178,7 @@ export type MobileSessionRevokeReasonEnum = "logout" | "password_changed" | "pas
 export type NavIconEnum = "dashboard" | "buildings" | "team" | "clients" | "quotes" | "invoices" | "recurring_invoices" | "contracts" | "documents" | "schedule" | "tasks" | "expenses" | "notifications" | "notification_settings" | "pending_actions" | "users" | "roles" | "audit_logs" | "media" | "profile" | "invoice_settings" | "settings";
 export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "invoice.issue_reminder" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned" | "task.commented" | "task.ai_run";
 export type ObjectTypeEnum = "office" | "apartment" | "house" | "residential_building" | "common_areas";
+export type PaymentImportRowStateEnum = "already_imported" | "no_vs" | "vs_not_found" | "invoice_not_payable" | "invoice_paid" | "previously_deleted" | "possible_duplicate" | "overpaid" | "partial" | "matched";
 export type PaymentSourceEnum = "manual" | "bank_import" | "legacy_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense";

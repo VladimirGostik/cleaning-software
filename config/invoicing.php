@@ -26,4 +26,12 @@ return [
         'merge_timeout_seconds' => 60,
         'qpdf_binary' => env('QPDF_BINARY', 'qpdf'),
     ],
+
+    'payment_import' => [
+        'max_files' => 12,
+        'max_file_kb' => 1024,
+        'max_rows' => 500,
+        'throttle' => 20,
+        'search_throttle' => 120,
+    ],
 ];

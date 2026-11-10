@@ -19,6 +19,7 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceBulkController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceExportController;
+use App\Http\Controllers\InvoicePaymentImportController;
 use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MediaController;
@@ -224,6 +225,12 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
         Route::post('/invoices/bulk/pay', [InvoiceBulkController::class, 'pay'])->name('invoices.bulk.pay');
         Route::post('/invoices/bulk/send', [InvoiceBulkController::class, 'send'])->name('invoices.bulk.send');
         Route::post('/invoices/bulk/issue', [InvoiceBulkController::class, 'issue'])->name('invoices.bulk.issue');
+    });
+    Route::get('/invoices/payment-import', [InvoicePaymentImportController::class, 'page'])->name('invoices.payment-import');
+    Route::get('/invoices/payment-import/invoices', [InvoicePaymentImportController::class, 'invoices'])->name('invoices.payment-import.invoices')->middleware('throttle:payment-import-search');
+    Route::middleware('throttle:payment-import')->group(function (): void {
+        Route::post('/invoices/payment-import/preview', [InvoicePaymentImportController::class, 'preview'])->name('invoices.payment-import.preview');
+        Route::post('/invoices/payment-import', [InvoicePaymentImportController::class, 'store'])->name('invoices.payment-import.store');
     });
     Route::get('/invoices/buyer-preview', [InvoiceController::class, 'buyerPreview'])->name('invoices.buyer-preview');
     Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');

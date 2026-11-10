@@ -28,6 +28,7 @@ use App\Scopes\TenantScope;
 use App\Support\CustomerParty;
 use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -82,6 +83,11 @@ final readonly class InvoiceService
                 AllowedFilter::dynamic('number'),
                 AllowedFilter::dynamic('status'),
                 AllowedFilter::dynamic('type'),
+                AllowedFilter::callback('open', static function (Builder $query, mixed $value): void {
+                    if (filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+                        $query->whereIn('status', [InvoiceStatusEnum::Issued, InvoiceStatusEnum::Overdue]);
+                    }
+                }),
                 AllowedFilter::dynamic('client_id')->uuid(),
                 AllowedFilter::dynamic('customer_name'),
                 AllowedFilter::dynamic('issue_date')->date(),
@@ -219,13 +225,13 @@ final readonly class InvoiceService
         });
     }
 
-    public function recordPayment(Invoice $invoice, InvoicePaymentData $data, ?User $actor, PaymentSourceEnum $source = PaymentSourceEnum::Manual): InvoicePayment
+    public function recordPayment(Invoice $invoice, InvoicePaymentData $data, ?User $actor, PaymentSourceEnum $source = PaymentSourceEnum::Manual, ?string $externalReference = null): InvoicePayment
     {
         if (! $invoice->status->canTransitionTo(InvoiceStatusEnum::Paid)) {
             throw ValidationException::withMessages(['status' => [__('app.invoice_cannot_mark_paid')]]);
         }
 
-        return $this->db->transaction(function () use ($invoice, $data, $actor, $source): InvoicePayment {
+        return $this->db->transaction(function () use ($invoice, $data, $actor, $source, $externalReference): InvoicePayment {
             $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
 
             if (! $locked->status->canTransitionTo(InvoiceStatusEnum::Paid)) {
@@ -249,6 +255,7 @@ final readonly class InvoiceService
                 'paid_on' => $data->paid_on,
                 'payment_type' => $data->payment_type,
                 'source' => $source,
+                'external_reference' => $externalReference,
                 'note' => $data->note,
                 'recorded_by_user_id' => $actor?->id,
             ]);

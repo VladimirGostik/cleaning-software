@@ -13,5 +13,7 @@ final readonly class StatementRow
         public ?string $counterparty,
         public ?string $note,
         public string $reference,
+        public ?string $variableSymbol = null,
+        public ?string $counterpartyIban = null,
     ) {}
 }

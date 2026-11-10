@@ -33,7 +33,11 @@ final readonly class CamtStatementParser
 
         $iban = '';
         $rows = [];
+        $creditRows = [];
         $references = [];
+        $creditReferences = [];
+        $periodFrom = null;
+        $periodTo = null;
         $credits = 0;
         $others = 0;
         $max = config()->integer('expenses.statement.max_rows');
@@ -46,6 +50,8 @@ final readonly class CamtStatementParser
             }
 
             $iban = $current;
+            $periodFrom ??= $this->periodDate($this->text($xpath, 'c:FrToDt/c:FrDtTm', $statement));
+            $periodTo = $this->periodDate($this->text($xpath, 'c:FrToDt/c:ToDtTm', $statement)) ?? $periodTo;
 
             foreach ($this->elements($xpath, 'c:Ntry', $statement) as $entry) {
                 if ($this->text($xpath, 'c:Sts', $entry) !== 'BOOK' || strtolower($this->text($xpath, 'c:RvslInd', $entry) ?? '') === 'true') {
@@ -58,6 +64,13 @@ final readonly class CamtStatementParser
 
                 if ($direction === 'CRDT') {
                     $credits++;
+
+                    $credit = $this->credit($xpath, $entry, count($creditRows) + 1);
+
+                    if ($credit !== null && ! isset($creditReferences[$credit->reference])) {
+                        $creditReferences[$credit->reference] = true;
+                        $creditRows[] = $credit;
+                    }
 
                     continue;
                 }
@@ -87,7 +100,7 @@ final readonly class CamtStatementParser
             }
         }
 
-        return new CamtStatement($iban, $rows, $credits, $others);
+        return new CamtStatement($iban, $rows, $credits, $others, $creditRows, $periodFrom, $periodTo);
     }
 
     public function entryKey(string $iban, string $reference): string
@@ -165,6 +178,61 @@ final readonly class CamtStatementParser
             note: $single === null ? null : SafeText::clean($this->note($xpath, $single), 500),
             reference: $reference,
         );
+    }
+
+    private function credit(DOMXPath $xpath, DOMElement $entry, int $position): ?StatementRow
+    {
+        $reference = Str::trim($this->text($xpath, 'c:NtryRef', $entry) ?? '');
+        $amount = $this->elements($xpath, 'c:Amt', $entry)[0] ?? null;
+
+        if ($reference === '' || mb_strlen($reference) > 100 || $amount === null || $amount->getAttribute('Ccy') !== 'EUR') {
+            return null;
+        }
+
+        $value = trim($amount->textContent);
+
+        if (preg_match('/^\d{1,10}(\.\d{1,2})?$/', $value) !== 1 || (float) $value <= 0.0) {
+            return null;
+        }
+
+        try {
+            $date = $this->bookingDate($xpath, $entry);
+        } catch (ValidationException) {
+            return null;
+        }
+
+        $details = $this->elements($xpath, 'c:NtryDtls/c:TxDtls', $entry);
+        $single = count($details) === 1 ? $details[0] : null;
+        $payerIban = $single === null ? '' : self::normalizeIban($this->text($xpath, 'c:RltdPties/c:DbtrAcct/c:Id/c:IBAN', $single) ?? '');
+
+        return new StatementRow(
+            row: $position,
+            date: $date,
+            amount: number_format((float) $value, 2, '.', ''),
+            counterparty: $single === null ? null : SafeText::clean($this->text($xpath, 'c:RltdPties/c:Dbtr/c:Nm', $single), 200),
+            note: $single === null ? null : SafeText::clean($this->note($xpath, $single), 500),
+            reference: $reference,
+            variableSymbol: $single === null ? null : $this->variableSymbol($this->text($xpath, 'c:Refs/c:EndToEndId', $single)),
+            counterpartyIban: preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/', $payerIban) === 1 ? $payerIban : null,
+        );
+    }
+
+    private function variableSymbol(?string $endToEnd): ?string
+    {
+        if ($endToEnd === null || preg_match('#/VS(\d{1,10})(?!\d)#', $endToEnd, $matches) !== 1) {
+            return null;
+        }
+
+        $symbol = ltrim($matches[1], '0');
+
+        return $symbol === '' ? null : $symbol;
+    }
+
+    private function periodDate(?string $value): ?string
+    {
+        $day = substr($value ?? '', 0, 10);
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 ? $day : null;
     }
 
     private function note(DOMXPath $xpath, DOMElement $details): ?string

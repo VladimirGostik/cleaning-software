@@ -182,6 +182,9 @@ function onSettingsSaved(): void {
             >
                 {{ t('pohoda_export_button') }}
             </button>
+            <Link v-if="allows('edit invoices')" href="/invoices/payment-import" class="btn btn-neutral btn-sm">
+                {{ t('invoice_payment_import_button') }}
+            </Link>
             <Can permission="manage billing settings">
                 <button type="button" class="btn btn-neutral btn-sm" @click="settingsDrawer.open">
                     {{ t('invoicing_settings') }}

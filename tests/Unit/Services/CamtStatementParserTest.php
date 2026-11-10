@@ -279,4 +279,71 @@ final class CamtStatementParserTest extends TestCase
     {
         $this->assertRefused('<?xml version="1.0"?><Document xmlns="'.self::CAMT_NAMESPACE.'"><BkToCstmrStmt/></Document>');
     }
+
+    /** @return array<string, mixed> */
+    private function paying(string $reference, string $endToEnd = '/VS0000012345/SS/KS', string $amount = '25.00'): array
+    {
+        return $this->credit($reference, $amount, '2026-10-05', [
+            'counterparty' => null,
+            'payer' => 'Platca A',
+            'payer_iban' => 'SK3333000000003333333333',
+            'end_to_end' => $endToEnd,
+        ]);
+    }
+
+    public function test_credit_is_parsed_with_variable_symbol_payer_and_period(): void
+    {
+        $statement = $this->parser->parse($this->camtXml(
+            [$this->paying('C1')],
+            period: ['2026-09-30T00:00:00.000+02:00', '2026-10-30T23:59:59.000+01:00'],
+        ));
+
+        $this->assertSame(1, $statement->skippedCreditRows);
+        $this->assertCount(1, $statement->creditRows);
+        $credit = $statement->creditRows[0];
+        $this->assertSame('C1', $credit->reference);
+        $this->assertSame('25.00', $credit->amount);
+        $this->assertSame('2026-10-05', $credit->date);
+        $this->assertSame('12345', $credit->variableSymbol);
+        $this->assertSame('Platca A', $credit->counterparty);
+        $this->assertSame('SK3333000000003333333333', $credit->counterpartyIban);
+        $this->assertSame('Platba C1', $credit->note);
+        $this->assertSame('2026-09-30', $statement->periodFrom);
+        $this->assertSame('2026-10-30', $statement->periodTo);
+    }
+
+    public function test_credit_without_variable_symbol_has_none_and_period_is_optional(): void
+    {
+        $statement = $this->parser->parse($this->camtXml([
+            $this->paying('C1', 'NOTPROVIDED'),
+            $this->paying('C2', '/VS0000000000/SS'),
+            $this->paying('C3', '/VS12345678901'),
+        ]));
+
+        $this->assertCount(3, $statement->creditRows);
+        $this->assertNull($statement->creditRows[0]->variableSymbol);
+        $this->assertNull($statement->creditRows[1]->variableSymbol);
+        $this->assertNull($statement->creditRows[2]->variableSymbol);
+        $this->assertNull($statement->periodFrom);
+        $this->assertNull($statement->periodTo);
+    }
+
+    public function test_unreadable_credits_are_left_out_without_failing_the_file(): void
+    {
+        $statement = $this->parser->parse($this->camtXml([
+            $this->debit('D1', '5.00'),
+            $this->paying('C1'),
+            $this->paying('C1', amount: '30.00'),
+            $this->paying('C2', amount: '0.00'),
+            $this->credit('C3', '10.00', '2026-10-05', ['currency' => 'CZK']),
+            $this->credit('C4', '10.00', '2026-10-05', ['reference' => null]),
+            $this->credit('C5', 'abc', '2026-10-05'),
+            $this->paying('C6'),
+        ]));
+
+        $this->assertSame(7, $statement->skippedCreditRows);
+        $this->assertCount(1, $statement->debitRows);
+        $this->assertSame(['C1', 'C6'], array_map(static fn ($row): string => $row->reference, $statement->creditRows));
+        $this->assertSame('25.00', $statement->creditRows[0]->amount);
+    }
 }
