@@ -26,4 +26,27 @@ final class PaymentImportResultData extends Data
         public readonly array $overpayments,
         public readonly array $skipped,
     ) {}
+
+    public function withoutFreeText(): self
+    {
+        return new self(
+            $this->recorded_count,
+            $this->recorded_total,
+            $this->already_imported,
+            $this->excluded,
+            $this->settled_invoices,
+            $this->partly_paid_invoices,
+            array_map(
+                static fn (PaymentImportOverpaymentData $overpayment): PaymentImportOverpaymentData => new PaymentImportOverpaymentData(
+                    $overpayment->reference,
+                    $overpayment->invoice_id,
+                    $overpayment->invoice_number,
+                    null,
+                    $overpayment->excess,
+                ),
+                $this->overpayments,
+            ),
+            $this->skipped,
+        );
+    }
 }

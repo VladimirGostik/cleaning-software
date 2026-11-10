@@ -21,4 +21,15 @@ final class PaymentImportPreviewData extends Data
         public readonly int $unreadable_credit_rows,
         public readonly int $overlapping_rows,
     ) {}
+
+    public function withoutFreeText(): self
+    {
+        return new self(
+            $this->files,
+            array_map(static fn (PaymentImportRowData $row): PaymentImportRowData => $row->withoutFreeText(), $this->rows),
+            $this->ignored_debit_rows,
+            $this->unreadable_credit_rows,
+            $this->overlapping_rows,
+        );
+    }
 }

@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Data\CreateUserData;
 use App\Data\UpdateUserData;
 use App\Enums\SupportedLanguage;
+use App\Models\Expense;
 use App\Models\Role;
 use App\Models\TenantMembership;
 use App\Models\User;
@@ -127,6 +128,10 @@ final readonly class UserService
                 ->first();
 
             if ($membership !== null) {
+                if (Expense::withTrashed()->where('tenant_membership_id', $membership->id)->exists()) {
+                    throw ValidationException::withMessages(['status' => [__('app.user_delete_has_expenses')]]);
+                }
+
                 $this->tasks->unassignForMembership($membership, onlyOpen: false);
                 $this->jobs->unassignFutureForMembership($membership);
                 $this->registration->revokePendingInvitations($tenantId, $user->email);

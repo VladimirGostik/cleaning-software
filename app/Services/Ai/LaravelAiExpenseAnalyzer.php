@@ -9,6 +9,7 @@ use App\Data\Expenses\ExpenseAnalysisContextData;
 use App\Data\Expenses\ExpenseCategoryProposalData;
 use App\Data\Expenses\ExpenseCompanyContextData;
 use App\Data\Expenses\ExpenseDraftData;
+use App\Data\Expenses\ExpenseDraftLineData;
 use App\Data\Expenses\ExpenseProposalData;
 use App\Data\Expenses\ExpenseRowData;
 use App\Enums\CurrencyEnum;
@@ -142,12 +143,19 @@ final readonly class LaravelAiExpenseAnalyzer implements AnalyzesExpenses
             'company_id' => $schema->string()->required()->nullable()->description('Id of the company from the list that this expense belongs to, matched by name, ICO or IBAN'),
             'confidence' => $schema->number()->required()->description('From 0 to 1'),
             'reason' => $schema->string()->required()->nullable()->description('One short sentence in Slovak explaining the category and company choice'),
+            'payroll_month' => $schema->string()->required()->nullable()->description('Payroll month as YYYY-MM for payslips and payroll sheets, otherwise null'),
+            'lines' => $schema->array()->required()->items($schema->object([
+                'name' => $schema->string()->required()->nullable()->description('Employee or recipient name exactly as printed'),
+                'amount' => $schema->string()->required()->nullable()->description('Amount, dot as decimal separator, no currency symbol'),
+                'month' => $schema->string()->required()->nullable()->description('Month as YYYY-MM when the line has its own month'),
+            ]))->description('One entry per employee on a payslip or payroll sheet (amount = net pay, "Čistá mzda"), or one entry per recipient of a batch levy payment order with its amount. Empty array for anything else.'),
         ];
     }
 
     private function draftInstructions(): string
     {
-        return 'You extract expense data from receipts and invoices of Slovak cleaning companies and propose a category and the owning company. '.self::DATA_RULE;
+        return 'You extract expense data from receipts and invoices of Slovak cleaning companies and propose a category and the owning company. '
+            .'For a payslip or payroll sheet return one line per employee with the net pay ("Čistá mzda") as amount and the name as printed; for a batch levy payment order return one line per recipient with its amount; for anything else return no lines. Never output birth numbers or bank accounts. '.self::DATA_RULE;
     }
 
     private function companiesBlock(ExpenseAnalysisContextData $ctx): string
@@ -181,7 +189,31 @@ final readonly class LaravelAiExpenseAnalyzer implements AnalyzesExpenses
                 confidence: $this->confidence($result['confidence'] ?? null),
                 reason: $this->string($result['reason'] ?? null),
             ),
+            payroll_month: $this->string($result['payroll_month'] ?? null),
+            lines: $this->lines($result['lines'] ?? null),
         );
+    }
+
+    /** @return list<ExpenseDraftLineData> */
+    private function lines(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $lines = [];
+
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $lines[] = new ExpenseDraftLineData(
+                    name: $this->string($item['name'] ?? null),
+                    amount: $this->string($item['amount'] ?? null),
+                    payroll_month: $this->string($item['month'] ?? null),
+                );
+            }
+        }
+
+        return $lines;
     }
 
     // Native structured output rejects an enum on a nullable type, so draftFrom() and categorize() validate the value.

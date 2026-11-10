@@ -30,4 +30,27 @@ final class PaymentImportRowData extends Data
         public readonly ?string $existing_payment_id,
         public readonly bool $include,
     ) {}
+
+    public function withoutFreeText(): self
+    {
+        return new self(
+            $this->reference,
+            $this->file_index,
+            $this->date,
+            $this->amount,
+            null,
+            $this->payer_iban,
+            $this->variable_symbol,
+            null,
+            $this->state,
+            $this->invoice,
+            $this->balance_before,
+            $this->amount_to_record,
+            $this->excess,
+            $this->instalment_position,
+            $this->instalment_count,
+            $this->existing_payment_id,
+            $this->include,
+        );
+    }
 }

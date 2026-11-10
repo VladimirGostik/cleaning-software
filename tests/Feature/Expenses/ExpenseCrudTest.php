@@ -202,7 +202,7 @@ final class ExpenseCrudTest extends TestCase
                 ->component('Expenses/Index')
                 ->has('expenses.data', 2)
                 ->has('context.companies', 2)
-                ->has('context.categories', 12));
+                ->has('context.categories', 13));
 
         $this->webAs($this->accountant, $this->alpha)
             ->get('/expenses?filter[status]=draft')
@@ -339,7 +339,7 @@ final class ExpenseCrudTest extends TestCase
             ->getJson('/api/expenses/form-context')
             ->assertOk()
             ->assertJsonCount(2, 'companies')
-            ->assertJsonCount(12, 'categories');
+            ->assertJsonCount(13, 'categories');
     }
 
     public function test_expense_routes_are_closed_to_non_mobile_tokens(): void

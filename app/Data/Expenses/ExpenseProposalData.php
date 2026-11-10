@@ -24,4 +24,16 @@ final class ExpenseProposalData extends Data
         #[Nullable, Max(500)]
         public readonly ?string $reason = null,
     ) {}
+
+    /** @return array<string, mixed> */
+    public function stored(): array
+    {
+        return [
+            'category' => $this->category?->value,
+            'tenant_id' => $this->tenant_id,
+            'confidence' => $this->confidence,
+            'reason' => $this->reason,
+            'model' => config('ai.model'),
+        ];
+    }
 }

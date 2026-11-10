@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\TaskCommentController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TaskParseController;
 use App\Http\Controllers\Api\TaskRunController;
+use App\Http\Controllers\Api\TokenUploadController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
@@ -114,4 +115,10 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::put('/users/{user}', [UserController::class, 'update']);
     });
+});
+
+Route::prefix('token')->middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mcp', 'token.uploads', 'throttle:token-uploads'])->group(function (): void {
+    Route::post('/invoice-payments/preview', [TokenUploadController::class, 'paymentsPreview'])->name('token.payments.preview');
+    Route::post('/invoice-payments', [TokenUploadController::class, 'paymentsImport'])->middleware('token.uploads:write')->name('token.payments.import');
+    Route::post('/expenses/receipt', [TokenUploadController::class, 'expenseReceipt'])->middleware('token.uploads:write')->name('token.expenses.receipt');
 });

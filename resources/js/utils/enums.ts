@@ -365,6 +365,7 @@ export const EXPENSE_CATEGORIES: readonly App.Enums.ExpenseCategoryEnum[] = [
     'rent',
     'utilities',
     'wages',
+    'payroll_levies',
     'insurance',
     'fees',
     'bank_charges',

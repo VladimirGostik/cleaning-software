@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\ApiLocaleMiddleware;
+use App\Http\Middleware\EnsureTokenUploads;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\LocaleMiddleware;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ability' => CheckForAnyAbility::class,
             'locale.api' => ApiLocaleMiddleware::class,
             'user.active' => EnsureUserIsActive::class,
+            'token.uploads' => EnsureTokenUploads::class,
         ]);
 
         $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO);

@@ -18,6 +18,7 @@ enum ExpenseCategoryEnum: string
     case Utilities = 'utilities';
     case Wages = 'wages';
     case Insurance = 'insurance';
+    case PayrollLevies = 'payroll_levies';
     case Fees = 'fees';
     case BankCharges = 'bank_charges';
     case Other = 'other';

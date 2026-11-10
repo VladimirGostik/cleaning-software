@@ -769,6 +769,25 @@ export type ExpenseAnalyzeData = {
 readonly receipt: File | null,
 readonly text: string | null,
 };
+export type ExpenseBatchLineData = {
+readonly amount: string,
+readonly tenant_membership_id: string | null,
+readonly supplier_name: string | null,
+readonly description: string | null,
+};
+export type ExpenseBatchStoreData = {
+readonly date: string,
+readonly category: App.Enums.ExpenseCategoryEnum,
+readonly lines: App.Data.Expenses.ExpenseBatchLineData[],
+readonly tenant_id?: string,
+readonly currency: App.Enums.CurrencyEnum,
+readonly supplier_name: string | null,
+readonly description: string | null,
+readonly payroll_month: string | null,
+readonly receipt_uuid: string | null,
+readonly ai_proposal: App.Data.Expenses.ExpenseProposalData | null,
+readonly duplicate_action: App.Enums.ExpenseDuplicateActionEnum | null,
+};
 export type ExpenseCanData = {
 readonly update: boolean,
 readonly delete: boolean,
@@ -808,6 +827,10 @@ readonly receipt: App.Data.MediaFileData | null,
 readonly ai_proposal: App.Data.Expenses.ExpenseProposalData | null,
 readonly confirmed_at: string | null,
 readonly can: App.Data.Expenses.ExpenseCanData,
+readonly tenant_membership_id: string | null,
+readonly employee_name: string | null,
+readonly payroll_month: string | null,
+readonly is_undocumented: boolean,
 };
 export type ExpenseDraftData = {
 readonly date: string | null,
@@ -817,10 +840,26 @@ readonly vat_amount: string | null,
 readonly supplier_name: string | null,
 readonly description: string | null,
 readonly proposal: App.Data.Expenses.ExpenseProposalData,
+readonly payroll_month: string | null,
+readonly lines: App.Data.Expenses.ExpenseDraftLineData[],
+};
+export type ExpenseDraftLineData = {
+readonly name: string | null,
+readonly amount: string | null,
+readonly payroll_month: string | null,
+readonly tenant_membership_id: string | null,
+readonly employee_label: string | null,
+};
+export type ExpenseEmployeeOptionData = {
+readonly id: string,
+readonly tenant_id: string,
+readonly label: string,
+readonly is_active: boolean,
 };
 export type ExpenseFormContextData = {
 readonly companies: App.Data.Auth.MobileCompanyData[],
 readonly categories: App.Enums.ExpenseCategoryEnum[],
+readonly employees: App.Data.Expenses.ExpenseEmployeeOptionData[],
 };
 export type ExpenseImportAccountCheckData = {
 readonly status: App.Enums.ExpenseImportAccountStatusEnum,
@@ -882,6 +921,11 @@ readonly category: App.Enums.ExpenseCategoryEnum | null,
 readonly source: App.Enums.ExpenseSourceEnum,
 readonly has_receipt: boolean,
 readonly proposed_category: App.Enums.ExpenseCategoryEnum | null,
+readonly tenant_membership_id: string | null,
+readonly employee_name: string | null,
+readonly payroll_month: string | null,
+readonly is_undocumented: boolean,
+readonly description: string | null,
 };
 export type ExpenseProposalData = {
 readonly category: App.Enums.ExpenseCategoryEnum | null,
@@ -937,6 +981,11 @@ readonly rows: App.Data.Expenses.ExpenseStatementRowData[],
 readonly include_references: string[],
 readonly exclude_references: string[],
 };
+export type ExpenseTotalData = {
+readonly currency: App.Enums.CurrencyEnum,
+readonly amount: string,
+readonly count: number,
+};
 export type ExpenseUpsertData = {
 readonly date: string,
 readonly amount: string,
@@ -950,6 +999,19 @@ readonly status: App.Enums.ExpenseStatusEnum | null,
 readonly receipt_uuid: string | null,
 readonly source: App.Enums.ExpenseSourceEnum,
 readonly ai_proposal: App.Data.Expenses.ExpenseProposalData | null,
+readonly tenant_membership_id?: string | null,
+readonly payroll_month?: string | null,
+readonly is_undocumented?: boolean,
+readonly duplicate_action: App.Enums.ExpenseDuplicateActionEnum | null,
+};
+export type TokenExpenseReceiptData = {
+readonly company_id: string,
+readonly expense_ids: string[],
+readonly file: File,
+};
+export type TokenExpenseReceiptResultData = {
+readonly expense_ids: string[],
+readonly file_name: string,
 };
 }
 namespace Invitations {
@@ -1380,6 +1442,15 @@ readonly to: string,
 export type PohodaExportPreviewData = {
 readonly count: number,
 readonly skipped_non_eur: number,
+};
+export type TokenPaymentImportData = {
+readonly company_id: string,
+readonly files: File[],
+readonly exclude_references: string[],
+};
+export type TokenPaymentPreviewData = {
+readonly company_id: string,
+readonly files: File[],
 };
 export type VatBreakdownLineData = {
 readonly rate: number,
@@ -2162,7 +2233,8 @@ export type DocumentTypeEnum = "service_agreement" | "employment" | "nda" | "gdp
 export type EfaStatusEnum = "none" | "ready" | "generated" | "submitted" | "accepted" | "rejected" | "failed";
 export type EmployeeTypeEnum = "brigade" | "tpp" | "self_employed";
 export type EmploymentContractTypeEnum = "dpp" | "dpc" | "tpp" | "self_employed";
-export type ExpenseCategoryEnum = "fuel" | "materials" | "cleaning_supplies" | "equipment" | "services" | "rent" | "utilities" | "wages" | "insurance" | "fees" | "bank_charges" | "other";
+export type ExpenseCategoryEnum = "fuel" | "materials" | "cleaning_supplies" | "equipment" | "services" | "rent" | "utilities" | "wages" | "insurance" | "payroll_levies" | "fees" | "bank_charges" | "other";
+export type ExpenseDuplicateActionEnum = "keep_both" | "replace";
 export type ExpenseImportAccountStatusEnum = "matched" | "other_company" | "unknown_account" | "company_iban_missing";
 export type ExpenseImportRowStateEnum = "new" | "already_imported" | "previously_deleted" | "possible_match";
 export type ExpenseSourceEnum = "manual" | "receipt" | "bank_statement" | "mcp";

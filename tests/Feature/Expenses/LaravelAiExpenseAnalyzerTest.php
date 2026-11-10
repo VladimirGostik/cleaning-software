@@ -122,6 +122,43 @@ final class LaravelAiExpenseAnalyzerTest extends TestCase
         }
     }
 
+    public function test_payslip_lines_and_month_are_mapped(): void
+    {
+        $this->fakeProvider([
+            'date' => '2026-11-05', 'amount' => null, 'currency' => 'EUR', 'vat_amount' => null,
+            'supplier_name' => null, 'description' => null, 'category' => 'wages',
+            'company_id' => null, 'confidence' => 0.7, 'reason' => null, 'payroll_month' => '2026-10',
+            'lines' => [
+                ['name' => 'Novak Jan', 'amount' => '812.30', 'month' => null],
+                ['name' => 'Kovacova Eva', 'amount' => '640.00', 'month' => '2026-10'],
+                'junk',
+            ],
+        ]);
+
+        $draft = app(LaravelAiExpenseAnalyzer::class)->analyzeText('payslip', $this->context());
+
+        $this->assertSame('2026-10', $draft->payroll_month);
+        $this->assertCount(2, $draft->lines);
+        $this->assertSame('Novak Jan', $draft->lines[0]->name);
+        $this->assertSame('812.30', $draft->lines[0]->amount);
+        $this->assertSame('2026-10', $draft->lines[1]->payroll_month);
+
+        Http::assertSent(fn (Request $request): bool => data_get($request->data(), 'output_config.format.schema.properties.lines') !== null);
+    }
+
+    public function test_a_missing_lines_key_gives_no_lines(): void
+    {
+        $this->fakeProvider([
+            'date' => null, 'amount' => '5.00', 'currency' => 'EUR', 'vat_amount' => null, 'supplier_name' => null,
+            'description' => null, 'category' => null, 'company_id' => null, 'confidence' => 0.1, 'reason' => null,
+        ]);
+
+        $plain = app(LaravelAiExpenseAnalyzer::class)->analyzeText('x', $this->context());
+
+        $this->assertSame([], $plain->lines);
+        $this->assertNull($plain->payroll_month);
+    }
+
     public function test_receipt_is_sent_as_a_document_with_structured_output_and_mapped_back(): void
     {
         $this->fakeProvider([

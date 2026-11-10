@@ -202,6 +202,33 @@ final readonly class InvoicePaymentImportService
         }
     }
 
+    /**
+     * @param  list<UploadedFile>  $files
+     * @param  list<string>  $exclude
+     */
+    public function importServerMatches(array $files, array $exclude, User $actor): PaymentImportResultData
+    {
+        $preview = $this->preview($files, $actor);
+        $this->assertAccountsMatch($preview);
+        $skip = array_flip($exclude);
+
+        $rows = array_map(
+            static fn (PaymentImportRowData $row): PaymentImportRowInputData => new PaymentImportRowInputData($row->reference, true),
+            array_values(array_filter($preview->rows, static fn (PaymentImportRowData $row): bool => $row->include && ! isset($skip[$row->reference]))),
+        );
+
+        return $this->import(new PaymentImportData($files, $rows), $actor);
+    }
+
+    public function assertAccountsMatch(PaymentImportPreviewData $preview): void
+    {
+        foreach ($preview->files as $file) {
+            if ($file->account->status !== ExpenseImportAccountStatusEnum::Matched) {
+                throw ValidationException::withMessages(['files.'.$file->index => [$file->name.': '.__('app.payment_import_no_matching_file')]]);
+            }
+        }
+    }
+
     /** @return list<PaymentImportInvoiceData> */
     public function searchInvoices(PaymentImportInvoiceSearchData $data): array
     {

@@ -14,6 +14,7 @@ import EmployeeActionsCard from '@/Components/Employees/EmployeeActionsCard.vue'
 import EmployeeMetaCard from '@/Components/Employees/EmployeeMetaCard.vue';
 import EmployeePersonalCard from '@/Components/Employees/EmployeePersonalCard.vue';
 import EmployeeDocumentsCard from '@/Components/Employees/EmployeeDocumentsCard.vue';
+import EmployeeExpensesCard from '@/Components/Employees/EmployeeExpensesCard.vue';
 import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
 import EmployeeRoleModal from '@/Components/Employees/EmployeeRoleModal.vue';
 
@@ -28,6 +29,7 @@ const props = defineProps<{
     documents: App.Data.Employees.EmployeeDocumentData[] | null;
     documentConstraints: App.Data.Employees.EmployeeDocumentConstraintsData | null;
     contracts: App.Data.Contracts.ContractListItemData[] | null;
+    expenses: App.Data.Expenses.ExpenseListItemData[] | null;
     canCreateContract: boolean;
 }>();
 
@@ -142,6 +144,7 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
                 :constraints="documentConstraints"
                 :can-manage="employee.can.manage_documents === true"
             />
+            <EmployeeExpensesCard v-if="expenses !== null" :employee-id="employee.id" :expenses="expenses" />
             <RelatedContractsCard
                 :contracts="contracts"
                 :can-create="canCreateContract"

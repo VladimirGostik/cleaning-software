@@ -8,6 +8,7 @@ import Header from '@/Layouts/Header.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import SelectInput from '@/Components/Forms/SelectInput.vue';
 import FileInput from '@/Components/Forms/FileInput.vue';
+import StatusChip from '@/Components/StatusChip.vue';
 import ExpenseStatusBadge from '@/Components/Expenses/ExpenseStatusBadge.vue';
 import ExpenseCategoryBadge from '@/Components/Expenses/ExpenseCategoryBadge.vue';
 import ExpenseProposalHint from '@/Components/Expenses/ExpenseProposalHint.vue';
@@ -15,11 +16,13 @@ import ExpenseFormDrawer from '@/Components/Expenses/ExpenseFormDrawer.vue';
 import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
 
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
-import { formatDate, formatDatetime } from '@/utils/date';
+import { useMoneyFormat } from '@/Composables/useMoneyFormat';
+import { formatDate, formatDatetime, formatMonth } from '@/utils/date';
 import { EXPENSE_CATEGORIES, expenseCategoryKey, expenseSourceKey } from '@/utils/enums';
 import type { Breadcrumb } from '@/types';
 
 const { t } = useI18n();
+const { money } = useMoneyFormat();
 
 const props = defineProps<{
     expense: App.Data.Expenses.ExpenseDetailData;
@@ -28,7 +31,7 @@ const props = defineProps<{
 
 const breadcrumbs = computed<Breadcrumb[]>(() => [
     { label: t('dashboard'), url: '/' },
-    { label: t('expenses'), url: '/expenses' },
+    { label: t('expenses'), url: props.expense.is_undocumented ? '/expenses?filter[undocumented]=1' : '/expenses' },
     { label: formatDate(props.expense.date) },
 ]);
 
@@ -68,7 +71,10 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 </script>
 
 <template>
-    <Header :title="expense.supplier_name ?? formatDate(expense.date)" :breadcrumbs="breadcrumbs">
+    <Header
+        :title="expense.employee_name ?? expense.supplier_name ?? formatDate(expense.date)"
+        :breadcrumbs="breadcrumbs"
+    >
         <template #actions>
             <button v-if="expense.can.update" type="button" class="btn btn-neutral btn-sm" @click="ui.editOpen = true">
                 <PencilSquareIcon class="size-5" />
@@ -130,6 +136,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <div class="flex flex-wrap gap-2">
                         <ExpenseStatusBadge :status="expense.status" />
                         <ExpenseCategoryBadge v-if="expense.category" :category="expense.category" />
+                        <StatusChip v-if="expense.is_undocumented" tone="neutral" :label="t('expense_cash_chip')" />
                     </div>
 
                     <dl class="mt-2 space-y-2 text-sm">
@@ -137,19 +144,27 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                             <dt class="text-base-content/60">{{ t('expense_company') }}</dt>
                             <dd>{{ expense.tenant_name ?? t('empty_dash') }}</dd>
                         </div>
+                        <div v-if="expense.employee_name" class="flex justify-between gap-4">
+                            <dt class="text-base-content/60">{{ t('expense_payslip_employee') }}</dt>
+                            <dd>{{ expense.employee_name }}</dd>
+                        </div>
+                        <div v-if="expense.payroll_month" class="flex justify-between gap-4">
+                            <dt class="text-base-content/60">{{ t('expense_payslip_month_for') }}</dt>
+                            <dd>{{ formatMonth(expense.payroll_month) }}</dd>
+                        </div>
                         <div class="flex justify-between gap-4">
                             <dt class="text-base-content/60">{{ t('expense_date') }}</dt>
                             <dd>{{ formatDate(expense.date) }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
                             <dt class="text-base-content/60">{{ t('expense_amount') }}</dt>
-                            <dd>{{ expense.amount }} {{ expense.currency }}</dd>
+                            <dd>{{ money(expense.amount, expense.currency) }}</dd>
                         </div>
-                        <div class="flex justify-between gap-4">
+                        <div v-if="!expense.is_undocumented" class="flex justify-between gap-4">
                             <dt class="text-base-content/60">{{ t('expense_vat_amount') }}</dt>
                             <dd>{{ expense.vat_amount ?? t('empty_dash') }}</dd>
                         </div>
-                        <div class="flex justify-between gap-4">
+                        <div v-if="!expense.is_undocumented" class="flex justify-between gap-4">
                             <dt class="text-base-content/60">{{ t('expense_supplier') }}</dt>
                             <dd>{{ expense.supplier_name ?? t('empty_dash') }}</dd>
                         </div>
@@ -165,7 +180,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div v-if="!expense.is_undocumented" class="card bg-base-100 shadow-sm">
                 <div class="card-body">
                     <h2 class="card-title text-base">{{ t('expense_receipt') }}</h2>
 

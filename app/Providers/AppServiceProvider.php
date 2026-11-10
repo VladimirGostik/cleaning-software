@@ -144,6 +144,12 @@ final class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(config()->integer('ai.mcp_throttle', 120))->by($tokenId !== null ? 'mcp-token:'.$tokenId : 'ip:'.get_client_ip());
         });
+        RateLimiter::for('token-uploads', function (Request $request): Limit {
+            $token = $request->user()?->currentAccessToken();
+            $tokenId = $token instanceof PersonalAccessToken ? (string) $token->id : null;
+
+            return Limit::perMinute(config()->integer('token_uploads.throttle'))->by($tokenId !== null ? 'token:'.$tokenId : 'ip:'.get_client_ip());
+        });
         RateLimiter::for('assistant', fn (Request $request) => Limit::perMinute(config()->integer('ai.throttle.assistant', 30))->by($request->user()?->getAuthIdentifier() ?? 'ip:'.get_client_ip()));
         RateLimiter::for('document-preview', fn (Request $request) => Limit::perMinute(30)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('invoice-send', fn (Request $request) => Limit::perMinute(10)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));

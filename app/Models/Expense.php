@@ -34,6 +34,9 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property string|null $supplier_name
  * @property string|null $description
  * @property ExpenseCategoryEnum|null $category
+ * @property string|null $tenant_membership_id
+ * @property Carbon|null $payroll_month
+ * @property bool $is_undocumented
  * @property ExpenseSourceEnum $source
  * @property string|null $bank_reference
  * @property string|null $external_hash
@@ -44,10 +47,12 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property Carbon|null $deleted_at
  * @property Tenant $tenant
  * @property User|null $creator
+ * @property TenantMembership|null $employee
  */
 #[Fillable([
     'tenant_id', 'created_by_user_id', 'status', 'date', 'amount', 'currency', 'vat_amount', 'supplier_name',
     'description', 'category', 'source', 'bank_reference', 'external_hash', 'ai_proposal', 'confirmed_at',
+    'tenant_membership_id', 'payroll_month', 'is_undocumented',
 ])]
 final class Expense extends Model implements HasMedia
 {
@@ -69,6 +74,8 @@ final class Expense extends Model implements HasMedia
             'vat_amount' => 'decimal:2',
             'ai_proposal' => 'array',
             'confirmed_at' => 'datetime',
+            'payroll_month' => 'date',
+            'is_undocumented' => 'boolean',
         ];
     }
 
@@ -87,7 +94,7 @@ final class Expense extends Model implements HasMedia
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'date', 'amount', 'currency', 'vat_amount', 'supplier_name', 'category', 'confirmed_at'])
+            ->logOnly(['status', 'date', 'amount', 'currency', 'vat_amount', 'supplier_name', 'category', 'confirmed_at', 'tenant_membership_id', 'payroll_month', 'is_undocumented'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
@@ -101,6 +108,12 @@ final class Expense extends Model implements HasMedia
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    /** @return BelongsTo<TenantMembership, $this> */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(TenantMembership::class, 'tenant_membership_id');
     }
 
     public function isDraft(): bool

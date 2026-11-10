@@ -36,9 +36,13 @@ final class ExpenseDetailData extends Data
         public readonly ?ExpenseProposalData $ai_proposal,
         public readonly ?string $confirmed_at,
         public readonly ExpenseCanData $can,
+        public readonly ?string $tenant_membership_id = null,
+        public readonly ?string $employee_name = null,
+        public readonly ?string $payroll_month = null,
+        public readonly bool $is_undocumented = false,
     ) {}
 
-    /** Expects `tenant` and `media` eager loaded. */
+    /** Expects `tenant`, `media` and `employee.user` eager loaded. */
     public static function fromModel(Expense $expense, ExpenseCanData $can, string $receiptUrl): self
     {
         $list = ExpenseListItemData::fromModel($expense);
@@ -64,6 +68,10 @@ final class ExpenseDetailData extends Data
             ai_proposal: self::proposal($expense),
             confirmed_at: $expense->confirmed_at?->toIso8601String(),
             can: $can,
+            tenant_membership_id: $list->tenant_membership_id,
+            employee_name: $list->employee_name,
+            payroll_month: $list->payroll_month,
+            is_undocumented: $list->is_undocumented,
         );
     }
 

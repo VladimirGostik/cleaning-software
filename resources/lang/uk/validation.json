@@ -305,6 +305,15 @@
     "attributes.status": "статус",
     "attributes.street": "вулиця",
     "attributes.supplier_name": "постачальник",
+    "attributes.tenant_membership_id": "співробітник",
+    "attributes.payroll_month": "місяць зарплати",
+    "attributes.is_undocumented": "без документа",
+    "attributes.duplicate_action": "вирішення дубліката",
+    "attributes.lines": "рядки",
+    "attributes.lines.*.tenant_membership_id": "співробітник у рядку",
+    "attributes.lines.*.supplier_name": "отримувач у рядку",
+    "attributes.lines.*.amount": "сума в рядку",
+    "attributes.lines.*.description": "опис у рядку",
     "attributes.swift_bic": "SWIFT/BIC",
     "attributes.taskable_id": "пов'язаний запис",
     "attributes.taskable_type": "тип пов'язаного запису",
@@ -365,5 +374,8 @@
     "attributes.billing_period": "період оплати",
     "attributes.billing_email": "платіжний e-mail",
     "attributes.recipient_email": "e-mail одержувача",
-    "attributes.save_for_future": "зберегти для майбутніх рахунків"
+    "attributes.save_for_future": "зберегти для майбутніх рахунків",
+    "attributes.exclude_references.*": "референс",
+    "attributes.expense_ids": "витрати",
+    "attributes.expense_ids.*": "витрата"
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Expenses\ExpenseAnalyzeData;
+use App\Data\Expenses\ExpenseBatchStoreData;
 use App\Data\Expenses\ExpenseConfirmData;
 use App\Data\Expenses\ExpenseImportData;
 use App\Data\Expenses\ExpenseImportResultData;
@@ -17,6 +18,7 @@ use App\Models\Expense;
 use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\ExpenseImportService;
+use App\Services\Expenses\EmployeeExpenseService;
 use App\Services\ExpenseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +34,7 @@ final class ExpenseController extends Controller
     public function __construct(
         private readonly ExpenseService $expenses,
         private readonly ExpenseImportService $imports,
+        private readonly EmployeeExpenseService $employeeExpenses,
     ) {}
 
     #[Authorize('viewAny', Expense::class)]
@@ -43,6 +46,7 @@ final class ExpenseController extends Controller
 
         return Inertia::render('Expenses/Index', [
             'expenses' => $this->expenses->paginate($request),
+            'totals' => $this->expenses->totals($request),
             'filters' => $request->query(),
             'context' => $this->expenses->formContext($actor),
         ]);
@@ -103,6 +107,17 @@ final class ExpenseController extends Controller
 
         return to_route($visibleHere ? 'expenses.show' : 'expenses.index', $visibleHere ? $expense : [])
             ->with('success', __('app.expense_created'));
+    }
+
+    #[Authorize('create', Expense::class)]
+    public function batchStore(ExpenseBatchStoreData $data, Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $created = $this->employeeExpenses->createBatch($data, $actor, $request->session()->getId());
+
+        return to_route('expenses.index')->with('success', __('app.expense_batch_created', ['count' => count($created)]));
     }
 
     #[Authorize('view', 'expense')]

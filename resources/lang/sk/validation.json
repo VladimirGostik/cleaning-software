@@ -305,6 +305,15 @@
     "attributes.status": "stav",
     "attributes.street": "ulica",
     "attributes.supplier_name": "dodávateľ",
+    "attributes.tenant_membership_id": "zamestnanec",
+    "attributes.payroll_month": "mzdový mesiac",
+    "attributes.is_undocumented": "bez dokladu",
+    "attributes.duplicate_action": "riešenie duplicity",
+    "attributes.lines": "riadky",
+    "attributes.lines.*.tenant_membership_id": "zamestnanec v riadku",
+    "attributes.lines.*.supplier_name": "príjemca v riadku",
+    "attributes.lines.*.amount": "suma v riadku",
+    "attributes.lines.*.description": "popis v riadku",
     "attributes.swift_bic": "SWIFT/BIC",
     "attributes.taskable_id": "súvisiaci záznam",
     "attributes.taskable_type": "typ súvisiaceho záznamu",
@@ -365,5 +374,8 @@
     "attributes.billing_period": "fakturačné obdobie",
     "attributes.billing_email": "fakturačný e-mail",
     "attributes.recipient_email": "e-mail príjemcu",
-    "attributes.save_for_future": "uložiť pre budúce faktúry"
+    "attributes.save_for_future": "uložiť pre budúce faktúry",
+    "attributes.exclude_references.*": "referencia",
+    "attributes.expense_ids": "výdavky",
+    "attributes.expense_ids.*": "výdavok"
 }

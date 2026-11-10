@@ -11,6 +11,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class ExpenseDraftData extends Data
 {
+    /** @param  list<ExpenseDraftLineData>  $lines */
     public function __construct(
         public readonly ?string $date,
         public readonly ?string $amount,
@@ -19,5 +20,7 @@ final class ExpenseDraftData extends Data
         public readonly ?string $supplier_name,
         public readonly ?string $description,
         public readonly ExpenseProposalData $proposal,
+        public readonly ?string $payroll_month = null,
+        public readonly array $lines = [],
     ) {}
 }

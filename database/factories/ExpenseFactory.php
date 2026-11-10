@@ -10,6 +10,7 @@ use App\Enums\ExpenseSourceEnum;
 use App\Enums\ExpenseStatusEnum;
 use App\Models\Expense;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -40,6 +41,9 @@ final class ExpenseFactory extends Factory
             'external_hash' => null,
             'ai_proposal' => null,
             'confirmed_at' => now(),
+            'tenant_membership_id' => null,
+            'payroll_month' => null,
+            'is_undocumented' => false,
         ];
     }
 
@@ -56,5 +60,26 @@ final class ExpenseFactory extends Factory
     public function draft(): static
     {
         return $this->state(fn () => ['status' => ExpenseStatusEnum::Draft, 'category' => null, 'confirmed_at' => null]);
+    }
+
+    public function forEmployee(TenantMembership $employee, string $month): static
+    {
+        return $this->state(fn () => [
+            'tenant_id' => $employee->tenant_id,
+            'tenant_membership_id' => $employee->id,
+            'payroll_month' => $month.'-01',
+            'category' => ExpenseCategoryEnum::Wages,
+            'is_undocumented' => false,
+        ]);
+    }
+
+    public function undocumented(TenantMembership $employee): static
+    {
+        return $this->state(fn () => [
+            'tenant_id' => $employee->tenant_id,
+            'tenant_membership_id' => $employee->id,
+            'category' => ExpenseCategoryEnum::Wages,
+            'is_undocumented' => true,
+        ]);
     }
 }

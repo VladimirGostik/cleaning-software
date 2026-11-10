@@ -9,6 +9,7 @@ use App\Enums\CurrencyEnum;
 use App\Enums\ExpenseCategoryEnum;
 use App\Models\Expense;
 use App\Models\User;
+use App\Services\Expenses\EmployeeExpenseService;
 use App\Services\ExpenseService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -24,16 +25,20 @@ use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 #[IsDestructive]
 final class UpdateExpenseTool extends TenantTool
 {
+    use DescribesExpenseEmployee;
+
     protected function rules(): array
     {
-        return ['expense_id' => ['required', 'uuid']];
+        return ['expense_id' => ['required', 'uuid'], ...$this->employeeRules()];
     }
 
-    public function execute(Request $request, User $user, string $companyId, ExpenseService $expenses): Response
+    public function execute(Request $request, User $user, string $companyId, ExpenseService $expenses, EmployeeExpenseService $employees): Response
     {
         $expense = Expense::query()->findOrFail($this->id($request, 'expense_id'));
 
         Gate::forUser($user)->authorize('update', $expense);
+
+        $employeeId = $this->resolveEmployeeId($request, $user, $companyId, $employees) ?? $expense->tenant_membership_id;
 
         $validated = ExpenseUpsertData::validateAndCreate([
             'date' => $request->get('date', $expense->date->toDateString()),
@@ -45,6 +50,10 @@ final class UpdateExpenseTool extends TenantTool
             'category' => $request->get('category', $expense->category?->value),
             'status' => $request->get('status'),
             'tenant_id' => $companyId,
+            'tenant_membership_id' => $employeeId,
+            'payroll_month' => $request->has('payroll_month') ? $request->get('payroll_month') : $expense->payroll_month?->format('Y-m'),
+            'is_undocumented' => $request->has('is_undocumented') ? (bool) $request->get('is_undocumented') : $expense->is_undocumented,
+            'duplicate_action' => $request->get('duplicate_action'),
         ]);
 
         $data = ExpenseUpsertData::from([...$validated->toArray(), 'source' => $expense->source->value]);
@@ -65,6 +74,7 @@ final class UpdateExpenseTool extends TenantTool
             'supplier_name' => $schema->string()->max(200)->nullable()->description('Who was paid; null clears it.'),
             'description' => $schema->string()->max(5000)->nullable()->description('What it was for; null clears it.'),
             'category' => $schema->string()->enum(array_map(fn (ExpenseCategoryEnum $case): string => $case->value, ExpenseCategoryEnum::cases()))->description('Category.'),
+            ...$this->employeeProperties($schema),
         ];
     }
 }

@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\ContractService;
 use App\Services\EmployeeService;
+use App\Services\Expenses\EmployeeExpenseService;
 use App\Services\RoleService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +40,7 @@ final class EmployeeController extends Controller
         private readonly EmployeeService $employees,
         private readonly RoleService $roles,
         private readonly ContractService $contracts,
+        private readonly EmployeeExpenseService $employeeExpenses,
     ) {}
 
     #[Authorize('viewAny', TenantMembership::class)]
@@ -115,6 +117,9 @@ final class EmployeeController extends Controller
             'documents' => $documents,
             'documentConstraints' => $can['manage_documents'] ? EmployeeDocumentConstraintsData::fromConfig() : null,
             'contracts' => $this->contracts->listFor($employee, $actor),
+            'expenses' => $actor->can(PermissionEnum::ViewExpenses->value) && $actor->can(PermissionEnum::ViewEmployeePersonalData->value)
+                ? $this->employeeExpenses->forEmployee($employee)
+                : null,
             'canCreateContract' => $this->contracts->canCreateFor($employee, $actor),
         ]);
     }

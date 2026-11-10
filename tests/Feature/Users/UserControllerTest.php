@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Users;
 
+use App\Models\Expense;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -336,6 +337,22 @@ final class UserControllerTest extends TestCase
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('users', ['id' => $target->id]);
         $this->assertDatabaseMissing('tenant_memberships', ['user_id' => $target->id, 'tenant_id' => $tenant->id]);
+    }
+
+    public function test_destroy_is_refused_when_the_member_has_employee_expenses_even_soft_deleted(): void
+    {
+        $user = $this->userWithPermission('delete employees', 'manage employee_access');
+        $tenant = Tenant::findOrFail(current_tenant_id());
+        $target = User::factory()->create();
+        $this->addMember($tenant, $target);
+        $membership = TenantMembership::query()->where('user_id', $target->id)->where('tenant_id', $tenant->id)->firstOrFail();
+        $expense = Expense::factory()->forEmployee($membership, '2026-10')->create(['created_by_user_id' => $user->id]);
+        $expense->delete();
+
+        $this->actingAs($user)->delete("/users/{$target->id}")->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('tenant_memberships', ['id' => $membership->id]);
+        $this->assertDatabaseHas('users', ['id' => $target->id]);
     }
 
     public function test_destroy_is_forbidden_without_permission(): void

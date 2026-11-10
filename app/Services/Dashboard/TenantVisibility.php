@@ -37,6 +37,11 @@ final readonly class TenantVisibility
         public array $permissions,
     ) {}
 
+    public function readsEmployeePersonalData(): bool
+    {
+        return in_array(PermissionEnum::ViewEmployeePersonalData, $this->permissions, true);
+    }
+
     /**
      * @param  list<self>  $all
      * @param  callable(self): bool  $predicate

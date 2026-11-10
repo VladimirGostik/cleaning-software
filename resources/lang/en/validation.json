@@ -305,6 +305,15 @@
     "attributes.status": "status",
     "attributes.street": "street",
     "attributes.supplier_name": "supplier",
+    "attributes.tenant_membership_id": "employee",
+    "attributes.payroll_month": "payroll month",
+    "attributes.is_undocumented": "undocumented",
+    "attributes.duplicate_action": "duplicate resolution",
+    "attributes.lines": "lines",
+    "attributes.lines.*.tenant_membership_id": "line employee",
+    "attributes.lines.*.supplier_name": "line recipient",
+    "attributes.lines.*.amount": "line amount",
+    "attributes.lines.*.description": "line description",
     "attributes.swift_bic": "SWIFT/BIC",
     "attributes.taskable_id": "related record",
     "attributes.taskable_type": "related record type",
@@ -365,5 +374,8 @@
     "attributes.billing_period": "billing period",
     "attributes.billing_email": "billing e-mail",
     "attributes.recipient_email": "recipient e-mail",
-    "attributes.save_for_future": "save for future invoices"
+    "attributes.save_for_future": "save for future invoices",
+    "attributes.exclude_references.*": "reference",
+    "attributes.expense_ids": "expenses",
+    "attributes.expense_ids.*": "expense"
 }

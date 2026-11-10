@@ -320,6 +320,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::post('/expenses/import', [ExpenseController::class, 'import'])->name('expenses.import.store');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::post('/expenses/batch', [ExpenseController::class, 'batchStore'])->name('expenses.batch.store');
         Route::match(['PUT', 'PATCH'], '/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update')->whereUuid('expense');
         Route::post('/expenses/{expense}/confirm', [ExpenseController::class, 'confirm'])->name('expenses.confirm')->whereUuid('expense');
     });

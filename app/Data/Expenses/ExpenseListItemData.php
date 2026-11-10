@@ -29,9 +29,14 @@ final class ExpenseListItemData extends Data
         public readonly ExpenseSourceEnum $source,
         public readonly bool $has_receipt,
         public readonly ?ExpenseCategoryEnum $proposed_category,
+        public readonly ?string $tenant_membership_id = null,
+        public readonly ?string $employee_name = null,
+        public readonly ?string $payroll_month = null,
+        public readonly bool $is_undocumented = false,
+        public readonly ?string $description = null,
     ) {}
 
-    /** Expects `tenant` and `media` eager loaded. */
+    /** Expects `tenant`, `media` and `employee.user` eager loaded. */
     public static function fromModel(Expense $expense): self
     {
         return new self(
@@ -48,6 +53,11 @@ final class ExpenseListItemData extends Data
             source: $expense->source,
             has_receipt: $expense->getFirstMedia(Expense::RECEIPT_COLLECTION) !== null,
             proposed_category: self::proposedCategory($expense),
+            tenant_membership_id: $expense->tenant_membership_id,
+            employee_name: $expense->employee?->display_name,
+            payroll_month: $expense->payroll_month?->format('Y-m'),
+            is_undocumented: $expense->is_undocumented,
+            description: $expense->description,
         );
     }
 

@@ -53,3 +53,10 @@ export async function postJson<T>(url: string, body: FormData | Record<string, u
 
     throw new RequestError(response.status, first ?? payload.message ?? null);
 }
+
+export function uploadTemporaryFile(file: File): Promise<{ uuid: string }> {
+    const body = new FormData();
+    body.append('file', file);
+
+    return postJson<{ uuid: string }>('/uploads', body);
+}

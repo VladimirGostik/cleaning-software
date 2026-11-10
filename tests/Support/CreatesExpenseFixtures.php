@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Contracts\Ai\AnalyzesExpenses;
+use App\Enums\PermissionEnum;
 use App\Models\Tenant;
 use App\Models\User;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\Fakes\FakeExpenseAnalyzer;
 
 trait CreatesExpenseFixtures
@@ -49,5 +51,13 @@ trait CreatesExpenseFixtures
             'category' => 'fuel',
             ...$overrides,
         ];
+    }
+
+    /** @param  list<PermissionEnum>  $permissions */
+    protected function grantPermissions(User $user, Tenant $tenant, array $permissions): void
+    {
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+        $user->givePermissionTo(array_map(static fn (PermissionEnum $permission): string => $permission->value, $permissions));
     }
 }

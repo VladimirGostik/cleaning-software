@@ -15,9 +15,11 @@ final class ExpenseFormContextData extends Data
     /**
      * @param  list<MobileCompanyData>  $companies
      * @param  list<ExpenseCategoryEnum>  $categories
+     * @param  list<ExpenseEmployeeOptionData>  $employees
      */
     public function __construct(
         public readonly array $companies,
         public readonly array $categories,
+        public readonly array $employees = [],
     ) {}
 }
