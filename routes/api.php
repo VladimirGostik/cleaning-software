@@ -121,4 +121,6 @@ Route::prefix('token')->middleware(['auth:sanctum', 'locale.api', 'user.active',
     Route::post('/invoice-payments/preview', [TokenUploadController::class, 'paymentsPreview'])->name('token.payments.preview');
     Route::post('/invoice-payments', [TokenUploadController::class, 'paymentsImport'])->middleware('token.uploads:write')->name('token.payments.import');
     Route::post('/expenses/receipt', [TokenUploadController::class, 'expenseReceipt'])->middleware('token.uploads:write')->name('token.expenses.receipt');
+    Route::post('/contracts', [TokenUploadController::class, 'contractStore'])->middleware('token.uploads:write')->name('token.contracts.store');
+    Route::post('/contracts/attachments', [TokenUploadController::class, 'contractAttachmentStore'])->middleware('token.uploads:write')->name('token.contracts.attachments.store');
 });

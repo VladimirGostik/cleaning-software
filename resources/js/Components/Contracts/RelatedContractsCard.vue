@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ContractCategoryBadge from '@/Components/Contracts/ContractCategoryBadge.vue';
+import ContractFileMarker from '@/Components/Contracts/ContractFileMarker.vue';
 import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue';
 import { formatDate } from '@/utils/date';
 
@@ -41,6 +42,7 @@ const { t } = useI18n();
                     </div>
                     <ContractCategoryBadge :category="contract.category" />
                     <ContractStatusBadge :status="contract.status" />
+                    <ContractFileMarker :source="contract.source" :is-signed="contract.is_signed" />
                 </li>
             </ul>
         </div>

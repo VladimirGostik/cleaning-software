@@ -12,6 +12,7 @@ import ContractDocumentStep from './ContractDocumentStep.vue';
 
 import { toNumber } from '@/utils/money';
 import { toDateInputValue } from '@/utils/date';
+import { contractCancelHref } from '@/utils/contracts';
 import { CONTRACT_CATEGORIES, CONTRACT_CATEGORY_CONTRACTABLE_TYPES } from '@/utils/enums';
 import { useContractDocument, type ContractFormData } from '@/Composables/useContractDocument';
 
@@ -130,20 +131,7 @@ const doc = useContractDocument({
 const step = ref<1 | 2>(isEditing.value ? 2 : 1);
 const regenerateConfirmOpen = ref(false);
 
-const cancelHref = computed(() => {
-    if (props.contract) return `/contracts/${props.contract.id}`;
-    const id = props.prefill?.contractable_id;
-    switch (props.prefill?.contractable_type) {
-        case 'client':
-            return id ? `/clients/${id}` : '/contracts';
-        case 'cleaning_object':
-            return id ? `/objects/${id}` : '/contracts';
-        case 'tenant_membership':
-            return id ? `/employees/${id}` : '/contracts';
-        default:
-            return '/contracts';
-    }
-});
+const cancelHref = computed(() => contractCancelHref(props.contract, props.prefill));
 
 const DOCUMENT_STEP_FIELDS = ['body', 'show_header', 'show_footer', 'status'];
 

@@ -6,11 +6,19 @@ import FormField from '@/Components/Forms/FormField.vue';
 import FileUploadInput from '@/Components/Forms/FileUploadInput.vue';
 import { formatBytes } from '@/utils/bytes';
 
+interface CurrentFile {
+    file_name: string;
+    mime_type: string | null;
+    size: number;
+    download_url: string;
+}
+
 const props = defineProps<{
     modelValue: string | null;
-    currentDocument: App.Data.MediaFileData | null;
+    currentFile: CurrentFile | null;
     accept: string;
     maxSizeKb: number;
+    hint: string;
     error: string | null;
 }>();
 
@@ -21,7 +29,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const uploadLabel = computed(() =>
-    props.currentDocument ? t('quote_document_replace_label') : t('quote_document_upload_label'),
+    props.currentFile ? t('uploaded_file_replace_label') : t('uploaded_file_upload_label'),
 );
 
 function onUpdate(value: string | string[] | null): void {
@@ -32,22 +40,22 @@ function onUpdate(value: string | string[] | null): void {
 <template>
     <div class="space-y-4">
         <div
-            v-if="props.currentDocument"
+            v-if="props.currentFile"
             class="flex items-center justify-between gap-3 rounded-box border border-base-300 p-3"
         >
             <div class="min-w-0">
-                <p class="truncate font-medium">{{ props.currentDocument.file_name }}</p>
+                <p class="truncate font-medium">{{ props.currentFile.file_name }}</p>
                 <p class="text-xs text-base-content/60">
-                    {{ props.currentDocument.mime_type ?? t('empty_dash') }} ·
-                    {{ formatBytes(props.currentDocument.size) }}
+                    {{ props.currentFile.mime_type ?? t('empty_dash') }} ·
+                    {{ formatBytes(props.currentFile.size) }}
                 </p>
             </div>
-            <a :href="props.currentDocument.download_url" target="_blank" rel="noopener" class="btn btn-sm shrink-0">
-                {{ t('quote_document_download') }}
+            <a :href="props.currentFile.download_url" target="_blank" rel="noopener" class="btn btn-sm shrink-0">
+                {{ t('uploaded_file_download') }}
             </a>
         </div>
 
-        <FormField :label="uploadLabel" :error="props.error" :required="!props.currentDocument">
+        <FormField :label="uploadLabel" :error="props.error" :required="!props.currentFile">
             <FileUploadInput
                 :model-value="props.modelValue"
                 :accept="props.accept"
@@ -57,8 +65,6 @@ function onUpdate(value: string | string[] | null): void {
             />
         </FormField>
 
-        <p class="text-xs text-base-content/60">
-            {{ t('quote_document_upload_hint', { size: formatBytes(props.maxSizeKb * 1024) }) }}
-        </p>
+        <p class="text-xs text-base-content/60">{{ props.hint }}</p>
     </div>
 </template>

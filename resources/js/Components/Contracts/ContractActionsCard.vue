@@ -30,7 +30,7 @@ const hasText = computed(() => props.contract.body !== null);
         <div class="card-body space-y-2">
             <h2 class="card-title text-base">{{ t('contract_section_actions') }}</h2>
 
-            <Can v-if="hasText && props.contract.is_editable" permission="edit contracts">
+            <Can v-if="props.contract.is_editable" permission="edit contracts">
                 <Link
                     :href="`/contracts/${props.contract.id}/edit`"
                     class="btn btn-sm btn-neutral w-full justify-start"
@@ -48,7 +48,7 @@ const hasText = computed(() => props.contract.body !== null);
             </Can>
 
             <a
-                v-if="hasText"
+                v-if="props.contract.can_download_pdf"
                 :href="`/contracts/${props.contract.id}/pdf`"
                 target="_blank"
                 rel="noopener"
@@ -65,7 +65,7 @@ const hasText = computed(() => props.contract.body !== null);
                 </button>
             </Can>
 
-            <Can v-if="hasText && props.contract.is_editable" permission="delete contracts">
+            <Can v-if="props.contract.is_editable" permission="delete contracts">
                 <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('delete')">
                     <TrashIcon class="size-5" />
                     {{ t('delete') }}

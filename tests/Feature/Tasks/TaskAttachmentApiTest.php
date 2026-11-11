@@ -10,7 +10,7 @@ use App\Models\Role;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Services\TaskAttachmentService;
+use App\Support\MediaFiles;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
@@ -253,7 +253,7 @@ final class TaskAttachmentApiTest extends TestCase
 
         $this->assertSame('ab  .pdf', $posted['name']);
         $this->assertSame($posted, $listed);
-        $this->assertSame(TaskAttachmentService::cleanName("C:\\fakepath\\a\u{200B}b  .pdf"), $posted['name']);
+        $this->assertSame(MediaFiles::cleanName("C:\\fakepath\\a\u{200B}b  .pdf"), $posted['name']);
         $this->assertStringNotContainsString('fakepath', Media::query()->firstOrFail()->file_name);
     }
 

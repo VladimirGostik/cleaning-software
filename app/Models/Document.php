@@ -40,6 +40,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Fillable(['tenant_id', 'documentable_type', 'documentable_id', 'document_template_id', 'type', 'title', 'body', 'show_header', 'show_footer'])]
 final class Document extends Model implements HasMedia
 {
+    public const string ATTACHMENTS_COLLECTION = 'attachments';
+
     /** @use HasFactory<DocumentFactory> */
     use BelongsToTenant, HasFactory, HasUuids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
@@ -61,6 +63,7 @@ final class Document extends Model implements HasMedia
 
         $this->addMediaCollection('file')->singleFile()->useDisk($disk);
         $this->addMediaCollection('pdf')->singleFile()->useDisk($disk);
+        $this->addMediaCollection(self::ATTACHMENTS_COLLECTION)->useDisk($disk);
     }
 
     public function getActivitylogOptions(): LogOptions

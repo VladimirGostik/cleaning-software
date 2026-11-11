@@ -12,14 +12,15 @@ import TextareaInput from '@/Components/Forms/TextareaInput.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
 import { callValidate } from '@/Components/Forms/useFieldError';
 
+import UploadedFileField from '@/Components/Documents/UploadedFileField.vue';
 import QuoteKindSelector from './QuoteKindSelector.vue';
 import QuoteSubjectPicker, { type QuoteSubjectMode } from './QuoteSubjectPicker.vue';
-import QuoteDocumentUpload from './QuoteDocumentUpload.vue';
 import QuoteFormSummary from './QuoteFormSummary.vue';
 import QuoteTextDocumentCard from './QuoteTextDocumentCard.vue';
 import QuoteTextDocumentWorkspace from './QuoteTextDocumentWorkspace.vue';
 import InvoiceItemsEditor, { type ItemRow } from '@/Components/Invoices/InvoiceItemsEditor.vue';
 
+import { formatBytes } from '@/utils/bytes';
 import { toDateInputValue } from '@/utils/date';
 import { toNumber } from '@/utils/money';
 import {
@@ -243,6 +244,9 @@ const frequencyOptions = computed<SelectOption[]>(() => [
     ...enumOptions(TASK_FREQUENCIES, taskFrequencyKey, t),
 ]);
 const documentAccept = computed(() => props.context.document_allowed_mimes.join(','));
+const documentHint = computed(() =>
+    t('quote_document_upload_hint', { size: formatBytes(props.context.document_max_size_kb * 1024) }),
+);
 const canSubmit = computed(() => !(isDocument.value && !isEditing.value && !form.document_uuid));
 
 function setKind(kind: App.Enums.QuoteKindEnum): void {
@@ -376,11 +380,12 @@ function submit(): void {
                 <div v-else class="card bg-base-100 shadow-sm">
                     <div class="card-body">
                         <h2 class="card-title text-base">{{ t('quote_section_document') }}</h2>
-                        <QuoteDocumentUpload
+                        <UploadedFileField
                             v-model="form.document_uuid"
-                            :current-document="quote?.document ?? null"
+                            :current-file="quote?.document ?? null"
                             :accept="documentAccept"
                             :max-size-kb="context.document_max_size_kb"
+                            :hint="documentHint"
                             :error="form.errors.document_uuid"
                         />
                     </div>

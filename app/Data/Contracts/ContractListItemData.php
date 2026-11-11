@@ -6,6 +6,7 @@ namespace App\Data\Contracts;
 
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
+use App\Enums\ContractSourceEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Models\Contract;
@@ -32,6 +33,8 @@ final class ContractListItemData extends Data
         public readonly bool $is_editable,
         public readonly bool $can_be_signed,
         public readonly bool $can_be_terminated,
+        public readonly ContractSourceEnum $source,
+        public readonly bool $is_signed,
     ) {}
 
     public static function fromModel(Contract $contract, ContractTextService $text, User $actor): self
@@ -50,9 +53,11 @@ final class ContractListItemData extends Data
             contractable_type: ContractableTypeEnum::from($contract->contractable_type),
             contractable_label: $contract->contractableLabel(),
             signed_at: $contract->signed_at?->toIso8601String(),
-            is_editable: $contract->isEditable() && $canRead,
+            is_editable: ($contract->isEditable() || $contract->isFile()) && $canRead,
             can_be_signed: $contract->canBeSigned() && $canRead && $text->missingTokens($contract) === [],
             can_be_terminated: $contract->canBeTerminated(),
+            source: $contract->source,
+            is_signed: $contract->is_signed,
         );
     }
 }

@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
+use App\Enums\ContractSourceEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use App\Enums\DocumentTypeEnum;
@@ -16,6 +17,7 @@ use App\Models\Document;
 use App\Models\Quote;
 use App\Models\TenantMembership;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Contract>
@@ -50,6 +52,8 @@ final class ContractFactory extends Factory
             'valid_from' => now()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
             'signed_at' => null,
+            'is_signed' => false,
+            'source' => ContractSourceEnum::Generated,
             'terminated_at' => null,
             'termination_reason' => null,
             'notes' => null,
@@ -92,6 +96,7 @@ final class ContractFactory extends Factory
         return $this->state(fn () => [
             'status' => ContractStatusEnum::Draft,
             'signed_at' => null,
+            'is_signed' => false,
         ]);
     }
 
@@ -100,6 +105,7 @@ final class ContractFactory extends Factory
         return $this->state(fn () => [
             'status' => ContractStatusEnum::Active,
             'signed_at' => now()->subDay(),
+            'is_signed' => true,
         ]);
     }
 
@@ -109,6 +115,7 @@ final class ContractFactory extends Factory
             'status' => ContractStatusEnum::Expired,
             'term_type' => ContractTermTypeEnum::Fixed,
             'signed_at' => now()->subYear(),
+            'is_signed' => true,
             'valid_from' => now()->subYear()->toDateString(),
             'end_date' => now()->subDay()->toDateString(),
         ]);
@@ -119,6 +126,7 @@ final class ContractFactory extends Factory
         return $this->state(fn () => [
             'status' => ContractStatusEnum::Terminated,
             'signed_at' => now()->subMonths(2),
+            'is_signed' => true,
             'terminated_at' => now(),
             'termination_reason' => 'Ukončené dohodou.',
         ]);
@@ -172,5 +180,18 @@ final class ContractFactory extends Factory
             'title' => $quote->subject ?? __('app.contract_default_title_from_quote'),
             'number' => $quote->number,
         ]);
+    }
+
+    public function fromFile(): static
+    {
+        return $this->state(fn () => [
+            'source' => ContractSourceEnum::File,
+            'status' => ContractStatusEnum::Active,
+            'is_signed' => true,
+            'signed_at' => null,
+            'file_sha256' => hash('sha256', Str::uuid()->toString()),
+        ])->afterCreating(function (Contract $contract): void {
+            $contract->document()->update(['body' => null, 'show_header' => false, 'show_footer' => false]);
+        });
     }
 }

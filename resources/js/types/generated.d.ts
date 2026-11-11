@@ -343,6 +343,10 @@ readonly is_primary: boolean,
 };
 }
 namespace Contracts {
+export type ContractAttachmentUploadData = {
+readonly file: File,
+readonly title: string | null,
+};
 export type ContractCreatePrefillData = {
 readonly contractable_type: App.Enums.ContractableTypeEnum | null,
 readonly contractable_id: string | null,
@@ -382,6 +386,42 @@ readonly employment: App.Data.Contracts.EmploymentContractData | null,
 readonly is_editable: boolean,
 readonly can_be_signed: boolean,
 readonly can_be_terminated: boolean,
+readonly source: App.Enums.ContractSourceEnum,
+readonly is_signed: boolean,
+readonly main_file: App.Data.Contracts.ContractFileData | null,
+readonly attachments: App.Data.Contracts.ContractFileData[],
+readonly can_manage_files: boolean,
+readonly can_download_pdf: boolean,
+};
+export type ContractFileConstraintsData = {
+readonly max_size_kb: number,
+readonly max_count: number,
+readonly allowed_mimes: string[],
+readonly allowed_extensions: string[],
+};
+export type ContractFileData = {
+readonly id: string,
+readonly title: string,
+readonly file_name: string,
+readonly mime_type: string | null,
+readonly size: number,
+readonly created_at: string,
+readonly download_url: string,
+readonly can_delete: boolean,
+};
+export type ContractFileUpsertData = {
+readonly title: string,
+readonly number: string | null,
+readonly category: App.Enums.ContractCategoryEnum,
+readonly contractable_type: App.Enums.ContractableTypeEnum,
+readonly contractable_id: string,
+readonly valid_from: string,
+readonly term_type: App.Enums.ContractTermTypeEnum,
+readonly end_date: string | null,
+readonly is_signed: boolean,
+readonly signed_on: string | null,
+readonly notes: string | null,
+readonly file_uuid: string | null,
 };
 export type ContractFormContextData = {
 readonly objects: App.Data.Objects.ObjectOptionData[],
@@ -391,6 +431,7 @@ readonly templates: App.Data.DocumentTemplates.DocumentTemplateOptionData[],
 readonly tokens: App.Data.DocumentTemplates.DocumentTokenCatalogData,
 readonly letterhead: App.Data.Documents.DocumentLetterheadData,
 readonly footer: string[],
+readonly file_constraints: App.Data.Contracts.ContractFileConstraintsData,
 };
 export type ContractGenerateData = {
 readonly category: App.Enums.ContractCategoryEnum,
@@ -423,6 +464,8 @@ readonly signed_at: string | null,
 readonly is_editable: boolean,
 readonly can_be_signed: boolean,
 readonly can_be_terminated: boolean,
+readonly source: App.Enums.ContractSourceEnum,
+readonly is_signed: boolean,
 };
 export type ContractTerminateData = {
 readonly terminated_at: string,
@@ -468,6 +511,18 @@ readonly is_active: boolean,
 export type PlaceholderTokenData = {
 readonly token: string,
 readonly label: string,
+};
+export type TokenContractFileData = {
+readonly company_id: string,
+readonly file: File,
+readonly contract_id: string | null,
+readonly title: string | null,
+};
+export type TokenContractResultData = {
+readonly contract_id: string,
+readonly attachment_id: string | null,
+readonly created: boolean,
+readonly url: string,
 };
 }
 namespace Dashboard {
@@ -2218,6 +2273,7 @@ export type BulkSkipReasonEnum = "not_found" | "not_issued" | "no_email" | "not_
 export type ClientTypeEnum = "corporate" | "private";
 export type ConfirmationChannelEnum = "chat" | "app";
 export type ContractCategoryEnum = "service_agreement" | "employment" | "nda" | "gdpr" | "other";
+export type ContractSourceEnum = "generated" | "file";
 export type ContractStatusEnum = "draft" | "active" | "expired" | "terminated";
 export type ContractTermTypeEnum = "fixed" | "indefinite";
 export type ContractableTypeEnum = "cleaning_object" | "tenant_membership" | "client";

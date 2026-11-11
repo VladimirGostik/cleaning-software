@@ -91,4 +91,37 @@ final class ContractPolicyTest extends TestCase
         $this->assertFalse($this->policy->view($user, $draft));
         $this->assertFalse($this->policy->create($user));
     }
+
+    public function test_file_contracts_are_editable_and_deletable_at_any_status_but_have_no_pdf(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = $this->actingAsTenantUser('Admin', $tenant);
+        $file = Contract::factory()->fromFile()->create(['tenant_id' => $tenant->id]);
+        $terminated = Contract::factory()->fromFile()->create(['tenant_id' => $tenant->id, 'status' => 'terminated']);
+        $generatedActive = Contract::factory()->active()->create(['tenant_id' => $tenant->id]);
+
+        foreach ([$file, $terminated] as $contract) {
+            $this->assertTrue($this->policy->update($user, $contract));
+            $this->assertTrue($this->policy->delete($user, $contract));
+            $this->assertTrue($this->policy->manageFiles($user, $contract));
+            $this->assertFalse($this->policy->sign($user, $contract));
+            $this->assertFalse($this->policy->downloadPdf($user, $contract));
+        }
+
+        $this->assertFalse($this->policy->update($user, $generatedActive));
+        $this->assertFalse($this->policy->delete($user, $generatedActive));
+        $this->assertTrue($this->policy->manageFiles($user, $generatedActive));
+        $this->assertTrue($this->policy->downloadPdf($user, $generatedActive));
+    }
+
+    public function test_view_only_role_cannot_manage_files(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = $this->actingAsTenantUser('Účtovníčka', $tenant);
+        $file = Contract::factory()->fromFile()->create(['tenant_id' => $tenant->id]);
+
+        $this->assertTrue($this->policy->view($user, $file));
+        $this->assertFalse($this->policy->manageFiles($user, $file));
+        $this->assertFalse($this->policy->update($user, $file));
+    }
 }

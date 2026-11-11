@@ -10,8 +10,11 @@ import ContractPartiesCard from '@/Components/Contracts/ContractPartiesCard.vue'
 import ContractTermCard from '@/Components/Contracts/ContractTermCard.vue';
 import ContractEmploymentCard from '@/Components/Contracts/ContractEmploymentCard.vue';
 import ContractActionsCard from '@/Components/Contracts/ContractActionsCard.vue';
+import ContractFileMarker from '@/Components/Contracts/ContractFileMarker.vue';
+import ContractFilePanel from '@/Components/Contracts/ContractFilePanel.vue';
 import ContractLinksCard from '@/Components/Contracts/ContractLinksCard.vue';
 import ContractTerminateModal from '@/Components/Contracts/ContractTerminateModal.vue';
+import AttachedFilesCard from '@/Components/Documents/AttachedFilesCard.vue';
 import DocumentMissingTokens from '@/Components/Documents/DocumentMissingTokens.vue';
 import DocumentSheet from '@/Components/Documents/DocumentSheet.vue';
 import StatusErrorAlert from '@/Components/StatusErrorAlert.vue';
@@ -22,6 +25,7 @@ import type { Breadcrumb } from '@/types';
 
 const props = defineProps<{
     contract: App.Data.Contracts.ContractDetailData;
+    fileConstraints: App.Data.Contracts.ContractFileConstraintsData | null;
 }>();
 
 const { t } = useI18n();
@@ -79,6 +83,7 @@ const deleteConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
         <template #actions>
             <ContractStatusBadge :status="contract.status" />
             <ContractCategoryBadge :category="contract.category" />
+            <ContractFileMarker :source="contract.source" :is-signed="contract.is_signed" />
         </template>
     </Header>
 
@@ -138,28 +143,47 @@ const deleteConfirm = useDeleteConfirm<App.Data.Contracts.ContractDetailData>({
 
     <div class="card bg-base-100 mt-6 shadow-sm">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('contract_section_body') }}</h2>
-
-            <div v-if="contract.body === null" class="alert alert-warning" role="alert">
-                <span>{{ t('contract_text_no_access') }}</span>
-            </div>
+            <template v-if="contract.source === 'file'">
+                <h2 class="card-title text-base">{{ t('contract_section_file') }}</h2>
+                <ContractFilePanel :file="contract.main_file" />
+            </template>
 
             <template v-else>
-                <template v-if="missingTokens.length > 0">
-                    <DocumentMissingTokens :tokens="missingTokens" :summary="missingSummary" />
-                    <p class="text-sm text-base-content/60">{{ t('contract_sign_blocked_missing') }}</p>
-                </template>
+                <h2 class="card-title text-base">{{ t('contract_section_body') }}</h2>
 
-                <div class="overflow-hidden rounded-box border border-base-300">
-                    <DocumentSheet
-                        :html="contract.body"
-                        :tokens="contract.tokens"
-                        :letterhead="contract.show_header ? contract.letterhead : null"
-                        :footer="contract.show_footer ? contract.footer : []"
-                    />
+                <div v-if="contract.body === null" class="alert alert-warning" role="alert">
+                    <span>{{ t('contract_text_no_access') }}</span>
                 </div>
+
+                <template v-else>
+                    <template v-if="missingTokens.length > 0">
+                        <DocumentMissingTokens :tokens="missingTokens" :summary="missingSummary" />
+                        <p class="text-sm text-base-content/60">{{ t('contract_sign_blocked_missing') }}</p>
+                    </template>
+
+                    <div class="overflow-hidden rounded-box border border-base-300">
+                        <DocumentSheet
+                            :html="contract.body"
+                            :tokens="contract.tokens"
+                            :letterhead="contract.show_header ? contract.letterhead : null"
+                            :footer="contract.show_footer ? contract.footer : []"
+                        />
+                    </div>
+                </template>
             </template>
         </div>
+    </div>
+
+    <div v-if="contract.attachments.length > 0 || contract.can_manage_files" class="mt-6">
+        <AttachedFilesCard
+            :heading="t('contract_section_attachments')"
+            :documents="contract.attachments"
+            :upload-url="`/contracts/${contract.id}/attachments`"
+            :delete-url="(id) => `/contracts/${contract.id}/attachments/${id}`"
+            :constraints="fileConstraints"
+            :can-manage="contract.can_manage_files"
+            :title-max-length="120"
+        />
     </div>
 
     <ConfirmDeleteModal

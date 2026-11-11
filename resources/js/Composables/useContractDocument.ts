@@ -2,23 +2,19 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { InertiaForm } from '@inertiajs/vue3';
 
+import type { ContractBasicsFormData } from '@/Components/Contracts/ContractBasicsFields.vue';
 import type { EmploymentFormData } from '@/Components/Contracts/EmploymentContractFields.vue';
 import { usedTokenKeys } from '@/Components/Documents/editor/extensions/templateTokenHtml';
 import { HttpError, postJson } from '@/utils/http';
 
-export interface ContractFormData {
-    title: string;
-    number: string | null;
+export interface ContractFormData extends ContractBasicsFormData {
     category: App.Enums.ContractCategoryEnum;
-    term_type: App.Enums.ContractTermTypeEnum;
     contractable_type: App.Enums.ContractableTypeEnum;
     contractable_id: string;
     document_template_id: string | null;
     body: string;
     show_header: boolean;
     show_footer: boolean;
-    valid_from: string;
-    end_date: string | null;
     notes: string | null;
     employment: EmploymentFormData | null;
 }

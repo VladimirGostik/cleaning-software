@@ -12,22 +12,19 @@ use App\Models\Media;
 use App\Models\Task;
 use App\Models\User;
 use App\Policies\TaskPolicy;
-use App\Rules\TaskAttachmentFile;
-use App\Services\Ai\Guard\PromptGuard;
+use App\Rules\AllowedUploadFile;
+use App\Support\MediaFiles;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 final readonly class TaskAttachmentService
 {
-    private const int MAX_NAME_LENGTH = 120;
-
     public function __construct(private DatabaseManager $db, private TaskPolicy $policy) {}
 
     public function list(Task $task, User $actor, string $downloadRoute): TaskAttachmentListData
@@ -61,7 +58,7 @@ final readonly class TaskAttachmentService
 
     public function add(Task $task, UploadedFile $file, User $actor): Media
     {
-        $resolved = TaskAttachmentFile::resolve($file);
+        $resolved = AllowedUploadFile::resolve($file);
 
         if ($resolved === null) {
             throw ValidationException::withMessages(['file' => [__('app.task_attachment_invalid_type')]]);
@@ -81,7 +78,7 @@ final readonly class TaskAttachmentService
 
                 /** @var Media $media */
                 $media = $stored = $task->addMedia($file)
-                    ->usingName(self::cleanName($file->getClientOriginalName()))
+                    ->usingName(MediaFiles::cleanName($file->getClientOriginalName()))
                     ->usingFileName(Str::uuid()->toString().'.'.$resolved['extension'])
                     ->withCustomProperties(['uploaded_by_user_id' => $actor->id, 'uploaded_by_name' => $actor->name])
                     ->toMediaCollection(Task::ATTACHMENTS_COLLECTION);
@@ -120,59 +117,8 @@ final readonly class TaskAttachmentService
     {
         /** @var list<string> $inline */
         $inline = config('tasks.attachments.inline_mimes');
-        $mime = (string) $attachment->mime_type;
-        $name = $attachment->name;
-        $fallback = trim((string) preg_replace('/[^\x20-\x7E]|[%\/\\\\]/', '_', Str::ascii($name)));
 
-        return response()->stream(
-            function () use ($attachment): void {
-                /** @var resource $stream */
-                $stream = $attachment->stream();
-                fpassthru($stream);
-                fclose($stream);
-            },
-            200,
-            [
-                'Content-Type' => $mime,
-                'Content-Length' => (string) $attachment->size,
-                'Content-Disposition' => HeaderUtils::makeDisposition(
-                    in_array($mime, $inline, true) ? HeaderUtils::DISPOSITION_INLINE : HeaderUtils::DISPOSITION_ATTACHMENT,
-                    $name,
-                    $fallback === '' ? 'file' : $fallback,
-                ),
-                'X-Content-Type-Options' => 'nosniff',
-                'Cache-Control' => 'private, no-store',
-            ],
-        );
-    }
-
-    public static function cleanName(string $original): string
-    {
-        $name = str_replace('\\', '/', $original);
-        $slash = strrpos($name, '/');
-        $name = $slash === false ? $name : substr($name, $slash + 1);
-
-        $name = PromptGuard::stripInvisible($name);
-        $name = (string) preg_replace('/\p{Cc}/u', '', $name);
-        $name = self::trimSeparators($name);
-
-        if (mb_strlen($name) > self::MAX_NAME_LENGTH) {
-            $dot = mb_strrpos($name, '.');
-            $extensionLength = $dot === false ? 0 : mb_strlen($name) - $dot;
-
-            $name = $dot !== false && $extensionLength >= 2 && $extensionLength <= 11
-                ? mb_substr($name, 0, self::MAX_NAME_LENGTH - $extensionLength).mb_substr($name, $dot)
-                : mb_substr($name, 0, self::MAX_NAME_LENGTH);
-
-            $name = self::trimSeparators($name);
-        }
-
-        return $name === '' ? 'file' : $name;
-    }
-
-    private static function trimSeparators(string $value): string
-    {
-        return (string) preg_replace('/^\p{Z}+|\p{Z}+$/u', '', $value);
+        return MediaFiles::stream($attachment, $attachment->name, $inline);
     }
 
     /** @return MorphMany<Media, Task> */

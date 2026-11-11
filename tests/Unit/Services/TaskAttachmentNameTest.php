@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services;
 
-use App\Services\TaskAttachmentService;
+use App\Support\MediaFiles;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -29,16 +29,16 @@ final class TaskAttachmentNameTest extends TestCase
     #[DataProvider('vectors')]
     public function test_clean_name_follows_the_shared_vectors(string $input, string $expected): void
     {
-        $this->assertSame($expected, TaskAttachmentService::cleanName($input));
+        $this->assertSame($expected, MediaFiles::cleanName($input));
     }
 
     public function test_long_name_is_counted_in_code_points(): void
     {
-        $this->assertSame(str_repeat('č', 120), TaskAttachmentService::cleanName(str_repeat('č', 130)));
+        $this->assertSame(str_repeat('č', 120), MediaFiles::cleanName(str_repeat('č', 130)));
     }
 
     public function test_name_made_only_of_invisible_characters_becomes_file(): void
     {
-        $this->assertSame('file', TaskAttachmentService::cleanName("\u{200B}\u{FEFF}\n"));
+        $this->assertSame('file', MediaFiles::cleanName("\u{200B}\u{FEFF}\n"));
     }
 }

@@ -9,7 +9,7 @@ use App\Enums\PermissionEnum;
 use App\Enums\TaskPriorityEnum;
 use App\Enums\TaskSourceEnum;
 use App\Enums\TaskStatusEnum;
-use App\Rules\TaskAttachmentFile;
+use App\Rules\AllowedUploadFile;
 use App\Scopes\TaskScope;
 use App\Scopes\TenantScope;
 use Database\Factories\TaskFactory;
@@ -100,7 +100,7 @@ final class Task extends Model implements HasMedia
         $disk = config('tasks.attachments.disk', 'local');
 
         $this->addMediaCollection(self::ATTACHMENTS_COLLECTION)
-            ->acceptsMimeTypes(TaskAttachmentFile::detectedMimes())
+            ->acceptsMimeTypes(AllowedUploadFile::detectedMimes())
             ->useDisk(is_string($disk) ? $disk : 'local');
     }
 

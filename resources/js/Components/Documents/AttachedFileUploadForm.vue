@@ -1,3 +1,13 @@
+<script lang="ts">
+export interface AttachedFileConstraints {
+    allowed_mimes: string[];
+    max_size_kb: number;
+    allowed_extensions?: string[];
+    types?: App.Enums.DocumentTypeEnum[];
+    max_count?: number;
+}
+</script>
+
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
@@ -7,6 +17,7 @@ import FormField from '@/Components/Forms/FormField.vue';
 import SelectInput from '@/Components/Forms/SelectInput.vue';
 import TextInput from '@/Components/Forms/TextInput.vue';
 import { documentTypeKey, enumOptions } from '@/utils/enums';
+import { fileAccept } from '@/utils/contracts';
 import { formatBytes } from '@/utils/bytes';
 
 interface UploadFormData {
@@ -16,28 +27,31 @@ interface UploadFormData {
 }
 
 const props = defineProps<{
-    employeeId: string;
-    constraints: App.Data.Employees.EmployeeDocumentConstraintsData;
+    uploadUrl: string;
+    constraints: AttachedFileConstraints;
+    titleMaxLength: number;
 }>();
 
 const { t } = useI18n();
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
-const form = useForm<UploadFormData>('post', `/employees/${props.employeeId}/documents`, {
+const form = useForm<UploadFormData>('post', props.uploadUrl, {
     type: '',
     title: '',
     file: null,
 });
 
 form.transform((data: UploadFormData) => ({
-    type: data.type,
+    ...(props.constraints.types ? { type: data.type } : {}),
     title: data.title || null,
     file: data.file,
 }));
 
-const typeOptions = computed(() => enumOptions(props.constraints.types, documentTypeKey, t));
-const accept = computed(() => props.constraints.allowed_mimes.join(','));
+const typeOptions = computed(() =>
+    props.constraints.types ? enumOptions(props.constraints.types, documentTypeKey, t) : null,
+);
+const accept = computed(() => fileAccept(props.constraints));
 const maxSize = computed(() => formatBytes(props.constraints.max_size_kb * 1024));
 
 function onFileChange(event: Event): void {
@@ -47,7 +61,7 @@ function onFileChange(event: Event): void {
     if (file && file.size > props.constraints.max_size_kb * 1024) {
         form.file = null;
         if (fileInput.value) fileInput.value.value = '';
-        form.setError('file', t('employee_document_too_large', { size: maxSize.value }));
+        form.setError('file', t('attached_file_too_large', { size: maxSize.value }));
         return;
     }
 
@@ -56,7 +70,7 @@ function onFileChange(event: Event): void {
 
 function submit(): void {
     if (!form.file) {
-        form.setError('file', t('employee_document_file_required'));
+        form.setError('file', t('attached_file_file_required'));
         return;
     }
 
@@ -75,20 +89,21 @@ function submit(): void {
 <template>
     <FormProvider :form="form">
         <form novalidate class="space-y-3 rounded-box border border-base-200 p-4" @submit.prevent="submit">
-            <h3 class="text-sm font-semibold">{{ t('employee_document_upload') }}</h3>
+            <h3 class="text-sm font-semibold">{{ t('attached_file_upload') }}</h3>
 
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-3" :class="{ 'md:grid-cols-2': typeOptions }">
                 <SelectInput
+                    v-if="typeOptions"
                     field="type"
                     required
                     :label="t('type')"
                     :options="typeOptions"
                     :placeholder="t('select_type')"
                 />
-                <TextInput field="title" maxlength="255" :label="t('employee_document_title')" />
+                <TextInput field="title" :maxlength="titleMaxLength" :label="t('attached_file_title')" />
             </div>
 
-            <FormField :label="t('employee_document_file')" required :error="form.errors.file">
+            <FormField :label="t('attached_file_file')" required :error="form.errors.file">
                 <input
                     ref="fileInput"
                     type="file"
@@ -100,14 +115,14 @@ function submit(): void {
                     @change="onFileChange"
                 />
                 <p class="mt-1 text-xs text-base-content/60">
-                    {{ t('employee_document_hint', { size: maxSize }) }}
+                    {{ t('attached_file_hint', { size: maxSize }) }}
                 </p>
             </FormField>
 
             <div class="flex justify-end">
                 <button type="submit" class="btn btn-primary btn-sm" :disabled="form.processing">
                     <span v-if="form.processing" class="loading loading-spinner loading-xs" />
-                    {{ t('employee_document_upload_submit') }}
+                    {{ t('attached_file_upload_submit') }}
                 </button>
             </div>
         </form>

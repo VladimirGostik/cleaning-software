@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Tasks;
 
-use App\Rules\TaskAttachmentFile;
+use App\Rules\AllowedUploadFile;
 use Illuminate\Http\UploadedFile;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Data;
@@ -24,7 +24,7 @@ final class TaskAttachmentUploadData extends Data
     public static function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'max:'.config()->integer('tasks.attachments.max_size_kb'), new TaskAttachmentFile],
+            'file' => ['required', 'file', 'max:'.config()->integer('tasks.attachments.max_size_kb'), new AllowedUploadFile],
         ];
     }
 

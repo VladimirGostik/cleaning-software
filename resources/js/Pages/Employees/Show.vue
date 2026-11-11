@@ -13,7 +13,7 @@ import EmployeeAccessModal from '@/Components/Employees/EmployeeAccessModal.vue'
 import EmployeeActionsCard from '@/Components/Employees/EmployeeActionsCard.vue';
 import EmployeeMetaCard from '@/Components/Employees/EmployeeMetaCard.vue';
 import EmployeePersonalCard from '@/Components/Employees/EmployeePersonalCard.vue';
-import EmployeeDocumentsCard from '@/Components/Employees/EmployeeDocumentsCard.vue';
+import AttachedFilesCard from '@/Components/Documents/AttachedFilesCard.vue';
 import EmployeeExpensesCard from '@/Components/Employees/EmployeeExpensesCard.vue';
 import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
 import EmployeeRoleModal from '@/Components/Employees/EmployeeRoleModal.vue';
@@ -137,12 +137,15 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
             <EmployeeEmploymentCard :employee="employee" />
             <EmployeeAccessCard :employee="employee" />
             <EmployeePersonalCard v-if="personal" :personal="personal" />
-            <EmployeeDocumentsCard
+            <AttachedFilesCard
                 v-if="documents !== null"
-                :employee-id="employee.id"
+                :heading="t('employee_section_documents')"
                 :documents="documents"
+                :upload-url="`/employees/${employee.id}/documents`"
+                :delete-url="(id) => `/employees/${employee.id}/documents/${id}`"
                 :constraints="documentConstraints"
                 :can-manage="employee.can.manage_documents === true"
+                :title-max-length="255"
             />
             <EmployeeExpensesCard v-if="expenses !== null" :employee-id="employee.id" :expenses="expenses" />
             <RelatedContractsCard

@@ -8,19 +8,27 @@ import RadioGroup, { type RadioOption } from '@/Components/Forms/RadioGroup.vue'
 import {
     CONTRACT_CATEGORIES,
     CONTRACT_CATEGORY_CONTRACTABLE_TYPES,
+    CONTRACTABLE_TYPES,
     contractableTypeKey,
     contractCategoryKey,
     enumOptions,
 } from '@/utils/enums';
 
-const props = defineProps<{
-    context: App.Data.Contracts.ContractFormContextData;
-    contractableType: App.Enums.ContractableTypeEnum;
-    category: App.Enums.ContractCategoryEnum;
-    employmentType: App.Enums.EmploymentContractTypeEnum | null;
-    currentContractableId: string;
-    lockedLabel: string | null;
-}>();
+const props = withDefaults(
+    defineProps<{
+        context: App.Data.Contracts.ContractFormContextData;
+        contractableType: App.Enums.ContractableTypeEnum;
+        category: App.Enums.ContractCategoryEnum;
+        currentContractableId: string;
+        lockedLabel: string | null;
+        categories?: readonly App.Enums.ContractCategoryEnum[];
+        contractableTypes?: readonly App.Enums.ContractableTypeEnum[];
+    }>(),
+    {
+        categories: () => CONTRACT_CATEGORIES,
+        contractableTypes: () => CONTRACTABLE_TYPES,
+    },
+);
 
 const emit = defineEmits<{
     'update:contractableType': [value: App.Enums.ContractableTypeEnum];
@@ -30,7 +38,7 @@ const { t } = useI18n();
 
 const categoryOptions = computed(() =>
     enumOptions(
-        CONTRACT_CATEGORIES.filter(
+        props.categories.filter(
             (category) =>
                 props.lockedLabel === null ||
                 CONTRACT_CATEGORY_CONTRACTABLE_TYPES[category].includes(props.contractableType),
@@ -42,7 +50,9 @@ const categoryOptions = computed(() =>
 
 const availableTypes = computed(() =>
     CONTRACT_CATEGORY_CONTRACTABLE_TYPES[props.category].filter(
-        (type) => type !== 'tenant_membership' || props.context.memberships.length > 0,
+        (type) =>
+            props.contractableTypes.includes(type) &&
+            (type !== 'tenant_membership' || props.context.memberships.length > 0),
     ),
 );
 
@@ -78,19 +88,6 @@ const membershipOptions = computed<SelectOption[]>(() =>
         .filter((m) => m.is_active || m.id === props.currentContractableId)
         .map((m) => ({ value: m.id, label: m.label })),
 );
-
-const templateOptions = computed<SelectOption[]>(() => [
-    { value: '', label: t('contract_no_template') },
-    ...props.context.templates
-        .filter(
-            (tpl) =>
-                tpl.type === props.category &&
-                (props.category !== 'employment' ||
-                    tpl.employment_type === null ||
-                    tpl.employment_type === props.employmentType),
-        )
-        .map((tpl) => ({ value: tpl.id, label: tpl.name })),
-]);
 
 const noMembershipAccess = computed(() => props.category === 'employment' && props.context.memberships.length === 0);
 const noBreakdownHint = computed(() => props.category === 'service_agreement' && props.contractableType === 'client');
@@ -150,7 +147,5 @@ const noBreakdownHint = computed(() => props.category === 'service_agreement' &&
         </template>
 
         <p v-if="noBreakdownHint" class="text-sm text-base-content/60">{{ t('contract_client_no_breakdown_hint') }}</p>
-
-        <SelectInput field="document_template_id" :label="t('contract_template')" :options="templateOptions" />
     </div>
 </template>

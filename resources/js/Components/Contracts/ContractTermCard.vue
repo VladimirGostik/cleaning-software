@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n';
 import ContractTermBadge from './ContractTermBadge.vue';
 import { formatDate, formatDatetime } from '@/utils/date';
+import { contractSignatureLabel } from '@/utils/contracts';
 
 const props = defineProps<{
     contract: App.Data.Contracts.ContractDetailData;
@@ -36,7 +37,7 @@ const { t } = useI18n();
 
         <div>
             <p class="text-xs text-base-content/50">{{ t('contract_signed_at') }}</p>
-            <p>{{ props.contract.signed_at ? formatDatetime(props.contract.signed_at) : t('contract_not_signed') }}</p>
+            <p>{{ contractSignatureLabel(t, props.contract) }}</p>
         </div>
 
         <div v-if="props.contract.terminated_at" class="col-span-2 sm:col-span-4">

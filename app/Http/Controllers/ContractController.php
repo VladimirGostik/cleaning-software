@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Contracts\RendersContractPdf;
 use App\Data\Contracts\ContractCreatePrefillData;
 use App\Data\Contracts\ContractDetailData;
+use App\Data\Contracts\ContractFileConstraintsData;
 use App\Data\Contracts\ContractFormContextData;
 use App\Data\Contracts\ContractGenerateData;
 use App\Data\Contracts\ContractTerminateData;
@@ -29,6 +30,7 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\ContractService;
+use App\Services\Documents\ContractFileService;
 use App\Services\Documents\ContractTextService;
 use App\Services\Documents\DocumentFrame;
 use App\Services\Documents\DocumentTemplateCatalogue;
@@ -51,6 +53,7 @@ final class ContractController extends Controller
     public function __construct(
         private readonly ContractService $contracts,
         private readonly ContractTextService $text,
+        private readonly ContractFileService $files,
         private readonly DocumentTemplateService $templates,
         private readonly DocumentTemplateCatalogue $catalogue,
     ) {}
@@ -104,8 +107,11 @@ final class ContractController extends Controller
     {
         Inertia::encryptHistory();
 
+        $detail = ContractDetailData::fromModel($contract, $this->text, $this->files, $this->actor($request));
+
         return Inertia::render('Contracts/Show', [
-            'contract' => ContractDetailData::fromModel($contract, $this->text, $this->actor($request)),
+            'contract' => $detail,
+            'fileConstraints' => $detail->can_manage_files ? ContractFileConstraintsData::fromConfig() : null,
         ]);
     }
 
@@ -121,7 +127,7 @@ final class ContractController extends Controller
         $actor = $this->actor($request);
 
         return Inertia::render('Contracts/Edit', [
-            'contract' => ContractDetailData::fromModel($contract, $this->text, $actor),
+            'contract' => ContractDetailData::fromModel($contract, $this->text, $this->files, $actor),
             'context' => $this->formContext($actor, $keepObjectId),
         ]);
     }
@@ -223,6 +229,7 @@ final class ContractController extends Controller
             tokens: $this->catalogue->catalog(),
             letterhead: DocumentFrame::letterhead($tenant),
             footer: DocumentFrame::footer($tenant),
+            file_constraints: ContractFileConstraintsData::fromConfig(),
         );
     }
 

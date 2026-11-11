@@ -41,6 +41,22 @@ final readonly class TemporaryUploadService
         });
     }
 
+    public function findOwned(string $uuid, ?User $user, string $sessionId): Media
+    {
+        $userId = $user?->id;
+
+        $ownedIds = TemporaryUpload::query()
+            ->where('session_id', $sessionId)
+            ->when($userId !== null, fn (Builder $q) => $q->orWhere('user_id', $userId))
+            ->pluck('id');
+
+        return Media::inTenant(current_tenant_id())
+            ->where('uuid', $uuid)
+            ->where('model_type', (new TemporaryUpload)->getMorphClass())
+            ->whereIn('model_id', $ownedIds)
+            ->firstOrFail();
+    }
+
     /**
      * Moves a temporary upload's media onto `$model`. Scoped by tenant AND by the same
      * session/user ownership rule `delete()` uses — without both, any authenticated
@@ -49,19 +65,7 @@ final readonly class TemporaryUploadService
     public function moveToModel(HasMedia $model, string $collection, string $uuid, ?User $user, string $sessionId): Media
     {
         return DB::transaction(function () use ($model, $collection, $uuid, $user, $sessionId): Media {
-            $userId = $user?->id;
-
-            $ownedIds = TemporaryUpload::query()
-                ->where('session_id', $sessionId)
-                ->when($userId !== null, fn (Builder $q) => $q->orWhere('user_id', $userId))
-                ->pluck('id');
-
-            /** @var Media $media */
-            $media = Media::inTenant(current_tenant_id())
-                ->where('uuid', $uuid)
-                ->where('model_type', (new TemporaryUpload)->getMorphClass())
-                ->whereIn('model_id', $ownedIds)
-                ->firstOrFail();
+            $media = $this->findOwned($uuid, $user, $sessionId);
 
             /** @var Media $moved */
             $moved = $media->move($model, $collection);

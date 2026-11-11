@@ -142,4 +142,34 @@ final class CheckContractExpiryCommandTest extends TestCase
         $contract->refresh();
         $this->assertSame(ContractStatusEnum::Active, $contract->status);
     }
+
+    public function test_a_file_contract_recorded_as_expired_gets_no_expired_event(): void
+    {
+        Event::fake([ContractExpired::class]);
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
+        Contract::factory()->fromFile()->create([
+            'tenant_id' => $tenant->id,
+            'status' => ContractStatusEnum::Expired,
+            'end_date' => now()->subDays(40)->toDateString(),
+        ]);
+
+        $this->artisanCommand('app:check-contract-expiry')->assertExitCode(0);
+
+        Event::assertNotDispatched(ContractExpired::class);
+    }
+
+    public function test_an_active_file_contract_ending_in_thirty_days_dispatches_the_expiring_event(): void
+    {
+        Event::fake([ContractExpiring::class]);
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        RoleTemplatesSeeder::seedForTenant($tenant);
+        $contract = Contract::factory()->fromFile()->create(['tenant_id' => $tenant->id, 'end_date' => now()->addDays(30)->toDateString()]);
+
+        $this->artisanCommand('app:check-contract-expiry')->assertExitCode(0);
+
+        Event::assertDispatched(ContractExpiring::class, fn (ContractExpiring $e) => $e->contractId === $contract->id && $e->daysLeft === 30);
+    }
 }

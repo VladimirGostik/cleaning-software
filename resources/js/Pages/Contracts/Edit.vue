@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
 import ContractForm from '@/Components/Contracts/ContractForm.vue';
+import ContractFileForm from '@/Components/Contracts/ContractFileForm.vue';
 
 import type { Breadcrumb } from '@/types';
 
@@ -30,5 +31,6 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
         <Link :href="`/contracts/${contract.id}`" class="link link-hover font-medium">{{ t('view') }}</Link>
     </div>
 
+    <ContractFileForm v-else-if="contract.source === 'file'" :context="context" :contract="contract" />
     <ContractForm v-else :context="context" :contract="contract" />
 </template>

@@ -8,6 +8,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\ContractFileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\EInvoiceController;
@@ -208,7 +209,12 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::delete('/contracts/{contract}', [ContractController::class, 'destroy'])->name('contracts.destroy')->whereUuid('contract');
     Route::post('/contracts/{contract}/sign', [ContractController::class, 'sign'])->name('contracts.sign')->whereUuid('contract');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->name('contracts.pdf')->whereUuid('contract');
+    Route::get('/contracts/{contract}/files/{attachment}', [ContractFileController::class, 'show'])->name('contracts.files.show')->whereUuid(['contract', 'attachment']);
+    Route::post('/contracts/{contract}/attachments', [ContractFileController::class, 'storeAttachment'])->name('contracts.attachments.store')->whereUuid('contract');
+    Route::delete('/contracts/{contract}/attachments/{attachment}', [ContractFileController::class, 'destroyAttachment'])->name('contracts.attachments.destroy')->whereUuid(['contract', 'attachment']);
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
+        Route::post('/contracts/from-file', [ContractFileController::class, 'store'])->name('contracts.store-file');
+        Route::put('/contracts/{contract}/file-details', [ContractFileController::class, 'update'])->name('contracts.update-file')->whereUuid('contract');
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
         Route::post('/contracts/generate', [ContractController::class, 'generate'])->name('contracts.generate')->middleware('throttle:document-preview');
         Route::post('/contracts/generate-pdf', [ContractController::class, 'generatePdf'])->name('contracts.generate-pdf')->middleware('throttle:document-preview');

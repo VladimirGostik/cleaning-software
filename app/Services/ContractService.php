@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\Contracts\ContractFileUpsertData;
 use App\Data\Contracts\ContractGenerateData;
 use App\Data\Contracts\ContractListItemData;
 use App\Data\Contracts\ContractTerminateData;
 use App\Data\Contracts\ContractUpsertData;
+use App\Data\Contracts\TokenContractResultData;
 use App\Data\Documents\DocumentRenderData;
 use App\Enums\ContractableTypeEnum;
 use App\Enums\ContractCategoryEnum;
+use App\Enums\ContractSourceEnum;
 use App\Enums\ContractStatusEnum;
+use App\Enums\ContractTermTypeEnum;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\PermissionEnum;
 use App\Events\ContractSigned;
@@ -25,6 +29,7 @@ use App\Models\Quote;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
+use App\Services\Documents\ContractFileService;
 use App\Services\Documents\ContractTextService;
 use App\Services\Documents\DocumentContextBuilder;
 use App\Services\Documents\DocumentFrame;
@@ -39,9 +44,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
+use LogicException;
 use Spatie\QueryBuilder\QueryBuilder;
 
 final readonly class ContractService
@@ -54,6 +63,7 @@ final readonly class ContractService
         private DocumentContextBuilder $contexts,
         private DocumentTemplateCatalogue $catalogue,
         private DocumentPdfRenderer $pdf,
+        private ContractFileService $files,
     ) {}
 
     /**
@@ -68,6 +78,7 @@ final readonly class ContractService
                 AllowedFilter::dynamic('category'),
                 AllowedFilter::dynamic('term_type'),
                 AllowedFilter::dynamic('contractable_type'),
+                AllowedFilter::dynamic('source'),
                 AllowedFilter::dynamic('valid_from')->date(),
                 AllowedFilter::dynamic('end_date')->date(),
             )
@@ -275,6 +286,130 @@ final readonly class ContractService
         });
     }
 
+    public function createFromFile(ContractFileUpsertData $data, User $actor, string $sessionId): Contract
+    {
+        if ($data->file_uuid === null) {
+            throw ValidationException::withMessages(['file_uuid' => [__('app.contract_file_required')]]);
+        }
+
+        $this->assertFileSubject($data);
+
+        $sha256 = $this->files->hashStaged($data->file_uuid, $actor, $sessionId);
+        $this->assertHashFree($sha256);
+
+        try {
+            return $this->db->transaction(function () use ($data, $actor, $sessionId, $sha256): Contract {
+                $contract = $this->createFileContract($data, $sha256);
+                $this->files->attachStagedMain($contract->document ?? throw new LogicException('Contract document missing.'), (string) $data->file_uuid, $actor, $sessionId, $sha256);
+
+                return $contract->load('document');
+            });
+        } catch (UniqueConstraintViolationException) {
+            throw $this->duplicateFile($sha256);
+        }
+    }
+
+    public function importFromUpload(ContractFileUpsertData $data, UploadedFile $file, User $actor): TokenContractResultData
+    {
+        $this->assertFileSubject($data);
+
+        $sha256 = $this->files->hashUpload($file);
+        $existing = $this->files->findContractByHash($sha256);
+
+        if ($existing !== null) {
+            return $this->tokenResult($existing, false);
+        }
+
+        try {
+            $contract = $this->db->transaction(function () use ($data, $file, $actor, $sha256): Contract {
+                $contract = $this->createFileContract($data, $sha256);
+                $this->files->attachUploadedMain($contract->document ?? throw new LogicException('Contract document missing.'), $file, $actor, $sha256);
+
+                return $contract;
+            });
+        } catch (UniqueConstraintViolationException $exception) {
+            $raced = $this->files->findContractByHash($sha256);
+
+            if ($raced === null) {
+                throw $exception;
+            }
+
+            return $this->tokenResult($raced, false);
+        }
+
+        return $this->tokenResult($contract, true);
+    }
+
+    public function updateFileDetails(Contract $contract, ContractFileUpsertData $data, User $actor, string $sessionId): Contract
+    {
+        if (! $contract->isFile()) {
+            throw ValidationException::withMessages(['status' => [__('app.contract_not_file')]]);
+        }
+
+        $this->assertFileSubject($data);
+
+        $sha256 = null;
+
+        if ($data->file_uuid !== null) {
+            $sha256 = $this->files->hashStaged($data->file_uuid, $actor, $sessionId);
+            $existing = $this->files->findContractByHash($sha256);
+
+            if ($existing !== null && $existing->id !== $contract->id) {
+                throw $this->duplicateFile($sha256, $existing);
+            }
+
+            if ($sha256 === $contract->file_sha256) {
+                $sha256 = null;
+            }
+        }
+
+        try {
+            return $this->db->transaction(function () use ($contract, $data, $actor, $sessionId, $sha256): Contract {
+                $status = in_array($contract->status, [ContractStatusEnum::Active, ContractStatusEnum::Expired], true)
+                    ? $this->fileStatus($data)
+                    : $contract->status;
+
+                $contract->update([
+                    'contractable_type' => $data->contractable_type->value,
+                    'contractable_id' => $data->contractable_id,
+                    'category' => $data->category,
+                    'status' => $status,
+                    'term_type' => $data->term_type,
+                    'title' => $data->title,
+                    'number' => $data->number,
+                    'valid_from' => $data->valid_from,
+                    'end_date' => $data->term_type === ContractTermTypeEnum::Fixed ? $data->end_date : null,
+                    'is_signed' => $data->is_signed,
+                    'signed_at' => $this->signedAt($data),
+                    'notes' => $data->notes,
+                ]);
+
+                $document = $contract->document ?? throw new LogicException('Contract document missing.');
+                $document->update(['title' => $data->title, 'type' => DocumentTypeEnum::fromCategory($data->category)]);
+
+                if ($sha256 !== null && $data->file_uuid !== null) {
+                    $old = $document->getFirstMedia('file');
+                    $oldName = $old?->name;
+                    $oldHash = $old?->getCustomProperty('sha256');
+
+                    $media = $this->files->attachStagedMain($document, $data->file_uuid, $actor, $sessionId, $sha256);
+                    $contract->update(['file_sha256' => $sha256]);
+
+                    $this->files->auditMainReplaced($contract, $actor, [
+                        'old_name' => $oldName,
+                        'old_sha256' => $oldHash,
+                        'new_name' => $media->name,
+                        'new_sha256' => $sha256,
+                    ]);
+                }
+
+                return $contract->load('document');
+            });
+        } catch (UniqueConstraintViolationException) {
+            throw $this->duplicateFile((string) $sha256);
+        }
+    }
+
     public function sign(Contract $contract): Contract
     {
         if (! $contract->canBeSigned()) {
@@ -291,7 +426,7 @@ final readonly class ContractService
 
         return $this->db->transaction(function () use ($contract): Contract {
             $this->text->freezeBlocks($contract);
-            $contract->update(['status' => ContractStatusEnum::Active, 'signed_at' => now()]);
+            $contract->update(['status' => ContractStatusEnum::Active, 'signed_at' => now(), 'is_signed' => true]);
 
             ContractSigned::dispatch($contract->tenant_id, $contract->id);
 
@@ -318,7 +453,7 @@ final readonly class ContractService
 
     public function delete(Contract $contract): void
     {
-        if (! $contract->isEditable()) {
+        if (! $contract->isEditable() && ! $contract->isFile()) {
             throw ValidationException::withMessages(['status' => [__('app.contract_not_editable')]]);
         }
 
@@ -326,6 +461,89 @@ final readonly class ContractService
             $contract->document?->delete();
             $contract->delete();
         });
+    }
+
+    private function createFileContract(ContractFileUpsertData $data, string $sha256): Contract
+    {
+        $contract = Contract::create([
+            'contractable_type' => $data->contractable_type->value,
+            'contractable_id' => $data->contractable_id,
+            'category' => $data->category,
+            'status' => $this->fileStatus($data),
+            'source' => ContractSourceEnum::File,
+            'term_type' => $data->term_type,
+            'title' => $data->title,
+            'number' => $data->number,
+            'valid_from' => $data->valid_from,
+            'end_date' => $data->term_type === ContractTermTypeEnum::Fixed ? $data->end_date : null,
+            'is_signed' => $data->is_signed,
+            'signed_at' => $this->signedAt($data),
+            'notes' => $data->notes,
+            'file_sha256' => $sha256,
+        ]);
+
+        Document::create([
+            'documentable_type' => $contract->getMorphClass(),
+            'documentable_id' => $contract->id,
+            'type' => DocumentTypeEnum::fromCategory($data->category),
+            'title' => $data->title,
+            'body' => null,
+            'show_header' => false,
+            'show_footer' => false,
+        ]);
+
+        return $contract->load('document');
+    }
+
+    private function fileStatus(ContractFileUpsertData $data): ContractStatusEnum
+    {
+        $expired = $data->term_type === ContractTermTypeEnum::Fixed
+            && $data->end_date !== null
+            && Carbon::parse($data->end_date)->lt(today());
+
+        return $expired ? ContractStatusEnum::Expired : ContractStatusEnum::Active;
+    }
+
+    private function signedAt(ContractFileUpsertData $data): ?Carbon
+    {
+        return $data->is_signed && $data->signed_on !== null ? Carbon::parse($data->signed_on)->startOfDay() : null;
+    }
+
+    private function assertFileSubject(ContractFileUpsertData $data): void
+    {
+        $this->assertCategoryMatchesContractable($data->category, $data->contractable_type);
+
+        if (! $data->contractable_type->modelClass()::query()->whereKey($data->contractable_id)->exists()) {
+            throw ValidationException::withMessages(['contractable_id' => [__('app.contract_invalid_contractable')]]);
+        }
+    }
+
+    private function assertHashFree(string $sha256): void
+    {
+        $existing = $this->files->findContractByHash($sha256);
+
+        if ($existing !== null) {
+            throw $this->duplicateFile($sha256, $existing);
+        }
+    }
+
+    private function duplicateFile(string $sha256, ?Contract $existing = null): ValidationException
+    {
+        $existing ??= $this->files->findContractByHash($sha256);
+
+        return ValidationException::withMessages([
+            'file_uuid' => [__('app.contract_file_duplicate', ['title' => $existing->title ?? ''])],
+        ]);
+    }
+
+    private function tokenResult(Contract $contract, bool $created): TokenContractResultData
+    {
+        return new TokenContractResultData(
+            contract_id: $contract->id,
+            attachment_id: null,
+            created: $created,
+            url: route('contracts.show', ['contract' => $contract->id]),
+        );
     }
 
     private function buildHtml(ContractGenerateData $data, CleaningObject|Client|TenantMembership $subject, Tenant $tenant): string

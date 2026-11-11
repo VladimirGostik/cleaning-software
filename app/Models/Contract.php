@@ -8,6 +8,7 @@ use App\Concerns\BelongsToTenant;
 use App\Concerns\HasPdfFilename;
 use App\Concerns\HasUuids;
 use App\Enums\ContractCategoryEnum;
+use App\Enums\ContractSourceEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\ContractTermTypeEnum;
 use Database\Factories\ContractFactory;
@@ -32,6 +33,9 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $contractable_id
  * @property ContractCategoryEnum $category
  * @property ContractStatusEnum $status
+ * @property ContractSourceEnum $source
+ * @property bool $is_signed
+ * @property string|null $file_sha256
  * @property ContractTermTypeEnum $term_type
  * @property string $title
  * @property string|null $number
@@ -53,6 +57,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'tenant_id', 'document_template_id', 'quote_id', 'contractable_type', 'contractable_id',
     'category', 'status', 'term_type', 'title', 'number',
     'valid_from', 'end_date', 'signed_at', 'terminated_at', 'termination_reason', 'notes',
+    'source', 'is_signed', 'file_sha256',
 ])]
 final class Contract extends Model
 {
@@ -66,6 +71,8 @@ final class Contract extends Model
             'category' => ContractCategoryEnum::class,
             'status' => ContractStatusEnum::class,
             'term_type' => ContractTermTypeEnum::class,
+            'source' => ContractSourceEnum::class,
+            'is_signed' => 'boolean',
             'valid_from' => 'date',
             'end_date' => 'date',
             'signed_at' => 'datetime',
@@ -76,7 +83,10 @@ final class Contract extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'signed_at', 'terminated_at', 'number', 'title', 'contractable_id'])
+            ->logOnly([
+                'status', 'signed_at', 'terminated_at', 'number', 'title', 'contractable_id',
+                'valid_from', 'end_date', 'term_type', 'category', 'is_signed', 'source',
+            ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
@@ -118,6 +128,11 @@ final class Contract extends Model
     public function isEditable(): bool
     {
         return $this->status->isEditable();
+    }
+
+    public function isFile(): bool
+    {
+        return $this->source === ContractSourceEnum::File;
     }
 
     public function canBeSigned(): bool

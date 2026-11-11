@@ -33,5 +33,6 @@ final class ContractFormContextData extends Data
         public readonly DocumentLetterheadData $letterhead,
         /** @var string[] */
         public readonly array $footer,
+        public readonly ContractFileConstraintsData $file_constraints,
     ) {}
 }

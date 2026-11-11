@@ -12,6 +12,7 @@ import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import ContractStatusBadge from '@/Components/Contracts/ContractStatusBadge.vue';
 import ContractCategoryBadge from '@/Components/Contracts/ContractCategoryBadge.vue';
+import ContractFileMarker from '@/Components/Contracts/ContractFileMarker.vue';
 import ContractTermBadge from '@/Components/Contracts/ContractTermBadge.vue';
 import StatusErrorAlert from '@/Components/StatusErrorAlert.vue';
 import ContractTerminateModal from '@/Components/Contracts/ContractTerminateModal.vue';
@@ -55,7 +56,7 @@ const columns: TableColumn<App.Data.Contracts.ContractListItemData>[] = [
     { key: 'contractable_label', label: t('contract_contractable'), sortable: false },
     { key: 'category', label: t('type'), sortable: true, hideBelow: 1440 },
     { key: 'status', label: t('status'), sortable: true },
-    { key: 'term_type', label: t('contract_term_type'), sortable: false, hideBelow: 1440 },
+    { key: 'term_type', label: t('contract_term_type'), sortable: false, hideBelow: 1600 },
     { key: 'valid_from', label: t('contract_valid_from'), sortable: true, hideBelow: 1440, nowrap: true },
     { key: 'end_date', label: t('contract_end_date'), sortable: true, nowrap: true },
 ];
@@ -152,6 +153,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
             >
                 <template #cell-title="{ row }">
                     <Link :href="`/contracts/${row.id}`" class="link link-hover font-medium">{{ row.title }}</Link>
+                    <ContractFileMarker :source="row.source" :is-signed="row.is_signed" class="ml-2" />
                     <p v-if="row.number" class="tabular-nums text-xs text-base-content/60">{{ row.number }}</p>
                 </template>
 

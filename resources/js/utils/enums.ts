@@ -166,6 +166,24 @@ export const CONTRACTABLE_TYPES: readonly App.Enums.ContractableTypeEnum[] = [
     'client',
 ];
 
+export const CONTRACT_SOURCES: readonly App.Enums.ContractSourceEnum[] = ['generated', 'file'];
+
+export const CONTRACT_FILE_CATEGORIES: readonly App.Enums.ContractCategoryEnum[] = [
+    'service_agreement',
+    'nda',
+    'gdpr',
+    'other',
+];
+
+export const CONTRACT_FILE_CONTRACTABLE_TYPES: readonly App.Enums.ContractableTypeEnum[] = [
+    'cleaning_object',
+    'client',
+];
+
+export function contractSourceKey(source: App.Enums.ContractSourceEnum): string {
+    return `contract_source_${source}`;
+}
+
 export function contractStatusKey(status: App.Enums.ContractStatusEnum): string {
     return `contract_status_${status}`;
 }

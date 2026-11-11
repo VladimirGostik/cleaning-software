@@ -25,6 +25,7 @@ final class TemporaryMediaConstraints implements ValidationRule
         private readonly int $maxSizeKb,
         private readonly string $typeMessageKey = 'app.quote_document_invalid_type',
         private readonly string $sizeMessageKey = 'app.quote_document_too_large',
+        private readonly ?string $typesConfig = null,
     ) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -43,7 +44,7 @@ final class TemporaryMediaConstraints implements ValidationRule
             return;
         }
 
-        if (! in_array($media->mime_type, $this->allowedMimes, true)) {
+        if (! $this->typeAllowed($media)) {
             $fail(__($this->typeMessageKey));
 
             return;
@@ -52,5 +53,16 @@ final class TemporaryMediaConstraints implements ValidationRule
         if ($media->size > $this->maxSizeKb * 1024) {
             $fail(__($this->sizeMessageKey));
         }
+    }
+
+    private function typeAllowed(Media $media): bool
+    {
+        if ($this->typesConfig === null) {
+            return in_array($media->mime_type, $this->allowedMimes, true);
+        }
+
+        $extension = pathinfo($media->file_name, PATHINFO_EXTENSION);
+
+        return AllowedUploadFile::resolveDetected((string) $media->mime_type, $extension, $this->typesConfig) !== null;
     }
 }
