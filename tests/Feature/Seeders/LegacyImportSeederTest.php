@@ -159,6 +159,16 @@ final class LegacyImportSeederTest extends TestCase
         $this->assertSame('821 07', CleaningObject::withoutGlobalScopes()->firstOrFail()->postal_code);
     }
 
+    public function test_prints_buyers_synced_count(): void
+    {
+        $this->existingFirm();
+        $this->encrypt();
+
+        $this->artisanCommand('db:seed', ['--class' => LegacyImportSeeder::class])
+            ->expectsOutputToContain('0 buyers synced')
+            ->assertSuccessful();
+    }
+
     public function test_no_existing_firm_throws_and_writes_nothing(): void
     {
         $this->encrypt();

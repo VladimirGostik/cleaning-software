@@ -129,14 +129,14 @@ final class LegacyImportSeeder extends Seeder
         $count = fn (string $entity, string $action): int => $report->count($entity, $action);
 
         $this->command?->info(sprintf(
-            'Firms: %d created, %d existing. Clients: %d created, %d existing. Objects: %d created, %d existing, %d merged, %d skipped. Recurring invoices: %d created, %d existing, %d skipped, %d retired. Drafts: %d created, %d removed. Postal codes: %d filled, %d corrected, %d invalid. Firms with auto-issue default: %d. Invoices: %d created, %d existing, %d skipped, %d payments synced. Media failures: %d.',
+            'Firms: %d created, %d existing. Clients: %d created, %d existing. Objects: %d created, %d existing, %d merged, %d skipped. Recurring invoices: %d created, %d existing, %d skipped, %d retired. Drafts: %d created, %d removed. Postal codes: %d filled, %d corrected, %d invalid. Firms with auto-issue default: %d. Invoices: %d created, %d existing, %d skipped, %d payments synced, %d buyers synced. Media failures: %d.',
             $count('firm', 'created'), $count('firm', 'existing'),
             $count('client', 'created'), $count('client', 'existing'),
             $count('object', 'created'), $count('object', 'existing'), $count('object', 'merged'), $count('object', 'skipped'),
             $count('recurring', 'created'), $count('recurring', 'existing'), $count('recurring', 'skipped'), $count('recurring', 'retired'), $count('draft', 'created'), $count('draft', 'removed'),
             $count('postal_code', 'filled'), $count('postal_code', 'corrected'), $count('postal_code', 'invalid'),
             $count('auto_issue_firm', 'issued_default'),
-            $count('invoice', 'created'), $count('invoice', 'existing'), $count('invoice', 'skipped'), $count('invoice', 'payment_synced'),
+            $count('invoice', 'created'), $count('invoice', 'existing'), $count('invoice', 'skipped'), $count('invoice', 'payment_synced'), $count('invoice', 'buyer_synced'),
             $this->mediaFailures($report),
         ));
 

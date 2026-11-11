@@ -8,6 +8,7 @@ use App\Enums\InvoiceStatusEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentSourceEnum;
 use App\Events\InvoiceMarkedOverdue;
+use App\Models\Activity;
 use App\Models\CleaningObject;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
@@ -18,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -98,6 +100,111 @@ final class ImportLegacyInvoicesTest extends TestCase
         return Invoice::withoutGlobalScopes()->withTrashed()->where('number', $number)->with('items')->firstOrFail();
     }
 
+    private function houseWithBilling(): CleaningObject
+    {
+        $this->runImport($this->payload(null));
+
+        $object = CleaningObject::withoutGlobalScopes()->where('name', 'Test Street č.13,15')->firstOrFail();
+        $object->update([
+            'street' => 'House Street 13', 'city' => 'House City', 'postal_code' => '90001',
+            'billing_name' => 'Owner Association Billing',
+        ]);
+
+        return $object;
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    private function zastupene(int $id, string $number, array $extra = []): array
+    {
+        return $this->invoice($id, $number, ['header4' => 'Zastupene Invented Client', ...$extra]);
+    }
+
+    public function test_invoice_of_a_house_with_billing_identity_gets_the_app_buyer(): void
+    {
+        $this->houseWithBilling();
+
+        $this->runImport($this->payload([$this->zastupene(1, '20260101')]));
+
+        $invoice = $this->imported('20260101');
+        $this->assertSame('Owner Association Billing', $invoice->customer_name);
+        $this->assertSame('Invented Client', $invoice->customer_represented_by);
+        $this->assertSame('House Street 13', $invoice->customer_street);
+        $this->assertSame('House City', $invoice->customer_city);
+        $this->assertSame('90001', $invoice->customer_postal_code);
+    }
+
+    public function test_existing_linked_invoice_buyer_is_resynced_once_without_side_effects(): void
+    {
+        $object = $this->houseWithBilling();
+        $object->update(['billing_name' => null]);
+        $payload = $this->payload([$this->zastupene(1, '20260101', ['status' => 'paid', 'payment_date' => '2026-10-20'])]);
+        $this->runImport($payload);
+        $before = $this->imported('20260101');
+        $this->assertNotSame('Owner Association Billing', $before->customer_name);
+        Invoice::withoutGlobalScopes()->whereKey($before->id)->update(['customer_email' => 'keep@example.com']);
+        $object->update(['billing_name' => 'Owner Association Billing']);
+        $activities = Activity::query()->count();
+        Mail::fake();
+        Notification::fake();
+
+        $first = $this->runImport($payload);
+
+        $invoice = $this->imported('20260101');
+        $this->assertStringContainsString('1 buyers synced', $first);
+        $this->assertSame('Owner Association Billing', $invoice->customer_name);
+        $this->assertSame('Invented Client', $invoice->customer_represented_by);
+        $this->assertSame('keep@example.com', $invoice->customer_email);
+        $this->assertSame($before->number, $invoice->number);
+        $this->assertSame($before->total, $invoice->total);
+        $this->assertSame(InvoiceStatusEnum::Paid, $invoice->status);
+        $this->assertEquals($before->sent_at, $invoice->sent_at);
+        $this->assertSame(1, InvoicePayment::withoutGlobalScopes()->where('invoice_id', $invoice->id)->count());
+        $this->assertSame($activities, Activity::query()->count());
+        Mail::assertNothingSent();
+        Notification::assertNothingSent();
+
+        $updatedAt = $invoice->updated_at;
+        $second = $this->runImport($payload);
+
+        $this->assertStringContainsString('0 buyers synced', $second);
+        $this->assertStringContainsString('0 created', $second);
+        $this->assertEquals($updatedAt, $this->imported('20260101')->updated_at);
+    }
+
+    public function test_unlinked_invoice_keeps_the_mapper_buyer_and_is_not_counted(): void
+    {
+        $this->houseWithBilling();
+        $payload = $this->payload([$this->zastupene(1, '20260101', ['monthly_template' => null, 'name' => 'Nowhere 1'])]);
+
+        $this->runImport($payload);
+        $second = $this->runImport($payload);
+
+        $invoice = $this->imported('20260101');
+        $this->assertNull($invoice->cleaning_object_id);
+        $this->assertSame('Client Street 1', $invoice->customer_street);
+        $this->assertNull($invoice->customer_represented_by);
+        $this->assertStringContainsString('0 buyers synced', $second);
+    }
+
+    public function test_trashed_linked_invoice_is_not_resynced(): void
+    {
+        $object = $this->houseWithBilling();
+        $object->update(['billing_name' => null]);
+        $payload = $this->payload([$this->zastupene(1, '20260101')]);
+        $this->runImport($payload);
+        $before = $this->imported('20260101')->customer_name;
+        $this->imported('20260101')->delete();
+        $object->update(['billing_name' => 'Owner Association Billing']);
+
+        $output = $this->runImport($payload);
+
+        $this->assertStringContainsString('0 buyers synced', $output);
+        $this->assertSame($before, $this->imported('20260101')->customer_name);
+    }
+
     public function test_open_invoices_are_issued_or_overdue_and_nothing_is_dispatched(): void
     {
         Event::fake([InvoiceMarkedOverdue::class]);
@@ -110,7 +217,7 @@ final class ImportLegacyInvoicesTest extends TestCase
             $this->invoice(3, '20260103', ['status' => 'created', 'issue_date' => '2026-11-01', 'due_date' => '2026-11-04']),
         ]));
 
-        $this->assertStringContainsString('Invoices: 3 created, 0 existing, 0 skipped, 0 payments synced.', $output);
+        $this->assertStringContainsString('Invoices: 3 created, 0 existing, 0 skipped, 0 payments synced, 0 buyers synced.', $output);
         $this->assertSame(InvoiceStatusEnum::Overdue, $this->imported('20260101')->status);
         $this->assertSame(InvoiceStatusEnum::Issued, $this->imported('20260102')->status);
         $this->assertSame(InvoiceStatusEnum::Overdue, $this->imported('20260103')->status);
@@ -138,7 +245,8 @@ final class ImportLegacyInvoicesTest extends TestCase
         $this->assertSame(2, $invoice->items->count());
         $this->assertSame("Cleaning for 12/2025\nStairs", $invoice->header_text);
         $this->assertSame('Owner Association', $invoice->customer_name);
-        $this->assertSame('11000001', $invoice->customer_ico);
+        $this->assertNull($invoice->customer_ico);
+        $this->assertSame('Invented Client', $invoice->customer_represented_by);
         $this->assertSame('Legacy Alpha', $invoice->supplier_name);
         $this->assertSame('22222222', $invoice->supplier_ico);
         $this->assertSame('SK8975000000000123456789', $invoice->supplier_iban);
@@ -195,7 +303,7 @@ final class ImportLegacyInvoicesTest extends TestCase
 
         $output = $this->runImport($payload);
 
-        $this->assertStringContainsString('Invoices: 0 created, 2 existing, 0 skipped, 0 payments synced.', $output);
+        $this->assertStringContainsString('Invoices: 0 created, 2 existing, 0 skipped, 0 payments synced, 0 buyers synced.', $output);
         $this->assertSame(2, Invoice::withoutGlobalScopes()->withTrashed()->whereNotNull('legacy_id')->count());
     }
 
@@ -264,7 +372,7 @@ final class ImportLegacyInvoicesTest extends TestCase
 
         $output = $this->runImport($this->payload([$this->invoice(1, '20260101', ['status' => 'paid', 'payment_date' => '2026-10-25'])]));
 
-        $this->assertStringContainsString('Invoices: 0 created, 1 existing, 0 skipped, 0 payments synced.', $output);
+        $this->assertStringContainsString('Invoices: 0 created, 1 existing, 0 skipped, 0 payments synced, 0 buyers synced.', $output);
         $this->assertSame(0, InvoicePayment::withoutGlobalScopes()->count());
     }
 
