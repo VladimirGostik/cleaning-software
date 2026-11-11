@@ -29,6 +29,7 @@ use App\Services\Efa\NullEInvoiceAccessPoint;
 use App\Services\Pdf\ContractPdfService;
 use App\Services\Pdf\InvoicePdfService;
 use App\Services\Pdf\PayBySquareService;
+use App\Services\Pdf\PdfPageCounter;
 use App\Services\Pdf\QpdfMerger;
 use App\Services\Pdf\QuotePdfService;
 use App\Services\Pdf\SupplierSignatureResolver;
@@ -59,6 +60,7 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(DataValidatorResolver::class, PrecognitiveDataValidatorResolver::class);
+        $this->app->singleton(PdfPageCounter::class);
 
         $this->app->bind(RendersInvoicePdf::class, InvoicePdfService::class);
         $this->app->bind(GeneratesPaymentQr::class, PayBySquareService::class);

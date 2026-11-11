@@ -412,7 +412,7 @@ final readonly class ActionConfirmationService
         $failure = match (true) {
             $action === PendingActionEnum::CancelInvoice && $subject instanceof Invoice && ! $subject->canBeCancelled() => 'app.invoice_cannot_cancel',
             $action === PendingActionEnum::DeleteInvoiceDraft && $subject instanceof Invoice && ! $subject->isEditable() => 'app.invoice_not_editable',
-            $action === PendingActionEnum::DeleteQuote && $subject instanceof Quote && ! $subject->isEditable() => 'app.quote_not_editable',
+            $action === PendingActionEnum::DeleteQuote && $subject instanceof Quote && ! $subject->isDeletable() => 'app.quote_not_editable',
             $action === PendingActionEnum::SignContract && $subject instanceof Contract && ! $subject->canBeSigned() => 'app.contract_cannot_sign',
             default => null,
         };

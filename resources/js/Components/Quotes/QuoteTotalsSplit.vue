@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMoneyFormat } from '@/Composables/useMoneyFormat';
-import { isRecurringPeriod, type QuotePeriodTotals } from '@/utils/quoteBilling';
+import { isOneOffOnly, isRecurringPeriod, type QuotePeriodTotals } from '@/utils/quoteBilling';
 import { quoteBillingPeriodKey, quoteBillingSuffixKey } from '@/utils/enums';
 
 const props = defineProps<{
@@ -12,6 +13,12 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const { money } = useMoneyFormat();
+
+const oneOffOnly = computed(() => isOneOffOnly(props.periodTotals));
+
+function groupLabel(group: QuotePeriodTotals): string {
+    return oneOffOnly.value ? t('quote_total') : t(quoteBillingPeriodKey(group.billing_period));
+}
 
 function totalLabel(group: QuotePeriodTotals): string {
     const amount = money(group.total, props.currency);
@@ -36,12 +43,12 @@ function totalLabel(group: QuotePeriodTotals): string {
                     <dd class="tabular-nums">{{ money(group.vat_amount, props.currency) }}</dd>
                 </div>
                 <div class="flex justify-between border-t border-base-300 pt-1 text-base font-bold">
-                    <dt>{{ t(quoteBillingPeriodKey(group.billing_period)) }}</dt>
+                    <dt>{{ groupLabel(group) }}</dt>
                     <dd class="tabular-nums">{{ totalLabel(group) }}</dd>
                 </div>
             </template>
             <div v-else class="flex justify-between text-base font-bold">
-                <dt>{{ t(quoteBillingPeriodKey(group.billing_period)) }}</dt>
+                <dt>{{ groupLabel(group) }}</dt>
                 <dd class="tabular-nums">{{ totalLabel(group) }}</dd>
             </div>
         </div>

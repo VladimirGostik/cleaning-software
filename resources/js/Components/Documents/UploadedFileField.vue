@@ -19,7 +19,7 @@ const props = defineProps<{
     accept: string;
     maxSizeKb: number;
     hint: string;
-    error: string | null;
+    error?: string | null;
 }>();
 
 const emit = defineEmits<{

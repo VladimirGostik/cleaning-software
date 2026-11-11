@@ -50,7 +50,7 @@ final class WebAssistantTest extends TestCase
         $this->webAs($this->admin, $this->alpha)
             ->postJson(route('assistant.messages'), $this->payload())
             ->assertOk()
-            ->assertExactJson(['reply' => 'Fake reply', 'actions' => [], 'pending_action' => null, 'security_notice' => null]);
+            ->assertExactJson(['reply' => 'Fake reply', 'actions' => [], 'pending_action' => null, 'security_notice' => null, 'attachment_note' => null]);
 
         $this->assertSame($this->alpha->id, $this->fake->requests[0]->company_id);
         $this->assertSame('Ahoj', $this->fake->requests[0]->messages[0]->content);

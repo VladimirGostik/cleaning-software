@@ -1,17 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, postJson } from '@/utils/http';
-import { REQUEST_TIMEOUT_MS } from '@/utils/assistant';
+import { HttpError, postForm } from '@/utils/http';
+import { FILES_REQUEST_TIMEOUT_MS, REQUEST_TIMEOUT_MS } from '@/utils/assistant';
 import { useAssistantChat } from './useAssistantChat';
 
 vi.mock('@/utils/http', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/utils/http')>()),
-    postJson: vi.fn(),
+    postForm: vi.fn(),
 }));
 
-const post = vi.mocked(postJson);
+const post = vi.mocked(postForm);
 
 function reply(overrides: Partial<App.Data.Ai.AssistantReplyData> = {}): App.Data.Ai.AssistantReplyData {
-    return { reply: 'Hello', actions: [], pending_action: null, security_notice: null, ...overrides };
+    return {
+        reply: 'Hello',
+        actions: [],
+        pending_action: null,
+        security_notice: null,
+        attachment_note: null,
+        ...overrides,
+    };
 }
 
 function deferred<T>() {
@@ -23,6 +30,21 @@ function deferred<T>() {
     });
 
     return { promise, resolve, reject };
+}
+
+function entries(form: unknown): [string, string][] {
+    return Array.from((form as FormData).entries()).map(([key, value]) => [
+        key,
+        value instanceof File ? `file:${value.name}` : value,
+    ]);
+}
+
+function sentForm(call = 0): FormData {
+    return post.mock.calls[call][1];
+}
+
+function pdf(name: string): File {
+    return new File([new Uint8Array(4)], name, { type: 'application/pdf' });
 }
 
 const chat = useAssistantChat();
@@ -44,7 +66,11 @@ describe('useAssistantChat', () => {
         expect(chat.state.messages.map((m) => [m.role, m.content])).toEqual([['user', 'Hi']]);
         expect(chat.state.sending).toBe(true);
         expect(post.mock.calls[0][0]).toBe('/assistant/messages');
-        expect(post.mock.calls[0][1]).toEqual({ company_id: 'c1', messages: [{ role: 'user', content: 'Hi' }] });
+        expect(entries(sentForm())).toEqual([
+            ['company_id', 'c1'],
+            ['messages[0][role]', 'user'],
+            ['messages[0][content]', 'Hi'],
+        ]);
 
         pending.resolve(reply({ reply: 'Hey', security_notice: 'careful' }));
         await sent;
@@ -68,16 +94,16 @@ describe('useAssistantChat', () => {
         expect(chat.state.messages).toHaveLength(1);
     });
 
-    it('drops a late reply after a company change and reports the request was in flight', async () => {
+    it('keeps a late reply after a company change', async () => {
         const pending = deferred<App.Data.Ai.AssistantReplyData>();
         post.mockReturnValueOnce(pending.promise);
 
         const sent = chat.send('Hi');
-        expect(chat.bind('u1', 'c2')).toBe(true);
+        chat.bind('u1', 'c2');
         pending.resolve(reply());
         await sent;
 
-        expect(chat.state.messages).toEqual([]);
+        expect(chat.state.messages).toHaveLength(2);
         expect(chat.state.sending).toBe(false);
     });
 
@@ -117,38 +143,38 @@ describe('useAssistantChat', () => {
         }
     });
 
-    it('keeps the conversation when bound to the same user and company', async () => {
-        post.mockResolvedValueOnce(reply());
+    it('keeps the conversation across a company switch and sends the open company', async () => {
+        post.mockResolvedValue(reply());
         await chat.send('Hi');
 
-        expect(chat.bind('u1', 'c1')).toBe(false);
+        chat.bind('u1', 'c2');
         expect(chat.state.messages).toHaveLength(2);
+
+        await chat.send('And firm B?');
+        const form = sentForm(post.mock.calls.length - 1);
+        expect(form.get('company_id')).toBe('c2');
+        expect(form.get('messages[2][content]')).toBe('And firm B?');
+        expect(form.has('messages[3][role]')).toBe(false);
     });
 
-    it('resets on company change and on user change without any subscriber', async () => {
+    it('starts over for another user', async () => {
         post.mockResolvedValue(reply());
-
         await chat.send('Hi');
-        chat.bind('u1', 'c2');
-        expect(chat.state.messages).toEqual([]);
 
-        await chat.send('Hi');
-        chat.bind('u2', 'c2');
+        chat.bind('u2', 'c1');
         expect(chat.state.messages).toEqual([]);
     });
 
-    it('does not carry a conversation across company A -> B -> C', async () => {
-        post.mockResolvedValue(reply());
-        await chat.send('secret of A');
+    it('drops a late reply of the previous user', async () => {
+        const pending = deferred<App.Data.Ai.AssistantReplyData>();
+        post.mockReturnValueOnce(pending.promise);
 
-        chat.bind('u1', 'c2');
-        chat.bind('u1', 'c3');
-        await chat.send('hello C');
+        const sent = chat.send('Hi');
+        chat.bind('u2', 'c1');
+        pending.resolve(reply());
+        await sent;
 
-        expect(post.mock.calls.at(-1)![1]).toEqual({
-            company_id: 'c3',
-            messages: [{ role: 'user', content: 'hello C' }],
-        });
+        expect(chat.state.messages).toEqual([]);
     });
 
     it('blocks after an unknown outcome, and retry clears it and re-posts the same history', async () => {
@@ -166,7 +192,7 @@ describe('useAssistantChat', () => {
 
         expect(chat.state.blocked).toBe(false);
         expect(chat.state.error).toBeNull();
-        expect(post.mock.calls[1][1]).toEqual(post.mock.calls[0][1]);
+        expect(entries(sentForm(1))).toEqual(entries(sentForm(0)));
         expect(chat.state.messages.at(-1)?.role).toBe('assistant');
     });
 
@@ -198,5 +224,136 @@ describe('useAssistantChat', () => {
         chat.settlePending('p1', 'done');
 
         expect(chat.state.messages.at(-1)?.pendingOutcome).toBe('done');
+    });
+
+    describe('files', () => {
+        it('a message with files sends the files', async () => {
+            post.mockResolvedValueOnce(reply());
+
+            const outcome = await chat.send('', [pdf('a.pdf'), pdf('b.pdf')]);
+
+            expect(outcome).toBe('replied');
+            expect(entries(sentForm())).toEqual([
+                ['company_id', 'c1'],
+                ['messages[0][role]', 'user'],
+                ['messages[0][content]', ''],
+                ['attachments[]', 'file:a.pdf'],
+                ['attachments[]', 'file:b.pdf'],
+            ]);
+            expect(chat.state.messages[0].attachmentNames).toEqual(['a.pdf', 'b.pdf']);
+        });
+
+        it('sends only the names of an earlier message and no files on the next turn', async () => {
+            post.mockResolvedValue(reply({ attachment_note: 'File saved to: expense.' }));
+            await chat.send('', [pdf('a.pdf')]);
+
+            expect(chat.state.messages.at(-1)?.attachmentNote).toBe('File saved to: expense.');
+
+            await chat.send('thanks');
+
+            const form = sentForm(1);
+            expect(form.getAll('messages[0][attachment_names][]')).toEqual(['a.pdf']);
+            expect(form.has('attachments[]')).toBe(false);
+            expect(form.get('messages[2][content]')).toBe('thanks');
+        });
+
+        it('retry resends the held files after a network error', async () => {
+            post.mockRejectedValueOnce(new TypeError('network')).mockResolvedValueOnce(reply());
+
+            await chat.send('see', [pdf('a.pdf')]);
+            expect(chat.state.blocked).toBe(true);
+
+            await expect(chat.retry()).resolves.toBe('replied');
+
+            expect(entries(sentForm(1))).toEqual(entries(sentForm(0)));
+            expect(sentForm(1).has('messages[0][attachment_names][]')).toBe(false);
+        });
+
+        it('hands the message back on a 422 for attachments and removes the user turn', async () => {
+            const file = pdf('a.pdf');
+            post.mockRejectedValueOnce(new HttpError(422, null, null, { 'attachments.0': ['Too many pages'] }));
+
+            const outcome = await chat.send('check', [file]);
+
+            expect(outcome).toBe('returned');
+            expect(chat.state.messages).toEqual([]);
+            expect(chat.state.error).toBeNull();
+            expect(chat.takeReturned()).toMatchObject({
+                text: 'check',
+                files: [file],
+                error: { kind: 'validation', message: 'Too many pages' },
+            });
+            expect(chat.takeReturned()).toBeNull();
+        });
+
+        it('keeps the returned message in state until a consumer takes it', async () => {
+            const file = pdf('a.pdf');
+            post.mockRejectedValueOnce(new HttpError(413));
+
+            await chat.send('later', [file]);
+
+            expect(chat.returned.value).toMatchObject({ text: 'later', files: [file] });
+            expect(chat.takeReturned()?.text).toBe('later');
+            expect(chat.returned.value).toBeNull();
+        });
+
+        it('waits 120 s for a turn with files and 90 s for text only', async () => {
+            vi.useFakeTimers();
+            try {
+                const hang = (_url: string, _body: FormData, opts?: { signal?: AbortSignal }) =>
+                    new Promise<never>((_resolve, reject) => {
+                        opts!.signal!.addEventListener('abort', () => reject(opts!.signal!.reason));
+                    });
+                post.mockImplementationOnce(hang);
+
+                const sent = chat.send('see', [pdf('a.pdf')]);
+                await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+                expect(chat.state.sending).toBe(true);
+                await vi.advanceTimersByTimeAsync(FILES_REQUEST_TIMEOUT_MS - REQUEST_TIMEOUT_MS);
+                await sent;
+
+                expect(chat.state.error?.kind).toBe('outcome_unknown');
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('hands the message back on a 413 with the too_large kind', async () => {
+            post.mockRejectedValueOnce(new HttpError(413));
+
+            await expect(chat.send('x', [pdf('a.pdf')])).resolves.toBe('returned');
+
+            expect(chat.takeReturned()?.error.kind).toBe('too_large');
+        });
+
+        it('keeps the turn on a 422 that is not about the files', async () => {
+            post.mockRejectedValueOnce(new HttpError(422, null, null, { messages: ['Too long'] }));
+
+            await expect(chat.send('x', [pdf('a.pdf')])).resolves.toBe('failed');
+
+            expect(chat.state.messages).toHaveLength(1);
+            expect(chat.state.error?.kind).toBe('validation');
+        });
+
+        it('reset drops the held files', async () => {
+            const pending = deferred<App.Data.Ai.AssistantReplyData>();
+            post.mockReturnValueOnce(pending.promise);
+            const sent = chat.send('x', [pdf('a.pdf')]);
+
+            chat.reset();
+            pending.reject(new DOMException('aborted', 'AbortError'));
+            await sent;
+            await expect(chat.retry()).resolves.toBe('skipped');
+
+            post.mockResolvedValueOnce(reply());
+            await chat.send('plain');
+
+            expect(sentForm(1).has('attachments[]')).toBe(false);
+        });
+
+        it('skips an empty text without files', async () => {
+            await expect(chat.send('  ')).resolves.toBe('skipped');
+            expect(post).not.toHaveBeenCalled();
+        });
     });
 });

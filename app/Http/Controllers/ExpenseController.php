@@ -20,6 +20,7 @@ use App\Navigation\NavItem;
 use App\Services\ExpenseImportService;
 use App\Services\Expenses\EmployeeExpenseService;
 use App\Services\ExpenseService;
+use App\Support\MediaFiles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -183,7 +184,7 @@ final class ExpenseController extends Controller
             200,
             [
                 'Content-Type' => (string) $media->mime_type,
-                'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_INLINE, $media->file_name, 'receipt'),
+                'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_INLINE, MediaFiles::cleanName($media->name.'.'.$media->extension), 'receipt'),
                 'Cache-Control' => 'private, no-store',
                 'X-Content-Type-Options' => 'nosniff',
             ],

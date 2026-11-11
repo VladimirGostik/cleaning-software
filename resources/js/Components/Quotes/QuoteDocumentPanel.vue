@@ -12,7 +12,7 @@ const props = defineProps<{
 const { t } = useI18n();
 const { allows } = useAuthorization();
 
-const canEdit = computed(() => allows('edit quotes') && props.quote.status === 'draft');
+const canEdit = computed(() => allows('edit quotes') && props.quote.is_editable);
 </script>
 
 <template>

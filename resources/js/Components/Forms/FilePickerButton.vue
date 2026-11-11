@@ -9,6 +9,7 @@ defineProps<{
     multiple?: boolean;
     capture?: 'environment';
     disabled?: boolean;
+    iconOnly?: boolean;
 }>();
 
 const emit = defineEmits<{ selected: [files: File[]] }>();
@@ -28,9 +29,16 @@ function onChange(event: Event): void {
 </script>
 
 <template>
-    <button type="button" v-bind="$attrs" :disabled="disabled" @click="input?.click()">
+    <button
+        type="button"
+        v-bind="$attrs"
+        :disabled="disabled"
+        :aria-label="iconOnly ? label : undefined"
+        :title="iconOnly ? label : undefined"
+        @click="input?.click()"
+    >
         <slot />
-        {{ label }}
+        <template v-if="!iconOnly">{{ label }}</template>
     </button>
     <input
         ref="input"

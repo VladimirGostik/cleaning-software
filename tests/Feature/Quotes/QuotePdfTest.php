@@ -8,6 +8,7 @@ use App\Data\Quotes\QuoteItemData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\QuoteKindEnum;
+use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Tenant;
@@ -227,6 +228,20 @@ final class QuotePdfTest extends TestCase
         $this->assertStringContainsString('Popis služby Množstvo Cena za jednotku Celková cena', $text);
     }
 
+    public function test_one_off_only_quote_prints_spolu_instead_of_the_period(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false]);
+        $quote = $this->makeQuote($tenant, [
+            $this->item('Window cleaning', QuoteBillingPeriodEnum::OneOff, 1, 300),
+            $this->item('Carpets', QuoteBillingPeriodEnum::OneOff, 2, 50),
+        ]);
+
+        $text = $this->text($this->render($quote, $tenant));
+
+        $this->assertStringContainsString('Spolu 400,00 EUR', $text);
+        $this->assertStringNotContainsString('Jednorazovo', $text);
+    }
+
     public function test_vat_payer_with_four_periods_prints_each_group_and_no_vat_recap(): void
     {
         $tenant = Tenant::factory()->create(['is_vat_payer' => true]);
@@ -296,6 +311,21 @@ final class QuotePdfTest extends TestCase
 
         $this->assertStringContainsString('IČO: 35683073', $text);
         $this->assertStringContainsString('DIČ: 2020905865', $text);
+    }
+
+    public function test_note_is_printed_above_the_items_and_the_object_name_is_not_printed(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'name' => 'Rajčianska 32']);
+        $quote = $this->makeQuote($tenant, $this->mixedItems(), null, $client->id);
+        $quote->update(['cleaning_object_id' => $object->id, 'note' => 'Cleaning on weekends only']);
+
+        $text = $this->text($this->render($quote->load(['items', 'client', 'cleaningObject']), $tenant));
+
+        $this->assertStringNotContainsString('Rajčianska 32', $text);
+        $this->assertLessThan(strpos($text, 'Popis služby'), strpos($text, 'Cleaning on weekends only'));
     }
 
     public function test_default_quote_prints_the_system_logo(): void

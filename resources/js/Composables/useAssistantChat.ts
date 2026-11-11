@@ -1,13 +1,23 @@
-import { reactive, readonly, type DeepReadonly } from 'vue';
-import { postJson } from '@/utils/http';
+import { computed, reactive, readonly, shallowRef, type DeepReadonly } from 'vue';
+import { postForm } from '@/utils/http';
 import {
+    FILES_REQUEST_TIMEOUT_MS,
     REQUEST_TIMEOUT_MS,
+    buildAssistantFormData,
     buildPayloadMessages,
     describeAssistantError,
+    isAttachmentRejection,
     type AssistantError,
 } from '@/utils/assistant';
 
 export type PendingOutcome = 'done' | 'cancelled';
+export type SendOutcome = 'replied' | 'failed' | 'returned' | 'skipped';
+
+export interface ReturnedMessage {
+    text: string;
+    files: File[];
+    error: AssistantError;
+}
 
 export interface ChatMessage {
     id: string;
@@ -17,6 +27,8 @@ export interface ChatMessage {
     pending: App.Data.Ai.PendingActionData | null;
     pendingOutcome: PendingOutcome | null;
     securityNotice: string | null;
+    attachmentNames: string[];
+    attachmentNote: string | null;
 }
 
 export interface AssistantChatState {
@@ -44,8 +56,16 @@ const state = reactive<AssistantChatState>({
 let epoch = 0;
 let sequence = 0;
 let controller: AbortController | null = null;
+let heldFiles: File[] = [];
+const returned = shallowRef<ReturnedMessage | null>(null);
+const returnedMessage = computed(() => returned.value);
 
-function turn(role: App.Enums.AssistantRoleEnum, content: string, reply?: App.Data.Ai.AssistantReplyData): ChatMessage {
+function turn(
+    role: App.Enums.AssistantRoleEnum,
+    content: string,
+    reply?: App.Data.Ai.AssistantReplyData,
+    attachmentNames: string[] = [],
+): ChatMessage {
     return {
         id: `m${++sequence}`,
         role,
@@ -54,51 +74,101 @@ function turn(role: App.Enums.AssistantRoleEnum, content: string, reply?: App.Da
         pending: reply?.pending_action ?? null,
         pendingOutcome: null,
         securityNotice: reply?.security_notice ?? null,
+        attachmentNames,
+        attachmentNote: reply?.attachment_note ?? null,
     };
 }
 
-async function dispatch(companyId: string): Promise<void> {
+function history(files: readonly File[]) {
+    const messages = buildPayloadMessages(state.messages);
+    const last = messages.at(-1);
+    if (files.length > 0 && last !== undefined) delete last.attachment_names;
+
+    return messages;
+}
+
+function giveBack(content: string, files: File[], error: AssistantError): void {
+    state.messages.pop();
+    heldFiles = [];
+    returned.value = { text: content, files, error };
+}
+
+async function dispatch(companyId: string): Promise<SendOutcome> {
     const mine = epoch;
     const own = new AbortController();
     controller = own;
-    const timeout = setTimeout(() => own.abort(new DOMException('timeout', 'TimeoutError')), REQUEST_TIMEOUT_MS);
+    const files = heldFiles;
+    const timeout = setTimeout(
+        () => own.abort(new DOMException('timeout', 'TimeoutError')),
+        files.length > 0 ? FILES_REQUEST_TIMEOUT_MS : REQUEST_TIMEOUT_MS,
+    );
     state.sending = true;
     state.error = null;
+    let outcome: SendOutcome = 'failed';
 
     try {
-        const reply = await postJson<App.Data.Ai.AssistantReplyData>(
+        const reply = await postForm<App.Data.Ai.AssistantReplyData>(
             ENDPOINT,
-            { company_id: companyId, messages: buildPayloadMessages(state.messages) },
+            buildAssistantFormData(companyId, history(files), files),
             { signal: own.signal },
         );
-        if (mine !== epoch) return;
+        if (mine !== epoch) return 'failed';
+        heldFiles = [];
         state.messages.push(turn('assistant', reply.reply, reply));
+        outcome = 'replied';
     } catch (e) {
-        if (mine !== epoch) return;
-        state.error = describeAssistantError(e);
-        state.blocked = state.error.kind === 'outcome_unknown';
+        if (mine !== epoch) return 'failed';
+        const error = describeAssistantError(e);
+        const last = state.messages.at(-1);
+        if (isAttachmentRejection(e) && last?.role === 'user') {
+            giveBack(last.content, files, error);
+            outcome = 'returned';
+        } else {
+            state.error = error;
+            state.blocked = error.kind === 'outcome_unknown';
+        }
     } finally {
         clearTimeout(timeout);
         if (mine === epoch) state.sending = false;
     }
+
+    return outcome;
 }
 
-function send(text: string): Promise<void> {
+function send(text: string, files: File[] = []): Promise<SendOutcome> {
     const content = text.trim();
-    if (content === '' || state.companyId === null || state.sending || state.blocked) return Promise.resolve();
+    if ((content === '' && files.length === 0) || state.companyId === null || state.sending || state.blocked) {
+        return Promise.resolve('skipped');
+    }
 
-    state.messages.push(turn('user', content));
+    returned.value = null;
+    heldFiles = files;
+    state.messages.push(
+        turn(
+            'user',
+            content,
+            undefined,
+            files.map((file) => file.name),
+        ),
+    );
 
     return dispatch(state.companyId);
 }
 
-function retry(): Promise<void> {
+function retry(): Promise<SendOutcome> {
     const last = state.messages.at(-1);
-    if (state.sending || state.companyId === null || last?.role !== 'user') return Promise.resolve();
+    if (state.sending || state.companyId === null || last?.role !== 'user') return Promise.resolve('skipped');
 
     state.blocked = false;
 
     return dispatch(state.companyId);
+}
+
+function takeReturned(): ReturnedMessage | null {
+    const message = returned.value;
+    returned.value = null;
+
+    return message;
 }
 
 function acknowledge(): void {
@@ -110,21 +180,20 @@ function reset(): void {
     epoch += 1;
     controller?.abort();
     controller = null;
+    heldFiles = [];
+    returned.value = null;
     state.messages = [];
     state.sending = false;
     state.error = null;
     state.blocked = false;
 }
 
-function bind(userId: string, companyId: string): boolean {
-    if (state.userId === userId && state.companyId === companyId) return false;
+/** The assistant works across all of the user's companies: a company switch keeps the conversation, a new user starts over. */
+function bind(userId: string, companyId: string): void {
+    if (state.userId !== userId) reset();
 
-    const wasInFlight = state.sending;
-    reset();
     state.userId = userId;
     state.companyId = companyId;
-
-    return wasInFlight;
 }
 
 function closeOnSmallScreen(): void {
@@ -149,6 +218,8 @@ export function useAssistantChat() {
         state: readonly(state) as DeepReadonly<AssistantChatState>,
         send,
         retry,
+        returned: returnedMessage,
+        takeReturned,
         acknowledge,
         reset,
         bind,

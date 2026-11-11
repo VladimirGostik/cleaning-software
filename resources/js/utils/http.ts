@@ -60,17 +60,17 @@ export function getXsrfToken(): string {
     return entry === undefined ? '' : decodeURIComponent(entry.slice('XSRF-TOKEN='.length));
 }
 
-async function send(url: string, body: unknown, accept: string, signal?: AbortSignal): Promise<Response> {
+async function request(
+    url: string,
+    body: FormData | string,
+    headers: Record<string, string>,
+    signal?: AbortSignal,
+): Promise<Response> {
     const response = await fetch(url, {
         method: 'POST',
         credentials: 'same-origin',
-        headers: {
-            'X-XSRF-TOKEN': getXsrfToken(),
-            'X-Requested-With': 'XMLHttpRequest',
-            Accept: accept,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
+        headers: { 'X-XSRF-TOKEN': getXsrfToken(), 'X-Requested-With': 'XMLHttpRequest', ...headers },
+        body,
         signal,
     });
 
@@ -79,6 +79,10 @@ async function send(url: string, body: unknown, accept: string, signal?: AbortSi
     }
 
     return response;
+}
+
+function send(url: string, body: unknown, accept: string, signal?: AbortSignal): Promise<Response> {
+    return request(url, JSON.stringify(body), { Accept: accept, 'Content-Type': 'application/json' }, signal);
 }
 
 export async function getJson<T>(url: string, opts?: { signal?: AbortSignal }): Promise<T> {
@@ -115,6 +119,12 @@ export async function getBlob(url: string, opts?: { signal?: AbortSignal }): Pro
 
 export async function postJson<T>(url: string, body: unknown, opts?: { signal?: AbortSignal }): Promise<T> {
     const response = await send(url, body, 'application/json', opts?.signal);
+
+    return (await response.json()) as T;
+}
+
+export async function postForm<T>(url: string, body: FormData, opts?: { signal?: AbortSignal }): Promise<T> {
+    const response = await request(url, body, { Accept: 'application/json' }, opts?.signal);
 
     return (await response.json()) as T;
 }

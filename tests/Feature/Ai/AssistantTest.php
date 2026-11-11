@@ -145,7 +145,7 @@ final class AssistantTest extends TestCase
 
         $this->send(['messages' => [['role' => 'user', 'content' => 'a'], ['role' => 'assistant', 'content' => 'b'], ['role' => 'user', 'content' => 'c']]])
             ->assertOk()
-            ->assertExactJson(['reply' => 'Fake reply', 'actions' => [], 'pending_action' => null, 'security_notice' => null]);
+            ->assertExactJson(['reply' => 'Fake reply', 'actions' => [], 'pending_action' => null, 'security_notice' => null, 'attachment_note' => null]);
 
         $this->assertSame($this->alpha->id, $fake->requests[0]->company_id);
         $this->assertCount(3, $fake->requests[0]->messages);
@@ -413,8 +413,22 @@ final class AssistantTest extends TestCase
 
         $task = Task::unscopedForSystem()->sole();
         $this->assertSame($task->source->value === 'mcp' ? 'mcp' : $task->source->value, $task->source->value);
-        $response->assertJsonPath('actions.0.type', 'created')->assertJsonPath('actions.0.url', '/tasks/'.$task->id);
+        $response->assertJsonPath('actions.0.type', 'created')->assertJsonPath('actions.0.url', '/tasks/'.$task->id)->assertJsonPath('actions.0.company_id', $this->alpha->id);
         $this->assertStringNotContainsString('evil', (string) json_encode($response->json('actions')));
+    }
+
+    public function test_a_write_in_another_company_than_the_open_one_carries_that_company(): void
+    {
+        $this->realProvider([
+            $this->toolTurn([['name' => 'create_task', 'input' => ['company_id' => $this->beta->id, 'title' => 'Zavolať', 'priority' => 'high']]]),
+            $this->textTurn('Hotovo.'),
+        ]);
+
+        $response = $this->send()->assertOk();
+
+        $task = Task::unscopedForSystem()->sole();
+        $this->assertSame($this->beta->id, $task->tenant_id);
+        $response->assertJsonPath('actions.0.url', '/tasks/'.$task->id)->assertJsonPath('actions.0.company_id', $this->beta->id);
     }
 
     public function test_a_tool_call_for_confirm_action_cannot_execute_because_the_tool_is_not_registered(): void

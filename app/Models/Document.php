@@ -29,6 +29,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property DocumentTypeEnum $type
  * @property string $title
  * @property string|null $body
+ * @property string|null $draft_body body with tokens kept while a sent quote's text is frozen
  * @property bool $show_header
  * @property bool $show_footer
  * @property Carbon $created_at
@@ -37,7 +38,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property DocumentTemplate|null $template
  * @property Contract|Quote|TenantMembership|Model $documentable
  */
-#[Fillable(['tenant_id', 'documentable_type', 'documentable_id', 'document_template_id', 'type', 'title', 'body', 'show_header', 'show_footer'])]
+#[Fillable(['tenant_id', 'documentable_type', 'documentable_id', 'document_template_id', 'type', 'title', 'body', 'draft_body', 'show_header', 'show_footer'])]
 final class Document extends Model implements HasMedia
 {
     public const string ATTACHMENTS_COLLECTION = 'attachments';
@@ -51,6 +52,7 @@ final class Document extends Model implements HasMedia
         return [
             'type' => DocumentTypeEnum::class,
             'body' => 'encrypted',
+            'draft_body' => 'encrypted',
             'show_header' => 'boolean',
             'show_footer' => 'boolean',
         ];

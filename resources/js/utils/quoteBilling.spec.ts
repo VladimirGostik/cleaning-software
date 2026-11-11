@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     includedLines,
+    isOneOffOnly,
     periodTotalsFromData,
     quoteLineAmountLabel,
     quotePeriodTotals,
@@ -173,5 +174,14 @@ describe('includedLines', () => {
 
     it('handles null', () => {
         expect(includedLines(null)).toEqual([]);
+    });
+});
+
+describe('isOneOffOnly', () => {
+    it('is true only for a single one-off group', () => {
+        expect(isOneOffOnly([{ billing_period: 'one_off' }])).toBe(true);
+        expect(isOneOffOnly([{ billing_period: 'monthly' }])).toBe(false);
+        expect(isOneOffOnly([{ billing_period: 'one_off' }, { billing_period: 'monthly' }])).toBe(false);
+        expect(isOneOffOnly([])).toBe(false);
     });
 });

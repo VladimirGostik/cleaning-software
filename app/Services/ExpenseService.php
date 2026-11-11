@@ -41,6 +41,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -262,7 +263,7 @@ final readonly class ExpenseService
             try {
                 foreach ($expenses as $expense) {
                     $stored[] = $stored === []
-                        ? $expense->addMedia($file)->toMediaCollection(Expense::RECEIPT_COLLECTION)
+                        ? $expense->addMedia($file)->preservingOriginal()->usingFileName(Str::uuid()->toString().'.'.($file->guessExtension() ?? 'bin'))->toMediaCollection(Expense::RECEIPT_COLLECTION)
                         : $stored[0]->copy($expense, Expense::RECEIPT_COLLECTION);
                 }
             } catch (Throwable $exception) {

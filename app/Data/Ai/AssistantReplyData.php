@@ -18,5 +18,6 @@ final class AssistantReplyData extends Data
         public readonly array $actions,
         public readonly ?PendingActionData $pending_action,
         public readonly ?string $security_notice = null,
+        public readonly ?string $attachment_note = null,
     ) {}
 }

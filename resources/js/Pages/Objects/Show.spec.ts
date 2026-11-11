@@ -41,6 +41,7 @@ vi.mock('@/Components/Objects/ObjectBillingCard.vue', () => ({ default: { render
 vi.mock('@/Components/Objects/ObjectAccessCard.vue', () => ({ default: { render: () => null } }));
 vi.mock('@/Components/Objects/ObjectWorkBreakdownsCard.vue', () => ({ default: { render: () => null } }));
 vi.mock('@/Components/Contracts/RelatedContractsCard.vue', () => ({ default: { render: () => null } }));
+vi.mock('@/Components/Quotes/RelatedQuotesCard.vue', () => ({ default: { render: () => null } }));
 vi.mock('@/Components/Contacts/ContactsList.vue', () => ({ default: { render: () => null } }));
 
 function render(): HTMLElement {
@@ -60,6 +61,8 @@ function render(): HTMLElement {
                 workBreakdowns: [],
                 contracts: null,
                 canCreateContract: false,
+                quotes: null,
+                canCreateQuote: false,
             } as never),
     })
         .use(createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false }))

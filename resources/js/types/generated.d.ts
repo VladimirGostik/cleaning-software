@@ -234,20 +234,24 @@ export type AssistantActionData = {
 readonly type: App.Enums.AssistantActionTypeEnum,
 readonly label: string,
 readonly url: string | null,
+readonly company_id: string | null,
 };
 export type AssistantMessageData = {
 readonly role: App.Enums.AssistantRoleEnum,
 readonly content: string,
+readonly attachment_names: string[],
 };
 export type AssistantReplyData = {
 readonly reply: string,
 readonly actions: App.Data.Ai.AssistantActionData[],
 readonly pending_action: App.Data.Ai.PendingActionData | null,
 readonly security_notice: string | null,
+readonly attachment_note: string | null,
 };
 export type AssistantRequestData = {
 readonly company_id: string,
 readonly messages: App.Data.Ai.AssistantMessageData[],
+readonly attachments: File[],
 };
 export type PendingActionData = {
 readonly id: string,
@@ -1660,6 +1664,11 @@ readonly status: App.Enums.ContractStatusEnum,
 export type QuoteConvertToContractData = {
 readonly document_template_id: string | null,
 };
+export type QuoteCreatePrefillData = {
+readonly kind: App.Enums.QuoteKindEnum | null,
+readonly client_id: string | null,
+readonly cleaning_object_id: string | null,
+};
 export type QuoteDetailData = {
 readonly id: string,
 readonly client_id: string | null,
@@ -1667,6 +1676,7 @@ readonly client_name: string | null,
 readonly cleaning_object_id: string | null,
 readonly object_name: string | null,
 readonly status: App.Enums.QuoteStatusEnum,
+readonly is_editable: boolean,
 readonly kind: App.Enums.QuoteKindEnum,
 readonly number: string | null,
 readonly subject: string | null,

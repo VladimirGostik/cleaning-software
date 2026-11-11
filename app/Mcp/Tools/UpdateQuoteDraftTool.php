@@ -6,12 +6,14 @@ namespace App\Mcp\Tools;
 
 use App\Data\Quotes\QuotePeriodTotalsData;
 use App\Data\Quotes\QuoteUpsertData;
+use App\Enums\QuoteStatusEnum;
 use App\Models\Quote;
 use App\Models\User;
 use App\Services\QuoteService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -35,6 +37,11 @@ final class UpdateQuoteDraftTool extends TenantTool
         $quote = Quote::query()->findOrFail($this->id($request, 'quote_id'));
 
         Gate::forUser($user)->authorize('update', $quote);
+
+        // The web editor may reopen a sent quote; this tool sends no text document, so it stays draft-only.
+        if ($quote->status !== QuoteStatusEnum::Draft) {
+            throw ValidationException::withMessages(['status' => [__('app.quote_not_editable')]]);
+        }
 
         $payload = [...$this->quoteFields($request, $quote), 'kind' => $quote->kind->value, 'number' => $quote->number];
 

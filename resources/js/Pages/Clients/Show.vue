@@ -11,6 +11,7 @@ import ClientDetailCard from '@/Components/Clients/ClientDetailCard.vue';
 import ContactsList from '@/Components/Contacts/ContactsList.vue';
 import ClientObjectsTable from '@/Components/Clients/ClientObjectsTable.vue';
 import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
+import RelatedQuotesCard from '@/Components/Quotes/RelatedQuotesCard.vue';
 import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -25,6 +26,8 @@ const props = defineProps<{
     objects: App.Data.Objects.ObjectListItemData[];
     contracts: App.Data.Contracts.ContractListItemData[] | null;
     canCreateContract: boolean;
+    quotes: App.Data.Quotes.QuoteListItemData[] | null;
+    canCreateQuote: boolean;
 }>();
 
 const breadcrumbs: Breadcrumb[] = [
@@ -90,6 +93,8 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 :can-create="canCreateContract"
                 :create-href="`/contracts/create?contractable_type=client&contractable_id=${client.id}&category=service_agreement`"
             />
+
+            <RelatedQuotesCard :quotes="quotes" :can-create="canCreateQuote" :create-query="`client_id=${client.id}`" />
 
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body">

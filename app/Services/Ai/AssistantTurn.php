@@ -9,6 +9,7 @@ use App\Enums\ActionChannelEnum;
 use App\Enums\AssistantActionTypeEnum;
 use App\Enums\TaskRunOutcomeEnum;
 use App\Exceptions\AssistantTimeBudgetExceeded;
+use App\Services\Ai\Guard\PromptGuard;
 use Illuminate\Support\Str;
 
 /**
@@ -30,6 +31,8 @@ final class AssistantTurn
         'update_invoice_draft' => [AssistantActionTypeEnum::Updated, 'invoice', '/invoices/'],
     ];
 
+    private const array FILE_TURN_WRITES = ['create_expense', 'create_task', 'create_quote_draft', 'create_invoice_draft', 'prepare_action'];
+
     public readonly string $nonce;
 
     private float $deadline;
@@ -44,6 +47,8 @@ final class AssistantTurn
 
     private int $refusedWrites = 0;
 
+    private int $fileWriteAttempts = 0;
+
     private ?TaskRunOutcomeEnum $outcome = null;
 
     private ?string $outcomeMessage = null;
@@ -57,11 +62,15 @@ final class AssistantTurn
     /** @var array<string, AssistantActionData> */
     private array $writes = [];
 
+    /** @var array<string, array{kind: string, id: string, company_id: string, label: string, numbers: list<int>}> */
+    private array $createdRecords = [];
+
     public function __construct(
         ?float $budgetSeconds = null,
         public readonly ActionChannelEnum $channel = ActionChannelEnum::Assistant,
         public readonly ?string $pinnedCompanyId = null,
         public readonly ?string $taskRunId = null,
+        public readonly int $fileCount = 0,
     ) {
         $this->nonce = bin2hex(random_bytes(8));
         $configured = config('ai.assistant.turn_seconds', 20);
@@ -86,6 +95,16 @@ final class AssistantTurn
             $this->blockedTools[] = $tool;
 
             return $this->refuseWrite(__('app.assistant_guard_blocked'));
+        }
+
+        if ($this->fileCount > 0) {
+            if (! in_array($tool, self::FILE_TURN_WRITES, true)) {
+                return $this->refuseWrite(__('app.assistant_file_write_blocked'));
+            }
+
+            if (++$this->fileWriteAttempts > config()->integer('ai.assistant.attachments.max_writes')) {
+                return $this->refuseWrite(__('app.assistant_guard_limit'));
+            }
         }
 
         if ($tool === 'prepare_action') {
@@ -180,7 +199,8 @@ final class AssistantTurn
         return $this->writes !== [] || $this->pendingActionIds !== [];
     }
 
-    public function observe(string $tool, string $result): void
+    /** @param  list<int>  $fileNumbers */
+    public function observe(string $tool, string $result, ?string $companyId = null, array $fileNumbers = []): void
     {
         $data = json_decode($result, true);
 
@@ -203,8 +223,26 @@ final class AssistantTurn
         if (isset(self::WRITES[$tool]) && is_string($id) && Str::isUuid($id)) {
             [$type, $noun, $path] = self::WRITES[$tool];
 
-            $this->writes[$path.$id] = new AssistantActionData($type, __('app.assistant_noun_'.$noun), $path.$id);
+            $this->writes[$path.$id] = new AssistantActionData($type, __('app.assistant_noun_'.$noun), $path.$id, $companyId);
+
+            if ($companyId !== null && in_array($tool, ['create_expense', 'create_task'], true)) {
+                $label = $data['title'] ?? $data['supplier_name'] ?? $data['description'] ?? null;
+
+                $this->createdRecords[$path.$id] = [
+                    'kind' => $noun,
+                    'id' => $id,
+                    'company_id' => $companyId,
+                    'label' => Str::limit(PromptGuard::stripInvisible(is_string($label) ? $label : ''), 60),
+                    'numbers' => $fileNumbers,
+                ];
+            }
         }
+    }
+
+    /** @return list<array{kind: string, id: string, company_id: string, label: string, numbers: list<int>}> */
+    public function createdRecords(): array
+    {
+        return array_values($this->createdRecords);
     }
 
     /** @return list<string> */

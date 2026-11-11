@@ -29,6 +29,11 @@ export function isRecurringPeriod(period: Period): boolean {
     return period !== 'one_off';
 }
 
+/** One-off items only: nothing to split by period, the total reads "Spolu" (same rule as QuoteDisplay::isOneOffOnly). */
+export function isOneOffOnly(groups: readonly Pick<QuotePeriodTotals, 'billing_period'>[]): boolean {
+    return groups.length === 1 && groups[0].billing_period === 'one_off';
+}
+
 export function quotePeriodTotals(items: readonly QuoteBillingItem[], isVatPayer: boolean): QuotePeriodTotals[] {
     return QUOTE_BILLING_PERIODS.flatMap((period) => {
         const lines = items

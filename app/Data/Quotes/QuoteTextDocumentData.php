@@ -34,7 +34,7 @@ final class QuoteTextDocumentData extends Data
         public readonly array $footer,
     ) {}
 
-    /** $raw = body with tokens for the editor; otherwise the body as it prints right now. */
+    /** $raw = body with tokens for the editor (a sent quote gives back the text kept at send); otherwise the body as it prints right now. */
     public static function fromQuote(Quote $quote, QuoteTextService $text, bool $raw = false): ?self
     {
         $quote->loadMissing('document.template');
@@ -45,13 +45,14 @@ final class QuoteTextDocumentData extends Data
         }
 
         $tenant = $text->tenant($quote);
-        $frozen = $text->isFrozen($quote);
+        $editing = $raw && $quote->isEditable();
+        $frozen = ! $editing && $text->isFrozen($quote);
 
         return new self(
             id: $document->id,
             document_template_id: $document->document_template_id,
             document_template_name: $document->template?->name,
-            body: $raw && ! $frozen ? $document->body : (string) $text->resolvedBody($quote),
+            body: $editing ? ($document->draft_body ?? $document->body) : (string) $text->resolvedBody($quote),
             show_header: $document->show_header,
             show_footer: $document->show_footer,
             is_frozen: $frozen,

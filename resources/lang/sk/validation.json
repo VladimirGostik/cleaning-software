@@ -381,5 +381,12 @@
     "attributes.save_for_future": "uložiť pre budúce faktúry",
     "attributes.exclude_references.*": "referencia",
     "attributes.expense_ids": "výdavky",
-    "attributes.expense_ids.*": "výdavok"
+    "attributes.expense_ids.*": "výdavok",
+    "attributes.attachments": "súbory",
+    "attributes.attachments.*": "súbor",
+    "attributes.messages.*.attachment_names": "názvy príloh",
+    "attributes.messages.*.attachment_names.*": "názov prílohy",
+    "attributes.role": "rola",
+    "attributes.content": "obsah správy",
+    "attributes.attachment_names": "názvy príloh"
 }

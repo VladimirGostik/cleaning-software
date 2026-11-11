@@ -82,7 +82,7 @@ watch(
 watch(
     [() => auth.value.user?.id, () => tenant.value.active?.id],
     ([userId, companyId]) => {
-        if (userId && companyId && assistant.bind(userId, companyId)) addToast(t('assistant_discarded'), 'info');
+        if (userId && companyId) assistant.bind(userId, companyId);
     },
     { immediate: true },
 );
@@ -286,7 +286,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
     <!-- Toast container -->
     <div
         class="toast toast-bottom toast-end z-50"
-        :class="{ 'mb-20': canUseAssistant, 'sm:me-[27rem]': canUseAssistant && assistant.state.open }"
+        :class="{ 'mb-20': canUseAssistant, 'sm:me-[37.5rem]': canUseAssistant && assistant.state.open }"
     >
         <div v-for="toast in toasts" :key="toast.id" class="alert" :class="toastAlertClass(toast.type)">
             <span>{{ toast.message }}</span>

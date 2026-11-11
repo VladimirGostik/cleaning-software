@@ -15,5 +15,7 @@ final class AssistantActionData extends Data
         public readonly AssistantActionTypeEnum $type,
         public readonly string $label,
         public readonly ?string $url,
+        /** Company the record lives in; the client switches to it before opening `url`. */
+        public readonly ?string $company_id = null,
     ) {}
 }

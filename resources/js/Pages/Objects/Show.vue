@@ -13,6 +13,7 @@ import ObjectBillingCard from '@/Components/Objects/ObjectBillingCard.vue';
 import ObjectAccessCard from '@/Components/Objects/ObjectAccessCard.vue';
 import ObjectWorkBreakdownsCard from '@/Components/Objects/ObjectWorkBreakdownsCard.vue';
 import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
+import RelatedQuotesCard from '@/Components/Quotes/RelatedQuotesCard.vue';
 import ContactsList from '@/Components/Contacts/ContactsList.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -28,6 +29,8 @@ const props = defineProps<{
     workBreakdowns: App.Data.Schedule.WorkBreakdownDetailData[];
     contracts: App.Data.Contracts.ContractListItemData[] | null;
     canCreateContract: boolean;
+    quotes: App.Data.Quotes.QuoteListItemData[] | null;
+    canCreateQuote: boolean;
 }>();
 
 const breadcrumbs: Breadcrumb[] = [
@@ -121,6 +124,12 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 :contracts="contracts"
                 :can-create="canCreateContract"
                 :create-href="`/contracts/create?contractable_type=cleaning_object&contractable_id=${object.id}&category=service_agreement`"
+            />
+
+            <RelatedQuotesCard
+                :quotes="quotes"
+                :can-create="canCreateQuote"
+                :create-query="`cleaning_object_id=${object.id}`"
             />
 
             <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />

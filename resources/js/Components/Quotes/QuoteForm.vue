@@ -9,6 +9,7 @@ import TextInput from '@/Components/Forms/TextInput.vue';
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import DateInput from '@/Components/Forms/DateInput.vue';
 import TextareaInput from '@/Components/Forms/TextareaInput.vue';
+import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
 import { callValidate } from '@/Components/Forms/useFieldError';
 
@@ -32,7 +33,7 @@ import {
     TASK_FREQUENCIES,
     taskFrequencyKey,
 } from '@/utils/enums';
-import { quotePeriodTotals } from '@/utils/quoteBilling';
+import { isRecurringPeriod, quotePeriodTotals } from '@/utils/quoteBilling';
 import { useDependentValidation } from '@/Composables/useDependentValidation';
 import { useQuoteTextDocument } from '@/Composables/useQuoteTextDocument';
 import { useAuthorization } from '@/Composables/useAuthorization';
@@ -74,6 +75,7 @@ interface QuoteFormData {
 const props = defineProps<{
     context: App.Data.Quotes.QuoteFormContextData;
     quote?: App.Data.Quotes.QuoteDetailData | null;
+    prefill?: App.Data.Quotes.QuoteCreatePrefillData | null;
 }>();
 
 const { t } = useI18n();
@@ -99,10 +101,12 @@ function blankItem(): QuoteItemRow {
     };
 }
 
-function initialMode(quote: App.Data.Quotes.QuoteDetailData | null | undefined): QuoteSubjectMode {
-    if (!quote) return 'client';
-    if (quote.cleaning_object_id) return 'object';
-    if (quote.client_id) return 'client';
+function initialMode(
+    source: Pick<App.Data.Quotes.QuoteDetailData, 'client_id' | 'cleaning_object_id'> | null | undefined,
+    isNew: boolean,
+): QuoteSubjectMode {
+    if (source?.cleaning_object_id) return 'object';
+    if (source?.client_id || isNew) return 'client';
     return 'manual';
 }
 
@@ -137,11 +141,12 @@ function initialData(): QuoteFormData {
     }
 
     const today = new Date();
+    const kind = props.prefill?.kind ?? 'itemized';
 
     return {
-        kind: 'itemized',
-        client_id: null,
-        cleaning_object_id: null,
+        kind,
+        client_id: props.prefill?.client_id ?? null,
+        cleaning_object_id: props.prefill?.cleaning_object_id ?? null,
         subject: null,
         number: null,
         issue_date: toDateInputValue(today),
@@ -149,7 +154,7 @@ function initialData(): QuoteFormData {
         currency: props.context.default_currency,
         note: null,
         included_text: props.context.default_included_text,
-        items: [blankItem()],
+        items: kind === 'document' ? [] : [blankItem()],
         customer_name: null,
         customer_email: null,
         customer_street: null,
@@ -207,7 +212,7 @@ form.transform((data: QuoteFormData) => {
 });
 
 const ui = reactive({
-    subjectMode: initialMode(props.quote),
+    subjectMode: initialMode(props.quote ?? props.prefill, !props.quote),
 });
 
 const textEditorOpen = ref(false);
@@ -235,6 +240,14 @@ const textDocument = useQuoteTextDocument({ form, templates: () => templateOptio
 const settingsUrl = computed(() => (allows('manage billing settings') ? '/settings/invoicing' : null));
 
 const periodTotals = computed(() => quotePeriodTotals(form.items, props.context.is_vat_payer));
+
+const hasRecurringPayments = ref(form.items.some((item) => isRecurringPeriod(item.billing_period)));
+
+function setRecurringPayments(enabled: boolean): void {
+    hasRecurringPayments.value = enabled;
+    if (enabled) return;
+    form.items = form.items.map((item) => ({ ...item, billing_period: 'one_off' }));
+}
 
 const isDocument = computed(() => form.kind === 'document');
 const currencyOptions = computed<SelectOption[]>(() => enumOptions(CURRENCIES, currencyKey, t));
@@ -336,6 +349,14 @@ function submit(): void {
                 <div v-if="!isDocument" class="card bg-base-100 shadow-sm">
                     <div class="card-body">
                         <h2 class="card-title text-base">{{ t('quote_section_items') }}</h2>
+                        <div>
+                            <ToggleInput
+                                :model-value="hasRecurringPayments"
+                                :label="t('quote_recurring_payments')"
+                                @update:model-value="setRecurringPayments"
+                            />
+                            <p class="text-xs text-base-content/60">{{ t('quote_recurring_payments_hint') }}</p>
+                        </div>
                         <InvoiceItemsEditor
                             field="items"
                             :is-vat-payer="context.is_vat_payer"
@@ -349,6 +370,7 @@ function submit(): void {
                                 <div class="space-y-2">
                                     <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
                                         <SelectInput
+                                            v-if="hasRecurringPayments"
                                             :model-value="row.billing_period as string"
                                             :label="t('quote_item_billing_period')"
                                             :options="periodOptions"

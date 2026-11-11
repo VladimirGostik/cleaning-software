@@ -381,5 +381,12 @@
     "attributes.save_for_future": "save for future invoices",
     "attributes.exclude_references.*": "reference",
     "attributes.expense_ids": "expenses",
-    "attributes.expense_ids.*": "expense"
+    "attributes.expense_ids.*": "expense",
+    "attributes.attachments": "files",
+    "attributes.attachments.*": "file",
+    "attributes.messages.*.attachment_names": "attachment names",
+    "attributes.messages.*.attachment_names.*": "attachment name",
+    "attributes.role": "role",
+    "attributes.content": "message content",
+    "attributes.attachment_names": "attachment names"
 }

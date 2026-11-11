@@ -37,6 +37,24 @@ return [
         'max_messages' => 20,
         'max_message_chars' => 4000,
         'max_total_chars' => 12000,
+
+        'attachments' => [
+            'types' => [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                'application/pdf' => 'pdf',
+            ],
+            'max_files' => 5,
+            'image_max_kb' => 5120,
+            'pdf_max_kb' => 10240,
+            'total_max_kb' => 12288,
+            'pdf_max_pages' => 10,
+            'total_max_pages' => 20,
+            'max_writes' => 5,
+            'max_name_chars' => 255,
+            'page_count_timeout_seconds' => 10,
+        ],
     ],
 
     'guard' => [

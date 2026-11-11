@@ -381,5 +381,12 @@
     "attributes.save_for_future": "зберегти для майбутніх рахунків",
     "attributes.exclude_references.*": "референс",
     "attributes.expense_ids": "витрати",
-    "attributes.expense_ids.*": "витрата"
+    "attributes.expense_ids.*": "витрата",
+    "attributes.attachments": "файли",
+    "attributes.attachments.*": "файл",
+    "attributes.messages.*.attachment_names": "назви вкладень",
+    "attributes.messages.*.attachment_names.*": "назва вкладення",
+    "attributes.role": "роль",
+    "attributes.content": "вміст повідомлення",
+    "attributes.attachment_names": "назви вкладень"
 }

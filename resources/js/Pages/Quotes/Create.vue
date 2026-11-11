@@ -7,6 +7,7 @@ import type { Breadcrumb } from '@/types';
 
 defineProps<{
     context: App.Data.Quotes.QuoteFormContextData;
+    prefill: App.Data.Quotes.QuoteCreatePrefillData;
 }>();
 
 const { t } = useI18n();
@@ -21,5 +22,5 @@ const breadcrumbs: Breadcrumb[] = [
 <template>
     <Header :title="t('quote_add')" :breadcrumbs="breadcrumbs" />
 
-    <QuoteForm :context="context" />
+    <QuoteForm :context="context" :prefill="prefill" />
 </template>

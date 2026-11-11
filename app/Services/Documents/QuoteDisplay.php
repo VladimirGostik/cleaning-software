@@ -101,8 +101,25 @@ final readonly class QuoteDisplay
         return null;
     }
 
+    /** A quote with one-off items only has nothing to split by period, so its total is just "Spolu". */
+    public function isOneOffOnly(Quote $quote): bool
+    {
+        $groups = $this->groups($quote);
+
+        return count($groups) === 1 && $groups[0]['period'] === QuoteBillingPeriodEnum::OneOff;
+    }
+
+    public function groupLabel(Quote $quote, QuoteBillingPeriodEnum $period): string
+    {
+        return $this->isOneOffOnly($quote) ? __('app.quote_total') : $period->label();
+    }
+
     public function totalsLine(Quote $quote): string
     {
+        if ($this->isOneOffOnly($quote)) {
+            return $this->money($quote, $this->groups($quote)[0]['total']);
+        }
+
         return implode(' + ', array_map(
             fn (array $group): string => $this->money($quote, $group['total']).' '.Str::lower($group['period']->label()),
             $this->groups($quote),
@@ -116,13 +133,14 @@ final readonly class QuoteDisplay
 
         foreach ($this->groups($quote) as $group) {
             $suffix = $this->groupSuffix($group['period']);
+            $label = $this->groupLabel($quote, $group['period']);
 
             if ($quote->is_vat_payer) {
-                $rows[] = ['label' => $group['period']->label().' · '.__('app.document_quote_subtotal'), 'value' => $this->money($quote, $group['subtotal']), 'bold' => false];
-                $rows[] = ['label' => $group['period']->label().' · '.__('app.document_quote_vat'), 'value' => $this->money($quote, $group['vat_amount']), 'bold' => false];
+                $rows[] = ['label' => $label.' · '.__('app.document_quote_subtotal'), 'value' => $this->money($quote, $group['subtotal']), 'bold' => false];
+                $rows[] = ['label' => $label.' · '.__('app.document_quote_vat'), 'value' => $this->money($quote, $group['vat_amount']), 'bold' => false];
             }
 
-            $rows[] = ['label' => $group['period']->label(), 'value' => $this->money($quote, $group['total']).$suffix, 'bold' => true];
+            $rows[] = ['label' => $label, 'value' => $this->money($quote, $group['total']).$suffix, 'bold' => true];
         }
 
         return $rows;

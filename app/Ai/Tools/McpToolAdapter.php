@@ -23,6 +23,8 @@ use Throwable;
 
 final readonly class McpToolAdapter implements Tool
 {
+    private const array FILE_TOOLS = ['create_expense', 'create_task'];
+
     public function __construct(private CleanMasterTool $tool, private AssistantTurn $turn, private PromptGuard $guard) {}
 
     public function name(): string
@@ -38,7 +40,48 @@ final readonly class McpToolAdapter implements Tool
     /** @return array<string, Type> */
     public function schema(JsonSchema $schema): array
     {
-        return array_filter($this->tool->schema($schema), static fn (mixed $property): bool => $property instanceof Type);
+        $properties = array_filter($this->tool->schema($schema), static fn (mixed $property): bool => $property instanceof Type);
+
+        if ($this->turn->fileCount > 0 && $this->takesFiles()) {
+            $properties['attachment_numbers'] = $schema->array()
+                ->items($schema->integer()->min(1)->max($this->turn->fileCount))
+                ->description($this->tool->name() === 'create_expense'
+                    ? 'Number of the attached file that is this expense\'s receipt (exactly one).'
+                    : 'Numbers of the attached files to save on this task.');
+        }
+
+        return $properties;
+    }
+
+    private function takesFiles(): bool
+    {
+        return in_array($this->tool->name(), self::FILE_TOOLS, true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return list<int>|string The file numbers, or the error to return to the model.
+     */
+    private function fileNumbers(array $arguments): array|string
+    {
+        $numbers = $arguments['attachment_numbers'] ?? [];
+
+        if ($this->turn->fileCount === 0 || ! $this->takesFiles() || $numbers === []) {
+            return [];
+        }
+
+        $max = $this->turn->fileCount;
+        $valid = is_array($numbers)
+            && array_is_list($numbers)
+            && array_all($numbers, static fn (mixed $number): bool => is_int($number) && $number >= 1 && $number <= $max)
+            && ($this->tool->name() !== 'create_expense' || count($numbers) === 1);
+
+        if (! $valid) {
+            return __('app.assistant_attachment_numbers_invalid', ['max' => $max]);
+        }
+
+        /** @var list<int> $numbers */
+        return count($numbers) === count(array_unique($numbers)) ? $numbers : __('app.assistant_attachment_numbers_invalid', ['max' => $this->turn->fileCount]);
     }
 
     public function handle(Request $request): string
@@ -51,18 +94,30 @@ final readonly class McpToolAdapter implements Tool
             return 'Error: '.$message;
         }
 
-        if (! $this->inPinnedCompany($request->all())) {
+        $arguments = $request->all();
+
+        if (! $this->inPinnedCompany($arguments)) {
             return 'Error: '.__('app.task_run_company_pinned');
         }
 
-        $refusal = $this->refusal($request->all());
+        $fileNumbers = $this->fileNumbers($arguments);
+
+        if (is_string($fileNumbers)) {
+            return 'Error: '.$fileNumbers;
+        }
+
+        if ($this->takesFiles()) {
+            unset($arguments['attachment_numbers']);
+        }
+
+        $refusal = $this->refusal($arguments);
 
         if ($refusal !== null) {
             return 'Error: '.$refusal;
         }
 
         try {
-            $response = $this->tool->invoke(new McpRequest($request->all()));
+            $response = $this->tool->invoke(new McpRequest($arguments));
         } catch (Throwable $exception) {
             Log::warning('assistant.tool_failed', ['tool' => $this->tool->name(), 'exception' => $exception::class]);
 
@@ -72,11 +127,12 @@ final readonly class McpToolAdapter implements Tool
         $text = (string) $response->content();
 
         if (! $response->isError()) {
-            $this->turn->observe($this->tool->name(), $text);
+            $companyId = $arguments['company_id'] ?? null;
+            $this->turn->observe($this->tool->name(), $text, is_string($companyId) ? $companyId : null, $fileNumbers);
             $this->linkPreparedActionsToRun();
         }
 
-        $notice = $this->screen($text, $request->all());
+        $notice = $this->screen($text, $arguments);
         $text = PromptGuard::stripInvisible($text);
         $max = config()->integer('ai.assistant.max_tool_output_chars', 20000);
         $text = mb_strlen($text) > $max ? mb_substr($text, 0, $max).' ...['.__('app.assistant_output_truncated').']' : $text;

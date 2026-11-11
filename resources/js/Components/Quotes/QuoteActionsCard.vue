@@ -50,7 +50,7 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
         <div class="card-body space-y-2">
             <h2 class="card-title text-base">{{ t('quote_section_actions') }}</h2>
 
-            <Can v-if="isDraft" permission="edit quotes">
+            <Can v-if="props.quote.is_editable" permission="edit quotes">
                 <Link :href="`/quotes/${props.quote.id}/edit`" class="btn btn-sm btn-neutral w-full justify-start">
                     <PencilSquareIcon class="size-5" />
                     {{ t('edit') }}

@@ -249,6 +249,14 @@ final class ActivityRevertTest extends TestCase
         $this->assertNull($issued->fresh()?->deleted_at);
     }
 
+    public function test_sent_quote_create_revert_is_blocked_although_a_sent_quote_is_editable(): void
+    {
+        $sent = Quote::factory()->sent()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->revert($this->row($sent, 'created'))->assertSessionHasErrors(['status' => __('app.audit_revert_reason_not_draft')]);
+        $this->assertNull($sent->fresh()?->deleted_at);
+    }
+
     public function test_deleted_draft_quote_is_restored_with_its_document(): void
     {
         $quote = Quote::factory()->document()->create(['tenant_id' => $this->tenant->id]);

@@ -12,11 +12,13 @@ use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
+use App\Models\Quote;
 use App\Models\User;
 use App\Models\WorkBreakdown;
 use App\Navigation\NavItem;
 use App\Services\ContractService;
 use App\Services\ObjectService;
+use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -28,6 +30,7 @@ final class ObjectController extends Controller
     public function __construct(
         private readonly ObjectService $objects,
         private readonly ContractService $contracts,
+        private readonly QuoteService $quotes,
     ) {}
 
     #[Authorize('viewAny', CleaningObject::class)]
@@ -70,6 +73,8 @@ final class ObjectController extends Controller
                 ->all(),
             'contracts' => $this->contracts->listFor($object, $actor),
             'canCreateContract' => $this->contracts->canCreateFor($object, $actor),
+            'quotes' => $this->quotes->listFor($object, $actor),
+            'canCreateQuote' => $actor->can('create', Quote::class),
         ]);
     }
 

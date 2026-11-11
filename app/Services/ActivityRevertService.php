@@ -485,7 +485,8 @@ final readonly class ActivityRevertService
     private function notDraft(Model $subject, string $kind): bool
     {
         return match (true) {
-            $kind === 'remove' && ($subject instanceof Invoice || $subject instanceof Quote || $subject instanceof Contract) => ! $subject->isEditable(),
+            $kind === 'remove' && $subject instanceof Quote => ! $subject->isDeletable(),
+            $kind === 'remove' && ($subject instanceof Invoice || $subject instanceof Contract) => ! $subject->isEditable(),
             $kind === 'update' && $subject instanceof Expense => ! $subject->isDraft(),
             default => false,
         };

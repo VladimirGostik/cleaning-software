@@ -94,13 +94,19 @@
             @if($customerStreet){{ $customerStreet }}<br>@endif
             @if($customerCity || $customerPostalCode){{ implode(' ', array_filter([$customerPostalCode, $customerCity])) }}<br>@endif
             @if($client?->ico){{ __('app.quote_pdf_ico') }}: {{ $client->ico }}<br>@endif
-            @if($client?->dic){{ __('app.quote_pdf_dic') }}: {{ $client->dic }}<br>@endif
-            @if($quote->cleaningObject){{ __('app.quote_pdf_object') }}: {{ $quote->cleaningObject->name }}@endif
+            @if($client?->dic){{ __('app.quote_pdf_dic') }}: {{ $client->dic }}@endif
         </td>
     </tr>
 </table>
 
 <div class="q-meta">{{ __('app.quote_pdf_issue_date') }}: <b>{{ format_date($quote->issue_date) }}</b> &nbsp;·&nbsp; {{ __('app.quote_pdf_valid_until_long') }}: <b>{{ format_date($quote->valid_until) }}</b></div>
+
+@if($quote->note)
+<div class="q-section q-keep">
+    <div class="q-label">{{ __('app.quote_pdf_note') }}</div>
+    <div style="white-space: pre-line;">{{ $quote->note }}</div>
+</div>
+@endif
 
 <div class="q-section">
     <div class="q-label">{{ __('app.quote_pdf_offer') }}</div>
@@ -144,7 +150,7 @@
                     @if($quote->is_vat_payer)
                     <tr class="sub"><td>{{ __('app.quote_pdf_excl_vat') }}</td><td class="v">{{ $display->money($quote, $group['subtotal']) }} &nbsp;+&nbsp; {{ __('app.document_quote_vat') }} {{ $display->money($quote, $group['vat_amount']) }}</td></tr>
                     @endif
-                    <tr class="grp{{ $loop->first ? '' : ' sep' }}"><td>{{ $group['period']->label() }}@if($quote->is_vat_payer) {{ __('app.quote_pdf_incl_vat') }}@endif</td><td class="v">{{ $display->money($quote, $group['total']) }}@if($group['period']->shortSuffix()) <span class="q-per" style="font-size:10pt">/ {{ $group['period']->shortSuffix() }}</span>@endif</td></tr>
+                    <tr class="grp{{ $loop->first ? '' : ' sep' }}"><td>{{ $display->groupLabel($quote, $group['period']) }}@if($quote->is_vat_payer) {{ __('app.quote_pdf_incl_vat') }}@endif</td><td class="v">{{ $display->money($quote, $group['total']) }}@if($group['period']->shortSuffix()) <span class="q-per" style="font-size:10pt">/ {{ $group['period']->shortSuffix() }}</span>@endif</td></tr>
                     @endforeach
                 </table>
                 @if(!$quote->is_vat_payer)
@@ -154,13 +160,6 @@
         </tr>
     </table>
 </div>
-
-@if($quote->note)
-<div class="q-section q-keep">
-    <div class="q-label">{{ __('app.quote_pdf_note') }}</div>
-    <div style="white-space: pre-line;">{{ $quote->note }}</div>
-</div>
-@endif
 
 <div class="q-closing">
     {{ $dated }}<br>

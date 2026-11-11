@@ -24,7 +24,7 @@ final class AssistantController extends Controller
 {
     public function __construct(private readonly AssistantService $assistant) {}
 
-    #[Endpoint('Send assistant message', 'The client sends the last 20 messages (the last one from the user). 403 when the token has no mobile access or no use assistant permission in company_id; 422 with errors.ai when the AI provider is unavailable. A prepared irreversible action comes back as pending_action and is confirmed through /pending-actions.')]
+    #[Endpoint('Send assistant message', 'The client sends the last 20 messages (the last one from the user). 403 when the token has no mobile access or no use assistant permission in company_id; 422 with errors.ai when the AI provider is unavailable. A prepared irreversible action comes back as pending_action and is confirmed through /pending-actions. Send multipart/form-data to attach up to 5 files (attachments[], JPEG/PNG/WebP up to 5 MB, PDF up to 10 MB and 10 pages, 12 MB and 20 PDF pages in total) to the last message; the files are saved onto the expenses and tasks created in that message and attachment_note says what happened. Earlier messages carry only messages[i][attachment_names][]. 422 on attachments, 413 above the PHP post size.')]
     #[ResponseFromSpatieData(AssistantReplyData::class, User::class)]
     public function store(AssistantRequestData $data, Request $request): JsonResponse
     {

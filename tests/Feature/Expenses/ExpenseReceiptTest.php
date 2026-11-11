@@ -138,6 +138,18 @@ final class ExpenseReceiptTest extends TestCase
         $this->assertDatabaseCount('expenses', 0);
     }
 
+    public function test_a_receipt_stored_under_a_generated_name_downloads_under_its_original_name(): void
+    {
+        $expense = Expense::factory()->forTenant($this->alpha)->createdBy($this->accountant)->create();
+        $this->actingAsTenantUser('Admin', $this->alpha, $this->accountant);
+        $expense->addMedia($this->pdf('faktura-maj.pdf'))->usingFileName('0198c7a2-0000-7000-8000-000000000001.pdf')->toMediaCollection(Expense::RECEIPT_COLLECTION);
+
+        $response = $this->webAs($this->accountant, $this->alpha)->get("/expenses/{$expense->id}/receipt");
+
+        $response->assertOk();
+        $this->assertStringContainsString('faktura-maj.pdf', (string) $response->headers->get('Content-Disposition'));
+    }
+
     public function test_receipt_is_streamed_inline_to_authorised_users_only(): void
     {
         $expense = Expense::factory()->forTenant($this->alpha)->createdBy($this->accountant)->create();

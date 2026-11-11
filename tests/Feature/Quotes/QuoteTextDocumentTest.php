@@ -112,6 +112,35 @@ final class QuoteTextDocumentTest extends TestCase
         $this->assertSame('<p>Pôvodný klient</p>', $quote->document?->body);
     }
 
+    public function test_editing_a_sent_quote_reopens_it_as_a_draft_with_the_token_text(): void
+    {
+        $this->actingAsTenantUser();
+        $client = Client::factory()->create(['name' => 'Pôvodný klient']);
+        $template = $this->template('<p>{{customer.name}}</p>');
+        $this->post(route('quotes.store'), $this->payload(['client_id' => $client->id, 'customer_name' => null, 'document_template_id' => $template->id]));
+        $quote = Quote::query()->firstOrFail();
+        $this->post(route('quotes.send', $quote))->assertSessionHasNoErrors();
+        $client->update(['name' => 'Premenovaný klient']);
+
+        $this->get(route('quotes.show', $quote))->assertInertia(fn (AssertableInertia $page) => $page->where('quote.is_editable', true));
+        $this->get(route('quotes.edit', $quote))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('quote.text_document.body', '<p>{{customer.name}}</p>')
+            ->where('quote.text_document.is_frozen', false));
+
+        $this->put(route('quotes.update', $quote), $this->payload([
+            'client_id' => $client->id,
+            'customer_name' => null,
+            'document_template_id' => $template->id,
+            'document_body' => '<p>{{customer.name}}</p>',
+        ]))->assertSessionHasNoErrors();
+
+        $quote = $quote->fresh() ?? $quote;
+        $this->assertSame(QuoteStatusEnum::Draft, $quote->status);
+        $this->assertNull($quote->sent_at);
+        $this->assertNull($quote->document?->draft_body);
+        $this->assertSame('<p>Premenovaný klient</p>', app(QuoteTextService::class)->resolvedBody($quote));
+    }
+
     public function test_send_is_refused_while_a_token_has_no_value(): void
     {
         $this->actingAsTenantUser();

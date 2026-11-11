@@ -336,7 +336,31 @@ final class QuoteServiceTest extends TestCase
         $this->assertSame('100.00', $updated->subtotal);
     }
 
-    public function test_update_fails_when_not_draft(): void
+    public function test_update_fails_for_accepted_quote(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $quote = Quote::factory()->create(['tenant_id' => $tenant->id, 'status' => QuoteStatusEnum::Accepted]);
+
+        $this->expectException(ValidationException::class);
+
+        app(QuoteService::class)->update($quote, $this->upsertData(), null, 'sess-1');
+    }
+
+    public function test_update_of_sent_quote_returns_it_to_draft(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $quote = Quote::factory()->sent()->create(['tenant_id' => $tenant->id]);
+
+        $updated = app(QuoteService::class)->update($quote, $this->upsertData(['subject' => 'Opravená ponuka']), null, 'sess-1');
+
+        $this->assertSame(QuoteStatusEnum::Draft, $updated->status);
+        $this->assertNull($updated->sent_at);
+        $this->assertSame('Opravená ponuka', $updated->subject);
+    }
+
+    public function test_delete_fails_for_sent_quote(): void
     {
         $tenant = Tenant::factory()->create();
         $this->bindTenant($tenant);
@@ -344,7 +368,7 @@ final class QuoteServiceTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        app(QuoteService::class)->update($quote, $this->upsertData(), null, 'sess-1');
+        app(QuoteService::class)->delete($quote);
     }
 
     // -------------------------------------------------------------------------

@@ -59,12 +59,23 @@ final class QuoteController extends Controller
     }
 
     #[Authorize('create', Quote::class)]
-    public function create(): InertiaResponse
+    public function create(Request $request): InertiaResponse
     {
         $tenant = Tenant::query()->with('interface')->findOrFail(current_tenant_id());
 
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $prefill = $this->quotes->createPrefill(
+            $request->string('kind')->toString() ?: null,
+            $request->string('client_id')->toString() ?: null,
+            $request->string('cleaning_object_id')->toString() ?: null,
+            $actor,
+        );
+
         return Inertia::render('Quotes/Create', [
-            'context' => $this->formContext($tenant),
+            'context' => $this->formContext($tenant, $prefill->cleaning_object_id),
+            'prefill' => $prefill,
         ]);
     }
 

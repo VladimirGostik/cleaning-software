@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, getBlob, getJson, getXsrfToken, postBlob, postJson } from './http';
+import { HttpError, getBlob, getJson, getXsrfToken, postBlob, postForm, postJson } from './http';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -46,6 +46,27 @@ describe('getJson', () => {
         fetchMock.mockResolvedValue(response(null, 404, {}));
 
         await expect(getJson('/x')).rejects.toMatchObject({ status: 404 });
+    });
+});
+
+describe('postForm', () => {
+    it('sends the FormData as is with the XSRF header and no Content-Type', async () => {
+        fetchMock.mockResolvedValue(response('{"ok":true}', 200, { 'Content-Type': 'application/json' }));
+        const body = new FormData();
+        body.append('a', '1');
+
+        await expect(postForm('/x', body)).resolves.toEqual({ ok: true });
+
+        const [, init] = fetchMock.mock.calls[0];
+        expect(init?.body).toBe(body);
+        expect(init?.headers).toMatchObject({ 'X-XSRF-TOKEN': 'abc==', Accept: 'application/json' });
+        expect(init?.headers).not.toHaveProperty('Content-Type');
+    });
+
+    it('maps a 413 to HttpError', async () => {
+        fetchMock.mockResolvedValue(response(null, 413, {}));
+
+        await expect(postForm('/x', new FormData())).rejects.toMatchObject({ status: 413 });
     });
 });
 

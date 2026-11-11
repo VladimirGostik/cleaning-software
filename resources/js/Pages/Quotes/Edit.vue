@@ -24,9 +24,14 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 <template>
     <Header :title="t('quote_edit')" :breadcrumbs="breadcrumbs" />
 
-    <div v-if="quote.status !== 'draft'" class="alert alert-warning">
+    <div v-if="!quote.is_editable" class="alert alert-warning">
         <span>{{ t('quote_not_editable') }}</span>
     </div>
 
-    <QuoteForm v-else :context="context" :quote="quote" />
+    <template v-else>
+        <div v-if="quote.status === 'sent'" class="alert alert-warning mb-4" role="status">
+            <span>{{ t('quote_edit_sent_warning') }}</span>
+        </div>
+        <QuoteForm :context="context" :quote="quote" />
+    </template>
 </template>

@@ -78,6 +78,7 @@ final readonly class TaskAttachmentService
 
                 /** @var Media $media */
                 $media = $stored = $task->addMedia($file)
+                    ->preservingOriginal()
                     ->usingName(MediaFiles::cleanName($file->getClientOriginalName()))
                     ->usingFileName(Str::uuid()->toString().'.'.$resolved['extension'])
                     ->withCustomProperties(['uploaded_by_user_id' => $actor->id, 'uploaded_by_name' => $actor->name])

@@ -8,6 +8,7 @@ use App\Data\Contracts\ContractUpsertData;
 use App\Data\Invoices\InvoiceItemData;
 use App\Data\Invoices\InvoiceUpsertData;
 use App\Data\Quotes\QuoteConvertToContractData;
+use App\Data\Quotes\QuoteCreatePrefillData;
 use App\Data\Quotes\QuoteListItemData;
 use App\Data\Quotes\QuoteUpsertData;
 use App\Data\RecurringInvoices\RecurringInvoiceItemData;
@@ -18,11 +19,14 @@ use App\Enums\ContractTermTypeEnum;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\InvoiceTypeEnum;
 use App\Enums\PaymentTypeEnum;
+use App\Enums\PermissionEnum;
 use App\Enums\QuoteBillingPeriodEnum;
 use App\Enums\QuoteKindEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Enums\RoundingModeEnum;
 use App\Events\QuoteSent;
+use App\Models\CleaningObject;
+use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Document;
 use App\Models\DocumentTemplate;
@@ -43,6 +47,7 @@ use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -59,6 +64,48 @@ final readonly class QuoteService
         private DocumentHtmlSanitizer $sanitizer,
         private DocumentTemplateCatalogue $catalogue,
     ) {}
+
+    /**
+     * Quotes on a client (its objects included) or on one object; null without `view quotes`.
+     *
+     * @return list<QuoteListItemData>|null
+     */
+    public function listFor(Client|CleaningObject $subject, User $actor): ?array
+    {
+        if (! $actor->can(PermissionEnum::ViewQuotes->value)) {
+            return null;
+        }
+
+        $column = $subject instanceof Client ? 'client_id' : 'cleaning_object_id';
+
+        return array_values(Quote::query()
+            ->with(['client:id,name', 'cleaningObject:id,name', 'document.media'])
+            ->where($column, $subject->id)
+            ->latest('issue_date')
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn (Quote $quote) => QuoteListItemData::fromModel($quote))
+            ->all());
+    }
+
+    /** Drops ids the actor cannot reach; an object brings its own client. */
+    public function createPrefill(?string $kind, ?string $clientId, ?string $objectId, User $actor): QuoteCreatePrefillData
+    {
+        $object = $objectId !== null && Str::isUuid($objectId)
+            ? CleaningObject::query()->visibleTo($actor)->find($objectId)
+            : null;
+
+        $client = $object === null && $clientId !== null && Str::isUuid($clientId)
+            ? Client::query()->find($clientId)
+            : null;
+
+        return new QuoteCreatePrefillData(
+            kind: $kind !== null ? QuoteKindEnum::tryFrom($kind) : null,
+            client_id: $object->client_id ?? $client?->id,
+            cleaning_object_id: $object?->id,
+        );
+    }
 
     /**
      * @return LengthAwarePaginator<int, QuoteListItemData>
@@ -129,7 +176,10 @@ final readonly class QuoteService
         return $this->db->transaction(function () use ($quote, $data, $actor, $sessionId): Quote {
             $tenant = Tenant::withoutGlobalScopes()->findOrFail($quote->tenant_id);
 
-            $quote->update($this->buildAttributes($data, $tenant));
+            $quote->update([
+                ...$this->buildAttributes($data, $tenant),
+                ...($quote->status === QuoteStatusEnum::Sent ? ['status' => QuoteStatusEnum::Draft, 'sent_at' => null] : []),
+            ]);
 
             if ($data->kind === QuoteKindEnum::Itemized) {
                 $this->items->replacePriced($quote->items(), $data->items, (bool) $quote->is_vat_payer);
@@ -158,7 +208,10 @@ final readonly class QuoteService
             $resolved = $this->text->resolvedBody($quote);
 
             if ($resolved !== null) {
-                $quote->document?->update(['body' => $this->sanitizer->sanitize($resolved)]);
+                $quote->document?->update([
+                    'draft_body' => $quote->document->body,
+                    'body' => $this->sanitizer->sanitize($resolved),
+                ]);
             }
 
             $quote->update(['status' => QuoteStatusEnum::Sent, 'sent_at' => now()]);
@@ -235,7 +288,7 @@ final readonly class QuoteService
 
     public function delete(Quote $quote): void
     {
-        if (! $quote->isEditable()) {
+        if (! $quote->isDeletable()) {
             throw ValidationException::withMessages(['status' => [__('app.quote_not_editable')]]);
         }
 
@@ -464,6 +517,7 @@ final readonly class QuoteService
 
         if ($body !== null) {
             $document->body = $body;
+            $document->draft_body = null;
         }
 
         $document->save();

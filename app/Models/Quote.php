@@ -173,7 +173,13 @@ final class Quote extends Model
         return $this->hasMany(Contract::class);
     }
 
+    /** A sent quote is editable too; saving it returns it to draft (QuoteService::update). */
     public function isEditable(): bool
+    {
+        return in_array($this->status, [QuoteStatusEnum::Draft, QuoteStatusEnum::Sent], true);
+    }
+
+    public function isDeletable(): bool
     {
         return $this->status === QuoteStatusEnum::Draft;
     }
