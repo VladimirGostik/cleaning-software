@@ -45,13 +45,13 @@ function submit() {
         :breadcrumbs="breadcrumbs"
     >
         <template #actions>
-            <Link href="/roles" class="btn btn-ghost btn-sm">{{ t('cancel') }}</Link>
+            <Link href="/roles" class="btn btn-ghost">{{ t('cancel') }}</Link>
         </template>
     </Header>
 
     <FormProvider :form="form">
         <form novalidate @submit.prevent="submit">
-            <div class="card bg-base-100 shadow-sm mb-6">
+            <div class="card bg-base-100 mb-4">
                 <div class="card-body">
                     <div v-if="isEditing && role?.is_system" class="alert alert-warning mb-4">
                         <span>{{ t('system_role_warning') }}</span>
@@ -67,9 +67,9 @@ function submit() {
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm mb-6">
+            <div class="card bg-base-100 mb-4">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('permissions') }}</h2>
+                    <h2 class="card-title">{{ t('permissions') }}</h2>
                     <PermissionManager
                         :groups="permissions"
                         :model-value="form.permissions"

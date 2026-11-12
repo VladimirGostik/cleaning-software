@@ -6,8 +6,8 @@ import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import { formatDatetime } from '@/utils/date';
 import { formatBytes } from '@/utils/bytes';
-import EyeIcon from '~icons/material-symbols/visibility-rounded';
-import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import ArrowTopRightOnSquareIcon from '~icons/material-symbols/open-in-new-outline-rounded';
 import type { Breadcrumb, Paginator } from '@/types';
 import type { FilterConfig, TableColumn } from '@/types/table';
 
@@ -65,7 +65,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('media_library')" :breadcrumbs="breadcrumbs" />
 
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -85,7 +85,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
                 <template #cell-mime_type="{ value }">
                     <span v-if="value" class="kg-chip kg-chip--neutral kg-chip--sm">{{ value }}</span>
-                    <span v-else class="text-base-content/40">—</span>
+                    <span v-else class="text-muted">—</span>
                 </template>
 
                 <template #cell-size="{ value }">
@@ -106,23 +106,24 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                         :href="(row as App.Data.MediaListItemData).model_url!"
                         class="link link-primary text-sm inline-flex items-center gap-1"
                     >
-                        <ArrowTopRightOnSquareIcon class="size-3" />
+                        <ArrowTopRightOnSquareIcon />
                         {{ t('open_owner') }}
                     </Link>
-                    <span v-else class="text-base-content/40">—</span>
+                    <span v-else class="text-muted">—</span>
                 </template>
 
                 <template #cell-created_at="{ value }">
-                    <span class="text-sm text-base-content/70">{{ formatDatetime(value as string | null) }}</span>
+                    <span class="text-sm text-muted">{{ formatDatetime(value as string | null) }}</span>
                 </template>
 
                 <template #buttons="{ row }">
                     <Link
                         :href="`/media/${(row as App.Data.MediaListItemData).id}`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('details')"
+                        :aria-label="t('details')"
                     >
-                        <EyeIcon class="size-5" />
+                        <EyeIcon />
                     </Link>
                 </template>
             </DataTable>

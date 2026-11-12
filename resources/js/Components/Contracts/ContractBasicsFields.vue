@@ -64,7 +64,7 @@ function updateEndDate(value: string | null): void {
 
         <div>
             <TextInput field="number" :label="t('contract_number')" maxlength="50" />
-            <p class="text-xs text-base-content/60">{{ t('contract_number_hint') }}</p>
+            <p class="text-xs text-muted">{{ t('contract_number_hint') }}</p>
         </div>
 
         <RadioGroup field="term_type" :label="t('contract_term_type')" :options="termTypeOptions" />

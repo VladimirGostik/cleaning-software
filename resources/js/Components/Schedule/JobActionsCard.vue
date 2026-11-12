@@ -32,16 +32,16 @@ const hasActions = computed(
 </script>
 
 <template>
-    <div v-if="hasActions" class="card bg-base-100 shadow-sm">
+    <div v-if="hasActions" class="card bg-base-100">
         <div class="card-body space-y-2">
-            <h2 class="card-title text-base">{{ t('schedule_section_actions') }}</h2>
+            <h2 class="card-title">{{ t('schedule_section_actions') }}</h2>
 
             <Link
                 v-if="props.job.can.update"
                 :href="`/jobs/${props.job.id}/edit`"
                 class="btn btn-sm btn-neutral w-full justify-start"
             >
-                <PencilSquareIcon class="size-5" />
+                <PencilSquareIcon />
                 {{ t('edit') }}
             </Link>
 
@@ -51,7 +51,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('start')"
             >
-                <PlayCircleIcon class="size-5" />
+                <PlayCircleIcon />
                 {{ t('schedule_action_start') }}
             </button>
 
@@ -61,7 +61,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('complete')"
             >
-                <CheckCircleIcon class="size-5" />
+                <CheckCircleIcon />
                 {{ t('schedule_action_complete') }}
             </button>
 
@@ -71,7 +71,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('unapprove')"
             >
-                <HandThumbDownIcon class="size-5" />
+                <HandThumbDownIcon />
                 {{ t('schedule_action_unapprove') }}
             </button>
 
@@ -81,7 +81,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('cancel')"
             >
-                <XCircleIcon class="size-5" />
+                <XCircleIcon />
                 {{ t('schedule_action_cancel') }}
             </button>
         </div>

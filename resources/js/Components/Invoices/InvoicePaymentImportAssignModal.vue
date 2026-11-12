@@ -54,7 +54,7 @@ function isExact(invoice: App.Data.Invoices.PaymentImportInvoiceData): boolean {
         @keydown.esc="emit('close')"
     >
         <div v-if="open && row" ref="box" class="modal-box max-w-2xl">
-            <h3 :id="titleId" class="text-lg font-bold">{{ t('invoice_payment_import_assign_title') }}</h3>
+            <h3 :id="titleId" class="text-lg font-medium">{{ t('invoice_payment_import_assign_title') }}</h3>
             <p class="mt-1 text-sm text-muted tabular-nums">
                 {{ formatMoney(row.amount, 'EUR', locale) }} · {{ row.payer_name ?? t('empty_dash') }}
                 <template v-if="row.variable_symbol"> · {{ row.variable_symbol }}</template>
@@ -78,7 +78,7 @@ function isExact(invoice: App.Data.Invoices.PaymentImportInvoiceData): boolean {
                 <li v-for="invoice in finder.results.value" :key="invoice.id">
                     <button
                         type="button"
-                        class="w-full rounded-box border border-base-300 p-2 text-left text-sm hover:bg-base-200"
+                        class="w-full rounded-tile bg-base-200 p-3 text-left text-sm hover:bg-neutral"
                         @click="emit('select', invoice)"
                     >
                         <span class="flex flex-wrap items-center justify-between gap-2">

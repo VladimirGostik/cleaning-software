@@ -13,24 +13,24 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-3 text-sm">
-            <h2 class="card-title text-base">{{ t('quote_section_links') }}</h2>
+            <h2 class="card-title">{{ t('quote_section_links') }}</h2>
 
             <p v-if="props.quote.client_id">
-                <span class="text-base-content/60">{{ t('quote_link_client') }}:</span>
+                <span class="text-muted">{{ t('quote_link_client') }}:</span>
                 <Link :href="`/clients/${props.quote.client_id}`" class="link link-hover ml-1">
                     {{ props.quote.client_name }}
                 </Link>
             </p>
 
             <p v-if="props.quote.object_name">
-                <span class="text-base-content/60">{{ t('quote_section_object') }}:</span>
+                <span class="text-muted">{{ t('quote_section_object') }}:</span>
                 <span class="ml-1">{{ props.quote.object_name }}</span>
             </p>
 
             <div>
-                <p class="text-base-content/60">{{ t('quote_link_invoices') }}</p>
+                <p class="text-muted">{{ t('quote_link_invoices') }}</p>
                 <ul v-if="props.quote.invoices.length > 0" class="mt-1 space-y-1">
                     <li v-for="invoice in props.quote.invoices" :key="invoice.id" class="flex items-center gap-2">
                         <Link :href="`/invoices/${invoice.id}`" class="link link-hover">
@@ -39,11 +39,11 @@ const { t } = useI18n();
                         <InvoiceStatusBadge :status="invoice.status" />
                     </li>
                 </ul>
-                <p v-else class="mt-1 text-base-content/50">{{ t('quote_link_no_invoices') }}</p>
+                <p v-else class="mt-1 text-muted">{{ t('quote_link_no_invoices') }}</p>
             </div>
 
             <div>
-                <p class="text-base-content/60">{{ t('quote_link_contracts') }}</p>
+                <p class="text-muted">{{ t('quote_link_contracts') }}</p>
                 <ul v-if="props.quote.contracts.length > 0" class="mt-1 space-y-1">
                     <li v-for="contract in props.quote.contracts" :key="contract.id" class="flex items-center gap-2">
                         <Link :href="`/contracts/${contract.id}`" class="link link-hover">
@@ -52,12 +52,10 @@ const { t } = useI18n();
                         <ContractStatusBadge :status="contract.status" />
                     </li>
                 </ul>
-                <p v-else class="mt-1 text-base-content/50">{{ t('quote_link_no_contracts') }}</p>
+                <p v-else class="mt-1 text-muted">{{ t('quote_link_no_contracts') }}</p>
             </div>
 
-            <div class="divider my-1" />
-
-            <ul class="space-y-1 text-base-content/60">
+            <ul class="space-y-1 text-muted">
                 <li>
                     {{ props.quote.sent_at ? t('quote_sent_at') : t('quote_not_sent') }}
                     <template v-if="props.quote.sent_at">: {{ formatDatetime(props.quote.sent_at) }}</template>

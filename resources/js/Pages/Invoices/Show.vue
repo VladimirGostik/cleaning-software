@@ -117,10 +117,10 @@ function onSettingsSaved(): void {
         </Link>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div class="space-y-6">
-            <div class="card bg-base-100 shadow-sm">
-                <div class="card-body space-y-6">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div class="space-y-4">
+            <div class="card bg-base-100">
+                <div class="card-body space-y-4">
                     <InvoicePartiesBlock :invoice="invoice" />
                     <InvoiceMetaGrid :invoice="invoice" />
 
@@ -148,14 +148,14 @@ function onSettingsSaved(): void {
 
                     <InvoicePaymentInfo :invoice="invoice" />
 
-                    <p v-if="invoice.note" class="whitespace-pre-wrap text-sm text-base-content/70">
+                    <p v-if="invoice.note" class="whitespace-pre-wrap text-sm text-muted">
                         {{ invoice.note }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
             <InvoiceActionsCard
                 :invoice="invoice"
                 :recipient-choosable="sendOptions !== null"

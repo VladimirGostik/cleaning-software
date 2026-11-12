@@ -11,8 +11,8 @@ const lines = computed(() => includedLines(props.text));
 
 <template>
     <div v-if="lines.length > 0">
-        <h3 class="mb-1 text-sm font-semibold">{{ t('quote_pdf_included') }}</h3>
-        <ul class="list-disc space-y-0.5 pl-5 text-sm text-base-content/80">
+        <h3 class="mb-1 text-sm font-medium">{{ t('quote_pdf_included') }}</h3>
+        <ul class="list-disc space-y-0.5 pl-5 text-sm text-muted">
             <li v-for="(line, index) in lines" :key="index">{{ line }}</li>
         </ul>
     </div>

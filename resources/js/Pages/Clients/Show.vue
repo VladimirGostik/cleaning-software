@@ -52,40 +52,25 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 <template>
     <Header :title="client.name" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button
-                v-if="allows('edit clients')"
-                type="button"
-                class="btn btn-neutral btn-sm"
-                @click="ui.editOpen = true"
-            >
-                <PencilSquareIcon class="size-5" />
+            <button v-if="allows('edit clients')" type="button" class="btn btn-neutral" @click="ui.editOpen = true">
+                <PencilSquareIcon />
                 {{ t('edit') }}
             </button>
 
-            <button
-                v-if="allows('create objects')"
-                type="button"
-                class="btn btn-neutral btn-sm"
-                @click="ui.objectOpen = true"
-            >
-                <PlusIcon class="size-5" />
+            <button v-if="allows('create objects')" type="button" class="btn btn-neutral" @click="ui.objectOpen = true">
+                <PlusIcon />
                 {{ t('client_object_add') }}
             </button>
 
-            <button
-                v-if="allows('delete clients')"
-                type="button"
-                class="btn btn-error btn-sm"
-                @click="openModal(client)"
-            >
-                <TrashIcon class="size-5" />
+            <button v-if="allows('delete clients')" type="button" class="btn btn-error" @click="openModal(client)">
+                <TrashIcon />
                 {{ t('delete') }}
             </button>
         </template>
     </Header>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="space-y-6 lg:col-span-2">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div class="space-y-4 lg:col-span-2">
             <ClientObjectsTable :objects="objects" />
 
             <RelatedContractsCard
@@ -96,16 +81,16 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
             <RelatedQuotesCard :quotes="quotes" :can-create="canCreateQuote" :create-query="`client_id=${client.id}`" />
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('note') }}</h2>
+                    <h2 class="card-title">{{ t('note') }}</h2>
                     <p v-if="client.note" class="whitespace-pre-wrap">{{ client.note }}</p>
-                    <p v-else class="text-base-content/60">{{ t('client_no_note') }}</p>
+                    <p v-else class="text-muted">{{ t('client_no_note') }}</p>
                 </div>
             </div>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
             <ClientDetailCard :client="client" />
             <ContactsList
                 :contacts="client.contacts"

@@ -76,25 +76,25 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         :breadcrumbs="breadcrumbs"
     >
         <template #actions>
-            <button v-if="expense.can.update" type="button" class="btn btn-neutral btn-sm" @click="ui.editOpen = true">
-                <PencilSquareIcon class="size-5" />
+            <button v-if="expense.can.update" type="button" class="btn btn-neutral" @click="ui.editOpen = true">
+                <PencilSquareIcon />
                 {{ t('edit') }}
             </button>
 
-            <button v-if="expense.can.delete" type="button" class="btn btn-error btn-sm" @click="openModal(expense)">
-                <TrashIcon class="size-5" />
+            <button v-if="expense.can.delete" type="button" class="btn btn-error" @click="openModal(expense)">
+                <TrashIcon />
                 {{ t('delete') }}
             </button>
         </template>
     </Header>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="space-y-6 lg:col-span-2">
-            <div class="card bg-base-100 shadow-sm">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div class="space-y-4 lg:col-span-2">
+            <div class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('description') }}</h2>
+                    <h2 class="card-title">{{ t('description') }}</h2>
                     <p v-if="expense.description" class="whitespace-pre-wrap">{{ expense.description }}</p>
-                    <p v-else class="text-base-content/60">{{ t('empty_dash') }}</p>
+                    <p v-else class="text-muted">{{ t('empty_dash') }}</p>
                 </div>
             </div>
 
@@ -104,7 +104,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 :companies="context.companies"
             />
 
-            <div v-if="expense.can.confirm" class="card bg-base-100 shadow-sm">
+            <div v-if="expense.can.confirm" class="card bg-base-100">
                 <div class="card-body">
                     <form novalidate class="flex items-end gap-2" @submit.prevent="submitConfirm">
                         <div class="flex-1">
@@ -118,7 +118,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                         </div>
                         <button
                             type="submit"
-                            class="btn btn-primary btn-sm"
+                            class="btn btn-primary"
                             :disabled="confirmForm.processing || confirmForm.category === ''"
                         >
                             {{ t('expense_confirm') }}
@@ -128,10 +128,10 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             </div>
         </div>
 
-        <div class="space-y-6">
-            <div class="card bg-base-100 shadow-sm">
+        <div class="space-y-4">
+            <div class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('expense_details') }}</h2>
+                    <h2 class="card-title">{{ t('expense_details') }}</h2>
 
                     <div class="flex flex-wrap gap-2">
                         <ExpenseStatusBadge :status="expense.status" />
@@ -141,53 +141,53 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
                     <dl class="mt-2 space-y-2 text-sm">
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_company') }}</dt>
+                            <dt class="text-muted">{{ t('expense_company') }}</dt>
                             <dd>{{ expense.tenant_name ?? t('empty_dash') }}</dd>
                         </div>
                         <div v-if="expense.employee_name" class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_payslip_employee') }}</dt>
+                            <dt class="text-muted">{{ t('expense_payslip_employee') }}</dt>
                             <dd>{{ expense.employee_name }}</dd>
                         </div>
                         <div v-if="expense.payroll_month" class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_payslip_month_for') }}</dt>
+                            <dt class="text-muted">{{ t('expense_payslip_month_for') }}</dt>
                             <dd>{{ formatMonth(expense.payroll_month) }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_date') }}</dt>
+                            <dt class="text-muted">{{ t('expense_date') }}</dt>
                             <dd>{{ formatDate(expense.date) }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_amount') }}</dt>
+                            <dt class="text-muted">{{ t('expense_amount') }}</dt>
                             <dd>{{ money(expense.amount, expense.currency) }}</dd>
                         </div>
                         <div v-if="!expense.is_undocumented" class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_vat_amount') }}</dt>
+                            <dt class="text-muted">{{ t('expense_vat_amount') }}</dt>
                             <dd>{{ expense.vat_amount ?? t('empty_dash') }}</dd>
                         </div>
                         <div v-if="!expense.is_undocumented" class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_supplier') }}</dt>
+                            <dt class="text-muted">{{ t('expense_supplier') }}</dt>
                             <dd>{{ expense.supplier_name ?? t('empty_dash') }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_source') }}</dt>
+                            <dt class="text-muted">{{ t('expense_source') }}</dt>
                             <dd>{{ t(expenseSourceKey(expense.source)) }}</dd>
                         </div>
                         <div v-if="expense.confirmed_at" class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('expense_confirmed_at') }}</dt>
+                            <dt class="text-muted">{{ t('expense_confirmed_at') }}</dt>
                             <dd>{{ formatDatetime(expense.confirmed_at) }}</dd>
                         </div>
                     </dl>
                 </div>
             </div>
 
-            <div v-if="!expense.is_undocumented" class="card bg-base-100 shadow-sm">
+            <div v-if="!expense.is_undocumented" class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('expense_receipt') }}</h2>
+                    <h2 class="card-title">{{ t('expense_receipt') }}</h2>
 
                     <a v-if="expense.receipt" :href="expense.receipt.download_url" class="link" target="_blank">
                         {{ expense.receipt.file_name }}
                     </a>
-                    <p v-else class="text-sm text-base-content/60">{{ t('expense_receipt_none') }}</p>
+                    <p v-else class="text-sm text-muted">{{ t('expense_receipt_none') }}</p>
 
                     <form v-if="expense.can.update" novalidate class="space-y-2" @submit.prevent="submitReceipt">
                         <FileInput
@@ -198,7 +198,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                         />
                         <button
                             type="submit"
-                            class="btn btn-primary btn-sm"
+                            class="btn btn-primary"
                             :disabled="receiptForm.processing || !receiptForm.receipt"
                         >
                             {{ t('expense_receipt_attach') }}

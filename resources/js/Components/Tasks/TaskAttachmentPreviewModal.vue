@@ -2,9 +2,9 @@
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded';
-import ChevronLeftIcon from '~icons/material-symbols/chevron-left-rounded';
-import ChevronRightIcon from '~icons/material-symbols/chevron-right-rounded';
-import XMarkIcon from '~icons/material-symbols/close-rounded';
+import ChevronLeftIcon from '~icons/material-symbols/chevron-left-outline-rounded';
+import ChevronRightIcon from '~icons/material-symbols/chevron-right-outline-rounded';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 import { formatDatetime } from '@/utils/date';
 
 const props = defineProps<{
@@ -66,11 +66,11 @@ function onKeydown(event: KeyboardEvent): void {
         @close="emit('update:activeId', null)"
         @keydown="onKeydown"
     >
-        <div v-if="active" class="modal-box flex max-h-[92vh] w-full max-w-4xl flex-col gap-3 p-4">
+        <div v-if="active" class="modal-box flex max-h-[92vh] w-full max-w-4xl flex-col gap-3">
             <div class="flex items-start gap-2">
                 <div class="min-w-0 flex-1">
-                    <p class="truncate font-medium">{{ active.name }}</p>
-                    <p class="text-xs text-base-content/60">
+                    <p class="truncate text-lg font-medium">{{ active.name }}</p>
+                    <p class="text-xs text-muted">
                         <template v-if="active.uploaded_by_name">
                             {{ t('task_attachment_uploaded_by', { name: active.uploaded_by_name }) }} ·
                         </template>
@@ -80,28 +80,28 @@ function onKeydown(event: KeyboardEvent): void {
                 <a
                     :href="active.download_url"
                     download
-                    class="btn btn-ghost btn-sm btn-square"
+                    class="btn btn-ghost btn-square"
                     :aria-label="t('task_attachment_download')"
                     :title="t('task_attachment_download')"
                 >
-                    <ArrowDownTrayIcon class="size-5" />
+                    <ArrowDownTrayIcon />
                 </a>
                 <button
                     type="button"
-                    class="btn btn-ghost btn-sm btn-square"
+                    class="btn btn-ghost btn-square"
                     :aria-label="t('close')"
                     :title="t('close')"
                     @click="emit('update:activeId', null)"
                 >
-                    <XMarkIcon class="size-5" />
+                    <XMarkIcon />
                 </button>
             </div>
 
             <div
-                class="relative flex min-h-48 flex-1 items-center justify-center overflow-hidden rounded-box bg-base-200"
+                class="relative flex min-h-48 flex-1 items-center justify-center overflow-hidden rounded-card-nested bg-base-200"
             >
                 <span v-if="!loaded && !failed" class="loading loading-spinner" :aria-label="t('loading')" />
-                <p v-if="failed" class="p-6 text-sm text-base-content/60">{{ t('no_preview') }}</p>
+                <p v-if="failed" class="p-6 text-sm text-muted">{{ t('no_preview') }}</p>
                 <img
                     v-else
                     :key="active.id"
@@ -116,19 +116,19 @@ function onKeydown(event: KeyboardEvent): void {
                 <template v-if="hasSiblings">
                     <button
                         type="button"
-                        class="btn btn-circle btn-sm absolute left-2 top-1/2 -translate-y-1/2"
+                        class="btn btn-circle absolute left-2 top-1/2 -translate-y-1/2"
                         :aria-label="t('previous')"
                         @click="step(-1)"
                     >
-                        <ChevronLeftIcon class="size-5" />
+                        <ChevronLeftIcon />
                     </button>
                     <button
                         type="button"
-                        class="btn btn-circle btn-sm absolute right-2 top-1/2 -translate-y-1/2"
+                        class="btn btn-circle absolute right-2 top-1/2 -translate-y-1/2"
                         :aria-label="t('next')"
                         @click="step(1)"
                     >
-                        <ChevronRightIcon class="size-5" />
+                        <ChevronRightIcon />
                     </button>
                 </template>
             </div>

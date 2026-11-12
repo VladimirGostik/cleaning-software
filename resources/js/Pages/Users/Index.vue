@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 
 import { formatDatetime } from '@/utils/date';
@@ -89,17 +89,15 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('users')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link
+            <PageMainAction
                 v-if="allows('create employees') && allows('manage employee_access')"
+                :label="t('create')"
                 href="/users/create"
-                class="btn btn-secondary btn-sm"
-            >
-                {{ t('create') }}
-            </Link>
+            />
         </template>
     </Header>
 
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -119,7 +117,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                             {{ role }}
                         </span>
 
-                        <span v-if="row.roles.length === 0" class="text-base-content/40 text-sm">
+                        <span v-if="row.roles.length === 0" class="text-muted text-sm">
                             {{ t('no_roles') }}
                         </span>
                     </div>
@@ -135,7 +133,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #cell-created_at="{ value }">
-                    <span class="text-sm text-base-content/70">
+                    <span class="text-sm text-muted">
                         {{ formatDatetime(value as string | null) }}
                     </span>
                 </template>

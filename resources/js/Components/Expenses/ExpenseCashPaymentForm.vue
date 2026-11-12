@@ -107,7 +107,7 @@ function submit(): void {
     <FormProvider :form="form">
         <form novalidate class="flex h-full flex-col" @submit.prevent="submit">
             <div class="flex-1 space-y-4 p-6">
-                <p class="text-sm text-base-content/70">{{ t('expense_cash_hint') }}</p>
+                <p class="text-sm text-muted">{{ t('expense_cash_hint') }}</p>
 
                 <SelectInput
                     v-if="!isEdit && context.companies.length > 1"
@@ -141,7 +141,7 @@ function submit(): void {
                 />
             </div>
 
-            <div class="sticky bottom-0 border-t border-base-300 bg-base-100 px-6 py-3">
+            <div class="sticky bottom-0 bg-base-100 px-6 py-3">
                 <FormActions
                     :processing="form.processing"
                     :disabled="employeeOptions.length === 0"

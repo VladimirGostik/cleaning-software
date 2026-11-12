@@ -34,7 +34,7 @@ const label = computed(() => {
         v-else-if="phase !== 'idle'"
         role="status"
         aria-live="polite"
-        class="mb-3 flex flex-wrap items-center gap-3 rounded-box border border-base-300 bg-base-200 p-3 text-sm"
+        class="mb-3 flex flex-wrap items-center gap-3 rounded-card-nested bg-base-100 p-3 text-sm"
     >
         <span class="loading loading-spinner loading-sm" aria-hidden="true" />
         <span>{{ label }}</span>

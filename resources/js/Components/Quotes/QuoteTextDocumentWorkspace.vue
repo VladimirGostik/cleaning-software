@@ -89,11 +89,11 @@ watch(fullscreen, (on) => {
             @keydown="trapTab"
         >
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold">{{ t('quote_text_workspace_title') }}</h2>
+                <h2 class="text-lg font-medium">{{ t('quote_text_workspace_title') }}</h2>
                 <div class="flex flex-wrap items-center gap-4">
                     <DocumentFrameToggles v-model:show-header="showHeader" v-model:show-footer="showFooter" />
                     <button type="button" class="btn btn-sm btn-primary" @click="emit('close')">
-                        <XMarkIcon class="size-5" aria-hidden="true" />
+                        <XMarkIcon aria-hidden="true" />
                         {{ t('quote_text_workspace_done') }}
                     </button>
                 </div>
@@ -111,7 +111,7 @@ watch(fullscreen, (on) => {
                     :preview="preview"
                     variant="kegos"
                 />
-                <aside class="min-h-0 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-3">
+                <aside class="min-h-0 overflow-y-auto rounded-card kg-panel p-3">
                     <DocumentTokenPicker :tokens="tokens" @pick="editor?.insertToken($event)" />
                 </aside>
             </div>

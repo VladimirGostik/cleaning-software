@@ -48,7 +48,7 @@ function submit(): void {
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('employee_change_role') }}</h3>
+            <h3 class="text-lg font-medium">{{ t('employee_change_role') }}</h3>
 
             <form novalidate class="mt-4 space-y-4" @submit.prevent="submit">
                 <div>
@@ -61,7 +61,7 @@ function submit(): void {
                         :error="form.errors.role_name"
                         @update:model-value="form.role_name = $event"
                     />
-                    <p class="text-xs text-base-content/60">{{ t('employee_role_subset_hint') }}</p>
+                    <p class="text-xs text-muted">{{ t('employee_role_subset_hint') }}</p>
                 </div>
 
                 <div class="modal-action">

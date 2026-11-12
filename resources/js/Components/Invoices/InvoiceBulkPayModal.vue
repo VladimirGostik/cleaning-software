@@ -57,8 +57,8 @@ function submit(): void {
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('invoice_bulk_pay_title') }}</h3>
-            <p class="py-2 text-base-content/70">{{ t('invoice_bulk_pay_hint') }}</p>
+            <h3 class="text-lg font-medium">{{ t('invoice_bulk_pay_title') }}</h3>
+            <p class="py-2 text-muted">{{ t('invoice_bulk_pay_hint') }}</p>
 
             <FormProvider :form="form">
                 <form novalidate class="mt-2 space-y-2" @submit.prevent="submit">

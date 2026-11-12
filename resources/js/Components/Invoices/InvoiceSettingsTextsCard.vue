@@ -17,10 +17,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('invoice_settings_section_texts') }}</h2>
-            <p class="text-sm text-base-content/60">{{ t('invoice_settings_texts_hint') }}</p>
+            <h2 class="card-title">{{ t('invoice_settings_section_texts') }}</h2>
+            <p class="text-sm text-muted">{{ t('invoice_settings_texts_hint') }}</p>
 
             <TextareaInput
                 :model-value="headerText ?? ''"

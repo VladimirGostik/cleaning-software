@@ -32,14 +32,14 @@ function remove(property: string): void {
         <template #trigger="{ toggle, open: isOpen }">
             <button
                 type="button"
-                class="btn btn-ghost btn-xs btn-square"
+                class="btn btn-ghost btn-sm btn-square"
                 :class="{ 'text-primary': active }"
                 :aria-label="t('filter_column', { column: columnLabel })"
                 :title="t('filter_column', { column: columnLabel })"
                 :aria-expanded="isOpen"
                 @click.stop="toggle"
             >
-                <KG_ICONS.adminAction.filter class="size-4" />
+                <KG_ICONS.adminAction.filter />
             </button>
         </template>
 

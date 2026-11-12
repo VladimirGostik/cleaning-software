@@ -75,13 +75,13 @@ const { t, locale } = useI18n();
         <p v-else-if="row.state !== 'already_imported'" class="text-muted">{{ t('empty_dash') }}</p>
 
         <div v-if="canAssign(row)" class="flex flex-wrap gap-1 pt-1">
-            <button type="button" class="btn btn-neutral btn-xs" :disabled="disabled" @click="emit('assign')">
+            <button type="button" class="btn btn-neutral btn-sm" :disabled="disabled" @click="emit('assign')">
                 {{ t(effectiveInvoice(row) ? 'invoice_payment_import_change' : 'invoice_payment_import_assign') }}
             </button>
             <button
                 v-if="row.manual_invoice"
                 type="button"
-                class="btn btn-neutral btn-xs"
+                class="btn btn-neutral btn-sm"
                 :disabled="disabled"
                 @click="emit('unassign')"
             >

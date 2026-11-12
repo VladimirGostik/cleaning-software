@@ -21,10 +21,10 @@ const summary = computed(() => t('document_missing_summary', { count: missing.va
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
             <div class="flex flex-wrap items-center gap-2">
-                <h2 class="card-title text-base">{{ t('quote_section_text') }}</h2>
+                <h2 class="card-title">{{ t('quote_section_text') }}</h2>
                 <span v-if="textDocument.document_template_name" class="kg-chip kg-chip--neutral">
                     {{ textDocument.document_template_name }}
                 </span>

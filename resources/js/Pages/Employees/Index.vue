@@ -6,6 +6,7 @@ import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
 import UserGroupIcon from '~icons/material-symbols/groups-outline-rounded';
 import Header from '@/Layouts/Header.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';
@@ -94,9 +95,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('employees')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create employees')" href="/employees/create" class="btn btn-secondary btn-sm">
-                {{ t('employee_add') }}
-            </Link>
+            <PageMainAction v-if="allows('create employees')" :label="t('employee_add')" href="/employees/create" />
         </template>
     </Header>
 
@@ -107,11 +106,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         :icon="UserGroupIcon"
     >
         <template v-if="allows('create employees')" #cta>
-            <Link href="/employees/create" class="btn btn-primary btn-sm">{{ t('employee_add') }}</Link>
+            <Link href="/employees/create" class="btn btn-primary">{{ t('employee_add') }}</Link>
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -159,16 +158,22 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #buttons="{ row }">
-                    <Link :href="`/employees/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-5" />
+                    <Link
+                        :href="`/employees/${row.id}`"
+                        class="btn btn-ghost btn-square"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon />
                     </Link>
                     <Link
                         v-if="allows('edit employees')"
                         :href="`/employees/${row.id}/edit`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('edit')"
+                        :aria-label="t('edit')"
                     >
-                        <PencilSquareIcon class="size-5" />
+                        <PencilSquareIcon />
                     </Link>
                 </template>
             </DataTable>

@@ -24,7 +24,7 @@ const { t, locale } = useI18n();
 
 <template>
     <article
-        class="space-y-2 rounded-box border border-base-300 p-3"
+        class="space-y-2 rounded-card-nested bg-base-200 p-3"
         :class="{ 'text-muted': row.state === 'already_imported' }"
     >
         <div class="flex items-start justify-between gap-2">
@@ -38,7 +38,7 @@ const { t, locale } = useI18n();
             <InvoicePaymentImportStateChip :state="row.state" :manual="row.manual_invoice !== null" />
         </div>
         <div class="flex items-baseline justify-between gap-2">
-            <span class="text-lg font-semibold tabular-nums">{{ formatMoney(row.amount, 'EUR', locale) }}</span>
+            <span class="text-lg font-medium tabular-nums">{{ formatMoney(row.amount, 'EUR', locale) }}</span>
             <span class="text-sm text-muted">{{ formatDate(row.date) }}</span>
         </div>
         <p class="text-sm">{{ row.payer_name ?? t('empty_dash') }}</p>

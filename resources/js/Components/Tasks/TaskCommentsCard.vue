@@ -31,11 +31,11 @@ const deleteConfirm = useDeleteConfirm<App.Data.Tasks.TaskCommentData>({
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('task_comments') }}</h2>
+            <h2 class="card-title">{{ t('task_comments') }}</h2>
 
-            <p v-if="thread.comments.length === 0" class="text-base-content/60">{{ t('task_comments_empty') }}</p>
+            <p v-if="thread.comments.length === 0" class="text-muted">{{ t('task_comments_empty') }}</p>
 
             <ul v-else class="space-y-2">
                 <TaskCommentItem

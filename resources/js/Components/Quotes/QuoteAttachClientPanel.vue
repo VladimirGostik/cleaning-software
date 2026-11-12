@@ -40,10 +40,10 @@ function submit(): void {
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-3">
-            <h2 class="card-title text-base">{{ t('quote_attach_client_title') }}</h2>
-            <p class="text-sm text-base-content/60">{{ t('quote_attach_client_hint') }}</p>
+            <h2 class="card-title">{{ t('quote_attach_client_title') }}</h2>
+            <p class="text-sm text-muted">{{ t('quote_attach_client_hint') }}</p>
 
             <FormProvider :form="form">
                 <form novalidate class="space-y-3" @submit.prevent="submit">

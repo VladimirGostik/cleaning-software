@@ -12,7 +12,7 @@ const { money, percent } = useMoneyFormat();
 </script>
 
 <template>
-    <table v-if="props.breakdown.length > 0" class="table table-xs">
+    <table v-if="props.breakdown.length > 0" class="table">
         <caption class="text-left text-sm font-medium pb-1">
             {{
                 t('invoice_vat_recap_title')

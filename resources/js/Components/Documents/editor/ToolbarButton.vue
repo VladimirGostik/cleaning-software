@@ -19,7 +19,7 @@ defineEmits<{
 <template>
     <button
         type="button"
-        class="btn btn-ghost btn-xs"
+        class="btn btn-ghost btn-sm"
         :class="{ 'btn-active': pressed }"
         :aria-pressed="pressed"
         :aria-label="label"

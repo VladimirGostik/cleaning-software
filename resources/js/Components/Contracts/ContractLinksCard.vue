@@ -23,33 +23,33 @@ const hasLinks = computed(
 </script>
 
 <template>
-    <div v-if="hasLinks" class="card bg-base-100 shadow-sm">
+    <div v-if="hasLinks" class="card bg-base-100">
         <div class="card-body space-y-3 text-sm">
-            <h2 class="card-title text-base">{{ t('contract_section_links') }}</h2>
+            <h2 class="card-title">{{ t('contract_section_links') }}</h2>
 
             <p v-if="props.contract.quote_id">
-                <span class="text-base-content/60">{{ t('contract_link_quote') }}:</span>
+                <span class="text-muted">{{ t('contract_link_quote') }}:</span>
                 <Link :href="`/quotes/${props.contract.quote_id}`" class="link link-hover ml-1">
                     {{ props.contract.quote_number ?? t('quote_no_number') }}
                 </Link>
             </p>
 
             <p v-if="isObjectParty">
-                <span class="text-base-content/60">{{ t('contract_link_object') }}:</span>
+                <span class="text-muted">{{ t('contract_link_object') }}:</span>
                 <Link :href="`/objects/${props.contract.contractable_id}`" class="link link-hover ml-1">
                     {{ props.contract.contractable_label }}
                 </Link>
             </p>
 
             <p v-if="isClientParty">
-                <span class="text-base-content/60">{{ t('contract_link_client') }}:</span>
+                <span class="text-muted">{{ t('contract_link_client') }}:</span>
                 <Link :href="`/clients/${props.contract.contractable_id}`" class="link link-hover ml-1">
                     {{ props.contract.contractable_label }}
                 </Link>
             </p>
 
             <p v-if="props.contract.document_template_name">
-                <span class="text-base-content/60">{{ t('contract_link_template') }}:</span>
+                <span class="text-muted">{{ t('contract_link_template') }}:</span>
                 <span class="ml-1">{{ props.contract.document_template_name }}</span>
             </p>
         </div>

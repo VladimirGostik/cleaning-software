@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import AddIcon from '~icons/material-symbols/add-rounded';
+import AddIcon from '~icons/material-symbols/add-outline-rounded';
 import DeleteIcon from '~icons/material-symbols/delete-outline-rounded';
 
 import SelectInput from '@/Components/Forms/SelectInput.vue';
@@ -69,12 +69,7 @@ function rowError(index: number, field: string): string | null {
         </p>
 
         <ul class="space-y-3">
-            <li
-                v-for="(line, index) in lines"
-                :key="line.key"
-                class="rounded-box border border-base-300 p-3"
-                data-autom="expense-line"
-            >
+            <li v-for="(line, index) in lines" :key="line.key" class="kg-card-nested p-3" data-autom="expense-line">
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-start">
                     <div class="min-w-0">
                         <SelectInput
@@ -119,23 +114,23 @@ function rowError(index: number, field: string): string | null {
                     <button
                         v-if="canRemove"
                         type="button"
-                        class="btn btn-ghost btn-sm btn-square justify-self-end sm:mt-1"
+                        class="btn btn-ghost btn-square justify-self-end sm:mt-1"
                         :aria-label="t('expense_payslip_remove_line', { n: index + 1 })"
                         @click="remove(index)"
                     >
-                        <DeleteIcon class="size-5" />
+                        <DeleteIcon aria-hidden="true" />
                     </button>
                 </div>
             </li>
         </ul>
 
         <div class="flex flex-wrap items-center justify-between gap-2">
-            <button type="button" class="btn btn-neutral btn-sm h-auto min-h-8 py-1" :disabled="!canAdd" @click="add">
-                <AddIcon class="size-5" />
+            <button type="button" class="btn btn-neutral btn-sm" :disabled="!canAdd" @click="add">
+                <AddIcon aria-hidden="true" />
                 {{ kind === 'employee' ? t('expense_payslip_add_employee') : t('expense_payslip_add_recipient') }}
             </button>
             <p class="text-sm" data-autom="expense-lines-total">
-                {{ t('expense_payslip_total') }}: <span class="font-semibold tabular-nums">{{ total }}</span>
+                {{ t('expense_payslip_total') }}: <span class="font-medium tabular-nums">{{ total }}</span>
             </p>
         </div>
     </div>

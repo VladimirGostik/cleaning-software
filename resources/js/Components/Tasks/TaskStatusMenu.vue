@@ -66,12 +66,12 @@ function choose(status: App.Enums.TaskStatusEnum): void {
                 @click="toggle"
             >
                 <TaskStatusBadge :status="status" />
-                <KG_ICONS.adminAction.caretDown class="size-4 text-base-content/60" aria-hidden="true" />
+                <KG_ICONS.adminAction.caretDown class="text-muted" aria-hidden="true" />
             </button>
             <button
                 v-else
                 type="button"
-                class="btn btn-ghost btn-xs btn-square"
+                class="btn btn-ghost btn-square"
                 :disabled="disabled"
                 aria-haspopup="menu"
                 :aria-expanded="isOpen"
@@ -79,7 +79,7 @@ function choose(status: App.Enums.TaskStatusEnum): void {
                 :title="t('task_move_to')"
                 @click="toggle"
             >
-                <KG_ICONS.adminAction.more class="size-5" />
+                <KG_ICONS.adminAction.more />
             </button>
         </template>
 
@@ -89,13 +89,13 @@ function choose(status: App.Enums.TaskStatusEnum): void {
                 :key="option"
                 type="button"
                 role="menuitemradio"
-                class="flex items-center justify-between gap-3 rounded-field px-2 py-1.5 text-left hover:bg-base-200 focus-visible:bg-base-200"
+                class="flex items-center justify-between gap-3 min-h-11 rounded-tile-sm px-3 text-left hover:bg-base-100 focus-visible:bg-base-100"
                 :aria-checked="option === status"
                 :data-autofocus="option === status ? '' : undefined"
                 @click="choose(option)"
             >
                 <TaskStatusBadge :status="option" />
-                <KG_ICONS.adminAction.check v-if="option === status" class="size-4" aria-hidden="true" />
+                <KG_ICONS.adminAction.check v-if="option === status" aria-hidden="true" />
             </button>
         </div>
     </AnchoredPopover>

@@ -6,6 +6,7 @@ import BuildingOffice2Icon from '~icons/material-symbols/apartment-outline-round
 import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import NoSymbolIcon from '~icons/material-symbols/block-outline-rounded';
 import Header from '@/Layouts/Header.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
@@ -124,14 +125,11 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 <template>
     <Header :title="t('objects')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button
+            <PageMainAction
                 v-if="allows('create objects') && filterOptions.clients.length > 0"
-                type="button"
-                class="btn btn-secondary btn-sm"
+                :label="t('object_add')"
                 @click="ui.createOpen = true"
-            >
-                {{ t('object_add') }}
-            </button>
+            />
         </template>
     </Header>
 
@@ -149,7 +147,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="allows('create objects') && filterOptions.clients.length > 0"
                 type="button"
-                class="btn btn-primary btn-sm"
+                class="btn btn-primary"
                 @click="ui.createOpen = true"
             >
                 {{ t('object_add') }}
@@ -157,7 +155,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -208,18 +206,24 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 </template>
 
                 <template #buttons="{ row }">
-                    <Link :href="`/objects/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-5" />
+                    <Link
+                        :href="`/objects/${row.id}`"
+                        class="btn btn-ghost btn-square"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon />
                     </Link>
 
                     <button
                         v-if="allows('delete objects') && row.is_active"
                         type="button"
-                        class="btn btn-ghost btn-xs text-warning"
+                        class="btn btn-ghost btn-square text-warning"
                         :title="t('object_deactivate')"
+                        :aria-label="t('object_deactivate')"
                         @click="openModal(row)"
                     >
-                        <NoSymbolIcon class="size-5" />
+                        <NoSymbolIcon />
                     </button>
                 </template>
             </DataTable>

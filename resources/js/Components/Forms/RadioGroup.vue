@@ -44,11 +44,11 @@ function onSelect(value: string): void {
 
 <template>
     <FormField :label="label" :error="resolvedError" :required="required">
-        <div class="flex flex-wrap gap-4 mt-1">
+        <div class="mt-1 flex flex-wrap gap-x-4">
             <label
                 v-for="option in options"
                 :key="option.value"
-                class="flex items-center gap-2 cursor-pointer"
+                class="flex min-h-11 cursor-pointer items-center gap-2 lg:min-h-0"
                 :class="{ 'opacity-50 cursor-not-allowed': disabled || option.disabled }"
             >
                 <input

@@ -20,7 +20,7 @@ const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label:
 
 <template>
     <Header :title="t('invoicing_settings')" :breadcrumbs="breadcrumbs" />
-    <p class="mb-6 text-base-content/60">{{ t('invoice_settings_subtitle') }}</p>
+    <p class="mb-4 text-muted">{{ t('invoice_settings_subtitle') }}</p>
 
     <InvoiceSettingsForm
         :settings="settings"

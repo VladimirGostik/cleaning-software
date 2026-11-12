@@ -31,7 +31,7 @@ function submit() {
 <template>
     <AuthShell :title="t('login')" :subtitle="t('auth_welcome_back')">
         <FormProvider :form="form">
-            <form class="flex flex-col gap-[18px]" novalidate @submit.prevent="submit">
+            <form class="flex flex-col gap-4" novalidate @submit.prevent="submit">
                 <AuthTextField
                     field="email"
                     :label="t('email')"
@@ -47,7 +47,7 @@ function submit() {
                     <a
                         v-if="canResetPassword"
                         href="/forgot-password"
-                        class="text-[13px] font-medium hover:underline auth-link"
+                        class="inline-flex min-h-11 items-center text-xs font-medium hover:underline auth-link"
                     >
                         {{ t('forgot_password') }}
                     </a>

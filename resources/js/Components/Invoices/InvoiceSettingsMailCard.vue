@@ -56,10 +56,10 @@ function onInsert(token: string): void {
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('invoice_mail_card_title') }}</h2>
-            <p class="text-sm text-base-content/60">{{ t('invoice_mail_card_hint') }}</p>
+            <h2 class="card-title">{{ t('invoice_mail_card_title') }}</h2>
+            <p class="text-sm text-muted">{{ t('invoice_mail_card_hint') }}</p>
 
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
                 <div class="space-y-4">

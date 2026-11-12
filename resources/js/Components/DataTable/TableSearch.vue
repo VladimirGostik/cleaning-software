@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { KG_ICONS } from '@/icons/kegosIcons';
+import InfoIcon from '~icons/material-symbols/info-outline-rounded';
 import { ref, watch } from 'vue';
 
 const props = withDefaults(
@@ -43,9 +44,9 @@ function clear() {
 </script>
 
 <template>
-    <div v-if="!disabled" class="join w-full sm:w-auto">
-        <label class="input input-sm join-item flex w-full items-center gap-2 sm:w-72">
-            <KG_ICONS.adminAction.search class="size-5 opacity-50" />
+    <div v-if="!disabled" class="w-full sm:w-auto">
+        <label class="input flex w-full items-center gap-2 sm:w-72">
+            <KG_ICONS.adminAction.search class="text-muted" />
             <input
                 :value="value"
                 type="search"
@@ -57,19 +58,19 @@ function clear() {
             <button
                 v-if="value"
                 type="button"
-                class="btn btn-ghost btn-xs btn-square"
+                class="btn btn-ghost btn-sm btn-square"
                 :title="$t('clear_filters')"
                 :aria-label="$t('clear_filters')"
                 @click="clear"
             >
-                <KG_ICONS.adminAction.close class="size-4" />
+                <KG_ICONS.adminAction.close />
             </button>
             <div
                 v-else-if="searchableAttributes?.length"
                 class="tooltip tooltip-left"
                 :data-tip="`${searchableAttributes.join(', ')}`"
             >
-                <span class="opacity-50">ⓘ</span>
+                <InfoIcon class="text-muted" aria-hidden="true" />
             </div>
         </label>
     </div>

@@ -75,7 +75,7 @@ function submit(): void {
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">
+            <h3 class="text-lg font-medium">
                 {{ t(props.creditNote ? 'invoice_refund_modal_title' : 'invoice_pay_modal_title') }}
             </h3>
 

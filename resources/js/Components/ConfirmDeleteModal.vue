@@ -33,8 +33,8 @@ const confirmButtonClass = computed(() => CONFIRM_VARIANT_CLASS[props.confirmVar
 <template>
     <dialog class="modal" :class="{ 'modal-open': isOpen }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ title }}</h3>
-            <p class="py-4 text-base-content/70">{{ description }}</p>
+            <h3 class="text-lg font-medium">{{ title }}</h3>
+            <p class="py-4 text-muted">{{ description }}</p>
             <div class="modal-action">
                 <button type="button" class="btn btn-ghost" @click="emit('cancel')">
                     {{ t('cancel') }}

@@ -9,9 +9,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('invoice_settings_section_supplier') }}</h2>
+            <h2 class="card-title">{{ t('invoice_settings_section_supplier') }}</h2>
 
             <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': !compact }">
                 <TextInput field="name" :label="t('name')" required />
@@ -31,7 +31,7 @@ const { t } = useI18n();
                         maxlength="255"
                         :label="t('invoice_settings_representative_name')"
                     />
-                    <p class="mt-1 text-xs text-base-content/60">
+                    <p class="mt-1 text-xs text-muted">
                         {{ t('invoice_settings_representative_name_hint') }}
                     </p>
                 </div>
@@ -39,7 +39,7 @@ const { t } = useI18n();
                 <TextInput field="contact_phone" type="tel" :label="t('invoice_settings_contact_phone')" />
                 <div :class="{ 'md:col-span-2': !compact }">
                     <TextInput field="peppol_participant_id" :label="t('peppol_participant_id')" />
-                    <p class="mt-1 text-xs text-base-content/60">{{ t('peppol_participant_id_hint') }}</p>
+                    <p class="mt-1 text-xs text-muted">{{ t('peppol_participant_id_hint') }}</p>
                 </div>
             </div>
 

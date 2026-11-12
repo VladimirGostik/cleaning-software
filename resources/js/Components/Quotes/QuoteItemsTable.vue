@@ -16,7 +16,7 @@ const { money } = useMoneyFormat();
 
 <template>
     <div class="-mx-3 overflow-x-auto px-3">
-        <table class="table table-sm w-full [&_td]:px-2 [&_th]:px-2">
+        <table class="table w-full [&_td]:px-2 [&_th]:px-2">
             <thead>
                 <tr>
                     <th>{{ t('quote_pdf_service') }}</th>
@@ -28,11 +28,11 @@ const { money } = useMoneyFormat();
             <tbody>
                 <tr v-for="(item, index) in props.items" :key="index">
                     <td class="min-w-32">
-                        <span class="font-semibold">{{ item.description }}</span>
-                        <p v-if="item.note" class="whitespace-pre-line text-xs text-base-content/60">
+                        <span class="font-medium">{{ item.description }}</span>
+                        <p v-if="item.note" class="whitespace-pre-line text-xs text-muted">
                             {{ item.note }}
                         </p>
-                        <p v-if="item.frequency" class="text-xs text-base-content/60">
+                        <p v-if="item.frequency" class="text-xs text-muted">
                             {{ t(taskFrequencyKey(item.frequency)) }}
                         </p>
                     </td>

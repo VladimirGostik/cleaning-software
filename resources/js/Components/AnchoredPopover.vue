@@ -7,6 +7,8 @@ defineOptions({ inheritAttrs: false });
 const FOCUSABLE_SELECTOR =
     'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])';
 
+defineProps<{ block?: boolean }>();
+
 const open = defineModel<boolean>('open', { default: false });
 
 const anchor = ref<HTMLElement | null>(null);
@@ -86,7 +88,7 @@ onBeforeUnmount(unlisten);
 </script>
 
 <template>
-    <span ref="anchor" class="inline-flex" @click.stop>
+    <span ref="anchor" :class="block ? 'flex w-full' : 'inline-flex'" @click.stop>
         <slot name="trigger" :toggle="toggle" :open="open" />
     </span>
 
@@ -95,7 +97,7 @@ onBeforeUnmount(unlisten);
             v-if="open"
             ref="panel"
             v-bind="$attrs"
-            class="fixed z-50 rounded-box border border-base-300 bg-base-100 shadow-float"
+            class="kg-float fixed z-50"
             :style="{ top: `${position.top}px`, left: `${position.left}px` }"
             @click.stop
         >

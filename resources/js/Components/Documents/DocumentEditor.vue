@@ -19,7 +19,7 @@ withDefaults(
     <div class="flex h-full min-h-0 flex-col">
         <div
             v-if="editor?.isEditable || $slots['toolbar-end']"
-            class="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-base-300 bg-base-100"
+            class="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-base-100"
         >
             <DocumentEditorToolbar v-if="editor?.isEditable" :editor="editor" class="flex-1" />
             <div v-if="$slots['toolbar-end']" class="px-2">

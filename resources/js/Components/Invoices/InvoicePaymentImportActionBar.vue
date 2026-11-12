@@ -17,7 +17,7 @@ const { t, locale } = useI18n();
 
 <template>
     <div
-        class="sticky bottom-0 z-10 -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-3 border-t border-base-300 bg-base-100 pl-6 pr-24 py-3"
+        class="kg-sticky-footer flex flex-wrap items-center justify-between gap-3 rounded-card-nested bg-base-200 px-4 py-3"
     >
         <p class="text-sm font-medium tabular-nums" aria-live="polite">
             {{ t('invoice_payment_import_selection', { count, amount: formatMoney(amount, 'EUR', locale) }) }}

@@ -9,25 +9,26 @@ defineProps<{
 </script>
 
 <template>
-    <div class="relative flex min-h-screen flex-col items-center justify-center bg-white px-8 py-24">
-        <a href="/login" class="absolute left-8 top-6" aria-label="Kegos Clean">
+    <div class="relative flex min-h-screen flex-col items-center justify-center bg-base-200 px-5 py-24 lg:px-6">
+        <a href="/login" class="absolute left-5 top-6 lg:left-6" aria-label="Kegos Clean">
             <BrandLogo :size="28" />
         </a>
 
-        <div class="w-full max-w-[380px]">
-            <div class="mb-9">
-                <h1 class="text-[26px] font-semibold tracking-[-0.02em] text-base-content">{{ title }}</h1>
-                <p v-if="subtitle" class="mt-1.5 text-sm text-muted">
-                    {{ subtitle }}
-                </p>
-            </div>
+        <div class="card w-full max-w-sm bg-base-100">
+            <div class="card-body">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-normal text-base-content">{{ title }}</h1>
+                    <p v-if="subtitle" class="mt-1 text-sm text-muted">
+                        {{ subtitle }}
+                    </p>
+                </div>
 
-            <slot />
+                <slot />
 
-            <div class="mt-[18px] flex flex-col gap-[18px]">
-                <div class="h-px bg-base-300" />
-                <slot name="after" />
-                <AuthLanguageSwitcher />
+                <div class="mt-6 flex flex-col gap-4">
+                    <slot name="after" />
+                    <AuthLanguageSwitcher />
+                </div>
             </div>
         </div>
     </div>

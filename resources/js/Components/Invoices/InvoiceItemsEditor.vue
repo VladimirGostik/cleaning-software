@@ -102,7 +102,7 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
     <div class="space-y-3">
         <div
             aria-hidden="true"
-            class="hidden items-end gap-x-2 pb-1 text-xs font-medium uppercase tracking-wide text-base-content/60 2xl:grid"
+            class="hidden items-end gap-x-2 pb-1 text-xs font-medium uppercase tracking-wide text-muted 2xl:grid"
             :class="gridClass"
         >
             <span>{{ descriptionLabel ?? t('invoice_pdf_item_description') }}</span>
@@ -115,7 +115,7 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
             <span />
         </div>
 
-        <div class="space-y-3 2xl:space-y-0 2xl:divide-y 2xl:divide-base-200">
+        <div class="space-y-3 2xl:space-y-1">
             <InvoiceItemRow
                 v-for="(row, index) in rows"
                 :key="rowKey(row)"
@@ -140,10 +140,10 @@ function setField(index: number, key: keyof ItemRow, value: unknown): void {
         </div>
 
         <p v-if="errors[field]" class="text-error text-sm">{{ errors[field] }}</p>
-        <p v-if="rows.length === 0" class="text-sm text-base-content/60">{{ t('invoice_items_empty') }}</p>
+        <p v-if="rows.length === 0" class="text-sm text-muted">{{ t('invoice_items_empty') }}</p>
 
         <button type="button" class="btn btn-ghost btn-sm" @click="addRow">
-            <PlusIcon class="size-5" />
+            <PlusIcon />
             {{ t('invoice_item_add') }}
         </button>
     </div>

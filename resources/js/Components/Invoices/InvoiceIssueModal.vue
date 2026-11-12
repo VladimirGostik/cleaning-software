@@ -41,7 +41,7 @@ function submit(): void {
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('invoice_action_issue') }}</h3>
+            <h3 class="text-lg font-medium">{{ t('invoice_action_issue') }}</h3>
 
             <FormProvider :form="form">
                 <form novalidate class="mt-4" @submit.prevent="submit">
@@ -50,7 +50,7 @@ function submit(): void {
                         :label="t('invoice_issue_number_label')"
                         :placeholder="t('invoice_issue_number_placeholder')"
                     />
-                    <p class="text-sm text-base-content/60">{{ t('invoice_issue_hint') }}</p>
+                    <p class="text-sm text-muted">{{ t('invoice_issue_hint') }}</p>
 
                     <div class="modal-action">
                         <FormActions

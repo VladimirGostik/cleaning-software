@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CameraIcon from '~icons/material-symbols/photo-camera-outline-rounded';
-import PaperClipIcon from '~icons/material-symbols/attach-file-rounded';
+import PaperClipIcon from '~icons/material-symbols/attach-file-outline-rounded';
 import SendIcon from '~icons/material-symbols/send-outline-rounded';
 import AssistantAttachmentChip from '@/Components/Assistant/AssistantAttachmentChip.vue';
 import FilePickerButton from '@/Components/Forms/FilePickerButton.vue';
@@ -78,7 +78,7 @@ defineExpose({ restore });
 </script>
 
 <template>
-    <footer class="space-y-2 border-t border-base-300 p-3">
+    <footer class="space-y-2 p-3">
         <ul v-if="items.length > 0" class="flex flex-wrap gap-2" :aria-label="t('assistant_attach_file')">
             <li v-for="item in items" :key="item.id" class="max-w-full">
                 <AssistantAttachmentChip
@@ -94,7 +94,7 @@ defineExpose({ restore });
 
         <div class="flex items-end gap-2">
             <FilePickerButton
-                class="btn btn-ghost btn-circle"
+                class="btn btn-ghost btn-square"
                 icon-only
                 multiple
                 :label="t('assistant_attach_file')"
@@ -102,10 +102,10 @@ defineExpose({ restore });
                 :disabled="disabled || isFull"
                 @selected="emit('add', $event)"
             >
-                <PaperClipIcon class="size-5" />
+                <PaperClipIcon />
             </FilePickerButton>
             <FilePickerButton
-                class="btn btn-ghost btn-circle hidden pointer-coarse:inline-flex"
+                class="btn btn-ghost btn-square hidden pointer-coarse:inline-flex"
                 icon-only
                 capture="environment"
                 :label="t('assistant_take_photo')"
@@ -113,13 +113,13 @@ defineExpose({ restore });
                 :disabled="disabled || isFull"
                 @selected="emit('add', $event)"
             >
-                <CameraIcon class="size-5" />
+                <CameraIcon />
             </FilePickerButton>
             <textarea
                 ref="textarea"
                 v-model="draft"
                 rows="1"
-                class="textarea max-h-40 min-h-10 flex-1 resize-none placeholder:truncate"
+                class="textarea max-h-40 flex-1 resize-none placeholder:truncate"
                 :maxlength="MAX_MESSAGE_CHARS"
                 :placeholder="t('assistant_placeholder')"
                 :aria-label="t('assistant_placeholder')"
@@ -129,13 +129,13 @@ defineExpose({ restore });
             />
             <button
                 type="button"
-                class="btn btn-primary btn-circle"
+                class="btn btn-primary btn-square"
                 :aria-label="t('assistant_send')"
                 :title="t('assistant_send')"
                 :disabled="!canSend"
                 @click="submit"
             >
-                <SendIcon class="size-5" />
+                <SendIcon />
             </button>
         </div>
     </footer>

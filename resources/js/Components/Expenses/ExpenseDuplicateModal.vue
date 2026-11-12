@@ -30,12 +30,12 @@ watch(
 <template>
     <dialog class="modal" :class="{ 'modal-open': open }" aria-labelledby="expense-duplicate-title">
         <div class="modal-box" @keydown.esc.prevent="emit('cancel')">
-            <h3 id="expense-duplicate-title" class="text-lg font-bold">{{ t('expense_payslip_duplicate_title') }}</h3>
-            <p class="pt-4 text-base-content/70">{{ t('expense_payslip_duplicate_intro') }}</p>
+            <h3 id="expense-duplicate-title" class="text-lg font-medium">{{ t('expense_payslip_duplicate_title') }}</h3>
+            <p class="pt-4 text-muted">{{ t('expense_payslip_duplicate_intro') }}</p>
             <ul class="list-disc space-y-1 py-3 ps-5 text-sm">
                 <li v-for="message in messages" :key="message">{{ message }}</li>
             </ul>
-            <p class="text-sm text-base-content/70">{{ t('expense_payslip_duplicate_question') }}</p>
+            <p class="text-sm text-muted">{{ t('expense_payslip_duplicate_question') }}</p>
             <div class="modal-action flex-col sm:flex-row sm:justify-end">
                 <button type="button" class="btn btn-ghost" :disabled="processing" @click="emit('cancel')">
                     {{ t('cancel') }}

@@ -47,15 +47,15 @@ function toggle(value: string): void {
 
 <template>
     <div>
-        <p v-if="label" class="text-sm font-medium mb-2">
+        <p v-if="label" class="mb-2 text-xs text-muted">
             {{ label }}
         </p>
-        <div class="flex flex-wrap gap-4">
+        <div class="flex flex-wrap gap-x-4">
             <label
                 v-for="option in options"
                 :key="option.value"
-                class="flex items-center gap-2 cursor-pointer"
-                :class="{ 'opacity-50 cursor-not-allowed': disabled || option.disabled }"
+                class="flex min-h-11 cursor-pointer items-center gap-2 lg:min-h-0"
+                :class="{ 'cursor-not-allowed opacity-50': disabled || option.disabled }"
             >
                 <input
                     type="checkbox"

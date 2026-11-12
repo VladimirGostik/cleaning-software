@@ -48,20 +48,20 @@ const missingSummary = computed(() =>
 
 <template>
     <div class="space-y-4">
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100">
             <div class="card-body space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2 class="card-title text-base">{{ t('contract_section_body') }}</h2>
+                    <h2 class="card-title">{{ t('contract_section_body') }}</h2>
                     <div class="flex flex-wrap items-center gap-3">
                         <DocumentFrameToggles v-model:show-header="showHeader" v-model:show-footer="showFooter" />
                         <button type="button" class="btn btn-sm" @click="pdf.open">
-                            <DocumentTextIcon class="size-5" aria-hidden="true" />
+                            <DocumentTextIcon aria-hidden="true" />
                             {{ t('contract_step_pdf_preview') }}
                         </button>
                     </div>
                 </div>
 
-                <p class="text-sm text-base-content/60">{{ t('contract_step_document_hint') }}</p>
+                <p class="text-sm text-muted">{{ t('contract_step_document_hint') }}</p>
 
                 <DocumentMissingTokens :tokens="missing" :summary="missingSummary" />
 

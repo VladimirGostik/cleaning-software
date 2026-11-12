@@ -137,15 +137,18 @@ if (form) {
             required
         />
 
-        <div v-if="props.mode !== 'standalone' && (loading || error || preview)" class="rounded-box bg-base-200 p-4">
-            <h3 class="text-sm font-semibold text-base-content/70">{{ t('invoice_buyer_preview_title') }}</h3>
+        <div
+            v-if="props.mode !== 'standalone' && (loading || error || preview)"
+            class="rounded-card-nested bg-base-200 p-4"
+        >
+            <h3 class="text-sm font-medium text-muted">{{ t('invoice_buyer_preview_title') }}</h3>
             <span v-if="loading" class="loading loading-spinner loading-sm" />
             <div v-else-if="error" class="alert alert-warning mt-2">
                 <span>{{ t('invoice_buyer_preview_failed') }}</span>
             </div>
             <template v-else-if="preview">
                 <CustomerPartyDetails :party="preview.buyer" class="mt-2" />
-                <p v-if="sourceNote" class="mt-2 text-xs text-base-content/60">{{ sourceNote }}</p>
+                <p v-if="sourceNote" class="mt-2 text-xs text-muted">{{ sourceNote }}</p>
             </template>
         </div>
 
@@ -173,7 +176,7 @@ if (form) {
                     :label="t('email')"
                     :suggestions="preview?.email_options"
                 />
-                <p class="mt-1 text-xs text-base-content/60">{{ t('invoice_customer_email_hint') }}</p>
+                <p class="mt-1 text-xs text-muted">{{ t('invoice_customer_email_hint') }}</p>
             </div>
         </div>
     </div>

@@ -106,7 +106,7 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-4">
-                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('address') }}</h2>
+                    <h2 class="text-sm font-medium text-muted">{{ t('address') }}</h2>
 
                     <TextInput field="street" :label="t('street')" />
 
@@ -119,7 +119,7 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-4">
-                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('object_access') }}</h2>
+                    <h2 class="text-sm font-medium text-muted">{{ t('object_access') }}</h2>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <TextInput field="access_code" :label="t('object_access_code')" />
@@ -135,13 +135,13 @@ function submit(): void {
                 </div>
 
                 <div v-if="canSeeContacts" class="space-y-4">
-                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('object_contacts') }}</h2>
+                    <h2 class="text-sm font-medium text-muted">{{ t('object_contacts') }}</h2>
                     <ContactsListField field="contacts" />
                 </div>
 
                 <div v-if="canSeeBilling" class="space-y-4">
-                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('object_billing') }}</h2>
-                    <p class="text-xs text-base-content/60">{{ t('object_billing_hint') }}</p>
+                    <h2 class="text-sm font-medium text-muted">{{ t('object_billing') }}</h2>
+                    <p class="text-xs text-muted">{{ t('object_billing_hint') }}</p>
 
                     <TextInput
                         field="billing_name"
@@ -157,12 +157,12 @@ function submit(): void {
 
                     <div>
                         <TextInput field="billing_peppol_participant_id" :label="t('peppol_participant_id')" />
-                        <p class="mt-1 text-xs text-base-content/60">{{ t('peppol_participant_id_hint') }}</p>
+                        <p class="mt-1 text-xs text-muted">{{ t('peppol_participant_id_hint') }}</p>
                     </div>
 
                     <div>
                         <TextInput field="billing_email" type="email" :label="t('object_billing_email')" />
-                        <p class="mt-1 text-xs text-base-content/60">{{ t('object_billing_email_hint') }}</p>
+                        <p class="mt-1 text-xs text-muted">{{ t('object_billing_email_hint') }}</p>
                     </div>
 
                     <TextInput field="billing_street" :label="t('street')" />
@@ -183,7 +183,7 @@ function submit(): void {
                 <ToggleInput v-if="isEdit" field="is_active" :label="t('object_is_active')" />
             </div>
 
-            <div class="sticky bottom-0 border-t border-base-300 bg-base-100 px-6 py-3">
+            <div class="sticky bottom-0 bg-base-100 px-6 py-3">
                 <FormActions :processing="form.processing" @cancel="emit('cancel')" />
             </div>
         </form>

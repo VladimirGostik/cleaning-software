@@ -38,7 +38,7 @@ const options = computed(() =>
     </div>
 
     <div v-else class="flex items-center gap-2" :title="t('quote_kind_locked')">
-        <span class="text-sm text-base-content/70">{{ t('quote_kind') }}</span>
+        <span class="text-sm text-muted">{{ t('quote_kind') }}</span>
         <QuoteKindBadge :kind="props.modelValue" />
     </div>
 </template>

@@ -30,7 +30,7 @@ const overdue = computed(() => isTaskOverdue(props.task));
 
 <template>
     <article
-        class="flex flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3"
+        class="kg-card-nested flex flex-col gap-2 p-3"
         :class="{ 'cursor-grab': draggable, 'opacity-60': busy }"
         :draggable="draggable"
         :aria-busy="busy"
@@ -66,11 +66,11 @@ const overdue = computed(() => isTaskOverdue(props.task));
             />
         </div>
 
-        <p v-if="task.due_at" class="text-sm" :class="overdue ? 'text-error' : 'text-base-content/60'">
+        <p v-if="task.due_at" class="text-sm" :class="overdue ? 'text-error' : 'text-muted'">
             <template v-if="overdue">{{ t('task_overdue') }}: </template>{{ formatDatetime(task.due_at) }}
         </p>
 
-        <div class="flex items-center justify-between gap-2 text-sm text-base-content/60">
+        <div class="flex items-center justify-between gap-2 text-sm text-muted">
             <InitialsAvatar v-if="task.assignee_name" :name="task.assignee_name" />
             <span v-else />
             <div class="flex items-center gap-3">
@@ -79,7 +79,7 @@ const overdue = computed(() => isTaskOverdue(props.task));
                     class="inline-flex items-center gap-1"
                     :aria-label="t('task_comments_count', task.comments_count)"
                 >
-                    <KG_ICONS.task.comment class="size-4" aria-hidden="true" />
+                    <KG_ICONS.task.comment aria-hidden="true" />
                     {{ task.comments_count }}
                 </span>
                 <span
@@ -87,7 +87,7 @@ const overdue = computed(() => isTaskOverdue(props.task));
                     class="inline-flex items-center gap-1"
                     :aria-label="t('task_attachments_count', task.attachments_count)"
                 >
-                    <KG_ICONS.task.attachment class="size-4" aria-hidden="true" />
+                    <KG_ICONS.task.attachment aria-hidden="true" />
                     {{ task.attachments_count }}
                 </span>
             </div>

@@ -36,23 +36,23 @@ function pick(color: string | null): void {
 
 <template>
     <details ref="root" class="dropdown" @keydown="onEscape">
-        <summary class="btn btn-ghost btn-xs" role="button" :aria-label="label" :title="label">
+        <summary class="btn btn-ghost btn-sm" :aria-label="label" :title="label">
             <slot />
         </summary>
-        <div class="dropdown-content z-20 mt-1 w-48 rounded-box border border-base-300 bg-base-100 p-2 shadow-sm">
+        <div class="dropdown-content z-20 mt-1 w-48 p-2">
             <div class="grid grid-cols-6 gap-1">
                 <button
                     v-for="color in colors"
                     :key="color"
                     type="button"
-                    class="size-6 rounded border border-base-300"
+                    class="size-6 rounded-tile-sm"
                     :style="{ backgroundColor: color }"
                     :aria-label="t('editor_color_swatch', { color })"
                     :title="t('editor_color_swatch', { color })"
                     @click="pick(color)"
                 />
             </div>
-            <button type="button" class="btn btn-ghost btn-xs mt-2 w-full" @click="pick(null)">
+            <button type="button" class="btn btn-ghost btn-sm mt-2 w-full" @click="pick(null)">
                 {{ t('editor_no_color') }}
             </button>
         </div>

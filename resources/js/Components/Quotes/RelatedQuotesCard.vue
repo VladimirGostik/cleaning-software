@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import UploadIcon from '~icons/material-symbols/upload-file-outline-rounded';
+import ListRow from '@/Components/ListRow.vue';
 import QuoteKindBadge from '@/Components/Quotes/QuoteKindBadge.vue';
 import QuotePeriodTotalsInline from '@/Components/Quotes/QuotePeriodTotalsInline.vue';
 import QuoteStatusBadge from '@/Components/Quotes/QuoteStatusBadge.vue';
@@ -18,13 +19,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div v-if="props.quotes !== null || props.canCreate" class="card bg-base-100 shadow-sm">
+    <div v-if="props.quotes !== null || props.canCreate" class="card bg-base-100">
         <div class="card-body space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="card-title text-base">{{ t('quotes') }}</h2>
+                <h2 class="card-title">{{ t('quotes') }}</h2>
                 <div v-if="props.canCreate" class="flex flex-wrap gap-2">
                     <Link :href="`/quotes/create?kind=document&${props.createQuery}`" class="btn btn-neutral btn-sm">
-                        <UploadIcon class="size-4" />
+                        <UploadIcon />
                         {{ t('quote_upload_pdf') }}
                     </Link>
                     <Link :href="`/quotes/create?${props.createQuery}`" class="btn btn-primary btn-sm">
@@ -33,17 +34,17 @@ const { t } = useI18n();
                 </div>
             </div>
 
-            <p v-if="props.quotes !== null && props.quotes.length === 0" class="text-sm text-base-content/60">
+            <p v-if="props.quotes !== null && props.quotes.length === 0" class="text-sm text-muted">
                 {{ t('quotes_empty') }}
             </p>
 
-            <ul v-else-if="props.quotes !== null" class="divide-y divide-base-200">
-                <li v-for="quote in props.quotes" :key="quote.id" class="flex flex-wrap items-center gap-2 py-2">
-                    <div class="min-w-0 flex-1">
-                        <Link :href="`/quotes/${quote.id}`" class="link link-hover font-medium">
-                            {{ quote.subject ?? quote.number ?? t('quote_no_number') }}
-                        </Link>
-                        <p class="text-xs text-base-content/60">
+            <ul v-else-if="props.quotes !== null" class="kg-list">
+                <li v-for="quote in props.quotes" :key="quote.id">
+                    <ListRow
+                        :title="quote.subject ?? quote.number ?? t('quote_no_number')"
+                        :href="`/quotes/${quote.id}`"
+                    >
+                        <template #description>
                             <span v-if="quote.number && quote.subject" class="tabular-nums">{{ quote.number }} · </span>
                             <span v-if="quote.object_name">{{ quote.object_name }} · </span>
                             {{ formatDate(quote.issue_date) }}
@@ -55,10 +56,14 @@ const { t } = useI18n();
                                     :currency="quote.currency"
                                 />
                             </template>
-                        </p>
-                    </div>
-                    <QuoteKindBadge :kind="quote.kind" :has-document="quote.has_document" />
-                    <QuoteStatusBadge v-if="quote.kind === 'itemized'" :status="quote.status" />
+                        </template>
+                        <template #trailing>
+                            <div class="flex flex-wrap items-center justify-end gap-2">
+                                <QuoteKindBadge :kind="quote.kind" :has-document="quote.has_document" />
+                                <QuoteStatusBadge v-if="quote.kind === 'itemized'" :status="quote.status" />
+                            </div>
+                        </template>
+                    </ListRow>
                 </li>
             </ul>
         </div>

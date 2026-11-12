@@ -73,12 +73,12 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
             <button
                 type="button"
                 class="text-left link link-hover"
-                :class="{ 'font-semibold': (row as NotificationRow).read_at === null }"
+                :class="{ 'font-medium': (row as NotificationRow).read_at === null }"
                 @click="emit('select', row as NotificationRow)"
             >
                 {{ (row as NotificationRow).title }}
             </button>
-            <p class="text-xs text-base-content/60 line-clamp-2">{{ (row as NotificationRow).body }}</p>
+            <p class="text-xs text-muted line-clamp-2">{{ (row as NotificationRow).body }}</p>
         </template>
 
         <template #cell-read_at="{ row }">
@@ -93,21 +93,21 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
             <Link
                 v-if="(row as NotificationRow).url"
                 :href="(row as NotificationRow).url!"
-                class="btn btn-ghost btn-xs"
+                class="btn btn-ghost btn-square"
                 :title="t('view')"
                 :aria-label="t('view')"
             >
-                <ArrowTopRightOnSquareIcon class="size-5" />
+                <ArrowTopRightOnSquareIcon />
             </Link>
             <button
                 v-if="(row as NotificationRow).read_at === null"
                 type="button"
-                class="btn btn-ghost btn-xs"
+                class="btn btn-ghost btn-square"
                 :title="t('notifications_mark_read')"
                 :aria-label="t('notifications_mark_read')"
                 @click="emit('mark-read', row as NotificationRow)"
             >
-                <CheckIcon class="size-5" />
+                <CheckIcon />
             </button>
         </template>
     </DataTable>

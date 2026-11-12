@@ -18,7 +18,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="flex items-center gap-3 rounded-box border border-base-300 bg-base-200 p-3">
+    <div class="flex items-center gap-3 rounded-card-nested bg-base-200 p-3">
         <img
             :key="image.uploaded_at"
             :src="`${image.url}?v=${encodeURIComponent(image.uploaded_at)}`"
@@ -28,7 +28,7 @@ const { t } = useI18n();
         />
         <div class="min-w-0">
             <p class="truncate font-medium">{{ image.file_name }}</p>
-            <p class="text-xs text-base-content/60">
+            <p class="text-xs text-muted">
                 {{ formatBytes(image.size) }} · {{ t('settings_image_uploaded_at') }}
                 {{ formatDate(image.uploaded_at) }}
             </p>

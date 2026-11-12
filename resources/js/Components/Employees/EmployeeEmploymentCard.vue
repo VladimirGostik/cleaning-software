@@ -12,13 +12,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('employee_section_employment') }}</h2>
+            <h2 class="card-title">{{ t('employee_section_employment') }}</h2>
 
             <div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('type') }}</p>
+                    <p class="text-xs text-muted">{{ t('type') }}</p>
                     <p>
                         {{
                             employee.employee_type
@@ -30,12 +30,12 @@ const { t } = useI18n();
 
                 <template v-if="employee.employee_type === 'self_employed'">
                     <div>
-                        <p class="text-xs text-base-content/50">{{ t('employee_company_ico') }}</p>
+                        <p class="text-xs text-muted">{{ t('employee_company_ico') }}</p>
                         <p>{{ employee.company_ico ?? t('empty_dash') }}</p>
                     </div>
 
                     <div>
-                        <p class="text-xs text-base-content/50">{{ t('employee_company_name') }}</p>
+                        <p class="text-xs text-muted">{{ t('employee_company_name') }}</p>
                         <p>{{ employee.company_name ?? t('empty_dash') }}</p>
                     </div>
                 </template>
@@ -50,7 +50,7 @@ const { t } = useI18n();
                     {{ t('employee_view_contract') }}
                 </Link>
             </template>
-            <p v-else class="text-base-content/60">{{ t('employee_no_employment') }}</p>
+            <p v-else class="text-muted">{{ t('employee_no_employment') }}</p>
         </div>
     </div>
 </template>

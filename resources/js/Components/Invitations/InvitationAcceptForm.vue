@@ -36,16 +36,16 @@ function submit() {
             </template>
         </p>
 
-        <div class="mt-4 flex flex-col gap-1.5">
-            <span class="text-sm font-medium text-base-content">{{ t('invitation_email_label') }}</span>
+        <div class="mt-4 flex flex-col gap-1">
+            <span class="text-xs text-muted">{{ t('invitation_email_label') }}</span>
             <p class="flex items-center gap-2 text-sm text-muted">
-                <EnvelopeIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+                <EnvelopeIcon class="text-muted" aria-hidden="true" />
                 {{ invitation.email }}
             </p>
         </div>
 
         <FormProvider :form="form">
-            <form class="mt-4 flex flex-col gap-[18px]" novalidate @submit.prevent="submit">
+            <form class="mt-4 flex flex-col gap-4" novalidate @submit.prevent="submit">
                 <AuthTextField
                     v-if="invitation.state === 'new_user'"
                     field="name"

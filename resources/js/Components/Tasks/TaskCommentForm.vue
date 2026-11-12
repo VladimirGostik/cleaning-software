@@ -60,7 +60,7 @@ function submit(): void {
             :rows="3"
         />
         <div class="flex items-center justify-between gap-3">
-            <span class="text-xs" :class="length > maxChars ? 'text-error' : 'text-base-content/60'">
+            <span class="text-xs" :class="length > maxChars ? 'text-error' : 'text-muted'">
                 {{ t('task_comment_chars', { count: length, max: maxChars }) }}
             </span>
             <button type="submit" class="btn btn-primary btn-sm" :disabled="!canSubmit">

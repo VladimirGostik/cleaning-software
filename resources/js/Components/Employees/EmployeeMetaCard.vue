@@ -10,10 +10,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-3 text-sm">
             <div>
-                <p class="text-xs text-base-content/50">{{ t('employee_joined_at') }}</p>
+                <p class="text-xs text-muted">{{ t('employee_joined_at') }}</p>
                 <p>{{ formatDate(props.employee.joined_at) }}</p>
             </div>
 
@@ -21,12 +21,12 @@ const { t } = useI18n();
                 t('employee_owner')
             }}</span>
 
-            <p v-if="props.employee.other_tenants_count > 0" class="text-base-content/70">
+            <p v-if="props.employee.other_tenants_count > 0" class="text-muted">
                 {{ t('employee_other_tenants', { count: props.employee.other_tenants_count }) }}
             </p>
 
             <div>
-                <p class="text-xs text-base-content/50">{{ t('employee_upcoming_jobs') }}</p>
+                <p class="text-xs text-muted">{{ t('employee_upcoming_jobs') }}</p>
                 <p class="tabular-nums">{{ props.employee.upcoming_jobs_count }}</p>
             </div>
         </div>

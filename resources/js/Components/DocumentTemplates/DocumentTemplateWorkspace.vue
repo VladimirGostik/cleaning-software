@@ -157,14 +157,14 @@ function submit(): void {
 <template>
     <FormProvider :form="form">
         <form novalidate @submit.prevent="submit">
-            <div v-show="!fullscreen" class="card mb-4 bg-base-100 shadow-sm">
+            <div v-show="!fullscreen" class="card mb-4 bg-base-100">
                 <div class="card-body">
                     <DocumentTemplateMetaFields
                         :show-employment-type="form.type === 'employment'"
                         :readonly="readonly"
                         :type-locked="typeLocked"
                     />
-                    <p v-if="template?.scope === 'override'" class="text-xs text-base-content/60">
+                    <p v-if="template?.scope === 'override'" class="text-xs text-muted">
                         {{ t('document_template_type_locked_hint') }}
                     </p>
                 </div>
@@ -223,8 +223,8 @@ function submit(): void {
                         :title="fullscreen ? t('document_template_fullscreen_exit') : t('document_template_fullscreen')"
                         @click="fullscreen = !fullscreen"
                     >
-                        <ArrowsPointingInIcon v-if="fullscreen" class="size-5" aria-hidden="true" />
-                        <ArrowsPointingOutIcon v-else class="size-5" aria-hidden="true" />
+                        <ArrowsPointingInIcon v-if="fullscreen" aria-hidden="true" />
+                        <ArrowsPointingOutIcon v-else aria-hidden="true" />
                     </button>
                     <span class="flex-1" />
                     <Link v-if="!fullscreen" :href="BASE_URL" class="btn btn-ghost btn-sm">
@@ -248,7 +248,7 @@ function submit(): void {
                     class="relative grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-rows-[minmax(0,1fr)]"
                     :class="readonly ? '' : 'min-[1440px]:grid-cols-[minmax(0,1fr)_18rem]'"
                 >
-                    <div class="card min-h-[32rem] bg-base-100 shadow-sm lg:min-h-0">
+                    <div class="card min-h-[32rem] bg-base-100 lg:min-h-0">
                         <div class="flex min-h-0 flex-1 flex-col">
                             <DocumentTokenEditor
                                 ref="editorRef"
@@ -266,18 +266,18 @@ function submit(): void {
 
                     <aside
                         v-if="!readonly"
-                        class="card min-h-0 overflow-y-auto bg-base-100 shadow-sm max-[1439px]:absolute max-[1439px]:inset-y-2 max-[1439px]:right-2 max-[1439px]:z-20 max-[1439px]:w-72 max-[1439px]:shadow-lg"
+                        class="kg-float min-h-0 overflow-y-auto max-[1439px]:absolute max-[1439px]:inset-y-2 max-[1439px]:right-2 max-[1439px]:z-20 max-[1439px]:w-72"
                         :class="pickerOpen ? '' : 'max-[1439px]:hidden'"
                         :aria-label="t('document_template_picker_title')"
                     >
                         <div class="flex flex-col gap-3 p-6">
-                            <h2 class="text-sm font-semibold">{{ t('document_template_picker_title') }}</h2>
+                            <h2 class="text-sm font-medium">{{ t('document_template_picker_title') }}</h2>
                             <DocumentTokenPicker :tokens="tokens" @pick="pickToken" />
                         </div>
                     </aside>
                 </div>
 
-                <div v-if="mode === 'preview'" class="card min-h-[32rem] flex-1 bg-base-100 shadow-sm lg:min-h-0">
+                <div v-if="mode === 'preview'" class="card min-h-[32rem] flex-1 bg-base-100 lg:min-h-0">
                     <div class="flex min-h-0 flex-1 flex-col p-6">
                         <DocumentTemplatePreview
                             :preview="preview"

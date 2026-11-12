@@ -26,8 +26,8 @@ const canAdd = computed(() => props.canCreate && props.column.status !== 'done')
 
 <template>
     <section
-        class="flex w-[85vw] shrink-0 snap-start flex-col gap-2 self-start rounded-box bg-base-200 p-2 sm:w-80 lg:snap-none"
-        :class="{ 'ring-2 ring-primary bg-primary-soft': dropTarget }"
+        class="card w-[85vw] shrink-0 snap-start gap-2 self-start p-3 sm:w-80 lg:snap-none"
+        :class="dropTarget ? 'bg-primary-soft outline-2 -outline-offset-2 outline-primary' : 'bg-base-100'"
         :aria-label="t(taskStatusKey(column.status))"
         @dragover.prevent
         @dragenter.prevent="emit('dragenter')"
@@ -35,13 +35,13 @@ const canAdd = computed(() => props.canCreate && props.column.status !== 'done')
         @drop.prevent="emit('drop')"
     >
         <header class="flex items-center justify-between gap-2 px-1 py-1">
-            <h2 class="font-semibold">{{ t(taskStatusKey(column.status)) }}</h2>
-            <span class="text-sm tabular-nums text-base-content/60">{{ column.total }}</span>
+            <h2 class="text-base font-medium">{{ t(taskStatusKey(column.status)) }}</h2>
+            <span class="kg-count">{{ column.total }}</span>
         </header>
 
         <div class="flex flex-col gap-2">
             <slot />
-            <p v-if="column.tasks.length === 0" class="px-1 py-4 text-center text-sm text-base-content/50">
+            <p v-if="column.tasks.length === 0" class="px-1 py-4 text-center text-sm text-muted">
                 {{ t('task_board_column_empty') }}
             </p>
         </div>
@@ -51,7 +51,7 @@ const canAdd = computed(() => props.canCreate && props.column.status !== 'done')
                 {{ t('task_board_show_all') }}
             </Link>
             <button v-if="canAdd" type="button" class="btn btn-ghost btn-sm justify-start" @click="emit('create')">
-                <KG_ICONS.adminAction.add class="size-4" aria-hidden="true" />
+                <KG_ICONS.adminAction.add aria-hidden="true" />
                 {{ t('task_add') }}
             </button>
         </footer>

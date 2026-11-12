@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="TRow extends object">
 import { computed, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
 import { KG_ICONS } from '@/icons/kegosIcons';
+import TableRowActions from './TableRowActions.vue';
 import TableFilters from './TableFilters.vue';
 import TableHeaderFilter from './TableHeaderFilter.vue';
 import TablePagination from './TablePagination.vue';
@@ -69,7 +69,6 @@ watch(
         if (props.selectable && selected.value.length) selected.value = [];
     },
 );
-const popoverOpen = ref<Record<string | number, boolean>>({});
 
 const resolvedColumns = computed<TableColumn<TRow>[]>(() => {
     if (props.columns?.length) return props.columns;
@@ -117,6 +116,10 @@ if (import.meta.env.DEV && props.selectable && !props.rowKey) {
     console.warn('DataTable: `selectable` requires `rowKey`.');
 }
 
+if (import.meta.env.DEV && props.selectable && !props.selectAllLabel) {
+    console.warn('DataTable: `selectable` requires `selectAllLabel`.');
+}
+
 function toggleAll(checked: boolean) {
     selected.value = checked ? [...pageIds.value] : [];
 }
@@ -148,6 +151,16 @@ function cellValue(row: TRow, column: TableColumn<TRow>) {
 function cellClass(row: TRow, column: TableColumn<TRow>) {
     if (typeof column.cellClass === 'function') return column.cellClass(row);
     return column.cellClass ?? column.class;
+}
+
+const cardColumns = computed(() => resolvedColumns.value.filter((column) => !column.hideBelow));
+const cardTitleColumn = computed(() => cardColumns.value.find((column) => column.primary) ?? cardColumns.value[0]);
+const cardMetaColumns = computed(() => cardColumns.value.filter((column) => column !== cardTitleColumn.value));
+
+function hasCell(row: TRow, column: TableColumn<TRow>): boolean {
+    if (slots[`cell-${column.key}`]) return true;
+    const value = cellValue(row, column);
+    return value !== null && value !== undefined && value !== '';
 }
 
 function currentSortDirection(column: TableColumn<TRow>): 'asc' | 'desc' | null {
@@ -192,14 +205,6 @@ function changePage(page: number) {
     visitSpatieQuery({ page }, { routeUrl: props.routeUrl, only: props.reloadOnly, resetPage: false });
 }
 
-function openDeletePopover(id: string | number) {
-    popoverOpen.value = { [id]: true };
-}
-
-function closeDeletePopover(id: string | number) {
-    popoverOpen.value[id] = false;
-}
-
 function canDeleteThisRow(row: TRow): boolean {
     return props.canDelete && !!props.deleteUrl && (props.canDeleteRow ? props.canDeleteRow(row) : true);
 }
@@ -217,12 +222,6 @@ function onRowClick(row: TRow, event: MouseEvent) {
 function onRowAuxClick(row: TRow, event: MouseEvent) {
     rowLink.onAuxClick(resolveRowHref(row), event);
 }
-
-function confirmDelete(row: TRow, id: string | number) {
-    if (!props.deleteUrl) return;
-    closeDeletePopover(id);
-    router.delete(props.deleteUrl(row), { preserveScroll: true });
-}
 </script>
 
 <template>
@@ -238,27 +237,126 @@ function confirmDelete(row: TRow, id: string | number) {
             @clear="clearFilters"
         />
 
-        <div v-if="$slots.card" class="flex flex-col gap-2 md:hidden">
-            <div
-                v-for="(row, index) in rows?.data ?? []"
-                :key="rowIdentifier(row, index)"
-                class="rounded-box border border-base-300 bg-base-100 p-3"
-            >
-                <slot name="card" :row="row" :index="index" />
-            </div>
-            <p v-if="!rows?.data?.length" class="py-8 text-center text-base-content/50">
+        <label
+            v-if="selectable"
+            class="flex min-h-11 cursor-pointer items-center gap-3 px-3 text-sm md:hidden"
+            data-autom="select-all-mobile"
+        >
+            <input
+                type="checkbox"
+                class="checkbox"
+                :checked="allSelected"
+                :indeterminate="someSelected"
+                @change="toggleAll(($event.target as HTMLInputElement).checked)"
+            />
+            <span>{{ selectAllLabel }}</span>
+        </label>
+
+        <div class="kg-list md:hidden">
+            <template v-if="loading">
+                <div v-for="i in skeletonCount" :key="`card-skeleton-${i}`" class="kg-list-row">
+                    <div class="skeleton h-4 w-full" />
+                </div>
+            </template>
+
+            <template v-else>
+                <div
+                    v-for="(row, index) in rows?.data ?? []"
+                    :key="rowIdentifier(row, index)"
+                    class="kg-list-row"
+                    :class="rowLink.rowClass(resolveRowHref(row))"
+                    @click="onRowClick(row, $event)"
+                    @auxclick="onRowAuxClick(row, $event)"
+                >
+                    <template v-if="$slots.card">
+                        <div class="min-w-0 flex-1">
+                            <slot name="card" :row="row" :index="index" />
+                        </div>
+                    </template>
+
+                    <template v-else>
+                        <label
+                            v-if="selectable"
+                            class="-ml-3 flex size-11 shrink-0 cursor-pointer items-center justify-center self-start"
+                            @click.stop
+                        >
+                            <input
+                                type="checkbox"
+                                class="checkbox"
+                                :checked="selected.includes(String(rowIdentifier(row, index)))"
+                                :aria-label="selectLabel?.(row)"
+                                @change="
+                                    toggleRow(
+                                        String(rowIdentifier(row, index)),
+                                        ($event.target as HTMLInputElement).checked,
+                                    )
+                                "
+                            />
+                        </label>
+                        <div class="flex min-w-0 flex-1 flex-col gap-1 py-0.5">
+                            <div class="flex flex-wrap items-start gap-x-2 gap-y-1">
+                                <div
+                                    v-if="cardTitleColumn"
+                                    class="flex min-w-32 flex-1 items-center text-base"
+                                    :class="{ 'min-h-11': showActionsColumn }"
+                                >
+                                    <div class="min-w-0 [overflow-wrap:anywhere]">
+                                        <slot
+                                            :name="`cell-${cardTitleColumn.key}`"
+                                            :row="row"
+                                            :value="cellValue(row, cardTitleColumn)"
+                                        >
+                                            {{ cellValue(row, cardTitleColumn) }}
+                                        </slot>
+                                    </div>
+                                </div>
+                                <TableRowActions
+                                    v-if="showActionsColumn"
+                                    class="ml-auto shrink-0"
+                                    :edit-href="canEdit && editUrl ? editUrl(row) : null"
+                                    :delete-href="canDeleteThisRow(row) && deleteUrl ? deleteUrl(row) : null"
+                                    @click.stop
+                                >
+                                    <slot name="buttons" :row="row" :index="index" />
+                                </TableRowActions>
+                            </div>
+                            <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+                                <template v-for="column in cardMetaColumns" :key="column.key">
+                                    <span
+                                        v-if="hasCell(row, column)"
+                                        class="inline-flex max-w-full items-baseline gap-1.5"
+                                    >
+                                        <span class="whitespace-nowrap">{{ column.label }}</span>
+                                        <span class="min-w-0 text-base-content [overflow-wrap:anywhere]">
+                                            <slot
+                                                :name="`cell-${column.key}`"
+                                                :row="row"
+                                                :value="cellValue(row, column)"
+                                            >
+                                                {{ cellValue(row, column) }}
+                                            </slot>
+                                        </span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <p v-if="!loading && !rows?.data?.length" class="py-8 text-center text-muted">
                 {{ Object.keys(query.filters).length ? $t('no_records_filters') : $t('no_results') }}
             </p>
         </div>
 
-        <div class="kg-table-bleed overflow-x-auto bg-base-100" :class="{ 'hidden md:block': $slots.card }">
+        <div class="hidden overflow-x-auto md:block">
             <table class="table w-full">
                 <thead>
                     <tr>
                         <th v-if="selectable" class="w-0">
                             <input
                                 type="checkbox"
-                                class="checkbox checkbox-sm"
+                                class="checkbox"
                                 :checked="allSelected"
                                 :indeterminate="someSelected"
                                 :aria-label="selectAllLabel"
@@ -297,13 +395,12 @@ function confirmDelete(row: TRow, id: string | number) {
                                                   ? KG_ICONS.adminAction.sortDesc
                                                   : KG_ICONS.adminAction.sortNone
                                         "
-                                        class="size-4"
-                                        :class="{ 'opacity-30': !currentSortDirection(column) }"
+                                        :class="{ 'text-muted': !currentSortDirection(column) }"
                                     />
                                 </template>
                             </span>
                         </th>
-                        <th v-if="showActionsColumn" class="sticky right-0 z-10 w-0 bg-base-100" />
+                        <th v-if="showActionsColumn" class="sticky right-0 z-10 w-0" />
                     </tr>
                 </thead>
 
@@ -329,7 +426,7 @@ function confirmDelete(row: TRow, id: string | number) {
                                 <td v-if="selectable" @click.stop>
                                     <input
                                         type="checkbox"
-                                        class="checkbox checkbox-sm"
+                                        class="checkbox"
                                         :checked="selected.includes(String(rowIdentifier(row, index)))"
                                         :aria-label="selectLabel?.(row)"
                                         @change="
@@ -350,60 +447,13 @@ function confirmDelete(row: TRow, id: string | number) {
                                     </slot>
                                 </td>
 
-                                <td
-                                    v-if="showActionsColumn"
-                                    class="sticky right-0 z-10 bg-base-100 group-hover:bg-base-200"
-                                >
-                                    <div class="flex items-center justify-end gap-1">
+                                <td v-if="showActionsColumn" class="sticky right-0 z-10">
+                                    <TableRowActions
+                                        :edit-href="canEdit && editUrl ? editUrl(row) : null"
+                                        :delete-href="canDeleteThisRow(row) && deleteUrl ? deleteUrl(row) : null"
+                                    >
                                         <slot name="buttons" :row="row" :index="index" />
-
-                                        <Link
-                                            v-if="canEdit && editUrl"
-                                            :href="editUrl(row)"
-                                            class="btn btn-ghost btn-sm btn-square"
-                                            :title="$t('edit')"
-                                            :aria-label="$t('edit')"
-                                        >
-                                            <KG_ICONS.adminAction.edit class="size-5" />
-                                        </Link>
-
-                                        <div v-if="canDeleteThisRow(row)" class="relative">
-                                            <button
-                                                type="button"
-                                                class="btn btn-ghost btn-sm btn-square text-error"
-                                                :title="$t('delete')"
-                                                :aria-label="$t('delete')"
-                                                @click="openDeletePopover(rowIdentifier(row, index))"
-                                            >
-                                                <KG_ICONS.adminAction.delete class="size-5" />
-                                            </button>
-                                            <div
-                                                v-if="popoverOpen[rowIdentifier(row, index)]"
-                                                class="absolute right-0 bottom-full z-50 mb-1 flex w-44 flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 shadow-float"
-                                                @click.stop
-                                            >
-                                                <p class="text-center text-sm font-medium">
-                                                    {{ $t('confirm_delete') }}
-                                                </p>
-                                                <div class="flex gap-2">
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-ghost btn-sm flex-1"
-                                                        @click="closeDeletePopover(rowIdentifier(row, index))"
-                                                    >
-                                                        {{ $t('no') }}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-error btn-sm flex-1"
-                                                        @click="confirmDelete(row, rowIdentifier(row, index))"
-                                                    >
-                                                        {{ $t('yes') }}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </TableRowActions>
                                 </td>
                             </tr>
 
@@ -415,7 +465,7 @@ function confirmDelete(row: TRow, id: string | number) {
                         </template>
 
                         <tr v-if="!rows?.data?.length">
-                            <td :colspan="columnCount" class="py-8 text-center text-base-content/50">
+                            <td :colspan="columnCount" class="py-8 text-center text-muted">
                                 {{ Object.keys(query.filters).length ? $t('no_records_filters') : $t('no_results') }}
                             </td>
                         </tr>

@@ -43,7 +43,11 @@ function submit(): void {
                     @update:files="onFiles"
                 />
             </div>
-            <button type="submit" class="btn btn-neutral" :disabled="loading || disabled || files.length === 0">
+            <button
+                type="submit"
+                class="btn btn-neutral h-12 min-h-12"
+                :disabled="loading || disabled || files.length === 0"
+            >
                 <span v-if="loading" class="loading loading-spinner loading-xs" />
                 {{ t('bank_statement_preview') }}
             </button>

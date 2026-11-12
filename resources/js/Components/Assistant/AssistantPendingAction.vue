@@ -24,19 +24,17 @@ const busy = computed(() => decision.processingId.value !== null);
 </script>
 
 <template>
-    <div class="card card-border mt-2 bg-base-100">
-        <div class="card-body gap-2 p-3">
+    <div class="mt-2 rounded-card-nested bg-base-100">
+        <div class="flex flex-col gap-2 p-3">
             <p class="text-sm font-medium">{{ t(`pending_action_${action.action}`) }}</p>
             <p class="whitespace-pre-wrap break-words text-sm">{{ action.preview }}</p>
-            <p class="text-xs text-base-content/60">
-                {{ t('pending_action_expires') }}: {{ formatDatetime(action.expires_at) }}
-            </p>
+            <p class="text-xs text-muted">{{ t('pending_action_expires') }}: {{ formatDatetime(action.expires_at) }}</p>
 
-            <p v-if="outcome" class="flex items-center gap-1 text-sm text-base-content/70">
-                <DoneIcon v-if="outcome === 'done'" class="size-4" />
+            <p v-if="outcome" class="flex items-center gap-1 text-sm text-muted">
+                <DoneIcon v-if="outcome === 'done'" />
                 {{ t(outcome === 'done' ? 'assistant_pending_done' : 'assistant_pending_cancelled') }}
             </p>
-            <p v-else-if="expired" class="text-sm text-base-content/70">{{ t('pending_action_expired') }}</p>
+            <p v-else-if="expired" class="text-sm text-muted">{{ t('pending_action_expired') }}</p>
             <div v-else class="flex gap-2">
                 <button
                     type="button"

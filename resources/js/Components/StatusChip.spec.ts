@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from 'vue';
 import StatusChip from './StatusChip.vue';
+import type { StatusTone } from './statusTone';
 
 function render(props: Record<string, unknown>): HTMLElement {
     const host = document.createElement('div');
@@ -16,11 +17,14 @@ describe('StatusChip', () => {
         expect(el.textContent?.trim()).toBe('Zaplatená');
     });
 
-    it('renders the default tone icon', () => {
-        expect(render({ tone: 'danger', label: 'x' }).querySelector('svg')).not.toBeNull();
+    it('renders no icon for any tone', () => {
+        const tones: StatusTone[] = ['planned', 'in_progress', 'done', 'warning', 'danger', 'neutral'];
+        for (const tone of tones) {
+            expect(render({ tone, label: 'x' }).querySelector('svg')).toBeNull();
+        }
     });
 
-    it('omits the icon for the neutral tone', () => {
-        expect(render({ tone: 'neutral', label: 'x' }).querySelector('svg')).toBeNull();
+    it('marks the small size', () => {
+        expect(render({ tone: 'neutral', label: 'x', size: 'sm' }).classList.contains('kg-chip--sm')).toBe(true);
     });
 });

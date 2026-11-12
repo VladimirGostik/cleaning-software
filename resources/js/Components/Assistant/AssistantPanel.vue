@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, provide, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import CloseIcon from '~icons/material-symbols/close-rounded';
+import CloseIcon from '~icons/material-symbols/close-outline-rounded';
 import NewConversationIcon from '~icons/material-symbols/add-outline-rounded';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import AssistantComposer from '@/Components/Assistant/AssistantComposer.vue';
@@ -123,7 +123,7 @@ watch(
         role="dialog"
         aria-modal="false"
         aria-labelledby="assistant-panel-title"
-        class="fixed inset-0 z-30 flex flex-col border border-base-300 bg-base-100 shadow-float sm:inset-auto sm:right-5 sm:bottom-24 sm:h-[min(48rem,calc(100dvh-7.5rem))] sm:w-[min(36rem,calc(100vw-2.5rem))] sm:rounded-box"
+        class="kg-float kg-float--panel fixed inset-0 z-30 flex flex-col sm:inset-auto sm:right-5 sm:bottom-[calc(1.25rem+var(--kg-bottom-nav-clearance)+3.375rem+0.75rem)] sm:h-[min(48rem,calc(100dvh-7.5rem-var(--kg-bottom-nav-clearance)))] sm:w-[min(36rem,calc(100vw-2.5rem))]"
         @keydown.esc="chat.close()"
         @dragenter="onDragEnter"
         @dragleave="onDragLeave"
@@ -132,35 +132,35 @@ watch(
     >
         <div
             v-if="dragDepth > 0 && !composerDisabled"
-            class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] border-2 border-dashed border-primary bg-base-100/90 text-sm font-semibold text-primary"
+            class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-base-100 text-sm font-medium text-primary"
             aria-hidden="true"
         >
             {{ t('assistant_drop_files') }}
         </div>
 
-        <header class="flex items-center gap-2 border-b border-base-300 px-4 py-3">
+        <header class="flex items-center gap-2 px-4 py-3">
             <div class="min-w-0 flex-1">
-                <h2 id="assistant-panel-title" class="text-sm font-semibold">{{ t('assistant_title') }}</h2>
-                <p class="text-xs text-base-content/60">{{ t('assistant_all_companies') }}</p>
+                <h2 id="assistant-panel-title" class="text-lg font-medium">{{ t('assistant_title') }}</h2>
+                <p class="text-xs text-muted">{{ t('assistant_all_companies') }}</p>
             </div>
             <button
                 type="button"
-                class="btn btn-ghost btn-sm btn-square"
+                class="btn btn-ghost btn-square"
                 :aria-label="t('assistant_new_conversation')"
                 :title="t('assistant_new_conversation')"
                 :disabled="!canReset"
                 @click="chat.reset()"
             >
-                <NewConversationIcon class="size-5" />
+                <NewConversationIcon />
             </button>
             <button
                 type="button"
-                class="btn btn-ghost btn-sm btn-square"
+                class="btn btn-ghost btn-square"
                 :aria-label="t('assistant_close')"
                 :title="t('assistant_close')"
                 @click="chat.close()"
             >
-                <CloseIcon class="size-5" />
+                <CloseIcon />
             </button>
         </header>
 
@@ -168,13 +168,13 @@ watch(
             <div v-if="!available" class="alert alert-info text-sm" role="status">
                 {{ t('assistant_not_configured') }}
             </div>
-            <p v-else-if="chat.state.messages.length === 0" class="py-6 text-center text-sm text-base-content/60">
+            <p v-else-if="chat.state.messages.length === 0" class="py-6 text-center text-sm text-muted">
                 {{ t('assistant_empty_hint') }}
             </p>
 
             <AssistantMessage v-for="message in chat.state.messages" :key="message.id" :message="message" />
 
-            <p v-if="chat.state.sending" class="flex items-center gap-2 text-sm text-base-content/60" role="status">
+            <p v-if="chat.state.sending" class="flex items-center gap-2 text-sm text-muted" role="status">
                 <span class="loading loading-dots loading-sm" aria-hidden="true" />
                 {{ t('assistant_thinking') }}
             </p>

@@ -46,7 +46,7 @@ function clearAssignment(): void {
 
     <InvoicePaymentImportResultCard v-if="result" :result="result" />
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body space-y-4">
             <p class="text-sm text-muted">{{ t('invoice_payment_import_intro') }}</p>
 

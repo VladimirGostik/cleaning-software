@@ -44,7 +44,7 @@ function onNativeChange(event: Event) {
             v-bind="$attrs"
             :checked="resolvedValue"
             type="checkbox"
-            class="toggle toggle-primary"
+            class="toggle toggle-primary kg-touch-target"
             :disabled="disabled"
             :aria-invalid="resolvedError ? 'true' : undefined"
             @change="onNativeChange"

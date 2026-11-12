@@ -19,14 +19,14 @@ const objectHref = (object: App.Data.Objects.ObjectListItemData) => `/objects/${
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
-            <h2 class="card-title text-base">{{ t('client_objects') }}</h2>
+            <h2 class="card-title">{{ t('client_objects') }}</h2>
 
             <EmptyState v-if="objects.length === 0" :title="t('client_no_objects')" :icon="BuildingOffice2Icon" />
 
             <div v-else class="overflow-x-auto">
-                <table class="table table-sm">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>{{ t('name') }}</th>
@@ -47,7 +47,7 @@ const objectHref = (object: App.Data.Objects.ObjectListItemData) => `/objects/${
                                 <Link :href="objectHref(object)" class="link link-hover font-medium">
                                     {{ object.name }}
                                 </Link>
-                                <div v-if="object.city" class="text-xs text-base-content/60">{{ object.city }}</div>
+                                <div v-if="object.city" class="text-xs text-muted">{{ object.city }}</div>
                             </td>
                             <td><ObjectTypeBadge :type="object.type" /></td>
                             <td>{{ object.area_sqm !== null ? `${object.area_sqm} m²` : t('empty_dash') }}</td>

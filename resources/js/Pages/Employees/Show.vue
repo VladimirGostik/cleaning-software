@@ -117,8 +117,8 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
         </template>
     </Header>
 
-    <div v-if="!employee.is_active" class="alert alert-warning mb-6">
-        <ExclamationTriangleIcon class="size-5" />
+    <div v-if="!employee.is_active" class="alert alert-warning mb-4">
+        <ExclamationTriangleIcon />
         <span>{{ t('employee_inactive_banner') }}</span>
         <button
             v-if="canReactivate"
@@ -131,8 +131,8 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
         </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div class="space-y-6">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div class="space-y-4">
             <EmployeeProfileCard :employee="employee" />
             <EmployeeEmploymentCard :employee="employee" />
             <EmployeeAccessCard :employee="employee" />
@@ -155,7 +155,7 @@ const deactivateConfirm = useDeleteConfirm<App.Data.Employees.EmployeeDetailData
             />
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
             <EmployeeActionsCard
                 :employee="employee"
                 :can-update="canUpdate"

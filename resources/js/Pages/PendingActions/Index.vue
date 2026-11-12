@@ -23,7 +23,7 @@ const { processingId, toConfirm, errorMessage, requestConfirm, cancel, confirmMo
 <template>
     <Header :title="t('pending_actions')" :breadcrumbs="breadcrumbs" />
 
-    <p class="mb-6 text-base-content/60">{{ t('pending_actions_intro') }}</p>
+    <p class="mb-4 text-muted">{{ t('pending_actions_intro') }}</p>
 
     <div v-if="errorMessage" class="alert alert-error mb-4" role="alert">{{ errorMessage }}</div>
 
@@ -34,8 +34,8 @@ const { processingId, toConfirm, errorMessage, requestConfirm, cancel, confirmMo
         :icon="ShieldExclamationIcon"
     />
 
-    <div v-else class="card bg-base-100 shadow-sm">
-        <ul class="card-body divide-y divide-base-300">
+    <div v-else class="card bg-base-100">
+        <ul class="card-body kg-list">
             <PendingActionRow
                 v-for="action in pendingActions"
                 :key="action.id"

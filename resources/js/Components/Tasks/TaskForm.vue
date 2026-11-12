@@ -226,7 +226,7 @@ function submit(): void {
                 </p>
             </div>
 
-            <div class="sticky bottom-0 border-t border-base-300 bg-base-100 px-6 py-3">
+            <div class="sticky bottom-0 bg-base-100 px-6 py-3">
                 <FormActions :processing="form.processing" @cancel="emit('cancel')" />
             </div>
         </form>

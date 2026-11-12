@@ -12,9 +12,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
-            <h2 class="card-title text-base">{{ t('basic_info') }}</h2>
+            <h2 class="card-title">{{ t('basic_info') }}</h2>
 
             <div class="flex flex-wrap gap-2">
                 <ClientTypeBadge :type="client.type" />
@@ -25,27 +25,27 @@ const { t } = useI18n();
 
             <dl class="mt-2 space-y-2 text-sm">
                 <div v-if="client.ico" class="flex justify-between gap-4">
-                    <dt class="text-base-content/60">{{ t('client_ico') }}</dt>
+                    <dt class="text-muted">{{ t('client_ico') }}</dt>
                     <dd>{{ client.ico }}</dd>
                 </div>
 
                 <div v-if="client.dic" class="flex justify-between gap-4">
-                    <dt class="text-base-content/60">{{ t('client_dic') }}</dt>
+                    <dt class="text-muted">{{ t('client_dic') }}</dt>
                     <dd>{{ client.dic }}</dd>
                 </div>
 
                 <div v-if="client.vat_number" class="flex justify-between gap-4">
-                    <dt class="text-base-content/60">{{ t('client_vat_number') }}</dt>
+                    <dt class="text-muted">{{ t('client_vat_number') }}</dt>
                     <dd>{{ client.vat_number }}</dd>
                 </div>
 
                 <div v-if="client.peppol_participant_id" class="flex justify-between gap-4">
-                    <dt class="text-base-content/60">{{ t('peppol_participant_id') }}</dt>
+                    <dt class="text-muted">{{ t('peppol_participant_id') }}</dt>
                     <dd>{{ client.peppol_participant_id }}</dd>
                 </div>
 
                 <div class="flex justify-between gap-4">
-                    <dt class="text-base-content/60">{{ t('address') }}</dt>
+                    <dt class="text-muted">{{ t('address') }}</dt>
                     <dd class="text-right">
                         <address class="not-italic">
                             <template v-if="client.street">{{ client.street }}<br /></template>
@@ -58,7 +58,7 @@ const { t } = useI18n();
                 </div>
             </dl>
 
-            <p class="mt-2 text-xs text-base-content/50">
+            <p class="mt-2 text-xs text-muted">
                 {{ t('client_customer_since', { date: formatDate(client.created_at) }) }}
             </p>
         </div>

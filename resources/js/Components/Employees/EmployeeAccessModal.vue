@@ -48,7 +48,7 @@ onBeforeUnmount(() => cancelPendingValidation(form));
 <template>
     <dialog class="modal modal-open">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('employee_access_grant') }}</h3>
+            <h3 class="text-lg font-medium">{{ t('employee_access_grant') }}</h3>
 
             <FormProvider :form="form">
                 <form novalidate class="mt-4 space-y-4" @submit.prevent="submit">
@@ -60,7 +60,7 @@ onBeforeUnmount(() => cancelPendingValidation(form));
                             required
                             :label="t('employee_login_email')"
                         />
-                        <p class="text-xs text-base-content/60">{{ t('employee_email_hint') }}</p>
+                        <p class="text-xs text-muted">{{ t('employee_email_hint') }}</p>
                     </div>
 
                     <div>
@@ -71,7 +71,7 @@ onBeforeUnmount(() => cancelPendingValidation(form));
                             :placeholder="t('select_role')"
                             :options="roleOptions"
                         />
-                        <p class="text-xs text-base-content/60">{{ t('employee_role_subset_hint') }}</p>
+                        <p class="text-xs text-muted">{{ t('employee_role_subset_hint') }}</p>
                     </div>
 
                     <p v-if="sharedError" class="text-error text-sm">{{ sharedError }}</p>

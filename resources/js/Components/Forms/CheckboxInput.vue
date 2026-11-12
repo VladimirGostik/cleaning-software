@@ -38,7 +38,7 @@ function onNativeChange(event: Event) {
 </script>
 
 <template>
-    <label class="flex items-center gap-2 cursor-pointer">
+    <label class="flex min-h-11 cursor-pointer items-center gap-2 lg:min-h-0">
         <input
             v-bind="$attrs"
             :checked="resolvedValue"

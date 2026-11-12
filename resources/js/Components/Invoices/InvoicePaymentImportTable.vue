@@ -31,7 +31,7 @@ const allChecked = computed(() => includable.value.length > 0 && includable.valu
 <template>
     <div>
         <div class="hidden overflow-x-auto md:block">
-            <table class="table table-sm">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>

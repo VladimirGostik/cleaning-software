@@ -14,7 +14,7 @@ const model = defineModel<string>({ required: true });
 </script>
 
 <template>
-    <select v-model="model" class="select select-xs w-auto" :aria-label="label" :title="label">
+    <select v-model="model" class="select w-auto" :aria-label="label" :title="label">
         <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
             {{ option.label }}
         </option>

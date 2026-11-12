@@ -62,14 +62,14 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
-            <h2 class="card-title text-lg">{{ t('mcp_tokens_title') }}</h2>
-            <p class="text-sm text-base-content/70">{{ t('mcp_tokens_intro') }}</p>
+            <h2 class="card-title">{{ t('mcp_tokens_title') }}</h2>
+            <p class="text-sm text-muted">{{ t('mcp_tokens_intro') }}</p>
 
-            <div v-if="plainToken" class="space-y-2 rounded-box border border-warning bg-warning/10 p-4" role="alert">
+            <div v-if="plainToken" class="space-y-2 rounded-card-nested bg-warning/10 p-4" role="alert">
                 <p class="text-sm font-medium">{{ t('mcp_token_once_warning') }}</p>
-                <code class="block break-all rounded bg-base-100 p-2 text-xs">{{ plainToken }}</code>
+                <code class="block break-all rounded-tile-sm bg-base-100 p-2 text-xs">{{ plainToken }}</code>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" class="btn btn-sm btn-primary" @click="copy">
                         {{ copied ? t('mcp_token_copied') : t('mcp_token_copy') }}
@@ -92,26 +92,26 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 </form>
             </FormProvider>
 
-            <p v-if="tokens.length === 0" class="text-sm text-base-content/60">{{ t('mcp_tokens_empty') }}</p>
-            <ul v-else class="divide-y divide-base-300">
-                <li v-for="token in tokens" :key="token.id" class="flex items-center justify-between gap-3 py-2">
+            <p v-if="tokens.length === 0" class="text-sm text-muted">{{ t('mcp_tokens_empty') }}</p>
+            <ul v-else class="kg-list">
+                <li v-for="token in tokens" :key="token.id" class="kg-list-row justify-between">
                     <div class="min-w-0">
                         <p class="truncate text-sm font-medium">{{ token.name }}</p>
-                        <p class="text-xs text-base-content/60">
+                        <p class="text-xs text-muted">
                             {{ t('mcp_token_last_used') }}:
                             {{ token.last_used_at ? formatDatetime(token.last_used_at) : t('mcp_token_never_used') }}
                         </p>
-                        <p v-if="token.expires_at" class="text-xs text-base-content/60">
+                        <p v-if="token.expires_at" class="text-xs text-muted">
                             {{ t('mcp_token_expires') }}: {{ formatDatetime(token.expires_at) }}
                         </p>
                     </div>
-                    <button type="button" class="btn btn-ghost btn-xs text-error" @click="openModal(token)">
+                    <button type="button" class="btn btn-ghost btn-sm text-error" @click="openModal(token)">
                         {{ t('mcp_token_revoke') }}
                     </button>
                 </li>
             </ul>
 
-            <div class="space-y-1 border-t border-base-300 pt-3 text-xs text-base-content/70">
+            <div class="space-y-1 pt-3 text-xs text-muted">
                 <p>
                     {{ t('mcp_help_url') }}:
                     <code class="break-all">{{ url }}</code>

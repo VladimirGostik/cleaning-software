@@ -21,8 +21,8 @@ const { t } = useI18n();
     <div class="flex items-start justify-between gap-4 py-3">
         <div>
             <p class="text-sm font-medium">{{ item.label }}</p>
-            <p class="text-xs text-base-content/60">{{ t(notificationPreferenceDescKey(item.type)) }}</p>
-            <p v-if="!item.configurable" class="text-xs text-base-content/50 italic">
+            <p class="text-xs text-muted">{{ t(notificationPreferenceDescKey(item.type)) }}</p>
+            <p v-if="!item.configurable" class="text-xs text-muted italic">
                 {{ t('notification_settings_not_configurable') }}
             </p>
         </div>

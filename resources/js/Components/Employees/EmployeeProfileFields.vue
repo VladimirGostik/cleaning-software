@@ -23,7 +23,7 @@ const { t } = useI18n();
                 :disabled="emailLocked"
                 :label="emailIsLogin ? t('employee_login_email') : t('employee_contact_email')"
             />
-            <p v-if="emailIsLogin && !emailLocked" class="text-xs text-base-content/60">
+            <p v-if="emailIsLogin && !emailLocked" class="text-xs text-muted">
                 {{ t('employee_email_hint') }}
             </p>
         </div>

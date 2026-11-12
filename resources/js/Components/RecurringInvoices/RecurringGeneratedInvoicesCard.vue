@@ -19,13 +19,13 @@ const { money } = useMoneyFormat();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
-            <h2 class="card-title text-base">{{ t('recurring_invoice_generated_invoices') }}</h2>
+            <h2 class="card-title">{{ t('recurring_invoice_generated_invoices') }}</h2>
 
             <EmptyState v-if="props.invoices.length === 0" :title="t('recurring_invoice_no_generated_invoices')" />
 
-            <table v-else class="table table-sm">
+            <table v-else class="table">
                 <thead>
                     <tr>
                         <th>{{ t('invoice_pdf_number') }}</th>

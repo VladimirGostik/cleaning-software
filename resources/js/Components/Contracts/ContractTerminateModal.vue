@@ -52,8 +52,8 @@ function submit(): void {
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('contract_action_terminate') }}</h3>
-            <p class="py-2 text-base-content/70">{{ t('contract_terminate_confirm') }}</p>
+            <h3 class="text-lg font-medium">{{ t('contract_action_terminate') }}</h3>
+            <p class="py-2 text-muted">{{ t('contract_terminate_confirm') }}</p>
 
             <form novalidate class="mt-4 space-y-4" @submit.prevent="submit">
                 <DateInput

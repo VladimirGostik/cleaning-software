@@ -100,20 +100,13 @@ onUnmounted(() => {
                 aria-modal="true"
                 :aria-labelledby="titleId"
                 tabindex="-1"
-                class="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-base-100 shadow-float"
+                class="kg-panel fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col sm:rounded-l-card"
                 @keydown="onKeydown"
             >
-                <div
-                    class="sticky top-0 z-10 flex items-center justify-between border-b border-base-300 bg-base-100 px-6 py-4"
-                >
-                    <h2 :id="titleId" class="text-lg font-bold">{{ title }}</h2>
-                    <button
-                        type="button"
-                        class="btn btn-ghost btn-sm btn-circle"
-                        :aria-label="t('close')"
-                        @click="close"
-                    >
-                        <XMarkIcon class="size-5" />
+                <div class="sticky top-0 z-10 flex items-center justify-between bg-base-100 px-6 py-4">
+                    <h2 :id="titleId" class="text-lg font-medium">{{ title }}</h2>
+                    <button type="button" class="btn btn-square btn-ghost" :aria-label="t('close')" @click="close">
+                        <XMarkIcon />
                     </button>
                 </div>
 

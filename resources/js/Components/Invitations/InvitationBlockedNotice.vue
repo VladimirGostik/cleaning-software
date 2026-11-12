@@ -32,7 +32,7 @@ function logout() {
             </p>
             <button
                 type="button"
-                class="mt-4 flex w-full items-center justify-center rounded-lg py-2.5 text-sm font-semibold text-white transition auth-submit-btn disabled:opacity-70"
+                class="mt-4 flex w-full items-center justify-center text-sm font-medium transition auth-submit-btn disabled:opacity-70"
                 :disabled="loggingOut"
                 @click="logout"
             >

@@ -69,7 +69,7 @@ function toggleGroup(group: App.Data.PermissionGroupData) {
                         :aria-label="group.group_label"
                         @change="toggleGroup(group)"
                     />
-                    <h4 class="font-semibold">{{ group.group_label }}</h4>
+                    <h4 class="font-medium">{{ group.group_label }}</h4>
                 </div>
                 <div class="flex flex-wrap gap-4 pl-7">
                     <label v-for="p in group.permissions" :key="p.id" class="flex items-center gap-2 cursor-pointer">

@@ -30,12 +30,12 @@ const roleOptions = computed<SelectOption[]>(() => props.roles.map((r) => ({ val
                 :placeholder="t('select_role')"
                 :options="roleOptions"
             />
-            <p class="text-xs text-base-content/60">{{ t('employee_role_subset_hint') }}</p>
+            <p class="text-xs text-muted">{{ t('employee_role_subset_hint') }}</p>
         </div>
 
         <div>
             <h3 class="text-sm font-medium">{{ t('employee_permissions') }}</h3>
-            <p class="text-xs text-base-content/60 mb-2">{{ t('employee_permissions_hint') }}</p>
+            <p class="text-xs text-muted mb-2">{{ t('employee_permissions_hint') }}</p>
             <PermissionManager
                 :groups="permissionGroups as App.Data.PermissionGroupData[]"
                 :model-value="permissions"

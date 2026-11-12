@@ -57,11 +57,10 @@ function submitPassword() {
 <template>
     <Header :title="t('profile')" :breadcrumbs="breadcrumbs" />
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Profile form -->
-        <div class="card bg-base-100 shadow-sm">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card bg-base-100">
             <div class="card-body">
-                <h2 class="card-title text-lg">
+                <h2 class="card-title">
                     {{ t('update_profile') }}
                 </h2>
 
@@ -84,10 +83,9 @@ function submitPassword() {
             </div>
         </div>
 
-        <!-- Change password form -->
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100">
             <div class="card-body">
-                <h2 class="card-title text-lg">
+                <h2 class="card-title">
                     {{ t('change_password') }}
                 </h2>
 
@@ -119,7 +117,7 @@ function submitPassword() {
         </div>
     </div>
 
-    <div class="mt-6">
+    <div class="mt-4">
         <McpTokensCard :tokens="mcpTokens" :url="mcpUrl" />
     </div>
 </template>

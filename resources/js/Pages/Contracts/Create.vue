@@ -29,7 +29,7 @@ const breadcrumbs: Breadcrumb[] = [
 <template>
     <Header :title="t('contract_add')" :breadcrumbs="breadcrumbs" />
 
-    <div class="space-y-6">
+    <div class="space-y-4">
         <ContractSourceSelector v-if="selectorAvailable" v-model="source" />
 
         <ContractFileForm v-if="selectorAvailable && source === 'file'" :context="context" :prefill="prefill" />

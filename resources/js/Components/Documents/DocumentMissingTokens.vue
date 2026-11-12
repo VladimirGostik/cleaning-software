@@ -40,10 +40,10 @@ function dismiss(): void {
     <div v-if="visible" class="alert alert-warning alert-soft shrink-0" role="status">
         <div class="w-full">
             <div class="flex items-center gap-2">
-                <p class="min-w-0 flex-1 text-sm font-semibold">{{ summary }}</p>
+                <p class="min-w-0 flex-1 text-sm font-medium">{{ summary }}</p>
                 <button
                     type="button"
-                    class="btn btn-ghost btn-xs"
+                    class="btn btn-ghost btn-sm"
                     :aria-expanded="expanded"
                     aria-controls="document-missing-list"
                     @click="expanded = !expanded"
@@ -52,12 +52,12 @@ function dismiss(): void {
                 </button>
                 <button
                     type="button"
-                    class="btn btn-ghost btn-xs btn-square"
+                    class="btn btn-ghost btn-sm btn-square"
                     :aria-label="t('document_missing_dismiss')"
                     :title="t('document_missing_dismiss')"
                     @click="dismiss"
                 >
-                    <XMarkIcon class="size-5" aria-hidden="true" />
+                    <XMarkIcon aria-hidden="true" />
                 </button>
             </div>
             <ul v-if="expanded" id="document-missing-list" class="mt-2 flex max-h-32 flex-wrap gap-1 overflow-y-auto">

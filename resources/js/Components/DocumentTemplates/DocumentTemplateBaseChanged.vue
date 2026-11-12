@@ -25,7 +25,7 @@ const comparing = ref(false);
 <template>
     <div class="alert alert-warning alert-soft mb-6 flex-col items-stretch gap-3" role="status">
         <div>
-            <p class="font-semibold">{{ t('document_template_base_changed_title') }}</p>
+            <p class="font-medium">{{ t('document_template_base_changed_title') }}</p>
             <p class="text-sm">{{ t('document_template_base_changed_description') }}</p>
         </div>
 
@@ -55,7 +55,7 @@ const comparing = ref(false);
 
         <div v-if="comparing" id="document-template-base-compare" class="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <section>
-                <h3 class="mb-1 text-sm font-semibold">{{ t('document_template_base_previous') }}</h3>
+                <h3 class="mb-1 text-sm font-medium">{{ t('document_template_base_previous') }}</h3>
                 <div class="h-96">
                     <DocumentTokenEditor
                         :model-value="previousBaseBody ?? ''"
@@ -66,7 +66,7 @@ const comparing = ref(false);
                 </div>
             </section>
             <section>
-                <h3 class="mb-1 text-sm font-semibold">{{ t('document_template_base_current') }}</h3>
+                <h3 class="mb-1 text-sm font-medium">{{ t('document_template_base_current') }}</h3>
                 <div class="h-96">
                     <DocumentTokenEditor
                         :model-value="baseBody"

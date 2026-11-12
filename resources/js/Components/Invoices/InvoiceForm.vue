@@ -257,11 +257,11 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
-            <div class="space-y-6">
-                <div class="card bg-base-100 shadow-sm">
+        <form novalidate class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
+            <div class="space-y-4">
+                <div class="card bg-base-100">
                     <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoice_section_subject') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_subject') }}</h2>
                         <InvoiceSubjectPicker
                             v-model:mode="ui.subjectMode"
                             :clients="context.clients"
@@ -270,9 +270,9 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('invoice_section_details') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_details') }}</h2>
 
                         <RadioGroup field="type" :label="t('type')" :options="typeOptions" />
 
@@ -320,9 +320,9 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('invoice_section_payment') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_payment') }}</h2>
 
                         <NumberInput
                             :model-value="form.deposit"
@@ -345,9 +345,9 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('invoice_section_items') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_items') }}</h2>
 
                         <TextareaInput
                             :model-value="form.header_text ?? ''"
@@ -375,9 +375,9 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('note') }}</h2>
+                        <h2 class="card-title">{{ t('note') }}</h2>
 
                         <TextareaInput
                             :model-value="form.note ?? ''"

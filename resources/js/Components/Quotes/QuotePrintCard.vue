@@ -53,10 +53,10 @@ const statusText = computed(() => {
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
             <div class="flex items-center gap-2">
-                <h2 class="card-title text-base">{{ t('quote_section_print') }}</h2>
+                <h2 class="card-title">{{ t('quote_section_print') }}</h2>
                 <span v-if="frozen" class="kg-chip kg-chip--neutral">{{ t('quote_text_frozen') }}</span>
             </div>
 
@@ -68,7 +68,7 @@ const statusText = computed(() => {
                     :error="noteError"
                     @update:model-value="note = $event"
                 />
-                <p class="mt-1 text-xs text-base-content/60">{{ t('quote_note_hint') }}</p>
+                <p class="mt-1 text-xs text-muted">{{ t('quote_note_hint') }}</p>
             </div>
 
             <div>
@@ -79,21 +79,19 @@ const statusText = computed(() => {
                     :error="includedError"
                     @update:model-value="includedText = $event"
                 />
-                <p class="mt-1 text-xs text-base-content/60">{{ t('quote_included_hint') }}</p>
+                <p class="mt-1 text-xs text-muted">{{ t('quote_included_hint') }}</p>
             </div>
 
             <div class="space-y-2">
                 <div>
                     <ToggleInput v-model="showTotals" :label="t('quote_show_totals')" />
-                    <p class="text-xs text-base-content/60">{{ t('quote_show_totals_hint') }}</p>
+                    <p class="text-xs text-muted">{{ t('quote_show_totals_hint') }}</p>
                 </div>
                 <ToggleInput v-if="!isVatPayer" v-model="showVatNote" :label="t('quote_show_vat_note')" />
             </div>
 
-            <div class="divider my-0" />
-
             <div class="space-y-3">
-                <p v-if="statusText" class="text-sm text-base-content/70" role="status">{{ statusText }}</p>
+                <p v-if="statusText" class="text-sm text-muted" role="status">{{ statusText }}</p>
 
                 <SelectInput
                     v-if="templates.length > 1"

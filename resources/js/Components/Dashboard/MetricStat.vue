@@ -17,13 +17,19 @@ const toneClass = computed<string>(
 <template>
     <button
         type="button"
-        class="-mx-2 rounded-box p-2 text-left hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        class="row-span-4 grid min-w-0 grid-rows-subgrid content-start rounded-box px-1.5 py-2 text-left hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         :disabled="switchingTo !== null"
         @click="navigate(tenantId, stat.href)"
     >
-        <span class="block text-xs text-base-content/60">{{ stat.label }}</span>
-        <span class="block text-lg font-semibold" :class="toneClass">{{ stat.value }}</span>
-        <span v-if="stat.caption" class="block text-xs text-base-content/50">{{ stat.caption }}</span>
-        <span v-for="row in stat.secondary" :key="row" class="block text-xs text-base-content/60">{{ row }}</span>
+        <span class="text-xs leading-snug text-muted">{{ stat.label }}</span>
+        <span
+            class="mt-1 text-[length:clamp(0.8125rem,5cqi,1.125rem)] leading-tight font-medium whitespace-nowrap tabular-nums"
+            :class="toneClass"
+            >{{ stat.value }}</span
+        >
+        <span class="text-xs text-muted">{{ stat.caption }}</span>
+        <span class="text-xs text-muted">
+            <span v-for="row in stat.secondary" :key="row" class="block">{{ row }}</span>
+        </span>
     </button>
 </template>

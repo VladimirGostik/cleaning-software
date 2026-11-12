@@ -12,10 +12,12 @@ import AssistantLauncher from '@/Components/Assistant/AssistantLauncher.vue';
 import { useAssistantChat } from '@/Composables/useAssistantChat';
 
 type NavigationItem = App.Data.NavigationItemData;
-import MenuIcon from '~icons/material-symbols/menu-rounded';
 import LogoutIcon from '~icons/material-symbols/logout-outline-rounded';
 import LanguageIcon from '~icons/material-symbols/language-outline-rounded';
-import { NAV_ICONS } from '@/icons/kegosIcons';
+import { KG_ICONS, NAV_ICONS } from '@/icons/kegosIcons';
+import { mobileNavItems } from '@/utils/mobileNav';
+import AnchoredPopover from '@/Components/AnchoredPopover.vue';
+import InitialsAvatar from '@/Components/InitialsAvatar.vue';
 import type { ToastPayload } from '@/Composables/useToast';
 
 const { t } = useI18n();
@@ -34,11 +36,10 @@ const canViewNotifications = computed(() => allows('view notifications'));
 const canUseAssistant = computed(() => allows('use assistant'));
 const assistant = useAssistantChat();
 const drawerOpen = ref(false);
-
-function navIcon(item: NavigationItem, active: boolean) {
-    const icons = NAV_ICONS[item.icon];
-    return active ? icons.filled : icons.outline;
-}
+const languageOpen = ref(false);
+const bottomNavItems = computed(() => mobileNavItems(navigation.value));
+const MoreIcon = KG_ICONS.adminAction.more;
+const CaretIcon = KG_ICONS.adminAction.caretDown;
 
 function translateLabel(label: string): string {
     return label.startsWith('app.') ? t(label.slice(4)) : t(label);
@@ -114,6 +115,10 @@ function isActive(href: string): boolean {
     return page.url.startsWith(href);
 }
 
+function isGroupActive(item: NavigationItem): boolean {
+    return item.children.some((child) => isActive(child.href));
+}
+
 function toastAlertClass(type: ToastMessage['type']): string {
     if (type === 'success') return 'alert-success';
     if (type === 'error') return 'alert-error';
@@ -122,23 +127,11 @@ function toastAlertClass(type: ToastMessage['type']): string {
 </script>
 
 <template>
-    <div class="drawer lg:drawer-open" data-theme="app-theme">
+    <div class="drawer lg:drawer-open" data-theme="app-theme" :data-assistant="canUseAssistant || undefined">
         <input id="app-drawer" v-model="drawerOpen" type="checkbox" class="drawer-toggle" />
 
-        <!-- Page content -->
-        <div class="drawer-content flex flex-col min-h-screen">
-            <!-- Mobile top bar -->
-            <div class="navbar bg-base-100 border-b border-base-300 lg:hidden sticky top-0 z-10">
-                <div class="flex-none">
-                    <label
-                        for="app-drawer"
-                        class="btn btn-square btn-ghost"
-                        :aria-label="t('open_menu')"
-                        :title="t('open_menu')"
-                    >
-                        <MenuIcon class="size-5" />
-                    </label>
-                </div>
+        <div class="drawer-content flex min-h-screen flex-col bg-base-200">
+            <div class="navbar sticky top-0 z-10 bg-base-200 px-5 lg:hidden">
                 <div class="flex-1">
                     <Link href="/" :aria-label="t('app_name')"><BrandLogo :size="18" /></Link>
                 </div>
@@ -146,25 +139,21 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     <TenantSwitcher :tenant="tenant" compact @add-tenant="isAddTenantOpen = true" />
                 </div>
                 <div v-if="canViewNotifications" class="flex-none">
-                    <NotificationBell compact />
+                    <NotificationBell />
                 </div>
             </div>
 
-            <div id="page-header" class="bg-base-200 px-7 pt-7 empty:hidden" />
+            <div id="page-header" class="bg-base-200 px-5 pt-5 empty:hidden lg:px-6 lg:pt-6" />
 
-            <main class="flex-1 p-7 bg-base-200">
+            <main class="flex-1 bg-base-200 p-5 pb-[calc(1.25rem+var(--kg-bottom-nav-clearance))] lg:p-6">
                 <slot />
             </main>
         </div>
 
-        <!-- Sidebar -->
         <div class="drawer-side z-20">
             <label for="app-drawer" class="drawer-overlay" />
-            <aside
-                class="w-64 h-screen overflow-hidden bg-base-100 border-r border-base-300 text-base-content flex flex-col"
-            >
-                <!-- Brand -->
-                <div class="px-4 pt-4 pb-5">
+            <aside class="kg-panel flex h-screen w-(--kg-sidebar-width) flex-col overflow-hidden text-base-content">
+                <div class="px-5 pb-4 pt-5">
                     <Link href="/" class="inline-block" :aria-label="t('app_name')"><BrandLogo :size="22" /></Link>
                 </div>
 
@@ -172,50 +161,57 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     <TenantSwitcher :tenant="tenant" @add-tenant="isAddTenantOpen = true" />
                 </div>
 
-                <!-- Navigation -->
-                <nav class="flex-1 overflow-y-auto p-3">
-                    <ul class="menu menu-sm w-full gap-0.5 p-0">
+                <nav class="flex-1 overflow-y-auto p-3" :aria-label="t('nav_main')">
+                    <ul class="flex flex-col gap-1">
                         <template v-for="item in navigation" :key="item.key">
                             <li v-if="item.children.length === 0">
                                 <Link
                                     :href="item.href"
-                                    :class="{ active: isActive(item.href) }"
-                                    class="flex items-center gap-2"
+                                    class="flex min-h-(--kg-nav-item-height) items-center gap-3 rounded-pill px-4 text-sm"
+                                    :class="
+                                        isActive(item.href)
+                                            ? 'bg-primary font-medium text-primary-content'
+                                            : 'text-base-content hover:bg-neutral'
+                                    "
+                                    :aria-current="isActive(item.href) ? 'page' : undefined"
                                 >
                                     <component
-                                        :is="navIcon(item, isActive(item.href))"
-                                        class="size-5"
-                                        :class="isActive(item.href) ? 'text-primary-hover' : 'text-muted'"
+                                        :is="NAV_ICONS[item.icon]"
+                                        :class="isActive(item.href) ? '' : 'text-muted'"
+                                        aria-hidden="true"
                                     />
                                     {{ translateLabel(item.label) }}
                                 </Link>
                             </li>
                             <li v-else>
-                                <details :open="item.children.some((c: NavigationItem) => isActive(c.href))">
-                                    <summary class="flex items-center gap-2">
-                                        <component
-                                            :is="
-                                                navIcon(
-                                                    item,
-                                                    item.children.some((c: NavigationItem) => isActive(c.href)),
-                                                )
-                                            "
-                                            class="size-5"
-                                            :class="
-                                                item.children.some((c: NavigationItem) => isActive(c.href))
-                                                    ? 'text-primary-hover'
-                                                    : 'text-muted'
-                                            "
-                                        />
+                                <details class="group" :open="isGroupActive(item)">
+                                    <summary
+                                        class="flex min-h-(--kg-nav-item-height) cursor-pointer list-none items-center gap-3 rounded-pill px-4 text-sm text-base-content hover:bg-neutral [&::-webkit-details-marker]:hidden"
+                                        :class="{ 'font-medium': isGroupActive(item) }"
+                                    >
+                                        <component :is="NAV_ICONS[item.icon]" class="text-muted" aria-hidden="true" />
                                         {{ translateLabel(item.label) }}
+                                        <CaretIcon
+                                            class="ml-auto text-muted group-open:rotate-180"
+                                            aria-hidden="true"
+                                        />
                                     </summary>
-                                    <ul>
+                                    <ul class="mt-1 flex flex-col gap-1 ps-4">
                                         <li v-for="child in item.children" :key="child.key">
-                                            <Link :href="child.href" :class="{ active: isActive(child.href) }">
+                                            <Link
+                                                :href="child.href"
+                                                class="flex min-h-(--kg-nav-item-height) items-center gap-3 rounded-pill px-4 text-sm"
+                                                :class="
+                                                    isActive(child.href)
+                                                        ? 'bg-primary font-medium text-primary-content'
+                                                        : 'text-base-content hover:bg-neutral'
+                                                "
+                                                :aria-current="isActive(child.href) ? 'page' : undefined"
+                                            >
                                                 <component
-                                                    :is="navIcon(child, isActive(child.href))"
-                                                    class="size-5"
-                                                    :class="isActive(child.href) ? 'text-primary-hover' : 'text-muted'"
+                                                    :is="NAV_ICONS[child.icon]"
+                                                    :class="isActive(child.href) ? '' : 'text-muted'"
+                                                    aria-hidden="true"
                                                 />
                                                 {{ translateLabel(child.label) }}
                                             </Link>
@@ -227,19 +223,14 @@ function toastAlertClass(type: ToastMessage['type']): string {
                     </ul>
                 </nav>
 
-                <!-- Footer: identity + bell row, logout + language row -->
-                <div class="relative mt-auto space-y-2 border-t border-base-300 p-3">
+                <div class="mt-auto space-y-2 p-3">
                     <div v-if="auth.user" class="flex items-center gap-3">
-                        <span
-                            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-hover"
-                        >
-                            {{ auth.user.name.charAt(0).toUpperCase() }}
-                        </span>
+                        <InitialsAvatar :name="auth.user.name" size="md" />
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-medium text-base-content">{{ auth.user.name }}</p>
                             <p class="truncate text-xs text-muted">{{ auth.user.email }}</p>
                         </div>
-                        <NotificationBell v-if="canViewNotifications" icon-only />
+                        <NotificationBell v-if="canViewNotifications" />
                     </div>
 
                     <div class="flex items-center justify-between gap-2">
@@ -248,70 +239,75 @@ function toastAlertClass(type: ToastMessage['type']): string {
                             class="btn btn-ghost btn-sm justify-start gap-2 text-base-content"
                             @click="logout"
                         >
-                            <LogoutIcon class="size-5" />
+                            <LogoutIcon />
                             {{ t('logout') }}
                         </button>
 
-                        <div v-if="languages && languages.length > 1" class="dropdown dropdown-top dropdown-end">
-                            <div
-                                tabindex="0"
-                                role="button"
-                                class="btn btn-ghost btn-sm justify-start gap-2 text-base-content"
-                            >
-                                <LanguageIcon class="size-5" />
-                                <span>{{ locale.toUpperCase() }}</span>
-                            </div>
-                            <ul
-                                tabindex="0"
-                                class="dropdown-content menu menu-sm bg-base-100 text-base-content rounded-box shadow-float z-50 w-40 p-1"
-                            >
+                        <AnchoredPopover
+                            v-if="languages && languages.length > 1"
+                            v-model:open="languageOpen"
+                            class="w-40 p-1"
+                        >
+                            <template #trigger="{ toggle, open: isOpen }">
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost btn-sm justify-start gap-2 text-base-content"
+                                    aria-haspopup="menu"
+                                    :aria-expanded="isOpen"
+                                    :aria-label="t('locale')"
+                                    @click="toggle"
+                                >
+                                    <LanguageIcon />
+                                    <span>{{ locale.toUpperCase() }}</span>
+                                </button>
+                            </template>
+                            <ul class="menu w-full p-0" role="menu">
                                 <li v-for="lang in languages" :key="lang.value">
-                                    <a :href="`/language/${lang.value}`" :class="{ active: locale === lang.value }">
-                                        <span v-if="lang.flag">{{ lang.flag }}</span>
+                                    <a
+                                        :href="`/language/${lang.value}`"
+                                        role="menuitem"
+                                        :class="{ 'font-medium': locale === lang.value }"
+                                        :aria-current="locale === lang.value ? 'true' : undefined"
+                                    >
                                         {{ lang.label }}
                                     </a>
                                 </li>
                             </ul>
-                        </div>
+                        </AnchoredPopover>
                     </div>
                 </div>
             </aside>
         </div>
+
+        <nav class="kg-bottom-nav" :aria-label="t('nav_mobile')">
+            <Link
+                v-for="item in bottomNavItems"
+                :key="item.key"
+                :href="item.href"
+                :aria-label="translateLabel(item.label)"
+                :aria-current="isActive(item.href) ? 'page' : undefined"
+            >
+                <component :is="NAV_ICONS[item.icon]" aria-hidden="true" />
+            </Link>
+            <button type="button" :aria-label="t('open_menu')" :aria-expanded="drawerOpen" @click="drawerOpen = true">
+                <MoreIcon aria-hidden="true" />
+            </button>
+        </nav>
 
         <AddTenantModal :open="isAddTenantOpen" :colors="tenantColors" @close="isAddTenantOpen = false" />
 
         <AssistantLauncher v-if="canUseAssistant" :hidden="drawerOpen" />
     </div>
 
-    <!-- Toast container -->
     <div
         class="toast toast-bottom toast-end z-50"
-        :class="{ 'mb-20': canUseAssistant, 'sm:me-[37.5rem]': canUseAssistant && assistant.state.open }"
+        :class="[
+            canUseAssistant ? 'mb-[calc(var(--kg-bottom-nav-clearance)+5rem)]' : 'mb-(--kg-bottom-nav-clearance)',
+            { 'sm:me-[37.5rem]': canUseAssistant && assistant.state.open },
+        ]"
     >
         <div v-for="toast in toasts" :key="toast.id" class="alert" :class="toastAlertClass(toast.type)">
             <span>{{ toast.message }}</span>
         </div>
     </div>
 </template>
-
-<style scoped>
-nav .menu :is(a, summary) {
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: var(--radius-field);
-    padding: 8px 10px;
-    color: var(--color-base-content);
-    transition: all 0.12s;
-}
-nav .menu :is(a, summary):hover {
-    background: var(--color-base-200);
-}
-nav .menu a.active {
-    background: var(--color-primary-soft);
-    color: var(--color-primary-hover);
-    box-shadow: none;
-}
-nav .menu a.active:hover {
-    background: var(--color-primary-soft);
-}
-</style>

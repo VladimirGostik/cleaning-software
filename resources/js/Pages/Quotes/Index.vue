@@ -7,6 +7,7 @@ import DocumentDuplicateIcon from '~icons/material-symbols/content-copy-outline-
 import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import PaperAirplaneIcon from '~icons/material-symbols/send-outline-rounded';
 import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -136,9 +137,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
 <template>
     <Header :title="t('quotes')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create quotes')" href="/quotes/create" class="btn btn-secondary btn-sm">
-                {{ t('quote_add') }}
-            </Link>
+            <PageMainAction v-if="allows('create quotes')" :label="t('quote_add')" href="/quotes/create" />
         </template>
     </Header>
 
@@ -155,7 +154,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -185,7 +184,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                         <span v-else>{{ row.customer_name }}</span>
                         <QuoteRoughBadge v-if="row.client_id === null" />
                     </p>
-                    <p v-if="row.subject" class="text-xs text-base-content/60">{{ row.subject }}</p>
+                    <p v-if="row.subject" class="text-xs text-muted">{{ row.subject }}</p>
                 </template>
 
                 <template #cell-object_name="{ row }">{{ row.object_name ?? t('empty_dash') }}</template>
@@ -207,44 +206,44 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                 <template #buttons="{ row }">
                     <Link
                         :href="`/quotes/${row.id}`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-5" />
+                        <EyeIcon />
                     </Link>
 
                     <button
                         v-if="allows('send quotes') && row.status === 'draft' && row.kind === 'itemized'"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('quote_action_send')"
                         :aria-label="t('quote_action_send')"
                         @click="sendConfirm.openModal(row)"
                     >
-                        <PaperAirplaneIcon class="size-5" />
+                        <PaperAirplaneIcon />
                     </button>
 
                     <button
                         v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('quote_action_accept')"
                         :aria-label="t('quote_action_accept')"
                         @click="acceptConfirm.openModal(row)"
                     >
-                        <CheckCircleIcon class="size-5" />
+                        <CheckCircleIcon />
                     </button>
 
                     <button
                         v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
                         type="button"
-                        class="btn btn-ghost btn-xs text-warning"
+                        class="btn btn-ghost btn-square text-warning"
                         :title="t('quote_action_reject')"
                         :aria-label="t('quote_action_reject')"
                         @click="rejectConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-5" />
+                        <XCircleIcon />
                     </button>
                 </template>
             </DataTable>

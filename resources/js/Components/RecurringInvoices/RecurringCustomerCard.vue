@@ -54,16 +54,16 @@ const editLink = computed<{ href: string; label: string } | null>(() => {
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
-            <h2 class="card-title text-base">{{ t('invoice_pdf_customer') }}</h2>
+            <h2 class="card-title">{{ t('invoice_pdf_customer') }}</h2>
 
             <p v-if="!buyer.name" class="font-medium">{{ t('recurring_invoice_no_customer') }}</p>
             <CustomerPartyDetails :party="buyer" />
 
-            <p class="text-xs text-base-content/60">{{ sourceNote }}</p>
+            <p class="text-xs text-muted">{{ sourceNote }}</p>
 
-            <p v-if="!buyer.email" class="text-sm text-base-content/60">{{ t('recurring_invoice_email_missing') }}</p>
+            <p v-if="!buyer.email" class="text-sm text-muted">{{ t('recurring_invoice_email_missing') }}</p>
             <div v-if="!buyer.email && recurringInvoice.auto_send" role="alert" class="alert alert-warning">
                 <span>{{ t('recurring_invoice_email_missing_auto_send') }}</span>
             </div>

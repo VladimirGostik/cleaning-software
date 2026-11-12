@@ -385,12 +385,12 @@ const busy = computed(() => form.processing || staging.value);
                     {{ t('expense_receipt') }}: {{ receiptFile.name }}
                 </p>
 
-                <p v-if="!isEdit && !canAttachReceipt" class="text-sm text-base-content/60">
+                <p v-if="!isEdit && !canAttachReceipt" class="text-sm text-muted">
                     {{ t('expense_receipt_attach_later') }}
                 </p>
             </div>
 
-            <div class="sticky bottom-0 border-t border-base-300 bg-base-100 px-6 py-3">
+            <div class="sticky bottom-0 bg-base-100 px-6 py-3">
                 <FormActions :processing="busy" @cancel="emit('cancel')" />
             </div>
         </form>

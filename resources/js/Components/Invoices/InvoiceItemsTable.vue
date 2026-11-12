@@ -41,7 +41,7 @@ function lineTotal(index: number, row: InvoiceItemsTableRow): number {
 
 <template>
     <div class="-mx-3 overflow-x-auto px-3">
-        <table class="table table-sm w-full [&_td]:px-2 [&_th]:px-2">
+        <table class="table w-full [&_td]:px-2 [&_th]:px-2">
             <thead>
                 <tr>
                     <th>{{ t('invoice_pdf_item_description') }}</th>

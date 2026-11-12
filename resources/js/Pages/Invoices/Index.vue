@@ -23,6 +23,7 @@ import InvoiceIssueModal from '@/Components/Invoices/InvoiceIssueModal.vue';
 import InvoicePohodaExportModal from '@/Components/Invoices/InvoicePohodaExportModal.vue';
 import InvoiceSettingsDrawer from '@/Components/Invoices/InvoiceSettingsDrawer.vue';
 import Can from '@/Components/Can.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { useInvoiceBulkPdf } from '@/Composables/useInvoiceBulkPdf';
@@ -174,42 +175,35 @@ function onSettingsSaved(): void {
 <template>
     <Header :title="t('invoices')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button
-                v-if="allows('view invoices')"
-                type="button"
-                class="btn btn-neutral btn-sm"
-                @click="ui.pohodaOpen = true"
-            >
+            <button v-if="allows('view invoices')" type="button" class="btn btn-neutral" @click="ui.pohodaOpen = true">
                 {{ t('pohoda_export_button') }}
             </button>
-            <Link v-if="allows('edit invoices')" href="/invoices/payment-import" class="btn btn-neutral btn-sm">
+            <Link v-if="allows('edit invoices')" href="/invoices/payment-import" class="btn btn-neutral">
                 {{ t('invoice_payment_import_button') }}
             </Link>
             <Can permission="manage billing settings">
-                <button type="button" class="btn btn-neutral btn-sm" @click="settingsDrawer.open">
+                <button type="button" class="btn btn-neutral" @click="settingsDrawer.open">
                     {{ t('invoicing_settings') }}
                 </button>
             </Can>
             <div v-if="allows('view invoices') && invoices.total > 0" class="flex flex-col items-end gap-1">
                 <button
                     type="button"
-                    class="btn btn-neutral btn-sm"
+                    class="btn btn-neutral"
                     :disabled="printAllTooMany || bulkPdf.active.value"
                     @click="bulkPdf.downloadAllMatching()"
                 >
                     {{ t('invoice_bulk_download_all', { count: invoices.total }) }}
                 </button>
-                <span v-if="printAllTooMany" class="text-xs text-base-content/60">
+                <span v-if="printAllTooMany" class="text-xs text-muted">
                     {{ t('invoice_bulk_download_all_limit', { max: bulkLimits.print_all_max }) }}
                 </span>
             </div>
-            <Link v-if="allows('create invoices')" href="/invoices/create" class="btn btn-secondary btn-sm">
-                {{ t('invoice_add') }}
-            </Link>
+            <PageMainAction v-if="allows('create invoices')" :label="t('invoice_add')" href="/invoices/create" />
         </template>
     </Header>
 
-    <InvoiceStatsCards :stats="stats" class="mb-6" />
+    <InvoiceStatsCards :stats="stats" class="mb-4" />
 
     <EmptyState
         v-if="showEmptyState"
@@ -224,7 +218,7 @@ function onSettingsSaved(): void {
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <InvoiceBulkPdfProgress
                 :phase="bulkPdf.state.phase"
@@ -275,7 +269,7 @@ function onSettingsSaved(): void {
                     <Link
                         v-if="row.client_id"
                         :href="`/clients/${row.client_id}`"
-                        class="link link-hover text-xs text-base-content/60"
+                        class="link link-hover text-xs text-muted"
                     >
                         {{ row.client_name }}
                     </Link>
@@ -294,55 +288,55 @@ function onSettingsSaved(): void {
                 <template #buttons="{ row }">
                     <Link
                         :href="`/invoices/${row.id}`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-5" />
+                        <EyeIcon />
                     </Link>
 
                     <button
                         v-if="allows('edit invoices') && row.status === 'draft'"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('invoice_action_issue')"
                         :aria-label="t('invoice_action_issue')"
                         @click="ui.issueFor = row.id"
                     >
-                        <CheckBadgeIcon class="size-5" />
+                        <CheckBadgeIcon />
                     </button>
 
                     <button
                         v-if="allows('edit invoices') && ['issued', 'overdue'].includes(row.status)"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="payLabel(row.is_credit_note)"
                         :aria-label="payLabel(row.is_credit_note)"
                         @click="ui.payFor = row"
                     >
-                        <BanknotesIcon class="size-5" />
+                        <BanknotesIcon />
                     </button>
 
                     <button
                         v-if="allows('create invoices')"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('invoice_action_duplicate')"
                         :aria-label="t('invoice_action_duplicate')"
                         @click="duplicate(row.id)"
                     >
-                        <DocumentDuplicateIcon class="size-5" />
+                        <DocumentDuplicateIcon />
                     </button>
 
                     <button
                         v-if="allows('cancel invoices') && ['issued', 'overdue'].includes(row.status)"
                         type="button"
-                        class="btn btn-ghost btn-xs text-warning"
+                        class="btn btn-ghost btn-square text-warning"
                         :title="t('invoice_action_cancel')"
                         :aria-label="t('invoice_action_cancel')"
                         @click="cancelConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-5" />
+                        <XCircleIcon />
                     </button>
                 </template>
             </DataTable>

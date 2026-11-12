@@ -6,6 +6,7 @@ import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounde
 import DocumentCheckIcon from '~icons/material-symbols/task-outline-rounded';
 import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -122,9 +123,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
 <template>
     <Header :title="t('contracts')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create contracts')" href="/contracts/create" class="btn btn-secondary btn-sm">
-                {{ t('contract_add') }}
-            </Link>
+            <PageMainAction v-if="allows('create contracts')" :label="t('contract_add')" href="/contracts/create" />
         </template>
     </Header>
 
@@ -143,7 +142,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -154,12 +153,12 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                 <template #cell-title="{ row }">
                     <Link :href="`/contracts/${row.id}`" class="link link-hover font-medium">{{ row.title }}</Link>
                     <ContractFileMarker :source="row.source" :is-signed="row.is_signed" class="ml-2" />
-                    <p v-if="row.number" class="tabular-nums text-xs text-base-content/60">{{ row.number }}</p>
+                    <p v-if="row.number" class="tabular-nums text-xs text-muted">{{ row.number }}</p>
                 </template>
 
                 <template #cell-contractable_label="{ row }">
                     {{ row.contractable_label }}
-                    <p class="text-xs text-base-content/60">{{ t(contractableTypeKey(row.contractable_type)) }}</p>
+                    <p class="text-xs text-muted">{{ t(contractableTypeKey(row.contractable_type)) }}</p>
                 </template>
 
                 <template #cell-category="{ row }">
@@ -185,33 +184,33 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                 <template #buttons="{ row }">
                     <Link
                         :href="`/contracts/${row.id}`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-5" />
+                        <EyeIcon />
                     </Link>
 
                     <button
                         v-if="allows('edit contracts') && row.can_be_signed"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('contract_action_sign')"
                         :aria-label="t('contract_action_sign')"
                         @click="signConfirm.openModal(row)"
                     >
-                        <CheckCircleIcon class="size-5" />
+                        <CheckCircleIcon />
                     </button>
 
                     <button
                         v-if="allows('terminate contracts') && row.can_be_terminated"
                         type="button"
-                        class="btn btn-ghost btn-xs text-warning"
+                        class="btn btn-ghost btn-square text-warning"
                         :title="t('contract_action_terminate')"
                         :aria-label="t('contract_action_terminate')"
                         @click="ui.terminateFor = row.id"
                     >
-                        <XCircleIcon class="size-5" />
+                        <XCircleIcon />
                     </button>
                 </template>
             </DataTable>

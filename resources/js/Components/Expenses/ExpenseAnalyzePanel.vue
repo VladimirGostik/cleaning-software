@@ -23,9 +23,9 @@ async function run(): Promise<void> {
 </script>
 
 <template>
-    <div class="space-y-3 rounded-box border border-base-300 p-4">
-        <h2 class="text-sm font-semibold">{{ t('expense_analyze_title') }}</h2>
-        <p class="text-xs text-base-content/60">{{ t('expense_analyze_hint') }}</p>
+    <div class="space-y-3 rounded-card-nested bg-base-200 p-4">
+        <h2 class="text-base font-medium">{{ t('expense_analyze_title') }}</h2>
+        <p class="text-xs text-muted">{{ t('expense_analyze_hint') }}</p>
 
         <FileInput
             :label="t('expense_analyze_file')"

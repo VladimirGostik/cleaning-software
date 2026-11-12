@@ -17,7 +17,7 @@ const { t } = useI18n();
     <div class="card bg-base-200/40">
         <div class="card-body space-y-3">
             <div class="flex flex-wrap items-center gap-2">
-                <span class="font-semibold text-sm">{{ props.breakdown.name }}</span>
+                <span class="font-medium text-sm">{{ props.breakdown.name }}</span>
                 <ObjectStatusBadge :is-active="props.breakdown.is_active" />
                 <Link
                     v-if="props.breakdown.contract_id"
@@ -36,11 +36,11 @@ const { t } = useI18n();
                 </Link>
             </div>
 
-            <p v-if="props.breakdown.tasks.length === 0" class="text-sm text-base-content/60">
+            <p v-if="props.breakdown.tasks.length === 0" class="text-sm text-muted">
                 {{ t('work_breakdown_no_tasks') }}
             </p>
 
-            <table v-else class="table table-sm">
+            <table v-else class="table">
                 <thead>
                     <tr>
                         <th>{{ t('work_breakdown_col_task') }}</th>

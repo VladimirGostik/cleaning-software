@@ -1,10 +1,10 @@
 <script setup lang="ts" generic="TRow extends object">
 import { computed, ref, useSlots } from 'vue';
 import { router } from '@inertiajs/vue3';
-import ChevronUpIcon from '~icons/material-symbols/expand-less-rounded';
-import ChevronDownIcon from '~icons/material-symbols/expand-more-rounded';
-import PencilSquareIcon from '~icons/material-symbols/edit-rounded';
-import TrashIcon from '~icons/material-symbols/delete-rounded';
+import ChevronUpIcon from '~icons/material-symbols/expand-less-outline-rounded';
+import ChevronDownIcon from '~icons/material-symbols/expand-more-outline-rounded';
+import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
+import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import type { TableColumn, Paginator } from '@/types';
 
 const props = withDefaults(
@@ -140,9 +140,9 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                             <span class="flex items-center gap-1">
                                 {{ column.label }}
                                 <template v-if="column.sortable">
-                                    <ChevronUpIcon v-if="getSortDirection(column) === 'asc'" class="size-3" />
-                                    <ChevronDownIcon v-else-if="getSortDirection(column) === 'desc'" class="size-3" />
-                                    <ChevronUpIcon v-else class="size-3 opacity-30" />
+                                    <ChevronUpIcon v-if="getSortDirection(column) === 'asc'" />
+                                    <ChevronDownIcon v-else-if="getSortDirection(column) === 'desc'" />
+                                    <ChevronUpIcon v-else class="text-muted" />
                                 </template>
                             </span>
                         </th>
@@ -178,25 +178,25 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                                     <a
                                         v-if="canEdit && editUrl"
                                         :href="editUrl(row)"
-                                        class="btn btn-ghost btn-xs"
+                                        class="btn btn-ghost btn-square"
                                         :title="$t('edit')"
                                     >
-                                        <PencilSquareIcon class="size-5" />
+                                        <PencilSquareIcon />
                                     </a>
 
                                     <div v-if="canDeleteThisRow(row)" class="relative">
                                         <button
                                             type="button"
-                                            class="btn btn-ghost btn-xs text-error"
+                                            class="btn btn-ghost btn-square text-error"
                                             :title="$t('delete')"
                                             @click="openDeletePopover(index)"
                                         >
-                                            <TrashIcon class="size-5" />
+                                            <TrashIcon />
                                         </button>
 
                                         <div
                                             v-if="popoverOpen[index]"
-                                            class="absolute right-0 bottom-full mb-1 z-50 w-44 rounded-box bg-base-100 shadow-float border border-base-300 p-3 flex flex-col gap-2"
+                                            class="kg-float absolute right-0 bottom-full mb-1 z-50 w-44 p-3 flex flex-col gap-2"
                                         >
                                             <p class="text-sm text-center font-medium">{{ $t('confirm_delete') }}</p>
                                             <div class="flex gap-2">
@@ -224,7 +224,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                         <tr v-if="!rows?.data?.length">
                             <td
                                 :colspan="resolvedColumns.length + (showActionsColumn ? 1 : 0)"
-                                class="text-center text-base-content/50 py-8"
+                                class="text-center text-muted py-8"
                             >
                                 {{ $t('no_results') }}
                             </td>
@@ -238,7 +238,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
             <div class="flex items-center gap-2">
                 <span class="text-sm">{{ $t('per_page') }}:</span>
                 <select
-                    class="select select-sm select-bordered"
+                    class="select"
                     :value="perPage"
                     @change="emit('update:perPage', Number(($event.target as HTMLSelectElement).value))"
                 >
@@ -247,7 +247,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                     </option>
                 </select>
             </div>
-            <span class="text-sm text-base-content/60">
+            <span class="text-sm text-muted">
                 {{ rows?.from ?? 0 }}&ndash;{{ rows?.to ?? 0 }} of {{ rows?.total ?? 0 }}
             </span>
         </div>

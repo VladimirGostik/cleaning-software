@@ -6,6 +6,7 @@ import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import UserGroupIcon from '~icons/material-symbols/groups-outline-rounded';
 import Header from '@/Layouts/Header.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
@@ -79,14 +80,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 <template>
     <Header :title="t('clients')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button
-                v-if="allows('create clients')"
-                type="button"
-                class="btn btn-secondary btn-sm"
-                @click="ui.createOpen = true"
-            >
-                {{ t('client_add') }}
-            </button>
+            <PageMainAction v-if="allows('create clients')" :label="t('client_add')" @click="ui.createOpen = true" />
         </template>
     </Header>
 
@@ -97,18 +91,13 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         :icon="UserGroupIcon"
     >
         <template #cta>
-            <button
-                v-if="allows('create clients')"
-                type="button"
-                class="btn btn-primary btn-sm"
-                @click="ui.createOpen = true"
-            >
+            <button v-if="allows('create clients')" type="button" class="btn btn-primary" @click="ui.createOpen = true">
                 {{ t('client_add') }}
             </button>
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -143,18 +132,24 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 </template>
 
                 <template #buttons="{ row }">
-                    <Link :href="`/clients/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-5" />
+                    <Link
+                        :href="`/clients/${row.id}`"
+                        class="btn btn-ghost btn-square"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon />
                     </Link>
 
                     <button
                         v-if="allows('delete clients')"
                         type="button"
-                        class="btn btn-ghost btn-xs text-error"
+                        class="btn btn-ghost btn-square text-error"
                         :title="t('delete')"
+                        :aria-label="t('delete')"
                         @click="openModal(row)"
                     >
-                        <TrashIcon class="size-5" />
+                        <TrashIcon />
                     </button>
                 </template>
             </DataTable>

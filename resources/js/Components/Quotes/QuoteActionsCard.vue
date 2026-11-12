@@ -48,13 +48,13 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-2">
-            <h2 class="card-title text-base">{{ t('quote_section_actions') }}</h2>
+            <h2 class="card-title">{{ t('quote_section_actions') }}</h2>
 
             <Can v-if="props.quote.is_editable" permission="edit quotes">
-                <Link :href="`/quotes/${props.quote.id}/edit`" class="btn btn-sm btn-neutral w-full justify-start">
-                    <PencilSquareIcon class="size-5" />
+                <Link :href="`/quotes/${props.quote.id}/edit`" class="btn btn-neutral w-full justify-start">
+                    <PencilSquareIcon />
                     {{ t('edit') }}
                 </Link>
             </Can>
@@ -63,11 +63,11 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                 <div>
                     <button
                         type="button"
-                        class="btn btn-sm btn-secondary w-full justify-start"
+                        class="btn btn-secondary w-full justify-start"
                         :disabled="hasMissingTokens"
                         @click="emit('send')"
                     >
-                        <PaperAirplaneIcon class="size-5" />
+                        <PaperAirplaneIcon />
                         {{ t('quote_action_send') }}
                     </button>
                     <p v-if="hasMissingTokens" class="mt-1 pl-1 text-xs text-warning">
@@ -77,33 +77,29 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
             </Can>
 
             <Can v-if="isSent && isItemized" permission="approve quotes">
-                <button type="button" class="btn btn-sm btn-primary w-full justify-start" @click="emit('accept')">
-                    <CheckCircleIcon class="size-5" />
+                <button type="button" class="btn btn-primary w-full justify-start" @click="emit('accept')">
+                    <CheckCircleIcon />
                     {{ t('quote_action_accept') }}
                 </button>
             </Can>
 
             <Can v-if="isSent && isItemized" permission="approve quotes">
-                <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('reject')">
-                    <XCircleIcon class="size-5" />
+                <button type="button" class="btn btn-neutral w-full justify-start" @click="emit('reject')">
+                    <XCircleIcon />
                     {{ t('quote_action_reject') }}
                 </button>
             </Can>
 
             <Can v-if="isAccepted && isItemized && hasOneOffGroup" permission="create invoices">
                 <div>
-                    <button
-                        type="button"
-                        class="btn btn-sm btn-primary w-full justify-start"
-                        @click="emit('convertInvoice')"
-                    >
-                        <ReceiptPercentIcon class="size-5" />
+                    <button type="button" class="btn btn-primary w-full justify-start" @click="emit('convertInvoice')">
+                        <ReceiptPercentIcon />
                         {{ t('quote_action_convert_invoice') }}
                     </button>
-                    <p v-if="recurringPeriods.length > 0" class="mt-1 pl-1 text-xs text-base-content/50">
+                    <p v-if="recurringPeriods.length > 0" class="mt-1 pl-1 text-xs text-muted">
                         {{ t('quote_convert_invoice_one_off_only') }}
                     </p>
-                    <p v-if="props.quote.invoices.length > 0" class="mt-1 pl-1 text-xs text-base-content/50">
+                    <p v-if="props.quote.invoices.length > 0" class="mt-1 pl-1 text-xs text-muted">
                         {{ t('quote_converted_count', { count: props.quote.invoices.length }) }}
                     </p>
                 </div>
@@ -117,18 +113,18 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                 <div>
                     <button
                         type="button"
-                        class="btn btn-sm btn-primary w-full justify-start"
+                        class="btn btn-primary w-full justify-start"
                         :disabled="!canConvertContract"
                         :title="!canConvertContract ? t('quote_convert_contract_requires_object') : undefined"
                         @click="emit('convertContract')"
                     >
-                        <DocumentCheckIcon class="size-5" />
+                        <DocumentCheckIcon />
                         {{ t('quote_action_convert_contract') }}
                     </button>
-                    <p v-if="!canConvertContract" class="mt-1 pl-1 text-xs text-base-content/50">
+                    <p v-if="!canConvertContract" class="mt-1 pl-1 text-xs text-muted">
                         {{ t('quote_convert_contract_requires_object') }}
                     </p>
-                    <p v-if="props.quote.contracts.length > 0" class="mt-1 pl-1 text-xs text-base-content/50">
+                    <p v-if="props.quote.contracts.length > 0" class="mt-1 pl-1 text-xs text-muted">
                         {{ t('quote_converted_contracts_count', { count: props.quote.contracts.length }) }}
                     </p>
                 </div>
@@ -137,10 +133,10 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
             <button
                 v-if="canDownloadPdf"
                 type="button"
-                class="btn btn-sm btn-neutral w-full justify-start"
+                class="btn btn-neutral w-full justify-start"
                 @click="emit('preview')"
             >
-                <VisibilityIcon class="size-5" />
+                <VisibilityIcon />
                 {{ t('preview') }}
             </button>
 
@@ -149,22 +145,22 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                 :href="`/quotes/${props.quote.id}/pdf`"
                 target="_blank"
                 rel="noopener"
-                class="btn btn-sm btn-neutral w-full justify-start"
+                class="btn btn-neutral w-full justify-start"
             >
-                <ArrowDownTrayIcon class="size-5" />
+                <ArrowDownTrayIcon />
                 {{ t('quote_action_download_pdf') }}
             </a>
 
             <Can permission="create quotes">
-                <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('duplicate')">
-                    <DocumentDuplicateIcon class="size-5" />
+                <button type="button" class="btn btn-neutral w-full justify-start" @click="emit('duplicate')">
+                    <DocumentDuplicateIcon />
                     {{ t('quote_action_duplicate') }}
                 </button>
             </Can>
 
             <Can v-if="isDraft" permission="delete quotes">
-                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('delete')">
-                    <TrashIcon class="size-5" />
+                <button type="button" class="btn btn-error w-full justify-start" @click="emit('delete')">
+                    <TrashIcon />
                     {{ t('delete') }}
                 </button>
             </Can>

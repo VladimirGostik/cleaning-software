@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import ChevronLeftIcon from '~icons/material-symbols/chevron-left-outline-rounded';
+import ChevronRightIcon from '~icons/material-symbols/chevron-right-outline-rounded';
+import FirstPageIcon from '~icons/material-symbols/first-page-outline-rounded';
+import LastPageIcon from '~icons/material-symbols/last-page-outline-rounded';
 import type { Paginator } from '@/types/table';
 
 const props = withDefaults(
@@ -43,9 +47,9 @@ function go(page: number) {
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <div class="flex shrink-0 items-center gap-2">
-                <span class="text-base-content/60 whitespace-nowrap">{{ $t('per_page') }}</span>
+                <span class="whitespace-nowrap text-muted">{{ $t('per_page') }}</span>
                 <select
-                    class="select select-sm select-bordered"
+                    class="select w-24"
                     :value="rows.per_page"
                     data-autom="select-page-size"
                     @change="emit('perPage', Number(($event.target as HTMLSelectElement).value))"
@@ -54,48 +58,58 @@ function go(page: number) {
                 </select>
             </div>
 
-            <span class="text-base-content/60 whitespace-nowrap">
+            <span class="whitespace-nowrap text-muted">
                 {{ rows.from ?? 0 }}–{{ rows.to ?? 0 }} / {{ rows.total ?? 0 }}
             </span>
         </div>
 
-        <div v-if="rows.last_page > 1" class="join justify-center">
-            <button type="button" class="join-item btn btn-sm" :disabled="rows.current_page <= 1" @click="go(1)">
-                «
+        <div v-if="rows.last_page > 1" class="join justify-center" role="navigation" :aria-label="$t('pagination_nav')">
+            <button
+                type="button"
+                class="join-item btn btn-neutral btn-square"
+                :aria-label="String(1)"
+                :disabled="rows.current_page <= 1"
+                @click="go(1)"
+            >
+                <FirstPageIcon aria-hidden="true" />
             </button>
             <button
                 type="button"
-                class="join-item btn btn-sm"
+                class="join-item btn btn-neutral btn-square"
+                :aria-label="$t('previous')"
                 :disabled="!rows.prev_page_url"
                 @click="go(rows.current_page - 1)"
             >
-                ‹
+                <ChevronLeftIcon aria-hidden="true" />
             </button>
             <button
                 v-for="page in visiblePages"
                 :key="page"
                 type="button"
-                class="join-item btn btn-sm"
-                :class="{ 'btn-active': page === rows.current_page }"
+                class="join-item btn btn-square"
+                :class="page === rows.current_page ? 'btn-primary' : 'btn-neutral'"
+                :aria-current="page === rows.current_page ? 'page' : undefined"
                 @click="go(page)"
             >
                 {{ page }}
             </button>
             <button
                 type="button"
-                class="join-item btn btn-sm"
+                class="join-item btn btn-neutral btn-square"
+                :aria-label="$t('next')"
                 :disabled="!rows.next_page_url"
                 @click="go(rows.current_page + 1)"
             >
-                ›
+                <ChevronRightIcon aria-hidden="true" />
             </button>
             <button
                 type="button"
-                class="join-item btn btn-sm"
+                class="join-item btn btn-neutral btn-square"
+                :aria-label="String(rows.last_page)"
                 :disabled="rows.current_page >= rows.last_page"
                 @click="go(rows.last_page)"
             >
-                »
+                <LastPageIcon aria-hidden="true" />
             </button>
         </div>
     </div>

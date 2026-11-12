@@ -7,6 +7,7 @@ import RectangleStackIcon from '~icons/material-symbols/description-outline-roun
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import ObjectStatusBadge from '@/Components/Objects/ObjectStatusBadge.vue';
 import DocumentTemplateScopeBadge from '@/Components/DocumentTemplates/DocumentTemplateScopeBadge.vue';
 import DocumentTemplateStateBadge from '@/Components/DocumentTemplates/DocumentTemplateStateBadge.vue';
@@ -71,20 +72,14 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('document_templates')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link
-                v-if="canCreateGlobal"
-                href="/settings/document-templates/create?global=1"
-                class="btn btn-neutral btn-sm"
-            >
+            <Link v-if="canCreateGlobal" href="/settings/document-templates/create?global=1" class="btn btn-neutral">
                 {{ t('document_template_add_global') }}
             </Link>
-            <Link
+            <PageMainAction
                 v-if="allows('create document_templates')"
+                :label="t('document_template_add')"
                 href="/settings/document-templates/create"
-                class="btn btn-secondary btn-sm"
-            >
-                {{ t('document_template_add') }}
-            </Link>
+            />
         </template>
     </Header>
 
@@ -105,7 +100,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -144,11 +139,11 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 <template #buttons="{ row }">
                     <Link
                         :href="`/settings/document-templates/${row.id}/edit`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('edit')"
                         :aria-label="t('edit')"
                     >
-                        <PencilSquareIcon class="size-5" />
+                        <PencilSquareIcon />
                     </Link>
                 </template>
             </DataTable>

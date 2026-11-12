@@ -1,23 +1,16 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue';
-import { TONE_ICON, type StatusTone } from './statusTone';
+import type { StatusTone } from './statusTone';
 
-const props = withDefaults(
+withDefaults(
     defineProps<{
         tone: StatusTone;
         label: string;
-        icon?: Component;
         size?: 'sm' | 'md';
     }>(),
-    { icon: undefined, size: 'md' },
+    { size: 'md' },
 );
-
-const resolvedIcon = computed(() => props.icon ?? TONE_ICON[props.tone]);
 </script>
 
 <template>
-    <span class="kg-chip" :class="[`kg-chip--${tone}`, { 'kg-chip--sm': size === 'sm' }]">
-        <component :is="resolvedIcon" v-if="resolvedIcon" aria-hidden="true" />
-        {{ label }}
-    </span>
+    <span class="kg-chip" :class="[`kg-chip--${tone}`, { 'kg-chip--sm': size === 'sm' }]">{{ label }}</span>
 </template>

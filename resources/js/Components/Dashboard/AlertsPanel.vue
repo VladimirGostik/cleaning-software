@@ -43,7 +43,7 @@ const isEmpty = computed<boolean>(() => sections.value.length === 0);
 <template>
     <aside class="card bg-base-100" aria-labelledby="dashboard-alerts-title">
         <div class="card-body gap-4">
-            <h2 id="dashboard-alerts-title" class="card-title text-base">{{ t('dashboard_alerts_title') }}</h2>
+            <h2 id="dashboard-alerts-title" class="card-title">{{ t('dashboard_alerts_title') }}</h2>
             <EmptyState
                 v-if="isEmpty"
                 :title="t('dashboard_alerts_empty_title')"
@@ -56,7 +56,7 @@ const isEmpty = computed<boolean>(() => sections.value.length === 0);
                     :key="section.type"
                     :aria-labelledby="`dashboard-alerts-${section.type}`"
                 >
-                    <div class="mb-1 flex items-center gap-2">
+                    <div class="mb-2 flex items-center gap-2">
                         <h3 :id="`dashboard-alerts-${section.type}`" class="text-sm font-medium">
                             {{ section.label }}
                         </h3>
@@ -64,14 +64,14 @@ const isEmpty = computed<boolean>(() => sections.value.length === 0);
                             section.count
                         }}</span>
                     </div>
-                    <ul class="divide-y divide-base-200">
+                    <ul class="kg-list">
                         <AlertRow
                             v-for="alert in section.rows"
                             :key="`${alert.tenant_id}-${alert.type}-${alert.title}`"
                             :alert="alert"
                         />
                     </ul>
-                    <p v-if="section.hidden > 0" class="mt-1 text-xs text-base-content/60">
+                    <p v-if="section.hidden > 0" class="mt-1 text-xs text-muted">
                         {{ t('dashboard_alerts_more', { count: section.hidden }) }}
                     </p>
                 </section>

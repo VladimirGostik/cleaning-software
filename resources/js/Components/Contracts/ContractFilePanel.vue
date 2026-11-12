@@ -30,21 +30,19 @@ const isPdf = computed(() => props.file?.mime_type === 'application/pdf');
         <span>{{ t('contract_file_no_access') }}</span>
     </div>
 
-    <div v-else class="flex flex-wrap items-center justify-between gap-3 rounded-box border border-base-300 p-3">
+    <div v-else class="flex flex-wrap items-center justify-between gap-3 p-3 kg-card-nested">
         <div class="min-w-0">
             <p class="truncate font-medium">{{ file.file_name }}</p>
-            <p class="text-xs text-base-content/60">
-                {{ file.mime_type ?? t('empty_dash') }} · {{ formatBytes(file.size) }}
-            </p>
+            <p class="text-xs text-muted">{{ file.mime_type ?? t('empty_dash') }} · {{ formatBytes(file.size) }}</p>
         </div>
 
         <div class="flex shrink-0 gap-2">
             <button v-if="isPdf" type="button" class="btn btn-sm btn-neutral" @click="pdf.open()">
-                <EyeIcon class="size-5" />
+                <EyeIcon />
                 {{ t('contract_file_preview') }}
             </button>
             <a :href="file.download_url" target="_blank" rel="noopener" class="btn btn-sm btn-neutral">
-                <ArrowDownTrayIcon class="size-5" />
+                <ArrowDownTrayIcon />
                 {{ t('uploaded_file_download') }}
             </a>
         </div>

@@ -34,20 +34,20 @@ const partyHref = computed(() => {
 </script>
 
 <template>
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-            <h3 class="text-sm font-semibold text-base-content/70">{{ t('contract_party_supplier') }}</h3>
+            <h3 class="text-sm font-medium text-muted">{{ t('contract_party_supplier') }}</h3>
             <p class="font-medium">{{ supplierName }}</p>
         </div>
 
         <div>
-            <h3 class="text-sm font-semibold text-base-content/70">{{ partyLabel }}</h3>
+            <h3 class="text-sm font-medium text-muted">{{ partyLabel }}</h3>
             <Link v-if="partyHref" :href="partyHref" class="link link-hover font-medium">
                 {{ contract.contractable_label }}
             </Link>
             <p v-else class="font-medium">{{ contract.contractable_label }}</p>
 
-            <p v-if="contract.document_template_name" class="mt-2 text-sm text-base-content/60">
+            <p v-if="contract.document_template_name" class="mt-2 text-sm text-muted">
                 {{ t('contract_link_template') }}: {{ contract.document_template_name }}
             </p>
         </div>

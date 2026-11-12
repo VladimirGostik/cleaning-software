@@ -62,13 +62,13 @@ function submit() {
         :breadcrumbs="breadcrumbs"
     >
         <template #actions>
-            <Link href="/users" class="btn btn-ghost btn-sm">{{ t('cancel') }}</Link>
+            <Link href="/users" class="btn btn-ghost">{{ t('cancel') }}</Link>
         </template>
     </Header>
 
     <FormProvider :form="form">
         <form novalidate @submit.prevent="submit">
-            <div class="card bg-base-100 shadow-sm mb-6">
+            <div class="card bg-base-100 mb-4">
                 <div class="card-body">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TextInput field="name" :label="t('name')" autocomplete="name" required />
@@ -76,7 +76,7 @@ function submit() {
                         <TextInput field="email" :label="t('email')" type="email" autocomplete="email" required />
 
                         <template v-if="!isEditing">
-                            <p class="text-sm text-base-content/60 md:col-span-2">
+                            <p class="text-sm text-muted md:col-span-2">
                                 {{ t('user_link_existing_hint') }}
                             </p>
 
@@ -96,9 +96,9 @@ function submit() {
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm mb-6">
+            <div class="card bg-base-100 mb-4">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('assign_roles') }}</h2>
+                    <h2 class="card-title">{{ t('assign_roles') }}</h2>
                     <CheckboxGroup field="roles" :options="roleOptions" />
                 </div>
             </div>

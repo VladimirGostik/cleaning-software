@@ -32,9 +32,14 @@ function refresh(): void {
 <template>
     <Header :title="t('dashboard')">
         <template #actions>
-            <span class="text-xs text-base-content/50">{{ generatedLabel }}</span>
-            <button type="button" class="btn btn-neutral btn-sm" :aria-label="t('dashboard_refresh')" @click="refresh">
-                <ArrowPathIcon class="size-5" />
+            <span class="text-xs text-muted">{{ generatedLabel }}</span>
+            <button
+                type="button"
+                class="btn btn-neutral btn-square"
+                :aria-label="t('dashboard_refresh')"
+                @click="refresh"
+            >
+                <ArrowPathIcon />
             </button>
         </template>
     </Header>
@@ -47,7 +52,7 @@ function refresh(): void {
     />
 
     <div v-else class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 min-[1680px]:grid-cols-3">
             <CompanyCard v-for="company in overview.companies" :key="company.tenant_id" :company="company" />
         </div>
         <AlertsPanel

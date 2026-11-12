@@ -11,9 +11,9 @@ const { t, locale } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4" role="status">
-            <h2 class="text-lg font-semibold">
+            <h2 class="text-lg font-medium">
                 {{
                     result.recorded_count > 0
                         ? t('invoice_payment_import_result_title')
@@ -85,10 +85,10 @@ const { t, locale } = useI18n();
             </section>
 
             <div class="flex flex-wrap gap-2">
-                <Link href="/invoices?filter[open]=1" class="btn btn-neutral btn-sm">
+                <Link href="/invoices?filter[open]=1" class="btn btn-neutral">
                     {{ t('invoice_payment_import_view_unpaid') }}
                 </Link>
-                <Link href="/invoices/payment-import" class="btn btn-neutral btn-sm">
+                <Link href="/invoices/payment-import" class="btn btn-neutral">
                     {{ t('invoice_payment_import_another') }}
                 </Link>
             </div>

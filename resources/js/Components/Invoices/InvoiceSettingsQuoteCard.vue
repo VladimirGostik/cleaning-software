@@ -15,10 +15,10 @@ const titleId = useId();
 </script>
 
 <template>
-    <section class="card bg-base-100 shadow-sm" :aria-labelledby="titleId">
+    <section class="card bg-base-100" :aria-labelledby="titleId">
         <div class="card-body space-y-4">
-            <h2 :id="titleId" class="card-title text-base">{{ t('invoice_settings_section_quotes') }}</h2>
-            <p class="text-sm text-base-content/60">{{ t('invoice_settings_quotes_hint') }}</p>
+            <h2 :id="titleId" class="card-title">{{ t('invoice_settings_section_quotes') }}</h2>
+            <p class="text-sm text-muted">{{ t('invoice_settings_quotes_hint') }}</p>
 
             <TextareaInput
                 :model-value="includedText ?? ''"
@@ -27,11 +27,11 @@ const titleId = useId();
                 :error="props.includedError"
                 @update:model-value="includedText = $event || null"
             />
-            <p class="text-xs text-base-content/60">{{ t('quote_included_hint') }}</p>
+            <p class="text-xs text-muted">{{ t('quote_included_hint') }}</p>
 
             <div>
                 <TextInput field="signing_place" :label="t('invoice_settings_signing_place')" maxlength="100" />
-                <p class="mt-1 text-xs text-base-content/60">{{ t('invoice_settings_signing_place_hint') }}</p>
+                <p class="mt-1 text-xs text-muted">{{ t('invoice_settings_signing_place_hint') }}</p>
             </div>
         </div>
     </section>

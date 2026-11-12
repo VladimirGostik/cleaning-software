@@ -99,44 +99,44 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <button
                 v-if="task.can.update && task.is_active"
                 type="button"
-                class="btn btn-secondary btn-sm"
+                class="btn btn-secondary"
                 :disabled="processing"
                 @click="transition(task.id, 'complete')"
             >
-                <CheckIcon class="size-5" />
+                <CheckIcon />
                 {{ t('task_complete') }}
             </button>
 
             <button
                 v-if="task.can.update && !task.is_active"
                 type="button"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-ghost"
                 :disabled="processing"
                 @click="transition(task.id, 'reopen')"
             >
-                <ArrowPathIcon class="size-5" />
+                <ArrowPathIcon />
                 {{ t('task_reopen') }}
             </button>
 
             <button
                 v-if="task.can.update"
                 type="button"
-                class="btn btn-ghost btn-sm hidden sm:inline-flex"
+                class="btn btn-ghost hidden sm:inline-flex"
                 :disabled="uploading"
                 @click="ui.editOpen = true"
             >
-                <PencilSquareIcon class="size-5" />
+                <PencilSquareIcon />
                 {{ t('edit') }}
             </button>
 
             <button
                 v-if="task.can.delete"
                 type="button"
-                class="btn btn-error btn-sm hidden sm:inline-flex"
+                class="btn btn-error hidden sm:inline-flex"
                 :disabled="uploading"
                 @click="openModal(task)"
             >
-                <TrashIcon class="size-5" />
+                <TrashIcon />
                 {{ t('delete') }}
             </button>
 
@@ -145,14 +145,14 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <template #trigger="{ toggle, open }">
                         <button
                             type="button"
-                            class="btn btn-ghost btn-sm btn-square"
+                            class="btn btn-ghost btn-square"
                             aria-haspopup="menu"
                             :aria-expanded="open"
                             :aria-label="t('more_actions')"
                             :title="t('more_actions')"
                             @click="toggle"
                         >
-                            <KG_ICONS.adminAction.more class="size-5" />
+                            <KG_ICONS.adminAction.more />
                         </button>
                     </template>
 
@@ -161,22 +161,22 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                             v-if="task.can.update"
                             type="button"
                             role="menuitem"
-                            class="flex items-center gap-2 rounded-field px-2 py-2 text-left hover:bg-base-200"
+                            class="flex min-h-11 items-center gap-2 rounded-tile-sm px-3 text-left hover:bg-base-100"
                             :disabled="uploading"
                             @click="((ui.moreOpen = false), (ui.editOpen = true))"
                         >
-                            <PencilSquareIcon class="size-5" />
+                            <PencilSquareIcon />
                             {{ t('edit') }}
                         </button>
                         <button
                             v-if="task.can.delete"
                             type="button"
                             role="menuitem"
-                            class="flex items-center gap-2 rounded-field px-2 py-2 text-left text-error hover:bg-base-200"
+                            class="flex min-h-11 items-center gap-2 rounded-tile-sm px-3 text-left text-error hover:bg-base-100"
                             :disabled="uploading"
                             @click="((ui.moreOpen = false), openModal(task))"
                         >
-                            <TrashIcon class="size-5" />
+                            <TrashIcon />
                             {{ t('delete') }}
                         </button>
                     </div>
@@ -185,13 +185,13 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         </template>
     </Header>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="space-y-6 lg:col-span-2">
-            <div class="card bg-base-100 shadow-sm">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div class="space-y-4 lg:col-span-2">
+            <div class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('description') }}</h2>
+                    <h2 class="card-title">{{ t('description') }}</h2>
                     <p v-if="task.description" class="whitespace-pre-wrap">{{ task.description }}</p>
-                    <p v-else class="text-base-content/60">{{ t('empty_dash') }}</p>
+                    <p v-else class="text-muted">{{ t('empty_dash') }}</p>
                 </div>
             </div>
 
@@ -218,10 +218,10 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <TaskCommentsCard :task-id="task.id" :thread="thread" :uploading="uploading" />
         </div>
 
-        <div class="order-first space-y-6 lg:order-none">
-            <div class="card bg-base-100 shadow-sm">
+        <div class="order-first space-y-4 lg:order-none">
+            <div class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('task_details') }}</h2>
+                    <h2 class="card-title">{{ t('task_details') }}</h2>
 
                     <div class="flex flex-wrap gap-2">
                         <TaskStatusMenu
@@ -236,47 +236,47 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 
                     <dl class="mt-2 space-y-2 text-sm">
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('task_company') }}</dt>
+                            <dt class="text-muted">{{ t('task_company') }}</dt>
                             <dd>
                                 {{ task.is_global ? t('task_kind_global') : (task.tenant_name ?? t('empty_dash')) }}
                             </dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('task_due_at') }}</dt>
+                            <dt class="text-muted">{{ t('task_due_at') }}</dt>
                             <dd>{{ task.due_at ? formatDatetime(task.due_at) : t('empty_dash') }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('task_remind_at') }}</dt>
+                            <dt class="text-muted">{{ t('task_remind_at') }}</dt>
                             <dd>{{ reminderLabel }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('task_assignee') }}</dt>
+                            <dt class="text-muted">{{ t('task_assignee') }}</dt>
                             <dd>{{ task.assignee_name ?? t('task_unassigned') }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('task_subject') }}</dt>
+                            <dt class="text-muted">{{ t('task_subject') }}</dt>
                             <dd>
                                 <TaskSubjectLink v-if="task.subject" :subject="task.subject" />
                                 <span v-else>{{ t('empty_dash') }}</span>
                             </dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('task_created_by') }}</dt>
+                            <dt class="text-muted">{{ t('task_created_by') }}</dt>
                             <dd>{{ task.created_by_name }}</dd>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('created_at') }}</dt>
+                            <dt class="text-muted">{{ t('created_at') }}</dt>
                             <dd>{{ formatDatetime(task.created_at) }}</dd>
                         </div>
                         <div v-if="task.completed_at" class="flex justify-between gap-4">
-                            <dt class="text-base-content/60">{{ t('task_completed_at') }}</dt>
+                            <dt class="text-muted">{{ t('task_completed_at') }}</dt>
                             <dd>{{ formatDatetime(task.completed_at) }}</dd>
                         </div>
                     </dl>
                 </div>
             </div>
 
-            <div v-if="canAssign" class="card bg-base-100 shadow-sm">
+            <div v-if="canAssign" class="card bg-base-100">
                 <div class="card-body">
                     <TaskAssignPanel :task="task" :members="assignMembers" />
                 </div>

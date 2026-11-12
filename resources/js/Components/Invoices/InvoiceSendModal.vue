@@ -52,7 +52,7 @@ function submit(): void {
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('invoice_action_send_email') }}</h3>
+            <h3 class="text-lg font-medium">{{ t('invoice_action_send_email') }}</h3>
 
             <FormProvider :form="form">
                 <form novalidate class="mt-4 space-y-2" @submit.prevent="submit">
@@ -64,7 +64,7 @@ function submit(): void {
                             :suggestions="options.email_options"
                             required
                         />
-                        <p class="text-xs text-base-content/60">{{ t('invoice_send_recipient_hint') }}</p>
+                        <p class="text-xs text-muted">{{ t('invoice_send_recipient_hint') }}</p>
                     </div>
 
                     <CheckboxInput

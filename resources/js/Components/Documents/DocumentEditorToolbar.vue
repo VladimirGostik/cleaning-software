@@ -6,7 +6,7 @@ import ArrowUturnLeftIcon from '~icons/material-symbols/undo-outline-rounded';
 import ArrowUturnRightIcon from '~icons/material-symbols/redo-outline-rounded';
 import Bars3BottomLeftIcon from '~icons/material-symbols/format-align-left-outline-rounded';
 import Bars3BottomRightIcon from '~icons/material-symbols/format-align-right-outline-rounded';
-import Bars3Icon from '~icons/material-symbols/format-align-center-rounded';
+import Bars3Icon from '~icons/material-symbols/format-align-center-outline-rounded';
 import Bars4Icon from '~icons/material-symbols/format-align-justify-outline-rounded';
 import ListBulletIcon from '~icons/material-symbols/format-list-bulleted-outline-rounded';
 import MinusIcon from '~icons/material-symbols/remove-outline-rounded';
@@ -58,7 +58,7 @@ interface ActionVisual {
 const ACTIONS: Record<DocumentToolbarActionId, ActionVisual> = {
     undo: { label: 'editor_undo', icon: ArrowUturnLeftIcon },
     redo: { label: 'editor_redo', icon: ArrowUturnRightIcon },
-    bold: { label: 'editor_bold', glyph: 'B', glyphClass: 'font-bold' },
+    bold: { label: 'editor_bold', glyph: 'B', glyphClass: 'font-medium' },
     italic: { label: 'editor_italic', glyph: 'I', glyphClass: 'italic' },
     underline: { label: 'editor_underline', glyph: 'U', glyphClass: 'underline' },
     strike: { label: 'editor_strike', glyph: 'S', glyphClass: 'line-through' },
@@ -178,7 +178,7 @@ function pickColor(id: 'textColor' | 'highlight', color: string | null): void {
                         :colors="DOCUMENT_COLORS"
                         @pick="pickColor(id, $event)"
                     >
-                        <span :class="id === 'textColor' ? 'font-bold' : 'bg-warning/40 px-0.5'">A</span>
+                        <span :class="id === 'textColor' ? 'font-medium' : 'bg-warning/40 px-0.5'">A</span>
                     </ToolbarColorPicker>
                     <ToolbarButton
                         v-else
@@ -187,7 +187,7 @@ function pickColor(id: 'textColor' | 'highlight', color: string | null): void {
                         :disabled="isToolbarActionDisabled(editor, action(id))"
                         @click="runToolbarAction(editor, action(id))"
                     >
-                        <component :is="ACTIONS[action(id)].icon" v-if="ACTIONS[action(id)].icon" class="size-4" />
+                        <component :is="ACTIONS[action(id)].icon" v-if="ACTIONS[action(id)].icon" />
                         <span v-else :class="ACTIONS[action(id)].glyphClass" aria-hidden="true">{{
                             ACTIONS[action(id)].glyph
                         }}</span>

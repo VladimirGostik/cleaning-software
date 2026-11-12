@@ -28,10 +28,10 @@ const { t } = useI18n();
             <template v-if="canManage">
                 <div>
                     <ToggleInput field="has_app_access" :label="t('employee_has_app_access')" />
-                    <p class="text-xs text-base-content/60">{{ t('employee_has_app_access_hint') }}</p>
+                    <p class="text-xs text-muted">{{ t('employee_has_app_access_hint') }}</p>
                 </div>
             </template>
-            <p v-else class="text-sm text-base-content/60">{{ t('employee_access_admin_only_hint') }}</p>
+            <p v-else class="text-sm text-muted">{{ t('employee_access_admin_only_hint') }}</p>
         </template>
 
         <template v-else>
@@ -40,7 +40,7 @@ const { t } = useI18n();
                     :has-access="employee.has_access"
                     :invitation-pending="employee.invitation_pending"
                 />
-                <span class="text-sm text-base-content/60">{{ t('employee_access_manage_on_detail') }}</span>
+                <span class="text-sm text-muted">{{ t('employee_access_manage_on_detail') }}</span>
                 <Link :href="`/employees/${employee.id}`" class="link link-hover text-sm">
                     {{ t('employee_access_open_detail') }}
                 </Link>

@@ -286,17 +286,17 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
-            <div class="space-y-6">
-                <div class="card bg-base-100 shadow-sm">
+        <form novalidate class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
+            <div class="space-y-4">
+                <div class="card bg-base-100">
                     <div class="card-body">
                         <TextInput field="name" :label="t('recurring_invoice_name')" required />
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoice_section_subject') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_subject') }}</h2>
                         <InvoiceSubjectPicker
                             v-model:mode="ui.subjectMode"
                             :clients="context.clients"
@@ -305,9 +305,9 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('recurring_invoice_section_schedule') }}</h2>
+                        <h2 class="card-title">{{ t('recurring_invoice_section_schedule') }}</h2>
 
                         <RadioGroup field="type" :label="t('type')" :options="typeOptions" />
 
@@ -337,7 +337,7 @@ function submit(): void {
                                     :label="t('recurring_invoice_billed_month')"
                                     :options="billedMonthOptions"
                                 />
-                                <p class="mt-1 text-sm text-base-content/60">
+                                <p class="mt-1 text-sm text-muted">
                                     {{ t('recurring_invoice_billed_month_hint') }}
                                 </p>
                             </div>
@@ -390,19 +390,19 @@ function submit(): void {
                         />
 
                         <ToggleInput field="auto_issue" :label="t('recurring_invoice_auto_issue')" />
-                        <p class="text-sm text-base-content/60">{{ autoIssueHint }}</p>
+                        <p class="text-sm text-muted">{{ autoIssueHint }}</p>
                         <ToggleInput
                             field="auto_send"
                             :label="t('recurring_invoice_auto_send')"
                             :disabled="!form.auto_issue"
                         />
-                        <p class="text-sm text-base-content/60">{{ t('recurring_invoice_auto_send_hint') }}</p>
+                        <p class="text-sm text-muted">{{ t('recurring_invoice_auto_send_hint') }}</p>
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('invoice_section_payment') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_payment') }}</h2>
 
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <TextInput field="constant_symbol" :label="t('invoice_pdf_constant_symbol')" />
@@ -432,9 +432,9 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoice_section_items') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_items') }}</h2>
                         <InvoiceItemsEditor
                             field="items"
                             :is-vat-payer="context.is_vat_payer"
@@ -445,9 +445,9 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
-                        <h2 class="card-title text-base">{{ t('invoice_section_texts') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_section_texts') }}</h2>
 
                         <TextareaInput
                             :model-value="form.header_text ?? ''"

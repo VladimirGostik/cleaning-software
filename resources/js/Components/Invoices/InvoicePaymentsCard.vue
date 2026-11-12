@@ -28,45 +28,45 @@ const deleteConfirm = useDeleteConfirm<App.Data.Invoices.InvoicePaymentListItemD
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-3">
-            <h2 class="card-title text-base">{{ t('invoice_payments_title') }}</h2>
+            <h2 class="card-title">{{ t('invoice_payments_title') }}</h2>
 
             <dl class="grid grid-cols-2 gap-1 text-sm">
-                <dt class="text-base-content/60">{{ t('invoice_paid_amount') }}</dt>
+                <dt class="text-muted">{{ t('invoice_paid_amount') }}</dt>
                 <dd class="text-right font-medium">{{ money(invoice.paid_amount, invoice.currency) }}</dd>
-                <dt class="text-base-content/60">{{ t('invoice_balance_due_label') }}</dt>
+                <dt class="text-muted">{{ t('invoice_balance_due_label') }}</dt>
                 <dd class="text-right font-medium">{{ money(invoice.balance_due, invoice.currency) }}</dd>
             </dl>
 
-            <p v-if="invoice.payments.length === 0" class="text-sm text-base-content/60">
+            <p v-if="invoice.payments.length === 0" class="text-sm text-muted">
                 {{ t('invoice_payments_empty') }}
             </p>
 
-            <ul v-else class="divide-y divide-base-200">
-                <li v-for="payment in invoice.payments" :key="payment.id" class="flex items-start gap-2 py-2 text-sm">
+            <ul v-else class="kg-list">
+                <li v-for="payment in invoice.payments" :key="payment.id" class="kg-list-row text-sm">
                     <div class="min-w-0 flex-1">
                         <p class="font-medium">{{ money(payment.amount, invoice.currency) }}</p>
-                        <p class="text-xs text-base-content/60">
+                        <p class="text-xs text-muted">
                             {{ formatDate(payment.paid_on) }} · {{ t(paymentTypeKey(payment.payment_type)) }} ·
                             {{ t(`invoice_payment_source_${payment.source}`) }}
                         </p>
-                        <p v-if="payment.recorded_by_name" class="text-xs text-base-content/60">
+                        <p v-if="payment.recorded_by_name" class="text-xs text-muted">
                             {{ t('invoice_payment_recorded_by') }}: {{ payment.recorded_by_name }}
                         </p>
-                        <p v-if="payment.note" class="whitespace-pre-wrap text-xs text-base-content/70">
+                        <p v-if="payment.note" class="whitespace-pre-wrap text-xs text-muted">
                             {{ payment.note }}
                         </p>
                     </div>
                     <button
                         v-if="canDelete"
                         type="button"
-                        class="btn btn-ghost btn-xs text-error"
+                        class="btn btn-ghost btn-square text-error"
                         :title="t('delete')"
                         :aria-label="t('delete')"
                         @click="deleteConfirm.openModal(payment)"
                     >
-                        <TrashIcon class="size-5" />
+                        <TrashIcon />
                     </button>
                 </li>
             </ul>

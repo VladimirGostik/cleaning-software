@@ -34,9 +34,9 @@ function updateRegistrationInfo(value: string): void {
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('invoice_settings_section_bank') }}</h2>
+            <h2 class="card-title">{{ t('invoice_settings_section_bank') }}</h2>
 
             <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': !compact }">
                 <TextInput field="iban" :label="t('invoice_settings_iban')" placeholder="SK0000000000000000000000" />

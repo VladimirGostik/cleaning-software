@@ -10,8 +10,8 @@ import ActivityRevertStatus from '@/Components/AuditLogs/ActivityRevertStatus.vu
 import { useActivityRevertConfirm } from '@/Composables/useActivityRevertConfirm';
 import { useAuthorization } from '@/Composables/useAuthorization';
 import { formatDatetime } from '@/utils/date';
-import EyeIcon from '~icons/material-symbols/visibility-rounded';
-import UndoIcon from '~icons/material-symbols/undo-rounded';
+import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
+import UndoIcon from '~icons/material-symbols/undo-outline-rounded';
 import type { Paginator, Breadcrumb, TableColumn } from '@/types';
 import type { FilterConfig } from '@/types/table';
 
@@ -62,7 +62,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 
     <StatusErrorAlert class="mb-4" />
 
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -81,7 +81,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                             (row as App.Data.ActivityLogListItemData).causer_name ?? '-'
                         }}</span>
                         <br />
-                        <span class="text-xs text-base-content/60">
+                        <span class="text-xs text-muted">
                             {{ (row as App.Data.ActivityLogListItemData).causer_email ?? '' }}
                         </span>
                     </div>
@@ -106,19 +106,20 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     <button
                         v-if="canRevert(row)"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('audit_revert_action')"
                         :aria-label="t('audit_revert_action')"
                         @click.stop="revertConfirm.openModal(row as App.Data.ActivityLogListItemData)"
                     >
-                        <UndoIcon class="size-5" />
+                        <UndoIcon />
                     </button>
                     <Link
                         :href="`/audit-logs/${(row as App.Data.ActivityLogListItemData).id}`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('details')"
+                        :aria-label="t('details')"
                     >
-                        <EyeIcon class="size-5" />
+                        <EyeIcon />
                     </Link>
                 </template>
             </DataTable>

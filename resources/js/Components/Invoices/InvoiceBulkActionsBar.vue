@@ -53,9 +53,7 @@ function runConfirmed(): void {
 </script>
 
 <template>
-    <div
-        class="sticky top-0 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-box border border-base-300 bg-base-200 p-2"
-    >
+    <div class="sticky top-0 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-card-nested bg-base-100 p-2">
         <span class="px-2 text-sm font-medium">{{ t('invoice_bulk_selected', { count: ids.length }) }}</span>
         <button type="button" class="btn btn-ghost btn-sm" @click="emit('clear')">
             {{ t('invoice_bulk_clear_selection') }}

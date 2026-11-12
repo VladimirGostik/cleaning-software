@@ -73,14 +73,14 @@ const deleteConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
         </template>
     </Header>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div class="space-y-6">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div class="space-y-4">
             <RecurringCustomerCard :recurring-invoice="recurringInvoice" />
             <RecurringScheduleCard :recurring-invoice="recurringInvoice" />
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('invoice_section_items') }}</h2>
+                    <h2 class="card-title">{{ t('invoice_section_items') }}</h2>
                     <InvoiceItemsTable
                         :items="recurringInvoice.items"
                         :currency="recurringInvoice.currency"
@@ -100,10 +100,10 @@ const deleteConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                 </div>
             </div>
 
-            <div v-if="recurringInvoice.note" class="card bg-base-100 shadow-sm">
+            <div v-if="recurringInvoice.note" class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('note') }}</h2>
-                    <p class="whitespace-pre-wrap text-sm text-base-content/70">{{ recurringInvoice.note }}</p>
+                    <h2 class="card-title">{{ t('note') }}</h2>
+                    <p class="whitespace-pre-wrap text-sm text-muted">{{ recurringInvoice.note }}</p>
                 </div>
             </div>
 

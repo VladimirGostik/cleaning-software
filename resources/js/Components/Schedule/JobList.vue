@@ -64,7 +64,7 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
 
         <template #cell-assignee_display_name="{ row }">
             <span v-if="row.assignee_display_name">{{ row.assignee_display_name }}</span>
-            <span v-else class="text-base-content/50">{{ t('job_status_unassigned') }}</span>
+            <span v-else class="text-muted">{{ t('job_status_unassigned') }}</span>
         </template>
 
         <template #cell-type="{ row }">
@@ -79,8 +79,8 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
         </template>
 
         <template #buttons="{ row }">
-            <Link :href="`/jobs/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')" :aria-label="t('view')">
-                <EyeIcon class="size-5" />
+            <Link :href="`/jobs/${row.id}`" class="btn btn-ghost btn-square" :title="t('view')" :aria-label="t('view')">
+                <EyeIcon />
             </Link>
         </template>
     </DataTable>

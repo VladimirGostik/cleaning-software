@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '@/Composables/useToast';
+import { KG_ICONS } from '@/icons/kegosIcons';
 
 export type AutocompleteOption = Record<string, unknown>;
 
@@ -282,37 +283,37 @@ onBeforeUnmount(() => {
             <button
                 v-if="showClear"
                 type="button"
-                class="absolute inset-y-0 right-0 px-3 text-base-content/60 hover:text-base-content"
+                class="absolute inset-y-0 right-1 flex w-10 items-center justify-center text-muted hover:text-base-content"
                 tabindex="-1"
                 :aria-label="t('clear_filters')"
                 @mousedown.prevent="clearSelection"
             >
-                ×
+                <KG_ICONS.adminAction.close aria-hidden="true" />
             </button>
         </div>
 
         <ul
             v-if="open"
-            class="menu bg-base-100 rounded-box shadow z-30 w-full max-h-64 overflow-y-auto absolute top-full left-0 mt-1 border border-base-200"
+            class="menu kg-float absolute top-full left-0 z-30 mt-1 max-h-64 w-full flex-nowrap overflow-y-auto p-2"
         >
             <li v-if="loading">
-                <span class="text-base-content/60">
+                <span class="text-muted">
                     <span class="loading loading-spinner loading-xs" />
                     {{ t('searching') }}
                 </span>
             </li>
             <li v-else-if="showHint">
-                <span class="text-base-content/50">
+                <span class="text-muted">
                     {{ t('type_to_search', { n: minChars }) }}
                 </span>
             </li>
             <li v-else-if="showNoResults">
-                <span class="text-base-content/50">{{ t('no_results') }}</span>
+                <span class="text-muted">{{ t('no_results') }}</span>
             </li>
             <li
                 v-for="(option, i) in results"
                 :key="String(option[valueKey])"
-                :class="{ 'bg-base-200': i === highlightedIndex }"
+                :class="{ 'rounded-tile-sm bg-base-100': i === highlightedIndex }"
             >
                 <button
                     type="button"
@@ -321,13 +322,13 @@ onBeforeUnmount(() => {
                     @mouseenter="highlightedIndex = i"
                 >
                     <span>{{ option[labelKey] }}</span>
-                    <span v-if="secondaryKey && option[secondaryKey]" class="text-xs text-base-content/60">
+                    <span v-if="secondaryKey && option[secondaryKey]" class="text-xs text-muted">
                         {{ option[secondaryKey] }}
                     </span>
                 </button>
             </li>
         </ul>
 
-        <p v-if="error" class="text-error text-sm mt-1">{{ error }}</p>
+        <p v-if="error" class="mt-1 text-sm text-error">{{ error }}</p>
     </div>
 </template>

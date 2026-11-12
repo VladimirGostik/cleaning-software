@@ -26,23 +26,23 @@ const hasText = computed(() => props.contract.body !== null);
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-2">
-            <h2 class="card-title text-base">{{ t('contract_section_actions') }}</h2>
+            <h2 class="card-title">{{ t('contract_section_actions') }}</h2>
 
             <Can v-if="props.contract.is_editable" permission="edit contracts">
                 <Link
                     :href="`/contracts/${props.contract.id}/edit`"
                     class="btn btn-sm btn-neutral w-full justify-start"
                 >
-                    <PencilSquareIcon class="size-5" />
+                    <PencilSquareIcon />
                     {{ t('edit') }}
                 </Link>
             </Can>
 
             <Can v-if="hasText && props.contract.can_be_signed" permission="edit contracts">
-                <button type="button" class="btn btn-sm btn-secondary w-full justify-start" @click="emit('sign')">
-                    <CheckCircleIcon class="size-5" />
+                <button type="button" class="btn btn-secondary w-full justify-start" @click="emit('sign')">
+                    <CheckCircleIcon />
                     {{ t('contract_action_sign') }}
                 </button>
             </Can>
@@ -54,20 +54,20 @@ const hasText = computed(() => props.contract.body !== null);
                 rel="noopener"
                 class="btn btn-sm btn-neutral w-full justify-start"
             >
-                <ArrowDownTrayIcon class="size-5" />
+                <ArrowDownTrayIcon />
                 {{ t('contract_action_download_pdf') }}
             </a>
 
             <Can v-if="props.contract.can_be_terminated" permission="terminate contracts">
                 <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('terminate')">
-                    <XCircleIcon class="size-5" />
+                    <XCircleIcon />
                     {{ t('contract_action_terminate') }}
                 </button>
             </Can>
 
             <Can v-if="props.contract.is_editable" permission="delete contracts">
                 <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('delete')">
-                    <TrashIcon class="size-5" />
+                    <TrashIcon />
                     {{ t('delete') }}
                 </button>
             </Can>

@@ -100,10 +100,10 @@ function toggleBoolean(): void {
 </script>
 
 <template>
-    <div class="join" :data-autom="`filter-${filter.property}`">
+    <div class="flex flex-wrap items-center gap-1" :data-autom="`filter-${filter.property}`">
         <select
             v-if="availableOperators.length > 1"
-            class="select select-sm select-bordered join-item max-w-40"
+            class="select max-w-40"
             :value="operator"
             @change="changeOperator(($event.target as HTMLSelectElement).value as FilterOperator)"
         >
@@ -112,17 +112,12 @@ function toggleBoolean(): void {
             </option>
         </select>
 
-        <button v-else type="button" class="btn btn-sm join-item no-animation pointer-events-none">
+        <button v-else type="button" class="btn btn-neutral no-animation pointer-events-none">
             {{ filter.label }}
         </button>
 
         <template v-if="filter.type === 'enum' || filter.type === 'select' || filter.type === 'autocomplete'">
-            <select
-                v-if="filter.multiple"
-                v-model="selectedValues"
-                multiple
-                class="select select-sm select-bordered join-item min-w-48 h-20"
-            >
+            <select v-if="filter.multiple" v-model="selectedValues" multiple class="select min-w-48 h-20">
                 <option v-for="option in filter.options ?? []" :key="option.value" :value="option.value">
                     {{ option.label }}
                 </option>
@@ -130,7 +125,7 @@ function toggleBoolean(): void {
 
             <select
                 v-else
-                class="select select-sm select-bordered join-item min-w-48"
+                class="select min-w-48"
                 :value="value ?? ''"
                 @change="changeValue(($event.target as HTMLSelectElement).value || null)"
             >
@@ -146,11 +141,14 @@ function toggleBoolean(): void {
         <button
             v-else-if="filter.type === 'boolean'"
             type="button"
-            class="btn btn-sm join-item"
-            :class="{
-                'btn-primary': value === 'true' || value === '1',
-                'btn-error': value === 'false' || value === '0',
-            }"
+            class="btn"
+            :class="
+                value === 'true' || value === '1'
+                    ? 'btn-primary'
+                    : value === 'false' || value === '0'
+                      ? 'btn-error'
+                      : 'btn-neutral'
+            "
             @click="toggleBoolean"
         >
             {{
@@ -164,14 +162,14 @@ function toggleBoolean(): void {
 
         <template v-else-if="operator === 'between'">
             <input
-                class="input input-sm input-bordered join-item min-w-40"
+                class="input min-w-40"
                 :type="betweenInputType"
                 :placeholder="$t('date_from')"
                 :value="betweenFrom"
                 @input="changeBetween(($event.target as HTMLInputElement).value, betweenTo)"
             />
             <input
-                class="input input-sm input-bordered join-item min-w-40"
+                class="input min-w-40"
                 :type="betweenInputType"
                 :placeholder="$t('date_to')"
                 :value="betweenTo"
@@ -181,7 +179,7 @@ function toggleBoolean(): void {
 
         <input
             v-else
-            class="input input-sm input-bordered join-item min-w-48"
+            class="input min-w-48"
             :type="
                 filter.type === 'number'
                     ? 'number'
@@ -198,12 +196,12 @@ function toggleBoolean(): void {
 
         <button
             type="button"
-            class="btn btn-sm btn-ghost join-item"
+            class="btn btn-square btn-neutral"
             :title="$t('remove_filter')"
             :aria-label="$t('remove_filter')"
             @click="emit('remove', filter.property)"
         >
-            <KG_ICONS.adminAction.close class="size-4" />
+            <KG_ICONS.adminAction.close />
         </button>
     </div>
 </template>

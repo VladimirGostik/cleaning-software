@@ -111,7 +111,7 @@ const columns: TableColumn<Row>[] = [
                         :status="row.ai_run_status"
                     />
                 </div>
-                <div class="flex items-center justify-between gap-2 text-sm text-base-content/60">
+                <div class="flex items-center justify-between gap-2 text-sm text-muted">
                     <span v-if="row.due_at" :class="{ 'text-error': isTaskOverdue(row) }">
                         <template v-if="isTaskOverdue(row)">{{ t('task_overdue') }}: </template
                         >{{ formatDatetime(row.due_at) }}
@@ -126,16 +126,22 @@ const columns: TableColumn<Row>[] = [
             <button
                 v-if="row.can_update && row.is_active"
                 type="button"
-                class="btn btn-ghost btn-xs"
+                class="btn btn-ghost btn-square"
                 :title="t('task_complete')"
+                :aria-label="t('task_complete')"
                 :disabled="processingId === row.id"
                 @click="emit('complete', row.id)"
             >
-                <CheckIcon class="size-5" />
+                <CheckIcon />
             </button>
 
-            <Link :href="`/tasks/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                <EyeIcon class="size-5" />
+            <Link
+                :href="`/tasks/${row.id}`"
+                class="btn btn-ghost btn-square"
+                :title="t('view')"
+                :aria-label="t('view')"
+            >
+                <EyeIcon />
             </Link>
         </template>
     </DataTable>

@@ -22,11 +22,11 @@ const cashHref = computed(() => `${payslipsHref.value}&filter[undocumented]=1`);
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm" data-autom="employee-expenses-card">
+    <div class="card bg-base-100" data-autom="employee-expenses-card">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('employee_expenses_title') }}</h2>
+            <h2 class="card-title">{{ t('employee_expenses_title') }}</h2>
 
-            <p v-if="payslips.length === 0 && cash.length === 0" class="text-sm text-base-content/60">
+            <p v-if="payslips.length === 0 && cash.length === 0" class="text-sm text-muted">
                 {{ t('employee_expenses_empty') }}
             </p>
 
@@ -35,11 +35,11 @@ const cashHref = computed(() => `${payslipsHref.value}&filter[undocumented]=1`);
                     <h3 class="text-sm font-medium">{{ t('employee_expenses_payslips') }}</h3>
                     <Link :href="payslipsHref" class="link link-hover text-sm">{{ t('employee_expenses_all') }}</Link>
                 </div>
-                <ul class="divide-y divide-base-200">
+                <ul class="kg-list">
                     <li
                         v-for="expense in payslips"
                         :key="expense.id"
-                        class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2"
+                        class="kg-list-row flex-wrap justify-between gap-x-4 gap-y-1"
                         data-autom="employee-payslip"
                     >
                         <Link :href="`/expenses/${expense.id}`" class="link link-hover font-medium">
@@ -64,18 +64,18 @@ const cashHref = computed(() => `${payslipsHref.value}&filter[undocumented]=1`);
                     <h3 class="text-sm font-medium">{{ t('employee_expenses_cash') }}</h3>
                     <Link :href="cashHref" class="link link-hover text-sm">{{ t('employee_expenses_all') }}</Link>
                 </div>
-                <ul class="divide-y divide-base-200">
+                <ul class="kg-list">
                     <li
                         v-for="expense in cash"
                         :key="expense.id"
-                        class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2"
+                        class="kg-list-row flex-wrap justify-between gap-x-4 gap-y-1"
                         data-autom="employee-cash"
                     >
                         <Link :href="`/expenses/${expense.id}`" class="link link-hover font-medium">
                             {{ formatDate(expense.date) }}
                         </Link>
                         <span class="tabular-nums">{{ money(expense.amount, expense.currency) }}</span>
-                        <span v-if="expense.description" class="basis-full text-sm text-base-content/70">
+                        <span v-if="expense.description" class="basis-full text-sm text-muted">
                             {{ expense.description }}
                         </span>
                     </li>

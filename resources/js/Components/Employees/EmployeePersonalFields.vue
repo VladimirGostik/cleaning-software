@@ -24,7 +24,7 @@ function updateBirthDate(value: string | null): void {
 
         <div>
             <TextInput field="national_id" autocomplete="off" maxlength="12" :label="t('employee_national_id')" />
-            <p class="text-xs text-base-content/60">{{ t('employee_national_id_hint') }}</p>
+            <p class="text-xs text-muted">{{ t('employee_national_id_hint') }}</p>
         </div>
 
         <div class="md:col-span-2">

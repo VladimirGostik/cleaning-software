@@ -47,7 +47,7 @@ function setField(index: number, key: string, value: unknown): void {
 
 <template>
     <div
-        class="grid grid-cols-2 gap-2 rounded-box bg-base-200 p-3 2xl:items-start 2xl:gap-x-2 2xl:gap-y-0 2xl:rounded-none 2xl:bg-transparent 2xl:p-0 2xl:py-2"
+        class="grid grid-cols-2 gap-2 max-2xl:rounded-tile max-2xl:bg-base-200 max-2xl:p-3 2xl:items-start 2xl:gap-x-2 2xl:gap-y-0 2xl:py-2"
         :class="gridClass"
     >
         <div class="col-span-2 2xl:col-span-1">
@@ -113,21 +113,21 @@ function setField(index: number, key: string, value: unknown): void {
         />
 
         <div class="self-center text-right 2xl:pt-1">
-            <span class="text-xs text-base-content/60 2xl:hidden">{{ t('invoice_item_line_total') }}</span>
-            <span class="block font-semibold tabular-nums">{{ money(line?.total ?? 0, currency) }}</span>
-            <span v-if="isVatPayer" class="block text-xs text-base-content/60 tabular-nums">
+            <span class="text-xs text-muted 2xl:hidden">{{ t('invoice_item_line_total') }}</span>
+            <span class="block font-medium tabular-nums">{{ money(line?.total ?? 0, currency) }}</span>
+            <span v-if="isVatPayer" class="block text-xs text-muted tabular-nums">
                 {{ money(line?.base ?? 0, currency) }} + {{ money(line?.vat ?? 0, currency) }}
             </span>
         </div>
 
         <button
             type="button"
-            class="btn btn-ghost btn-xs btn-square justify-self-end self-center"
+            class="btn btn-ghost btn-square justify-self-end self-center"
             :aria-label="t('invoice_item_remove', { index: index + 1 })"
             :title="t('invoice_item_remove', { index: index + 1 })"
             @click="emit('remove')"
         >
-            <TrashIcon class="size-5" />
+            <TrashIcon />
         </button>
 
         <div v-if="$slots['row-extra']" class="col-span-2 2xl:col-span-full">

@@ -45,14 +45,14 @@ const groups = computed(() => {
             @keydown.enter.prevent
         />
 
-        <p class="text-xs text-base-content/60">{{ t('document_picker_hint') }}</p>
+        <p class="text-xs text-muted">{{ t('document_picker_hint') }}</p>
 
-        <p v-if="groups.length === 0" class="text-sm text-base-content/60">
+        <p v-if="groups.length === 0" class="text-sm text-muted">
             {{ t('document_picker_no_match') }}
         </p>
 
         <section v-for="entry in groups" :key="entry.group">
-            <h3 class="mb-1 text-sm font-semibold">{{ entry.title }}</h3>
+            <h3 class="mb-1 text-sm font-medium">{{ entry.title }}</h3>
             <ul class="space-y-0.5">
                 <li v-for="token in entry.tokens" :key="token.key">
                     <button
@@ -62,7 +62,7 @@ const groups = computed(() => {
                         @click="emit('pick', token)"
                     >
                         <span>{{ token.label }}</span>
-                        <span class="font-mono text-xs text-base-content/60">{{ token.key }}</span>
+                        <span class="font-mono text-xs text-muted">{{ token.key }}</span>
                     </button>
                 </li>
             </ul>

@@ -66,26 +66,16 @@ function post(path: 'customize' | 'acknowledge'): void {
             <button
                 v-if="template.can.customize"
                 type="button"
-                class="btn btn-primary btn-sm"
+                class="btn btn-primary"
                 :disabled="processing"
                 @click="post('customize')"
             >
                 {{ t('document_template_customize') }}
             </button>
-            <button
-                v-if="template.can.reset"
-                type="button"
-                class="btn btn-ghost btn-sm"
-                @click="reset.openModal(template)"
-            >
+            <button v-if="template.can.reset" type="button" class="btn btn-ghost" @click="reset.openModal(template)">
                 {{ t('document_template_reset_action') }}
             </button>
-            <button
-                v-if="template.can.delete"
-                type="button"
-                class="btn btn-error btn-sm"
-                @click="remove.openModal(template)"
-            >
+            <button v-if="template.can.delete" type="button" class="btn btn-error" @click="remove.openModal(template)">
                 {{ t('delete') }}
             </button>
         </template>

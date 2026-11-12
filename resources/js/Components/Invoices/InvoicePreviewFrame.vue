@@ -33,7 +33,7 @@ onBeforeUnmount(() => observer?.disconnect());
             src="/settings/invoicing/preview"
             :title="t('invoice_settings_template_preview')"
             sandbox="allow-same-origin"
-            class="origin-top-left border-0 bg-base-100"
+            class="origin-top-left bg-base-100"
             :style="{ width: `${PAGE_WIDTH}px`, height: `${PAGE_HEIGHT}px`, transform: `scale(${scale})` }"
         />
     </div>

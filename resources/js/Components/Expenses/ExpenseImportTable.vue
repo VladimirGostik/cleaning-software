@@ -40,7 +40,7 @@ function onCategory(row: ImportRow, value: string): void {
 
 <template>
     <div class="overflow-x-auto">
-        <table class="table table-sm">
+        <table class="table">
             <thead>
                 <tr>
                     <th>{{ t('expense_import_include') }}</th>

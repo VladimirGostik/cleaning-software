@@ -4,7 +4,7 @@ defineProps<{ color: App.Enums.TenantColorEnum | null }>();
 
 <template>
     <span
-        class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+        class="kg-dot"
         :class="{ 'bg-primary': color === null }"
         :style="color ? { backgroundColor: color } : undefined"
         aria-hidden="true"

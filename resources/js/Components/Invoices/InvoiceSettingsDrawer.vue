@@ -27,14 +27,14 @@ const { t } = useI18n();
     <SideDrawer :open="open" :title="t('invoicing_settings')" @close="emit('close')">
         <div v-if="status === 'loading'" class="flex items-center justify-center gap-3 p-10">
             <span class="loading loading-spinner loading-md" />
-            <span class="text-sm text-base-content/60">{{ t('invoice_settings_drawer_loading') }}</span>
+            <span class="text-sm text-muted">{{ t('invoice_settings_drawer_loading') }}</span>
         </div>
 
         <div v-else-if="status === 'error'" class="p-6">
             <div role="alert" class="alert alert-error">
                 <span>{{ t('invoice_settings_drawer_error') }}</span>
             </div>
-            <button type="button" class="btn btn-sm mt-4" @click="emit('retry')">
+            <button type="button" class="btn btn-neutral mt-4" @click="emit('retry')">
                 {{ t('invoice_settings_drawer_retry') }}
             </button>
         </div>

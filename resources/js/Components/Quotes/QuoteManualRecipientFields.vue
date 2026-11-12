@@ -12,7 +12,7 @@ const { t } = useI18n();
         </div>
         <div class="md:col-span-2">
             <TextInput field="customer_represented_by" :label="t('quote_customer_represented_by')" />
-            <p class="mt-1 text-xs text-base-content/60">{{ t('quote_customer_represented_by_hint') }}</p>
+            <p class="mt-1 text-xs text-muted">{{ t('quote_customer_represented_by_hint') }}</p>
         </div>
         <TextInput field="customer_street" :label="t('street')" />
         <TextInput field="customer_city" :label="t('city')" />

@@ -104,10 +104,10 @@ onBeforeUnmount(() => cancelPendingValidation(form));
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="space-y-6" @submit.prevent="submit">
-            <div class="card bg-base-100 shadow-sm">
+        <form novalidate class="space-y-4" @submit.prevent="submit">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('employee_section_type') }}</h2>
+                    <h2 class="card-title">{{ t('employee_section_type') }}</h2>
                     <EmployeeTypeFields
                         :required="!isEditing"
                         :self-employed="form.employee_type === 'self_employed'"
@@ -116,9 +116,9 @@ onBeforeUnmount(() => cancelPendingValidation(form));
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('employee_section_profile') }}</h2>
+                    <h2 class="card-title">{{ t('employee_section_profile') }}</h2>
                     <EmployeeProfileFields
                         :email-field="emailField"
                         :email-is-login="hasLogin"
@@ -128,9 +128,9 @@ onBeforeUnmount(() => cancelPendingValidation(form));
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('employee_section_access') }}</h2>
+                    <h2 class="card-title">{{ t('employee_section_access') }}</h2>
                     <EmployeeAccessSection
                         :employee="employee ?? null"
                         :can-manage="canManageAccess"
@@ -144,16 +144,16 @@ onBeforeUnmount(() => cancelPendingValidation(form));
                 </div>
             </div>
 
-            <div v-if="hasPersonalSection" class="card bg-base-100 shadow-sm">
+            <div v-if="hasPersonalSection" class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('employee_section_personal') }}</h2>
+                    <h2 class="card-title">{{ t('employee_section_personal') }}</h2>
                     <EmployeePersonalFields />
                 </div>
             </div>
 
-            <div v-if="!isEditing" class="card bg-base-100 shadow-sm">
+            <div v-if="!isEditing" class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('employee_section_employment') }}</h2>
+                    <h2 class="card-title">{{ t('employee_section_employment') }}</h2>
                     <EmployeeEmploymentSection
                         :employment="form.employment"
                         :employee-type="form.employee_type"

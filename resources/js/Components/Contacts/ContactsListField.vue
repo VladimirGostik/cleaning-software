@@ -100,11 +100,11 @@ function setField(index: number, key: 'name' | 'position' | 'email' | 'phone', v
 
                 <button
                     type="button"
-                    class="btn btn-ghost btn-xs"
+                    class="btn btn-ghost btn-square"
                     :aria-label="t('contact_remove')"
                     @click="remove(index)"
                 >
-                    <TrashIcon class="size-5" />
+                    <TrashIcon />
                 </button>
             </div>
 
@@ -149,7 +149,7 @@ function setField(index: number, key: 'name' | 'position' | 'email' | 'phone', v
         <p v-if="errors[field]" class="text-error text-sm">{{ errors[field] }}</p>
 
         <button type="button" class="btn btn-ghost btn-sm" @click="add">
-            <PlusIcon class="size-5" />
+            <PlusIcon />
             {{ t('contact_add') }}
         </button>
     </div>

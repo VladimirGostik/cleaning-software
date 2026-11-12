@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import StatusChip from '@/Components/StatusChip.vue';
 import type { StatusTone } from '@/Components/statusTone';
-import { KG_ICONS } from '@/icons/kegosIcons';
 import { recurringStatusKey } from '@/utils/enums';
 
 const props = defineProps<{
@@ -12,16 +11,16 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const STATUS: Record<App.Enums.RecurringInvoiceStatusEnum, { tone: StatusTone; icon?: Component }> = {
+const STATUS: Record<App.Enums.RecurringInvoiceStatusEnum, { tone: StatusTone }> = {
     active: { tone: 'done' },
     paused: { tone: 'warning' },
-    completed: { tone: 'neutral', icon: KG_ICONS.status.done },
-    cancelled: { tone: 'neutral', icon: KG_ICONS.status.cancelled },
+    completed: { tone: 'neutral' },
+    cancelled: { tone: 'neutral' },
 };
 
 const entry = computed(() => STATUS[props.status]);
 </script>
 
 <template>
-    <StatusChip :tone="entry.tone" :icon="entry.icon" :label="t(recurringStatusKey(props.status))" size="sm" />
+    <StatusChip :tone="entry.tone" :label="t(recurringStatusKey(props.status))" size="sm" />
 </template>

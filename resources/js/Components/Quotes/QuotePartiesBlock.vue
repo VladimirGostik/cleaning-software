@@ -18,7 +18,7 @@ const linksToClient = computed(() => props.quote.client_id !== null && props.quo
 <template>
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
-            <h3 class="text-sm font-semibold text-base-content/70">{{ t('quote_section_customer') }}</h3>
+            <h3 class="text-sm font-medium text-muted">{{ t('quote_section_customer') }}</h3>
 
             <p class="flex items-center gap-2 font-medium">
                 <Link v-if="linksToClient" :href="`/clients/${props.quote.client_id}`" class="link link-hover">
@@ -32,7 +32,7 @@ const linksToClient = computed(() => props.quote.client_id !== null && props.quo
         </div>
 
         <div>
-            <h3 class="text-sm font-semibold text-base-content/70">{{ t('quote_section_object') }}</h3>
+            <h3 class="text-sm font-medium text-muted">{{ t('quote_section_object') }}</h3>
             <p>{{ props.quote.object_name ?? t('empty_dash') }}</p>
         </div>
     </div>

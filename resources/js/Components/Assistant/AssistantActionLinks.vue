@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import type { Component } from 'vue';
-import OpenIcon from '~icons/material-symbols/open-in-new-rounded';
+import OpenIcon from '~icons/material-symbols/open-in-new-outline-rounded';
 import CreatedIcon from '~icons/material-symbols/add-outline-rounded';
 import UpdatedIcon from '~icons/material-symbols/edit-outline-rounded';
 import { useAssistantChat } from '@/Composables/useAssistantChat';
@@ -33,28 +33,28 @@ const ICONS: Record<App.Enums.AssistantActionTypeEnum, Component> = {
 </script>
 
 <template>
-    <ul v-if="actions.length > 0" class="mt-2 flex flex-wrap gap-2">
+    <ul v-if="actions.length > 0" class="mt-2 flex flex-wrap gap-x-2 gap-y-3">
         <li v-for="(action, index) in actions" :key="index">
             <button
                 v-if="isAllowedAssistantLink(action.url) && isOtherCompany(action)"
                 type="button"
-                class="badge badge-neutral gap-1"
+                class="badge badge-neutral kg-touch-target gap-1"
                 @click="openInCompany(action)"
             >
-                <component :is="ICONS[action.type]" class="size-4" />
+                <component :is="ICONS[action.type]" />
                 {{ action.label }}
             </button>
             <Link
                 v-else-if="isAllowedAssistantLink(action.url)"
                 :href="action.url"
-                class="badge badge-neutral gap-1"
+                class="badge badge-neutral kg-touch-target gap-1"
                 @click="closeOnSmallScreen"
             >
-                <component :is="ICONS[action.type]" class="size-4" />
+                <component :is="ICONS[action.type]" />
                 {{ action.label }}
             </Link>
             <span v-else class="badge badge-neutral gap-1">
-                <component :is="ICONS[action.type]" class="size-4" />
+                <component :is="ICONS[action.type]" />
                 {{ action.label }}
             </span>
         </li>

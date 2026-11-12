@@ -55,25 +55,25 @@ function tokenDisplay(raw: string): string {
 <template>
     <div class="card bg-base-200/40">
         <div class="card-body space-y-3 p-4">
-            <h3 class="text-sm font-semibold">{{ t('contract_tokens_title') }}</h3>
-            <p class="text-xs text-base-content/60">{{ t('contract_tokens_hint') }}</p>
+            <h3 class="text-sm font-medium">{{ t('contract_tokens_title') }}</h3>
+            <p class="text-xs text-muted">{{ t('contract_tokens_hint') }}</p>
 
-            <p v-if="tokens.length === 0" class="text-xs text-base-content/50">{{ t('contract_tokens_empty') }}</p>
+            <p v-if="tokens.length === 0" class="text-xs text-muted">{{ t('contract_tokens_empty') }}</p>
 
             <div v-for="tokenGroup in groups" :key="tokenGroup.group" class="space-y-1">
-                <h4 class="text-xs font-semibold uppercase text-base-content/50">
+                <h4 class="text-xs font-medium uppercase text-muted">
                     {{ t(`contract_token_group_${tokenGroup.group}`) }}
                 </h4>
                 <ul class="space-y-0.5">
                     <li v-for="item in tokenGroup.items" :key="item.raw">
                         <button
                             type="button"
-                            class="flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-base-300/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            class="flex w-full flex-col items-start gap-0.5 rounded-tile-sm px-2 py-1.5 text-left transition-colors hover:bg-base-300/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                             :aria-label="t('contract_token_insert_aria', { token: item.raw })"
                             @click="emit('insert', item.raw)"
                         >
                             <span class="w-full text-sm break-words whitespace-normal">{{ item.label }}</span>
-                            <code class="text-xs opacity-60">{{ tokenDisplay(item.raw) }}</code>
+                            <code class="text-xs text-muted">{{ tokenDisplay(item.raw) }}</code>
                         </button>
                     </li>
                 </ul>

@@ -118,30 +118,43 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     --fc-border-color: var(--color-base-300);
     --fc-page-bg-color: var(--color-base-100);
     --fc-neutral-bg-color: var(--color-base-200);
-    --fc-today-bg-color: color-mix(in oklch, var(--color-primary) 4%, transparent);
+    --fc-today-bg-color: var(--color-primary-soft);
     --fc-button-bg-color: var(--color-neutral);
-    --fc-button-border-color: var(--color-neutral);
+    --fc-button-border-color: transparent;
     --fc-button-text-color: var(--color-base-content);
     --fc-button-hover-bg-color: var(--color-base-300);
-    --fc-button-hover-border-color: var(--color-base-300);
-    --fc-button-active-bg-color: var(--color-primary-soft);
-    --fc-button-active-border-color: var(--color-primary-soft);
+    --fc-button-hover-border-color: transparent;
+    --fc-button-active-bg-color: var(--color-primary);
+    --fc-button-active-border-color: transparent;
+}
+@media (width < 40rem) {
+    :deep(.fc .fc-header-toolbar) {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+    :deep(.fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(2)) {
+        order: -1;
+        flex-basis: 100%;
+        text-align: center;
+    }
 }
 :deep(.fc .fc-toolbar-title) {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: 1.125rem;
+    font-weight: 500;
 }
 :deep(.fc .fc-button) {
     height: 36px;
-    padding: 0 12px;
-    border-radius: var(--radius-field);
+    padding: 0 16px;
+    border-radius: var(--radius-selector);
     font-size: 14px;
     font-weight: 500;
     box-shadow: none;
 }
 :deep(.fc .fc-button:focus-visible) {
-    box-shadow: 0 0 0 3px var(--color-primary-soft);
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    box-shadow: none;
 }
 :deep(.fc .fc-button-group > .fc-button:not(:first-child)) {
     border-start-start-radius: 0;
@@ -154,11 +167,11 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 }
 :deep(.fc .fc-button-primary:not(:disabled).fc-button-active),
 :deep(.fc .fc-button-primary:not(:disabled):active) {
-    color: var(--color-primary-hover);
+    color: var(--color-primary-content);
 }
 :deep(.fc .fc-event) {
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-tile-sm, 0.875rem);
     padding: 2px 6px;
 }
 </style>

@@ -7,6 +7,7 @@ import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import Header from '@/Layouts/Header.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import ExpenseStatusBadge from '@/Components/Expenses/ExpenseStatusBadge.vue';
 import ExpenseCategoryBadge from '@/Components/Expenses/ExpenseCategoryBadge.vue';
 import ExpenseFormDrawer from '@/Components/Expenses/ExpenseFormDrawer.vue';
@@ -148,12 +149,14 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
 <template>
     <Header :title="t('expenses')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="canCreate && allows('manage expenses')" href="/expenses/import" class="btn btn-neutral btn-sm">
+            <Link v-if="canCreate && allows('manage expenses')" href="/expenses/import" class="btn btn-neutral">
                 {{ t('expense_import') }}
             </Link>
-            <button v-if="canCreate" type="button" class="btn btn-secondary btn-sm" @click="ui.createOpen = true">
-                {{ isUndocumented ? t('expense_cash_add') : t('expense_add') }}
-            </button>
+            <PageMainAction
+                v-if="canCreate"
+                :label="isUndocumented ? t('expense_cash_add') : t('expense_add')"
+                @click="ui.createOpen = true"
+            />
         </template>
     </Header>
 
@@ -164,17 +167,17 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
         :icon="BanknotesIcon"
     >
         <template #cta>
-            <button v-if="canCreate" type="button" class="btn btn-primary btn-sm" @click="ui.createOpen = true">
+            <button v-if="canCreate" type="button" class="btn btn-primary" @click="ui.createOpen = true">
                 {{ t('expense_add') }}
             </button>
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <p v-if="totals.length > 0" class="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
-                <span class="text-base-content/60">{{ t('expense_cash_totals') }}:</span>
-                <span v-for="total in totals" :key="total.currency" class="font-semibold tabular-nums">
+                <span class="text-muted">{{ t('expense_cash_totals') }}:</span>
+                <span v-for="total in totals" :key="total.currency" class="font-medium tabular-nums">
                     {{ money(total.amount, total.currency) }} · {{ total.count }}
                 </span>
             </p>
@@ -190,11 +193,9 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     <Link :href="`/expenses/${row.id}`" class="block space-y-1">
                         <span class="flex items-start justify-between gap-3">
                             <span class="min-w-0 font-medium">{{ payeeLabel(row) }}</span>
-                            <span class="shrink-0 font-semibold tabular-nums">{{
-                                money(row.amount, row.currency)
-                            }}</span>
+                            <span class="shrink-0 font-medium tabular-nums">{{ money(row.amount, row.currency) }}</span>
                         </span>
-                        <span class="flex flex-wrap items-center gap-2 text-sm text-base-content/70">
+                        <span class="flex flex-wrap items-center gap-2 text-sm text-muted">
                             <span>{{ formatDate(row.date) }}</span>
                             <ExpenseCategoryBadge
                                 v-if="row.category && !row.is_undocumented"
@@ -202,7 +203,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                             />
                             <ExpenseStatusBadge v-if="!row.is_undocumented" :status="row.status" />
                         </span>
-                        <span v-if="row.is_undocumented && row.description" class="block text-sm text-base-content/70">
+                        <span v-if="row.is_undocumented && row.description" class="block text-sm text-muted">
                             {{ row.description }}
                         </span>
                     </Link>
@@ -240,8 +241,13 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 </template>
 
                 <template #buttons="{ row }">
-                    <Link :href="`/expenses/${row.id}`" class="btn btn-ghost btn-xs" :title="t('view')">
-                        <EyeIcon class="size-5" />
+                    <Link
+                        :href="`/expenses/${row.id}`"
+                        class="btn btn-ghost btn-square"
+                        :title="t('view')"
+                        :aria-label="t('view')"
+                    >
+                        <EyeIcon />
                     </Link>
                 </template>
             </DataTable>

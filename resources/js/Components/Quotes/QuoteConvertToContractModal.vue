@@ -40,8 +40,8 @@ function submit(): void {
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('quote_convert_contract_title') }}</h3>
-            <p class="py-2 text-sm text-base-content/70">{{ t('quote_convert_contract_hint') }}</p>
+            <h3 class="text-lg font-medium">{{ t('quote_convert_contract_title') }}</h3>
+            <p class="py-2 text-sm text-muted">{{ t('quote_convert_contract_hint') }}</p>
 
             <FormProvider :form="form">
                 <form novalidate class="mt-4" @submit.prevent="submit">

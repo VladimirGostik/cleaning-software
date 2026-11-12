@@ -12,9 +12,11 @@ defineSlots<{ cta?: () => unknown }>();
 
 <template>
     <div class="py-10 text-center">
-        <component :is="icon" v-if="icon" class="mx-auto size-5 text-muted" aria-hidden="true" />
-        <h3 class="mt-3 font-semibold">{{ title }}</h3>
-        <p v-if="description" class="mt-1 text-sm text-muted">{{ description }}</p>
+        <span v-if="icon" class="kg-tile kg-tile--lg">
+            <component :is="icon" class="size-5.5 text-muted" aria-hidden="true" />
+        </span>
+        <h3 class="mt-3 text-base font-medium">{{ title }}</h3>
+        <p v-if="description" class="mt-1 text-xs text-muted">{{ description }}</p>
         <div v-if="$slots.cta" class="mt-4">
             <slot name="cta" />
         </div>

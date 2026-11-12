@@ -23,9 +23,9 @@ const roundingModeOptions = computed<SelectOption[]>(() => enumOptions(ROUNDING_
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('invoice_settings_section_defaults') }}</h2>
+            <h2 class="card-title">{{ t('invoice_settings_section_defaults') }}</h2>
 
             <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': !compact }">
                 <TextInput field="default_constant_symbol" :label="t('invoice_settings_default_constant_symbol')" />

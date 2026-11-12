@@ -14,28 +14,28 @@ const showUserName = computed(
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('employee_section_profile') }}</h2>
+            <h2 class="card-title">{{ t('employee_section_profile') }}</h2>
 
             <div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('email') }}</p>
+                    <p class="text-xs text-muted">{{ t('email') }}</p>
                     <p>{{ props.employee.email ?? t('empty_dash') }}</p>
                 </div>
 
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('phone') }}</p>
+                    <p class="text-xs text-muted">{{ t('phone') }}</p>
                     <p>{{ props.employee.phone ?? t('empty_dash') }}</p>
                 </div>
 
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('position') }}</p>
+                    <p class="text-xs text-muted">{{ t('position') }}</p>
                     <p>{{ props.employee.position ?? t('empty_dash') }}</p>
                 </div>
 
                 <div v-if="showUserName">
-                    <p class="text-xs text-base-content/50">{{ t('employee_user_name') }}</p>
+                    <p class="text-xs text-muted">{{ t('employee_user_name') }}</p>
                     <p>{{ props.employee.user_name }}</p>
                 </div>
             </div>

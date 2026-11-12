@@ -50,13 +50,9 @@ function select(value: App.Enums.TenantColorEnum) {
                 :aria-checked="resolvedValue === opt.value"
                 :aria-label="opt.label"
                 :disabled="disabled"
-                class="h-8 w-8 rounded-full border-2 transition focus:outline-none focus:ring-2 focus:ring-offset-1"
+                class="kg-touch-target size-8 rounded-full transition"
                 :style="{ backgroundColor: opt.value }"
-                :class="
-                    resolvedValue === opt.value
-                        ? 'border-base-content ring-2 ring-base-content ring-offset-1'
-                        : 'border-transparent hover:border-base-300'
-                "
+                :class="resolvedValue === opt.value ? 'outline-2 outline-offset-2 outline-base-content' : ''"
                 @click="select(opt.value)"
             />
         </div>

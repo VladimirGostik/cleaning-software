@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { KG_ICONS } from '@/icons/kegosIcons';
+import type { Component } from 'vue';
 import { onBeforeUnmount, ref, watch } from 'vue';
+import BoldIcon from '~icons/material-symbols/format-bold-outline-rounded';
+import ItalicIcon from '~icons/material-symbols/format-italic-outline-rounded';
+import StrikeIcon from '~icons/material-symbols/format-strikethrough-outline-rounded';
+import H1Icon from '~icons/material-symbols/format-h1-outline-rounded';
+import H2Icon from '~icons/material-symbols/format-h2-outline-rounded';
+import H3Icon from '~icons/material-symbols/format-h3-outline-rounded';
+import BulletListIcon from '~icons/material-symbols/format-list-bulleted-outline-rounded';
+import OrderedListIcon from '~icons/material-symbols/format-list-numbered-outline-rounded';
+import QuoteIcon from '~icons/material-symbols/format-quote-outline-rounded';
+import CodeBlockIcon from '~icons/material-symbols/code-blocks-outline-rounded';
+import UndoIcon from '~icons/material-symbols/undo-outline-rounded';
+import RedoIcon from '~icons/material-symbols/redo-outline-rounded';
 import { useI18n } from 'vue-i18n';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
@@ -42,7 +55,7 @@ const editor = useEditor({
         StarterKit,
         Image.configure({
             HTMLAttributes: {
-                class: 'rounded max-w-full h-auto',
+                class: 'rounded-tile-sm max-w-full h-auto',
             },
         }),
         Link.configure({
@@ -164,6 +177,108 @@ function onFileInputChange(e: Event): void {
     }
 }
 
+interface ToolbarButton {
+    key: string;
+    icon: Component;
+    title: string;
+    active?: () => boolean | undefined;
+    run: () => void;
+}
+
+const toolbarGroups: ToolbarButton[][] = [
+    [
+        {
+            key: 'bold',
+            icon: BoldIcon,
+            title: 'editor_bold',
+            active: () => editor.value?.isActive('bold'),
+            run: () => editor.value?.chain().focus().toggleBold().run(),
+        },
+        {
+            key: 'italic',
+            icon: ItalicIcon,
+            title: 'editor_italic',
+            active: () => editor.value?.isActive('italic'),
+            run: () => editor.value?.chain().focus().toggleItalic().run(),
+        },
+        {
+            key: 'strike',
+            icon: StrikeIcon,
+            title: 'editor_strike',
+            active: () => editor.value?.isActive('strike'),
+            run: () => editor.value?.chain().focus().toggleStrike().run(),
+        },
+    ],
+    [
+        {
+            key: 'h1',
+            icon: H1Icon,
+            title: 'editor_h1',
+            active: () => editor.value?.isActive('heading', { level: 1 }),
+            run: () => editor.value?.chain().focus().toggleHeading({ level: 1 }).run(),
+        },
+        {
+            key: 'h2',
+            icon: H2Icon,
+            title: 'editor_h2',
+            active: () => editor.value?.isActive('heading', { level: 2 }),
+            run: () => editor.value?.chain().focus().toggleHeading({ level: 2 }).run(),
+        },
+        {
+            key: 'h3',
+            icon: H3Icon,
+            title: 'editor_h3',
+            active: () => editor.value?.isActive('heading', { level: 3 }),
+            run: () => editor.value?.chain().focus().toggleHeading({ level: 3 }).run(),
+        },
+    ],
+    [
+        {
+            key: 'bulletList',
+            icon: BulletListIcon,
+            title: 'editor_bullet_list',
+            active: () => editor.value?.isActive('bulletList'),
+            run: () => editor.value?.chain().focus().toggleBulletList().run(),
+        },
+        {
+            key: 'orderedList',
+            icon: OrderedListIcon,
+            title: 'editor_ordered_list',
+            active: () => editor.value?.isActive('orderedList'),
+            run: () => editor.value?.chain().focus().toggleOrderedList().run(),
+        },
+        {
+            key: 'blockquote',
+            icon: QuoteIcon,
+            title: 'editor_blockquote',
+            active: () => editor.value?.isActive('blockquote'),
+            run: () => editor.value?.chain().focus().toggleBlockquote().run(),
+        },
+        {
+            key: 'codeBlock',
+            icon: CodeBlockIcon,
+            title: 'editor_code_block',
+            active: () => editor.value?.isActive('codeBlock'),
+            run: () => editor.value?.chain().focus().toggleCodeBlock().run(),
+        },
+    ],
+];
+
+const historyButtons: ToolbarButton[] = [
+    {
+        key: 'undo',
+        icon: UndoIcon,
+        title: 'editor_undo',
+        run: () => editor.value?.chain().focus().undo().run(),
+    },
+    {
+        key: 'redo',
+        icon: RedoIcon,
+        title: 'editor_redo',
+        run: () => editor.value?.chain().focus().redo().run(),
+    },
+];
+
 function setLink(): void {
     if (!editor.value) return;
     const prev = editor.value.getAttributes('link').href as string | undefined;
@@ -180,147 +295,70 @@ function setLink(): void {
 <template>
     <div>
         <div
-            class="border border-base-300 rounded-box overflow-hidden bg-base-100"
-            :class="{ 'border-error': error, 'opacity-60 pointer-events-none': disabled }"
+            class="rounded-tile bg-(--kg-control-bg) focus-within:outline-2 focus-within:outline-offset-2"
+            :class="[
+                error ? 'outline-2 outline-error' : 'focus-within:outline-primary',
+                { 'pointer-events-none opacity-60': disabled },
+            ]"
         >
-            <div class="flex flex-wrap items-center gap-1 px-2 py-1 border-b border-base-300 bg-base-200/50">
+            <div class="flex flex-wrap items-center gap-1 p-1">
+                <template v-for="group in toolbarGroups" :key="group[0].key">
+                    <button
+                        v-for="button in group"
+                        :key="button.key"
+                        type="button"
+                        class="btn btn-ghost btn-square"
+                        :class="{ 'btn-active': button.active?.() }"
+                        :title="t(button.title)"
+                        :aria-label="t(button.title)"
+                        :aria-pressed="button.active ? !!button.active() : undefined"
+                        @click="button.run"
+                    >
+                        <component :is="button.icon" aria-hidden="true" />
+                    </button>
+                </template>
                 <button
                     type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('bold') }"
-                    :title="t('editor_bold')"
-                    @click="editor?.chain().focus().toggleBold().run()"
-                >
-                    <strong>B</strong>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs italic"
-                    :class="{ 'btn-active': editor?.isActive('italic') }"
-                    :title="t('editor_italic')"
-                    @click="editor?.chain().focus().toggleItalic().run()"
-                >
-                    I
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs line-through"
-                    :class="{ 'btn-active': editor?.isActive('strike') }"
-                    :title="t('editor_strike')"
-                    @click="editor?.chain().focus().toggleStrike().run()"
-                >
-                    S
-                </button>
-                <span class="divider divider-horizontal mx-0" />
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('heading', { level: 1 }) }"
-                    :title="t('editor_h1')"
-                    @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
-                >
-                    H1
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('heading', { level: 2 }) }"
-                    :title="t('editor_h2')"
-                    @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
-                >
-                    H2
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('heading', { level: 3 }) }"
-                    :title="t('editor_h3')"
-                    @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
-                >
-                    H3
-                </button>
-                <span class="divider divider-horizontal mx-0" />
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('bulletList') }"
-                    :title="t('editor_bullet_list')"
-                    @click="editor?.chain().focus().toggleBulletList().run()"
-                >
-                    •
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('orderedList') }"
-                    :title="t('editor_ordered_list')"
-                    @click="editor?.chain().focus().toggleOrderedList().run()"
-                >
-                    1.
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('blockquote') }"
-                    :title="t('editor_blockquote')"
-                    @click="editor?.chain().focus().toggleBlockquote().run()"
-                >
-                    “”
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :class="{ 'btn-active': editor?.isActive('codeBlock') }"
-                    :title="t('editor_code_block')"
-                    @click="editor?.chain().focus().toggleCodeBlock().run()"
-                >
-                    {}
-                </button>
-                <span class="divider divider-horizontal mx-0" />
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
+                    class="btn btn-ghost btn-square"
                     :class="{ 'btn-active': editor?.isActive('link') }"
                     :title="t('editor_link')"
+                    :aria-label="t('editor_link')"
                     @click="setLink"
                 >
-                    <KG_ICONS.adminAction.link class="size-5" />
+                    <KG_ICONS.adminAction.link />
                 </button>
                 <button
                     type="button"
-                    class="btn btn-ghost btn-xs"
+                    class="btn btn-ghost btn-square"
                     :title="t('editor_image')"
+                    :aria-label="t('editor_image')"
                     :disabled="isUploading"
                     @click="onPickImage"
                 >
                     <span v-if="isUploading" class="loading loading-spinner loading-xs" />
-                    <KG_ICONS.adminAction.image v-else class="size-5" />
+                    <KG_ICONS.adminAction.image v-else />
                 </button>
                 <input ref="fileInputRef" type="file" class="hidden" accept="image/*" @change="onFileInputChange" />
-                <span class="divider divider-horizontal mx-0" />
                 <button
+                    v-for="button in historyButtons"
+                    :key="button.key"
                     type="button"
-                    class="btn btn-ghost btn-xs"
-                    :title="t('editor_undo')"
-                    @click="editor?.chain().focus().undo().run()"
+                    class="btn btn-ghost btn-square"
+                    :title="t(button.title)"
+                    :aria-label="t(button.title)"
+                    @click="button.run"
                 >
-                    ↶
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost btn-xs"
-                    :title="t('editor_redo')"
-                    @click="editor?.chain().focus().redo().run()"
-                >
-                    ↷
+                    <component :is="button.icon" aria-hidden="true" />
                 </button>
             </div>
 
-            <EditorContent :editor="editor" />
+            <div class="overflow-hidden rounded-b-tile bg-base-100">
+                <EditorContent :editor="editor" />
+            </div>
         </div>
 
-        <p v-if="error" class="text-error text-sm mt-1">{{ error }}</p>
-        <p v-if="uploadError" class="text-error text-sm mt-1">{{ uploadError }}</p>
+        <p v-if="error" class="mt-1 text-sm text-error">{{ error }}</p>
+        <p v-if="uploadError" class="mt-1 text-sm text-error">{{ uploadError }}</p>
     </div>
 </template>
 
@@ -328,7 +366,7 @@ function setLink(): void {
 .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
-    color: oklch(var(--bc) / 0.4);
+    color: var(--color-muted);
     pointer-events: none;
     height: 0;
 }

@@ -31,7 +31,7 @@ const breadcrumbs: Breadcrumb[] = [
 
     <ExpenseImportResultCard v-if="result" :result="result" />
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body space-y-4">
             <BankStatementUploadForm
                 :loading="flow.loading.value"

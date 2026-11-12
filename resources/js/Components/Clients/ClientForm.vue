@@ -84,7 +84,7 @@ function submit(): void {
                 <RadioGroup field="type" :label="t('client_type')" :options="typeOptions" required />
 
                 <div class="space-y-4">
-                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('basic_info') }}</h2>
+                    <h2 class="text-sm font-medium text-muted">{{ t('basic_info') }}</h2>
 
                     <TextInput field="name" :label="t('client_name')" required autofocus />
 
@@ -97,14 +97,14 @@ function submit(): void {
 
                     <div>
                         <TextInput field="peppol_participant_id" :label="t('peppol_participant_id')" />
-                        <p class="mt-1 text-xs text-base-content/60">{{ t('peppol_participant_id_hint') }}</p>
+                        <p class="mt-1 text-xs text-muted">{{ t('peppol_participant_id_hint') }}</p>
                     </div>
 
                     <ToggleInput field="is_vat_payer" :label="t('client_is_vat_payer')" />
                 </div>
 
                 <div class="space-y-4">
-                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('address') }}</h2>
+                    <h2 class="text-sm font-medium text-muted">{{ t('address') }}</h2>
 
                     <TextInput field="street" :label="t('street')" />
 
@@ -117,14 +117,14 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-4">
-                    <h2 class="text-sm font-semibold text-base-content/70">{{ t('client_contacts') }}</h2>
+                    <h2 class="text-sm font-medium text-muted">{{ t('client_contacts') }}</h2>
                     <ContactsListField field="contacts" />
                 </div>
 
                 <TextareaInput v-model="form.note" :label="t('note')" :error="form.errors.note" :rows="4" />
             </div>
 
-            <div class="sticky bottom-0 border-t border-base-300 bg-base-100 px-6 py-3">
+            <div class="sticky bottom-0 bg-base-100 px-6 py-3">
                 <FormActions :processing="form.processing" @cancel="emit('cancel')" />
             </div>
         </form>

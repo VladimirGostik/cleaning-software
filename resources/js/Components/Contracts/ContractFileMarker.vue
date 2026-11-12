@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import AttachFileIcon from '~icons/material-symbols/attach-file-rounded';
+import AttachFileIcon from '~icons/material-symbols/attach-file-outline-rounded';
 import StatusChip from '@/Components/StatusChip.vue';
 
 defineProps<{
@@ -14,7 +14,7 @@ const { t } = useI18n();
 <template>
     <span v-if="source === 'file'" class="inline-flex items-center gap-1.5 align-middle">
         <AttachFileIcon
-            class="size-4 text-base-content/60"
+            class="text-muted"
             role="img"
             :aria-label="t('contract_from_file')"
             :title="t('contract_from_file')"

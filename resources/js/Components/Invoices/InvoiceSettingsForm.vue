@@ -135,13 +135,13 @@ function submit(): void {
 <template>
     <FormProvider :form="form">
         <form novalidate :class="compact ? 'flex h-full flex-col' : ''" @submit.prevent="submit">
-            <div :class="compact ? 'flex-1 space-y-6 p-6' : 'space-y-6'">
+            <div :class="compact ? 'flex-1 space-y-4 p-6' : 'space-y-4'">
                 <InvoiceSettingsSupplierCard :compact="compact" />
                 <InvoiceSettingsBankCard :compact="compact" />
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body">
-                        <h2 class="card-title text-base">{{ t('invoice_settings_section_numbering') }}</h2>
+                        <h2 class="card-title">{{ t('invoice_settings_section_numbering') }}</h2>
                         <InvoiceNumberFormatField />
                     </div>
                 </div>
@@ -177,14 +177,14 @@ function submit(): void {
 
                 <InvoiceSettingsPreviewCard />
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-2">
                         <SelectInput
                             field="recurring_default_state"
                             :label="t('invoice_settings_recurring_default_state')"
                             :options="recurringDefaultStateOptions"
                         />
-                        <p class="text-sm text-base-content/60">
+                        <p class="text-sm text-muted">
                             {{ t('invoice_settings_recurring_default_state_hint') }}
                         </p>
                     </div>
@@ -194,8 +194,8 @@ function submit(): void {
             <div
                 :class="
                     compact
-                        ? 'sticky bottom-0 z-10 border-t border-base-300 bg-base-100 px-6 py-3'
-                        : 'sticky bottom-0 z-10 mt-8 rounded-box border border-base-300 bg-base-100 px-4 py-4 shadow-sm'
+                        ? 'sticky bottom-0 z-10 bg-base-100 px-6 py-3'
+                        : 'kg-sticky-footer mt-8 rounded-card bg-base-100 px-4 py-4'
                 "
             >
                 <FormActions

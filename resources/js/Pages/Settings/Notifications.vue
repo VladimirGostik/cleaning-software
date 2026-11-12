@@ -55,13 +55,13 @@ function submit(): void {
 <template>
     <Header :title="t('notification_settings')" :breadcrumbs="breadcrumbs" />
 
-    <p class="mb-6 text-base-content/60">{{ t('notification_settings_subtitle') }}</p>
+    <p class="mb-4 text-muted">{{ t('notification_settings_subtitle') }}</p>
 
     <FormProvider :form="form">
         <form novalidate @submit.prevent="submit">
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body">
-                    <div class="divide-y divide-base-300">
+                    <div class="kg-list">
                         <NotificationPreferenceRow
                             v-for="item in preferences.items"
                             :key="item.type"

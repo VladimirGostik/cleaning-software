@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import AnchoredPopover from '@/Components/AnchoredPopover.vue';
 import TableFilter from './TableFilter.vue';
 import TableSearch from './TableSearch.vue';
 import type { FilterConfig, FilterState, TableTabsConfig } from '@/types/table';
@@ -39,6 +40,7 @@ const activeFilters = ref<FilterState[]>(
     props.filters.filter((f) => props.queryFilters[f.property] !== undefined).map(makeState),
 );
 const search = ref(props.queryFilters.search ?? '');
+const addOpen = ref(false);
 
 watch(
     () => props.queryFilters,
@@ -63,6 +65,7 @@ const activeTab = computed(() =>
 );
 
 function addFilter(property: string) {
+    addOpen.value = false;
     const config = props.filters.find((filter) => filter.property === property);
     if (!config) return;
     activeFilters.value.push(makeState(config));
@@ -122,21 +125,27 @@ function handleTab(value: string) {
                 @remove="removeFilter"
             />
 
-            <div v-if="availableFilters.length" class="dropdown dropdown-bottom">
-                <button tabindex="0" type="button" class="btn btn-sm btn-neutral" data-autom="button-add-filter">
-                    {{ $t('filter') }}
-                </button>
-                <ul
-                    tabindex="0"
-                    class="dropdown-content menu bg-base-100 rounded-box z-20 w-56 p-2 shadow border border-base-300"
-                >
+            <AnchoredPopover v-if="availableFilters.length" v-model:open="addOpen" class="w-56 p-2">
+                <template #trigger="{ toggle, open }">
+                    <button
+                        type="button"
+                        class="btn btn-neutral"
+                        data-autom="button-add-filter"
+                        aria-haspopup="true"
+                        :aria-expanded="open"
+                        @click="toggle"
+                    >
+                        {{ $t('filter') }}
+                    </button>
+                </template>
+                <ul class="menu w-full p-0">
                     <li v-for="filter in availableFilters" :key="filter.property">
                         <button type="button" @click="addFilter(filter.property)">{{ filter.label }}</button>
                     </li>
                 </ul>
-            </div>
+            </AnchoredPopover>
 
-            <button v-if="hasOptionalFilters" type="button" class="btn btn-sm btn-ghost" @click="clearAll">
+            <button v-if="hasOptionalFilters" type="button" class="btn btn-ghost" @click="clearAll">
                 {{ $t('clear_filters') }}
             </button>
         </div>

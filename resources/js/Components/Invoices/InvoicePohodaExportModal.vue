@@ -62,8 +62,8 @@ watch(
 <template>
     <dialog class="modal" :class="{ 'modal-open': props.open }">
         <div class="modal-box">
-            <h3 class="text-lg font-bold">{{ t('pohoda_export_title') }}</h3>
-            <p class="mt-1 text-sm text-base-content/60">{{ t('pohoda_export_hint') }}</p>
+            <h3 class="text-lg font-medium">{{ t('pohoda_export_title') }}</h3>
+            <p class="mt-1 text-sm text-muted">{{ t('pohoda_export_hint') }}</p>
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <DateInput v-model="from" :label="t('pohoda_export_from')" :error="fromError" />
@@ -71,13 +71,13 @@ watch(
             </div>
 
             <div class="mt-4 min-h-12 text-sm" aria-live="polite">
-                <p v-if="loading" class="flex items-center gap-2 text-base-content/60">
+                <p v-if="loading" class="flex items-center gap-2 text-muted">
                     <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
                     {{ t('pohoda_export_loading') }}
                 </p>
                 <div v-else-if="failed" class="alert alert-error alert-soft" role="alert">
                     <span>{{ t('pohoda_export_preview_failed') }}</span>
-                    <button type="button" class="btn btn-ghost btn-xs" @click="retry">{{ t('retry') }}</button>
+                    <button type="button" class="btn btn-ghost btn-sm" @click="retry">{{ t('retry') }}</button>
                 </div>
                 <template v-else-if="preview">
                     <p v-if="preview.count === 0">{{ t('pohoda_export_empty') }}</p>

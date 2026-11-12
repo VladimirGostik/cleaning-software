@@ -10,9 +10,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4" role="status">
-            <h2 class="text-lg font-semibold">
+            <h2 class="card-title">
                 {{ result.created > 0 ? t('expense_import_result_title') : t('expense_import_result_nothing_title') }}
             </h2>
 

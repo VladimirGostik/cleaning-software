@@ -35,10 +35,10 @@ const labels = computed<SettingsImageFieldLabels>(() => ({
 </script>
 
 <template>
-    <section class="card bg-base-100 shadow-sm" :aria-labelledby="titleId">
+    <section class="card bg-base-100" :aria-labelledby="titleId">
         <div class="card-body space-y-4">
-            <h2 :id="titleId" class="card-title text-base">{{ t('invoice_settings_signature_title') }}</h2>
-            <p class="text-sm text-base-content/60">{{ t('invoice_settings_signature_hint') }}</p>
+            <h2 :id="titleId" class="card-title">{{ t('invoice_settings_signature_title') }}</h2>
+            <p class="text-sm text-muted">{{ t('invoice_settings_signature_hint') }}</p>
 
             <SettingsImageField
                 :image="props.signature"

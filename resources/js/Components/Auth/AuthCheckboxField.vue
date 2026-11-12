@@ -23,15 +23,15 @@ function onNativeChange(event: Event) {
 </script>
 
 <template>
-    <label class="flex cursor-pointer items-center gap-2">
+    <label class="flex min-h-11 cursor-pointer items-center gap-2">
         <span
-            class="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-[5px] border transition"
+            class="flex size-6 shrink-0 items-center justify-center rounded-full transition"
             :class="resolvedValue ? 'auth-checkbox-checked' : 'auth-checkbox-unchecked'"
             aria-hidden="true"
         >
-            <CheckIcon v-if="resolvedValue" class="h-3 w-3" />
+            <CheckIcon v-if="resolvedValue" />
         </span>
         <input type="checkbox" class="sr-only" :checked="resolvedValue" @change="onNativeChange" />
-        <span class="text-[13px] text-base-content">{{ label }}</span>
+        <span class="text-xs text-base-content">{{ label }}</span>
     </label>
 </template>

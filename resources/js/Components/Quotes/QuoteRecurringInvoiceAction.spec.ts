@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createApp, defineComponent, h } from 'vue';
+import { createApp, defineComponent, h, nextTick } from 'vue';
 import { createI18n } from 'vue-i18n';
 import QuoteRecurringInvoiceAction from './QuoteRecurringInvoiceAction.vue';
 
@@ -29,11 +29,19 @@ describe('QuoteRecurringInvoiceAction', () => {
         expect(links[0].getAttribute('href')).toBe('/recurring-invoices/create?quote_id=q-1&billing_period=monthly');
     });
 
-    it('renders a dropdown with one link per period', () => {
+    it('opens a popover with one link per period', async () => {
         const host = render(['monthly', 'yearly']);
-        const links = [...host.querySelectorAll('a')];
+        const trigger = host.querySelector('button');
 
-        expect(host.querySelector('.dropdown')).not.toBeNull();
+        expect(trigger?.getAttribute('aria-haspopup')).toBe('menu');
+        expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+
+        trigger?.click();
+        await nextTick();
+
+        const links = [...document.body.querySelectorAll('.kg-float a')];
+
+        expect(trigger?.getAttribute('aria-expanded')).toBe('true');
         expect(links.map((a) => a.getAttribute('href'))).toEqual([
             '/recurring-invoices/create?quote_id=q-1&billing_period=monthly',
             '/recurring-invoices/create?quote_id=q-1&billing_period=yearly',

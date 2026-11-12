@@ -114,12 +114,12 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="space-y-6" @submit.prevent="submit">
+        <form novalidate class="space-y-4" @submit.prevent="submit">
             <StatusErrorAlert />
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('contract_section_file') }}</h2>
+                    <h2 class="card-title">{{ t('contract_section_file') }}</h2>
 
                     <UploadedFileField
                         v-model="form.file_uuid"
@@ -132,9 +132,9 @@ function submit(): void {
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('contract_section_basics') }}</h2>
+                    <h2 class="card-title">{{ t('contract_section_basics') }}</h2>
 
                     <ContractBasicsFields />
 
@@ -151,15 +151,15 @@ function submit(): void {
                                 :error="form.errors.signed_on"
                                 @update:model-value="updateSignedOn"
                             />
-                            <p class="text-xs text-base-content/60">{{ t('contract_signed_on_hint') }}</p>
+                            <p class="text-xs text-muted">{{ t('contract_signed_on_hint') }}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('contract_section_subject') }}</h2>
+                    <h2 class="card-title">{{ t('contract_section_subject') }}</h2>
 
                     <ContractSubjectFields
                         :context="context"
@@ -174,7 +174,7 @@ function submit(): void {
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body">
                     <TextareaInput
                         :model-value="form.notes ?? ''"

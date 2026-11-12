@@ -12,7 +12,7 @@ defineProps<{ message: DeepReadonly<ChatMessage> }>();
 <template>
     <div class="flex" :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
         <div
-            class="max-w-[85%] rounded-box px-3 py-2 text-sm"
+            class="max-w-[85%] rounded-card-nested px-3 py-2 text-sm"
             :class="message.role === 'user' ? 'bg-primary-soft' : 'bg-base-200'"
         >
             <ul v-if="message.attachmentNames.length > 0" class="mb-1 flex flex-wrap gap-1.5">
@@ -29,7 +29,7 @@ defineProps<{ message: DeepReadonly<ChatMessage> }>();
                 {{ message.securityNotice }}
             </div>
 
-            <p v-if="message.attachmentNote" class="mt-2 text-xs text-base-content/60" role="status">
+            <p v-if="message.attachmentNote" class="mt-2 text-xs text-muted" role="status">
                 {{ message.attachmentNote }}
             </p>
 

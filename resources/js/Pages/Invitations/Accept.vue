@@ -33,7 +33,7 @@ const blockedState = computed<'expired' | 'wrong_user'>(() =>
 
         <template v-if="!isFormState" #after>
             <a href="/login" class="inline-flex items-center gap-1.5 text-sm font-medium hover:underline auth-link">
-                <ArrowLeftIcon class="h-3.5 w-3.5" />
+                <ArrowLeftIcon />
                 {{ t('invitation_back_to_login') }}
             </a>
         </template>

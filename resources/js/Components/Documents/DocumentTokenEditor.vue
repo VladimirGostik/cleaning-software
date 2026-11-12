@@ -120,8 +120,8 @@ defineExpose({ insertToken, focusToken });
 <template>
     <div class="flex h-full min-h-0 flex-col gap-3">
         <div
-            class="min-h-0 flex-1 overflow-hidden rounded-box border border-base-300 bg-base-100"
-            :class="{ 'border-error': error }"
+            class="min-h-0 flex-1 overflow-hidden rounded-box bg-base-100"
+            :class="{ 'outline outline-2 outline-offset-2 outline-error': error }"
         >
             <DocumentEditor
                 :editor="editor"

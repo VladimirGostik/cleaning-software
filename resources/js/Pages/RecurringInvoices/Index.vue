@@ -9,6 +9,7 @@ import PauseIcon from '~icons/material-symbols/pause-outline-rounded';
 import PlayIcon from '~icons/material-symbols/play-arrow-outline-rounded';
 import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 import Header from '@/Layouts/Header.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
@@ -114,13 +115,11 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
 <template>
     <Header :title="t('recurring_invoices')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link
+            <PageMainAction
                 v-if="allows('create recurring_invoices')"
+                :label="t('recurring_invoice_add')"
                 href="/recurring-invoices/create"
-                class="btn btn-secondary btn-sm"
-            >
-                {{ t('recurring_invoice_add') }}
-            </Link>
+            />
         </template>
     </Header>
 
@@ -141,7 +140,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"
@@ -153,7 +152,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                     <Link :href="`/recurring-invoices/${row.id}`" class="link link-hover font-medium">{{
                         row.name
                     }}</Link>
-                    <p class="text-xs text-base-content/60">
+                    <p class="text-xs text-muted">
                         {{ row.customer_display_name ?? t('recurring_invoice_no_customer') }}
                     </p>
                 </template>
@@ -167,7 +166,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                 </template>
 
                 <template #cell-auto_issue="{ row }">
-                    <CheckIcon v-if="row.auto_issue" class="size-5 text-success" />
+                    <CheckIcon v-if="row.auto_issue" class="text-success" />
                     <span v-else>{{ t('empty_dash') }}</span>
                 </template>
 
@@ -176,44 +175,44 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                 <template #buttons="{ row }">
                     <Link
                         :href="`/recurring-invoices/${row.id}`"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
-                        <EyeIcon class="size-5" />
+                        <EyeIcon />
                     </Link>
 
                     <button
                         v-if="allows('edit recurring_invoices') && row.status === 'active'"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('recurring_invoice_action_pause')"
                         :aria-label="t('recurring_invoice_action_pause')"
                         @click="pauseConfirm.openModal(row)"
                     >
-                        <PauseIcon class="size-5" />
+                        <PauseIcon />
                     </button>
 
                     <button
                         v-if="allows('edit recurring_invoices') && row.status === 'paused'"
                         type="button"
-                        class="btn btn-ghost btn-xs"
+                        class="btn btn-ghost btn-square"
                         :title="t('recurring_invoice_action_resume')"
                         :aria-label="t('recurring_invoice_action_resume')"
                         @click="resumeConfirm.openModal(row)"
                     >
-                        <PlayIcon class="size-5" />
+                        <PlayIcon />
                     </button>
 
                     <button
                         v-if="allows('delete recurring_invoices') && ['active', 'paused'].includes(row.status)"
                         type="button"
-                        class="btn btn-ghost btn-xs text-warning"
+                        class="btn btn-ghost btn-square text-warning"
                         :title="t('recurring_invoice_action_cancel')"
                         :aria-label="t('recurring_invoice_action_cancel')"
                         @click="cancelConfirm.openModal(row)"
                     >
-                        <XCircleIcon class="size-5" />
+                        <XCircleIcon />
                     </button>
                 </template>
             </DataTable>

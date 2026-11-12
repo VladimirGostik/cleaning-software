@@ -26,13 +26,13 @@ const cards = [
         <div v-for="card in cards" :key="card.key" class="card bg-base-100">
             <div class="card-body">
                 <div class="flex items-center justify-between">
-                    <p class="text-sm text-base-content/60">{{ t(card.label) }}</p>
-                    <component :is="card.icon" class="size-5 text-base-content/40" />
+                    <p class="text-sm text-muted">{{ t(card.label) }}</p>
+                    <component :is="card.icon" class="text-muted" />
                 </div>
-                <p class="text-2xl font-semibold tabular-nums" :class="card.error ? 'text-error' : 'text-base-content'">
+                <p class="text-stat font-normal tabular-nums" :class="card.error ? 'text-error' : 'text-base-content'">
                     {{ money(props.stats[card.key].amount, props.stats.currency) }}
                 </p>
-                <p class="text-xs text-base-content/50">
+                <p class="text-xs text-muted">
                     {{ t('invoice_stat_count', { count: props.stats[card.key].count }) }}
                 </p>
             </div>

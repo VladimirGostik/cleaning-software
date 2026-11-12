@@ -5,9 +5,9 @@ import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded'
 import CameraIcon from '~icons/material-symbols/photo-camera-outline-rounded';
 import DocumentIcon from '~icons/material-symbols/description-outline-rounded';
 import ExclamationTriangleIcon from '~icons/material-symbols/warning-outline-rounded';
-import PaperClipIcon from '~icons/material-symbols/attach-file-rounded';
+import PaperClipIcon from '~icons/material-symbols/attach-file-outline-rounded';
 import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
-import XMarkIcon from '~icons/material-symbols/close-rounded';
+import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import FilePickerButton from '@/Components/Forms/FilePickerButton.vue';
 import TaskAttachmentPreviewModal from './TaskAttachmentPreviewModal.vue';
@@ -77,10 +77,10 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
             <div class="flex flex-wrap items-center gap-2">
-                <h2 class="card-title flex-1 text-base">{{ t('task_attachments') }}</h2>
+                <h2 class="card-title flex-1">{{ t('task_attachments') }}</h2>
 
                 <template v-if="list.can_add">
                     <FilePickerButton
@@ -91,7 +91,7 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         :disabled="atLimit"
                         @selected="emit('add', $event)"
                     >
-                        <PaperClipIcon class="size-5" />
+                        <PaperClipIcon />
                     </FilePickerButton>
                     <FilePickerButton
                         class="btn btn-neutral btn-sm hidden pointer-coarse:inline-flex"
@@ -101,12 +101,12 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         :disabled="atLimit"
                         @selected="onCamera"
                     >
-                        <CameraIcon class="size-5" />
+                        <CameraIcon />
                     </FilePickerButton>
                 </template>
             </div>
 
-            <p v-if="list.can_add" class="text-xs text-base-content/60">
+            <p v-if="list.can_add" class="text-xs text-muted">
                 {{
                     atLimit
                         ? t('task_attachment_limit_hint', { max: list.constraints.max_count })
@@ -117,14 +117,10 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                 }}
             </p>
 
-            <p v-if="isEmpty" class="text-sm text-base-content/60">{{ t('task_attachments_empty') }}</p>
+            <p v-if="isEmpty" class="text-sm text-muted">{{ t('task_attachments_empty') }}</p>
 
-            <ul v-if="items.length > 0" class="space-y-2">
-                <li
-                    v-for="item in items"
-                    :key="item.id"
-                    class="flex items-center gap-2 rounded-box bg-base-200 px-3 py-2 text-sm"
-                >
+            <ul v-if="items.length > 0" class="kg-list">
+                <li v-for="item in items" :key="item.id" class="kg-list-row text-sm">
                     <div class="min-w-0 flex-1">
                         <p class="truncate">{{ item.name }}</p>
                         <progress
@@ -133,23 +129,23 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                             :value="item.progress"
                             max="100"
                         />
-                        <p v-else-if="item.status === 'queued'" class="text-xs text-base-content/60">
+                        <p v-else-if="item.status === 'queued'" class="text-xs text-muted">
                             {{ t('loading') }}
                         </p>
                         <p v-else role="alert" class="flex items-center gap-1 text-xs text-error">
-                            <ExclamationTriangleIcon class="size-5 shrink-0" />
+                            <ExclamationTriangleIcon class="shrink-0" />
                             {{ item.error }}
                         </p>
                     </div>
                     <button
                         v-if="item.status === 'failed'"
                         type="button"
-                        class="btn btn-ghost btn-xs btn-square"
+                        class="btn btn-ghost btn-square"
                         :aria-label="t('remove_file')"
                         :title="t('remove_file')"
                         @click="emit('dismiss', item.id)"
                     >
-                        <XMarkIcon class="size-5" />
+                        <XMarkIcon />
                     </button>
                 </li>
             </ul>
@@ -158,12 +154,12 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                 <li v-for="image in images" :key="image.id" class="group relative">
                     <button
                         type="button"
-                        class="flex aspect-square w-full items-center justify-center overflow-hidden rounded-box bg-base-200"
+                        class="flex aspect-square w-full items-center justify-center overflow-hidden rounded-tile bg-base-200"
                         :aria-label="t('task_attachment_open_preview', { name: image.name })"
                         :title="image.name"
                         @click="previewId = image.id"
                     >
-                        <DocumentIcon v-if="brokenTiles.has(image.id)" class="size-8 text-base-content/40" />
+                        <DocumentIcon v-if="brokenTiles.has(image.id)" class="text-muted" />
                         <img
                             v-else
                             :src="image.download_url"
@@ -177,20 +173,20 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                     <button
                         v-if="image.can_delete"
                         type="button"
-                        class="btn btn-circle btn-xs absolute right-1 top-1 bg-base-100/90 text-error"
+                        class="btn btn-circle absolute right-1 top-1 bg-base-100/90 text-error"
                         :disabled="uploading"
                         :aria-label="t('task_attachment_delete')"
                         :title="t('task_attachment_delete')"
                         @click="deleteConfirm.openModal(image)"
                     >
-                        <TrashIcon class="size-5" />
+                        <TrashIcon />
                     </button>
                 </li>
             </ul>
 
-            <ul v-if="files.length > 0" class="divide-y divide-base-200">
-                <li v-for="file in files" :key="file.id" class="flex flex-wrap items-center gap-2 py-2">
-                    <DocumentIcon class="size-5 shrink-0 text-base-content/60" />
+            <ul v-if="files.length > 0" class="kg-list">
+                <li v-for="file in files" :key="file.id" class="kg-list-row flex-wrap">
+                    <DocumentIcon class="shrink-0 text-muted" />
                     <div class="min-w-0 flex-1">
                         <a
                             v-if="isPdf(file)"
@@ -204,27 +200,27 @@ const deleteConfirm = useDeleteConfirm<Attachment>({
                         <a v-else :href="file.download_url" download class="link link-hover block truncate font-medium">
                             {{ file.name }}
                         </a>
-                        <p class="text-xs text-base-content/60">{{ meta(file) }}</p>
+                        <p class="text-xs text-muted">{{ meta(file) }}</p>
                     </div>
                     <a
                         :href="file.download_url"
                         download
-                        class="btn btn-ghost btn-sm btn-square"
+                        class="btn btn-ghost btn-square"
                         :aria-label="t('task_attachment_download')"
                         :title="t('task_attachment_download')"
                     >
-                        <ArrowDownTrayIcon class="size-5" />
+                        <ArrowDownTrayIcon />
                     </a>
                     <button
                         v-if="file.can_delete"
                         type="button"
-                        class="btn btn-ghost btn-sm btn-square text-error"
+                        class="btn btn-ghost btn-square text-error"
                         :disabled="uploading"
                         :aria-label="t('task_attachment_delete')"
                         :title="t('task_attachment_delete')"
                         @click="deleteConfirm.openModal(file)"
                     >
-                        <TrashIcon class="size-5" />
+                        <TrashIcon />
                     </button>
                 </li>
             </ul>

@@ -7,9 +7,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-4">
         <div class="space-y-4">
-            <h4 class="font-semibold text-sm">{{ t('tenant_add_section_basic') }}</h4>
+            <h4 class="font-medium text-sm">{{ t('tenant_add_section_basic') }}</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput field="name" :label="t('tenant_add_name')" required />
                 <TextInput field="ico" :label="t('tenant_add_ico')" required />
@@ -22,7 +22,7 @@ const { t } = useI18n();
         </div>
 
         <div class="space-y-4">
-            <h4 class="font-semibold text-sm">{{ t('tenant_add_section_address') }}</h4>
+            <h4 class="font-medium text-sm">{{ t('tenant_add_section_address') }}</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput field="address_line" :label="t('street')" />
                 <TextInput field="city" :label="t('city')" />
@@ -32,7 +32,7 @@ const { t } = useI18n();
         </div>
 
         <div class="space-y-4">
-            <h4 class="font-semibold text-sm">{{ t('tenant_add_section_contact') }}</h4>
+            <h4 class="font-medium text-sm">{{ t('tenant_add_section_contact') }}</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput field="contact_email" type="email" :label="t('invoice_settings_contact_email')" />
                 <TextInput field="contact_phone" type="tel" :label="t('invoice_settings_contact_phone')" />
@@ -40,7 +40,7 @@ const { t } = useI18n();
         </div>
 
         <div class="space-y-4">
-            <h4 class="font-semibold text-sm">{{ t('invoice_settings_section_bank') }}</h4>
+            <h4 class="font-medium text-sm">{{ t('invoice_settings_section_bank') }}</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput field="iban" :label="t('invoice_settings_iban')" placeholder="SK0000000000000000000000" />
                 <TextInput

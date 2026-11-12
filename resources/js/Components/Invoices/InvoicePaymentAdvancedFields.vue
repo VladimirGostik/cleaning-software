@@ -53,7 +53,7 @@ watch(
 <template>
     <details
         ref="detailsRef"
-        class="collapse collapse-arrow rounded-box border border-base-300 bg-base-100"
+        class="collapse collapse-arrow rounded-card-nested bg-base-200"
         :open="open"
         @toggle="onToggle"
     >
@@ -65,13 +65,13 @@ watch(
             <span v-if="hasError" class="kg-chip kg-chip--danger kg-chip--sm">{{
                 t('invoice_advanced_has_errors')
             }}</span>
-            <span class="ml-auto hidden truncate text-xs font-normal text-base-content/60 sm:inline">
+            <span class="ml-auto hidden truncate text-xs font-normal text-muted sm:inline">
                 {{ summary }}
             </span>
         </summary>
 
         <div class="collapse-content">
-            <p class="mb-3 text-xs text-base-content/60">{{ t('invoice_advanced_hint') }}</p>
+            <p class="mb-3 text-xs text-muted">{{ t('invoice_advanced_hint') }}</p>
 
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <SelectInput

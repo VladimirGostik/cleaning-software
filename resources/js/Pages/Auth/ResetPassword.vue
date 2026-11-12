@@ -34,7 +34,7 @@ function submit() {
 <template>
     <AuthShell :title="t('reset_password')">
         <FormProvider :form="form">
-            <form class="flex flex-col gap-[18px]" novalidate @submit.prevent="submit">
+            <form class="flex flex-col gap-4" novalidate @submit.prevent="submit">
                 <AuthTextField
                     field="email"
                     :label="t('email')"

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import CalendarDaysIcon from '~icons/material-symbols/calendar-month-outline-rounded';
 import ListBulletIcon from '~icons/material-symbols/format-list-bulleted-outline-rounded';
 import Header from '@/Layouts/Header.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { TableFilters } from '@/Components/DataTable';
 import JobList from '@/Components/Schedule/JobList.vue';
@@ -142,7 +143,7 @@ watch(
                     :aria-pressed="ui.viewMode === 'list'"
                     @click="ui.viewMode = 'list'"
                 >
-                    <ListBulletIcon class="size-5" />
+                    <ListBulletIcon />
                     {{ t('schedule_view_list') }}
                 </button>
                 <button
@@ -152,14 +153,12 @@ watch(
                     :aria-pressed="ui.viewMode === 'calendar'"
                     @click="ui.viewMode = 'calendar'"
                 >
-                    <CalendarDaysIcon class="size-5" />
+                    <CalendarDaysIcon />
                     {{ t('schedule_view_calendar') }}
                 </button>
             </div>
 
-            <Link v-if="allows('create schedule')" href="/jobs/create" class="btn btn-secondary btn-sm">
-                {{ t('schedule_add') }}
-            </Link>
+            <PageMainAction v-if="allows('create schedule')" :label="t('schedule_add')" href="/jobs/create" />
         </template>
     </Header>
 
@@ -174,11 +173,11 @@ watch(
         :icon="CalendarDaysIcon"
     >
         <template v-if="allows('create schedule')" #cta>
-            <Link href="/jobs/create" class="btn btn-primary btn-sm">{{ t('schedule_add') }}</Link>
+            <Link href="/jobs/create" class="btn btn-primary">{{ t('schedule_add') }}</Link>
         </template>
     </EmptyState>
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <TableFilters
                 :filters="filterDefinitions"
@@ -191,7 +190,7 @@ watch(
             <JobList v-if="ui.viewMode === 'list'" :jobs="props.jobs" />
 
             <template v-else>
-                <p class="text-xs text-base-content/60">{{ t('schedule_calendar_filters_hint') }}</p>
+                <p class="text-xs text-muted">{{ t('schedule_calendar_filters_hint') }}</p>
                 <JobCalendar
                     :events="calendar.state.events"
                     :loading="calendar.state.loading"

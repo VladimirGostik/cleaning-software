@@ -57,19 +57,19 @@ const confirmVariant = computed(() => (statusConfirm.state.item ? CONFIRM_VARIAN
         </template>
     </Header>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div class="space-y-6">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div class="space-y-4">
             <JobDetailCard :job="job" />
 
-            <div v-if="workBreakdown" class="card bg-base-100 shadow-sm">
+            <div v-if="workBreakdown" class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('schedule_section_breakdown') }}</h2>
+                    <h2 class="card-title">{{ t('schedule_section_breakdown') }}</h2>
                     <WorkBreakdownView :breakdown="workBreakdown" :highlight-task-id="job.work_breakdown_task_id" />
                 </div>
             </div>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
             <JobActionsCard
                 :job="job"
                 @start="statusConfirm.openModal('start')"

@@ -105,10 +105,10 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="space-y-6" @submit.prevent="submit">
-            <div class="card bg-base-100 shadow-sm">
+        <form novalidate class="space-y-4" @submit.prevent="submit">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-4">
-                    <h2 class="card-title text-base">{{ t('schedule_section_details') }}</h2>
+                    <h2 class="card-title">{{ t('schedule_section_details') }}</h2>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="md:col-span-2">

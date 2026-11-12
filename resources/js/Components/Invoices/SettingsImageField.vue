@@ -69,7 +69,7 @@ watch(
 <template>
     <div class="space-y-4">
         <template v-if="intent.kind === 'keep' && image === null">
-            <p class="text-sm text-base-content/60">{{ labels.empty }}</p>
+            <p class="text-sm text-muted">{{ labels.empty }}</p>
             <FormField :label="labels.upload" :error="error">
                 <FileUploadInput
                     :model-value="uploadModelValue"
@@ -117,7 +117,7 @@ watch(
                     @update:model-value="onUploaded"
                 />
             </FormField>
-            <p role="status" class="text-sm text-base-content/60">{{ labels.pendingUpload }}</p>
+            <p role="status" class="text-sm text-muted">{{ labels.pendingUpload }}</p>
             <div class="flex flex-wrap gap-2">
                 <button type="button" class="btn btn-sm btn-ghost" @click="onDiscardUpload">
                     {{ labels.discard }}

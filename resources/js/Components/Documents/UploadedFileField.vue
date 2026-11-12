@@ -39,13 +39,10 @@ function onUpdate(value: string | string[] | null): void {
 
 <template>
     <div class="space-y-4">
-        <div
-            v-if="props.currentFile"
-            class="flex items-center justify-between gap-3 rounded-box border border-base-300 p-3"
-        >
+        <div v-if="props.currentFile" class="kg-card-nested flex items-center justify-between gap-3 p-3">
             <div class="min-w-0">
                 <p class="truncate font-medium">{{ props.currentFile.file_name }}</p>
-                <p class="text-xs text-base-content/60">
+                <p class="text-xs text-muted">
                     {{ props.currentFile.mime_type ?? t('empty_dash') }} ·
                     {{ formatBytes(props.currentFile.size) }}
                 </p>
@@ -65,6 +62,6 @@ function onUpdate(value: string | string[] | null): void {
             />
         </FormField>
 
-        <p class="text-xs text-base-content/60">{{ props.hint }}</p>
+        <p class="text-xs text-muted">{{ props.hint }}</p>
     </div>
 </template>

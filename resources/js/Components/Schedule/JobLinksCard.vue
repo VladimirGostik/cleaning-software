@@ -14,16 +14,16 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-2">
-            <h2 class="card-title text-base">{{ t('schedule_section_links') }}</h2>
+            <h2 class="card-title">{{ t('schedule_section_links') }}</h2>
 
             <Link
                 v-if="props.job.client_id"
                 :href="`/clients/${props.job.client_id}`"
                 class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <UserGroupIcon class="size-5 shrink-0" />
+                <UserGroupIcon class="shrink-0" />
                 {{ props.job.client_name }}
             </Link>
 
@@ -31,7 +31,7 @@ const { t } = useI18n();
                 :href="`/objects/${props.job.cleaning_object_id}`"
                 class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <BuildingOffice2Icon class="size-5 shrink-0" />
+                <BuildingOffice2Icon class="shrink-0" />
                 {{ props.job.object_name }}
             </Link>
 
@@ -40,7 +40,7 @@ const { t } = useI18n();
                 :href="`/contracts/${props.job.contract_id}`"
                 class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <DocumentCheckIcon class="size-5 shrink-0" />
+                <DocumentCheckIcon class="shrink-0" />
                 {{ props.job.contract_title ?? t('schedule_detail_contract') }}
             </Link>
 
@@ -49,7 +49,7 @@ const { t } = useI18n();
                 :href="`/invoices/${props.job.invoice_id}`"
                 class="btn btn-sm btn-neutral h-auto min-h-9 w-full justify-start py-1.5 text-left"
             >
-                <DocumentTextIcon class="size-5 shrink-0" />
+                <DocumentTextIcon class="shrink-0" />
                 {{ t('schedule_detail_invoice') }}
             </Link>
         </div>

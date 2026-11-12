@@ -67,13 +67,13 @@ function markAllRead(): void {
             <span v-if="unreadCount > 0" class="kg-chip kg-chip--planned">
                 {{ t('notifications_unread_count', { count: unreadCount }) }}
             </span>
-            <button type="button" class="btn btn-sm btn-neutral" :disabled="unreadCount === 0" @click="markAllRead">
+            <button type="button" class="btn btn-neutral" :disabled="unreadCount === 0" @click="markAllRead">
                 {{ t('notifications_mark_all_read') }}
             </button>
         </template>
     </Header>
 
-    <p class="mb-6 text-base-content/60">{{ t('notifications_subtitle') }}</p>
+    <p class="mb-4 text-muted">{{ t('notifications_subtitle') }}</p>
 
     <EmptyState
         v-if="showEmptyState"
@@ -82,7 +82,7 @@ function markAllRead(): void {
         :icon="BellIcon"
     />
 
-    <div v-else class="card bg-base-100 shadow-sm">
+    <div v-else class="card bg-base-100">
         <div class="card-body">
             <NotificationList
                 :notifications="notifications"

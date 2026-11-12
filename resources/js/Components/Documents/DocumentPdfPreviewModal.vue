@@ -20,7 +20,7 @@ const { t } = useI18n();
     <dialog class="modal" :class="{ 'modal-open': isOpen }" :aria-label="t('document_pdf_title')">
         <div class="modal-box flex h-[90dvh] w-11/12 max-w-6xl flex-col gap-3">
             <div class="flex shrink-0 items-center justify-between gap-3">
-                <h3 class="text-lg font-bold">{{ t('document_pdf_title') }}</h3>
+                <h3 class="text-lg font-medium">{{ t('document_pdf_title') }}</h3>
                 <button type="button" class="btn btn-ghost btn-sm" @click="emit('close')">
                     {{ t('close') }}
                 </button>
@@ -36,7 +36,7 @@ const { t } = useI18n();
                 v-else-if="pdfUrl"
                 :src="pdfUrl"
                 :title="t('document_pdf_title')"
-                class="min-h-0 w-full flex-1 rounded-box border border-base-300"
+                class="min-h-0 w-full flex-1 rounded-card-nested"
             />
         </div>
         <form method="dialog" class="modal-backdrop">

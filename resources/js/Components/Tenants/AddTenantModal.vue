@@ -105,22 +105,22 @@ watch(
     >
         <div ref="modalBox" class="modal-box max-w-2xl">
             <div class="flex items-center justify-between mb-4">
-                <h3 :id="titleId" class="text-lg font-bold">{{ t('tenant_add_title') }}</h3>
-                <button type="button" class="btn btn-sm btn-ghost btn-circle" :aria-label="t('close')" @click="close">
-                    <XMarkIcon class="size-5" />
+                <h3 :id="titleId" class="text-lg font-medium">{{ t('tenant_add_title') }}</h3>
+                <button type="button" class="btn btn-square btn-ghost" :aria-label="t('close')" @click="close">
+                    <XMarkIcon />
                 </button>
             </div>
 
             <FormProvider :form="form">
                 <form novalidate @submit.prevent="submit">
-                    <div class="flex flex-col gap-6">
+                    <div class="flex flex-col gap-4">
                         <TenantSupplierFields />
 
                         <div class="space-y-4">
-                            <h4 class="font-semibold text-sm">{{ t('tenant_add_section_settings') }}</h4>
+                            <h4 class="font-medium text-sm">{{ t('tenant_add_section_settings') }}</h4>
                             <ColorSwatchPicker field="color" :colors="colors" :label="t('tenant_add_color')" />
                             <ToggleInput field="copy_settings" :label="t('tenant_add_copy_settings')" />
-                            <p class="text-sm text-base-content/60">{{ t('tenant_add_copy_settings_hint') }}</p>
+                            <p class="text-sm text-muted">{{ t('tenant_add_copy_settings_hint') }}</p>
                         </div>
                     </div>
 

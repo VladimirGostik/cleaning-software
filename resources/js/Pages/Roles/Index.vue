@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import Header from '@/Layouts/Header.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import DataTable from '@/Components/DataTable/DataTable.vue';
 import { useAuthorization } from '@/Composables/useAuthorization';
 import type { Paginator, Breadcrumb, TableColumn } from '@/types';
@@ -27,13 +27,11 @@ const columns: TableColumn[] = [
 <template>
     <Header :title="t('roles')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link v-if="allows('create roles')" href="/roles/create" class="btn btn-secondary btn-sm">
-                {{ t('create') }}
-            </Link>
+            <PageMainAction v-if="allows('create roles')" :label="t('create')" href="/roles/create" />
         </template>
     </Header>
 
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
             <DataTable
                 :columns="columns"

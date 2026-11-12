@@ -31,7 +31,7 @@ function fieldLabel(field: string): string {
 <template>
     <div v-if="props.missingFields.length > 0" role="alert" class="alert alert-warning mb-4 items-start">
         <div class="flex-1">
-            <p class="font-semibold">{{ t('invoice_settings_incomplete_title') }}</p>
+            <p class="font-medium">{{ t('invoice_settings_incomplete_title') }}</p>
             <p class="text-sm">{{ t('invoice_supplier_incomplete') }}</p>
             <p class="mt-1 text-sm">
                 <span class="font-medium">{{ t('invoice_settings_incomplete_missing_label') }}</span>
@@ -44,7 +44,7 @@ function fieldLabel(field: string): string {
                 {{ t('invoice_settings_incomplete_cta') }}
             </button>
             <template #fallback>
-                <p class="text-sm text-base-content/70">{{ t('invoice_settings_incomplete_no_permission') }}</p>
+                <p class="text-sm text-muted">{{ t('invoice_settings_incomplete_no_permission') }}</p>
             </template>
         </Can>
     </div>

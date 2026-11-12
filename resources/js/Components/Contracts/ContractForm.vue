@@ -185,7 +185,7 @@ function onSubmit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="space-y-6" @submit.prevent="onSubmit">
+        <form novalidate class="space-y-4" @submit.prevent="onSubmit">
             <ul class="steps w-full" :aria-label="t('contract_steps_label')">
                 <li class="step step-primary" :aria-current="step === 1 ? 'step' : undefined">
                     {{ t('contract_step_setup') }}

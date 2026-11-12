@@ -29,44 +29,44 @@ const isActiveOrPaused = computed(() => isActive.value || isPaused.value);
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-2">
-            <h2 class="card-title text-base">{{ t('invoice_section_actions') }}</h2>
+            <h2 class="card-title">{{ t('invoice_section_actions') }}</h2>
 
             <Can v-if="isActiveOrPaused" permission="edit recurring_invoices">
                 <Link
                     :href="`/recurring-invoices/${props.recurringInvoice.id}/edit`"
-                    class="btn btn-sm btn-neutral w-full justify-start"
+                    class="btn btn-neutral w-full justify-start"
                 >
-                    <PencilSquareIcon class="size-5" />
+                    <PencilSquareIcon />
                     {{ t('edit') }}
                 </Link>
             </Can>
 
             <Can v-if="isActive" permission="edit recurring_invoices">
-                <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('pause')">
-                    <PauseIcon class="size-5" />
+                <button type="button" class="btn btn-neutral w-full justify-start" @click="emit('pause')">
+                    <PauseIcon />
                     {{ t('recurring_invoice_action_pause') }}
                 </button>
             </Can>
 
             <Can v-if="isPaused" permission="edit recurring_invoices">
-                <button type="button" class="btn btn-sm btn-neutral w-full justify-start" @click="emit('resume')">
-                    <PlayIcon class="size-5" />
+                <button type="button" class="btn btn-neutral w-full justify-start" @click="emit('resume')">
+                    <PlayIcon />
                     {{ t('recurring_invoice_action_resume') }}
                 </button>
             </Can>
 
             <Can v-if="isActiveOrPaused" permission="delete recurring_invoices">
-                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('cancel')">
-                    <XCircleIcon class="size-5" />
+                <button type="button" class="btn btn-error w-full justify-start" @click="emit('cancel')">
+                    <XCircleIcon />
                     {{ t('recurring_invoice_action_cancel') }}
                 </button>
             </Can>
 
             <Can permission="delete recurring_invoices">
-                <button type="button" class="btn btn-sm btn-error w-full justify-start" @click="emit('delete')">
-                    <TrashIcon class="size-5" />
+                <button type="button" class="btn btn-error w-full justify-start" @click="emit('delete')">
+                    <TrashIcon />
                     {{ t('delete') }}
                 </button>
             </Can>

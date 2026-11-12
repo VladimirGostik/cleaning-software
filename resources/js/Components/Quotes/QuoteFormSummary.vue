@@ -25,27 +25,25 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('quote_section_summary') }}</h2>
+            <h2 class="card-title">{{ t('quote_section_summary') }}</h2>
 
             <div class="flex items-center justify-between">
                 <span class="tabular-nums font-medium">{{ props.number ?? t('quote_no_number') }}</span>
                 <QuoteKindBadge :kind="props.kind" />
             </div>
 
-            <div class="grid grid-cols-2 gap-2 text-sm text-base-content/70">
+            <div class="grid grid-cols-2 gap-2 text-sm text-muted">
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('quote_issue_date') }}</p>
+                    <p class="text-xs text-muted">{{ t('quote_issue_date') }}</p>
                     <p>{{ formatDate(props.issueDate) }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('quote_valid_until') }}</p>
+                    <p class="text-xs text-muted">{{ t('quote_valid_until') }}</p>
                     <p>{{ formatDate(props.validUntil) }}</p>
                 </div>
             </div>
-
-            <div class="divider my-0" />
 
             <QuoteTotalsSplit
                 v-if="props.kind === 'itemized'"
@@ -53,7 +51,7 @@ const { t } = useI18n();
                 :currency="props.currency"
                 :is-vat-payer="props.isVatPayer"
             />
-            <p v-if="props.kind === 'itemized' && !props.showTotals" class="text-xs text-base-content/60">
+            <p v-if="props.kind === 'itemized' && !props.showTotals" class="text-xs text-muted">
                 {{ t('quote_totals_not_printed') }}
             </p>
 

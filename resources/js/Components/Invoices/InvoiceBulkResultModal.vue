@@ -16,7 +16,7 @@ const { t } = useI18n();
 <template>
     <dialog class="modal" :class="{ 'modal-open': open }">
         <div v-if="result" class="modal-box max-w-2xl">
-            <h3 class="text-lg font-bold">{{ t('invoice_bulk_result_title') }}</h3>
+            <h3 class="text-lg font-medium">{{ t('invoice_bulk_result_title') }}</h3>
 
             <div class="mt-3 flex flex-wrap gap-2">
                 <span class="kg-chip kg-chip--done">{{
@@ -28,7 +28,7 @@ const { t } = useI18n();
             </div>
 
             <div v-if="result.skipped.length" class="mt-4 max-h-80 overflow-y-auto">
-                <table class="table table-sm">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>{{ t('invoice_bulk_result_invoice') }}</th>

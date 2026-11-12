@@ -270,13 +270,13 @@ function submit(): void {
     <FormProvider :form="form">
         <form novalidate class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="submit">
             <div class="space-y-6">
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body space-y-4">
                         <div>
                             <div class="[&_input]:text-lg [&_input]:font-medium">
                                 <TextInput field="subject" :label="t('quote_subject_text')" />
                             </div>
-                            <p class="mt-1 text-xs text-base-content/60">{{ t('quote_subject_hint') }}</p>
+                            <p class="mt-1 text-xs text-muted">{{ t('quote_subject_hint') }}</p>
                         </div>
 
                         <QuoteSubjectPicker
@@ -297,7 +297,7 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100">
                     <div class="card-body">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <DateInput
@@ -318,7 +318,7 @@ function submit(): void {
 
                             <div>
                                 <TextInput field="number" :label="t('quote_number_label')" maxlength="50" />
-                                <p class="mt-1 text-xs text-base-content/60">{{ t('quote_number_hint') }}</p>
+                                <p class="mt-1 text-xs text-muted">{{ t('quote_number_hint') }}</p>
                             </div>
 
                             <SelectInput
@@ -331,10 +331,10 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div v-if="!isDocument" class="card bg-base-100 shadow-sm">
+                <div v-if="!isDocument" class="card bg-base-100">
                     <div class="card-body">
                         <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-                            <h2 class="card-title text-base">{{ t('quote_section_items') }}</h2>
+                            <h2 class="card-title">{{ t('quote_section_items') }}</h2>
                             <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
                                 <div class="flex items-center gap-2 text-sm">
                                     <ToggleInput
@@ -353,14 +353,13 @@ function submit(): void {
                                             field="currency"
                                             :label="t('invoice_currency')"
                                             label-class="sr-only"
-                                            class="select-sm"
                                             :options="currencyOptions"
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <p class="text-xs text-base-content/60">{{ t('quote_recurring_payments_hint') }}</p>
+                        <p class="text-xs text-muted">{{ t('quote_recurring_payments_hint') }}</p>
                         <InvoiceItemsEditor
                             field="items"
                             :is-vat-payer="context.is_vat_payer"
@@ -404,9 +403,9 @@ function submit(): void {
                 </div>
 
                 <template v-else>
-                    <div class="card bg-base-100 shadow-sm">
+                    <div class="card bg-base-100">
                         <div class="card-body">
-                            <h2 class="card-title text-base">{{ t('quote_section_document') }}</h2>
+                            <h2 class="card-title">{{ t('quote_section_document') }}</h2>
                             <UploadedFileField
                                 v-model="form.document_uuid"
                                 :current-file="quote?.document ?? null"
@@ -418,7 +417,7 @@ function submit(): void {
                         </div>
                     </div>
 
-                    <div class="card bg-base-100 shadow-sm">
+                    <div class="card bg-base-100">
                         <div class="card-body">
                             <TextareaInput
                                 :model-value="form.note ?? ''"

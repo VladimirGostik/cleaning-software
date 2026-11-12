@@ -37,36 +37,30 @@ const isSwitching = computed<boolean>(() => switchingTo.value === props.alert.te
     <li>
         <button
             type="button"
-            class="flex w-full min-w-0 items-start gap-2 rounded-box px-2 py-2 text-left hover:bg-base-200"
+            class="kg-list-row w-full min-w-0 text-left"
             :disabled="switchingTo !== null"
             @click="navigate(alert.tenant_id, alert.url)"
         >
-            <span class="mt-1.5 size-2 shrink-0 rounded-full" :class="dotClass" aria-hidden="true" />
+            <span class="kg-dot shrink-0" :class="dotClass" aria-hidden="true" />
             <span class="sr-only">{{ typeLabel }}</span>
             <span class="min-w-0 flex-1">
                 <span class="flex min-w-0 items-center gap-1.5">
                     <TenantColorDot :color="alert.tenant_color" />
-                    <span class="truncate text-xs text-base-content/60">{{ alert.tenant_name }}</span>
+                    <span class="truncate text-xs text-muted">{{ alert.tenant_name }}</span>
                 </span>
-                <span class="block truncate text-sm font-medium">{{ alert.title }}</span>
-                <span v-if="alert.subtitle" class="block truncate text-xs text-base-content/50">{{
-                    alert.subtitle
-                }}</span>
+                <span class="block truncate text-base">{{ alert.title }}</span>
+                <span v-if="alert.subtitle" class="block truncate text-xs text-muted">{{ alert.subtitle }}</span>
             </span>
             <span class="shrink-0 text-right">
-                <span v-if="amount" class="block text-sm font-semibold">{{ amount }}</span>
+                <span v-if="amount" class="block text-sm font-medium">{{ amount }}</span>
                 <span
                     v-if="daysLabel"
                     class="block text-xs"
-                    :class="alert.type === 'overdue_invoice' ? 'text-error' : 'text-base-content/60'"
+                    :class="alert.type === 'overdue_invoice' ? 'text-error' : 'text-muted'"
                 >
                     {{ daysLabel }}
                 </span>
-                <time
-                    v-if="dueLabel"
-                    :datetime="alert.due_date ?? undefined"
-                    class="block text-xs text-base-content/50"
-                >
+                <time v-if="dueLabel" :datetime="alert.due_date ?? undefined" class="block text-xs text-muted">
                     {{ dueLabel }}
                 </time>
                 <span v-if="isSwitching" class="loading loading-spinner loading-xs" />

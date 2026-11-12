@@ -5,6 +5,7 @@ import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounde
 import Header from '@/Layouts/Header.vue';
 import { TableFilters } from '@/Components/DataTable';
 import EmptyState from '@/Components/EmptyState.vue';
+import PageMainAction from '@/Components/PageMainAction.vue';
 import ViewModeSwitch from '@/Components/ViewModeSwitch.vue';
 import TaskBoard from '@/Components/Tasks/TaskBoard.vue';
 import TaskFormDrawer from '@/Components/Tasks/TaskFormDrawer.vue';
@@ -69,9 +70,7 @@ function openCreate(status: App.Enums.TaskStatusEnum | null = null): void {
                 :label="t('tasks_view_mode')"
                 @update:model-value="changeView($event as App.Enums.TaskIndexViewEnum)"
             />
-            <button v-if="canCreate" type="button" class="btn btn-secondary btn-sm" @click="openCreate()">
-                {{ t('task_add') }}
-            </button>
+            <PageMainAction v-if="canCreate" :label="t('task_add')" @click="openCreate()" />
         </template>
     </Header>
 
@@ -84,7 +83,7 @@ function openCreate(status: App.Enums.TaskStatusEnum | null = null): void {
         :icon="CheckCircleIcon"
     >
         <template #cta>
-            <button v-if="canCreate" type="button" class="btn btn-primary btn-sm" @click="openCreate()">
+            <button v-if="canCreate" type="button" class="btn btn-primary" @click="openCreate()">
                 {{ t('task_add') }}
             </button>
         </template>
@@ -99,7 +98,7 @@ function openCreate(status: App.Enums.TaskStatusEnum | null = null): void {
             @clear="clearFilters"
         />
 
-        <div v-if="view === 'table' && tasks" class="card bg-base-100 shadow-sm">
+        <div v-if="view === 'table' && tasks" class="card bg-base-100">
             <div class="card-body">
                 <TaskTable
                     :tasks="tasks"

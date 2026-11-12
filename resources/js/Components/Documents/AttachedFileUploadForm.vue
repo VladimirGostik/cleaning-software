@@ -88,8 +88,8 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <form novalidate class="space-y-3 rounded-box border border-base-200 p-4" @submit.prevent="submit">
-            <h3 class="text-sm font-semibold">{{ t('attached_file_upload') }}</h3>
+        <form novalidate class="kg-card-nested space-y-3 p-4" @submit.prevent="submit">
+            <h3 class="text-base font-medium">{{ t('attached_file_upload') }}</h3>
 
             <div class="grid grid-cols-1 gap-3" :class="{ 'md:grid-cols-2': typeOptions }">
                 <SelectInput
@@ -114,7 +114,7 @@ function submit(): void {
                     :aria-invalid="form.errors.file ? 'true' : undefined"
                     @change="onFileChange"
                 />
-                <p class="mt-1 text-xs text-base-content/60">
+                <p class="mt-1 text-xs text-muted">
                     {{ t('attached_file_hint', { size: maxSize }) }}
                 </p>
             </FormField>

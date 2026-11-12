@@ -36,15 +36,15 @@ function onNativeChange() {
 </script>
 
 <template>
-    <div class="flex flex-col gap-1.5">
-        <label :for="id" class="text-sm font-medium text-base-content">
+    <div class="flex flex-col gap-1">
+        <label :for="id" class="text-xs text-muted">
             {{ label }}
         </label>
         <div class="relative">
             <component
                 :is="icon"
                 v-if="icon"
-                class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                class="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                 aria-hidden="true"
             />
             <input
@@ -56,8 +56,8 @@ function onNativeChange() {
                 :autocomplete="autocomplete"
                 :aria-invalid="resolvedError ? 'true' : undefined"
                 :aria-describedby="resolvedError ? `${id}-error` : undefined"
-                class="w-full rounded-field border border-border-strong bg-white py-2.5 min-h-11 pr-3 text-sm text-base-content placeholder:text-muted outline-none transition auth-input"
-                :class="[icon ? 'pl-9' : 'pl-3', { 'auth-input-error': resolvedError }]"
+                class="w-full rounded-field py-2.5 pr-3 text-sm text-base-content placeholder:text-muted outline-none transition auth-input max-lg:text-base"
+                :class="[icon ? 'pl-10' : 'pl-3', { 'auth-input-error': resolvedError }]"
                 @input="onInput"
                 @change="onNativeChange"
             />

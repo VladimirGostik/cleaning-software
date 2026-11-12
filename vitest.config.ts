@@ -15,7 +15,7 @@ export default defineConfig({
                 },
             },
         }),
-        Icons({ compiler: 'vue3', scale: 1 }),
+        Icons({ compiler: 'vue3', scale: 1, defaultClass: 'kg-icon' }),
     ],
     resolve: {
         alias: {

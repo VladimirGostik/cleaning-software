@@ -22,7 +22,7 @@ const ownerId = computed(() => props.check.owner_tenant_id);
 <template>
     <div role="alert" class="alert alert-warning flex flex-col items-start gap-3">
         <div v-if="check.status === 'other_company'" class="flex-1 space-y-1">
-            <p class="font-semibold">{{ t('bank_statement_other_company_title') }}</p>
+            <p class="font-medium">{{ t('bank_statement_other_company_title') }}</p>
             <p class="text-sm">
                 {{
                     t('bank_statement_other_company_body', {
@@ -34,11 +34,11 @@ const ownerId = computed(() => props.check.owner_tenant_id);
             <p class="text-sm">{{ t('bank_statement_switch_hint') }}</p>
         </div>
         <div v-else-if="check.status === 'company_iban_missing'" class="flex-1 space-y-1">
-            <p class="font-semibold">{{ t('bank_statement_iban_missing_title') }}</p>
+            <p class="font-medium">{{ t('bank_statement_iban_missing_title') }}</p>
             <p class="text-sm">{{ t('bank_statement_iban_missing_body', { company: activeName }) }}</p>
         </div>
         <div v-else class="flex-1 space-y-1">
-            <p class="font-semibold">{{ t('bank_statement_unknown_account_title') }}</p>
+            <p class="font-medium">{{ t('bank_statement_unknown_account_title') }}</p>
             <p class="text-sm">
                 {{ t('bank_statement_unknown_account_body', { iban: check.statement_iban, company: activeName }) }}
             </p>

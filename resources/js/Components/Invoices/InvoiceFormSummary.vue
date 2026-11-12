@@ -25,27 +25,25 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ t('invoice_section_summary') }}</h2>
+            <h2 class="card-title">{{ t('invoice_section_summary') }}</h2>
 
             <div class="flex items-center justify-between">
                 <span class="tabular-nums font-medium">{{ props.number ?? t('invoice_draft_number') }}</span>
                 <InvoiceTypeBadge :type="props.type" />
             </div>
 
-            <div class="grid grid-cols-2 gap-2 text-sm text-base-content/70">
+            <div class="grid grid-cols-2 gap-2 text-sm text-muted">
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('invoice_pdf_issue_date') }}</p>
+                    <p class="text-xs text-muted">{{ t('invoice_pdf_issue_date') }}</p>
                     <p>{{ formatDate(props.issueDate) }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-base-content/50">{{ t('invoice_pdf_due_date') }}</p>
+                    <p class="text-xs text-muted">{{ t('invoice_pdf_due_date') }}</p>
                     <p>{{ formatDate(props.dueDate) }}</p>
                 </div>
             </div>
-
-            <div class="divider my-0" />
 
             <InvoiceTotalsPanel
                 :subtotal="props.subtotal"

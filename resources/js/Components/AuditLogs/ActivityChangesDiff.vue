@@ -21,10 +21,10 @@ function display(change: App.Data.ActivityRevertChangeData, value: unknown): str
 </script>
 
 <template>
-    <p v-if="changes.length === 0" class="text-sm text-base-content/60">{{ t('audit_diff_empty') }}</p>
+    <p v-if="changes.length === 0" class="text-sm text-muted">{{ t('audit_diff_empty') }}</p>
 
     <div v-else class="overflow-x-auto">
-        <table class="table table-sm">
+        <table class="table">
             <thead>
                 <tr>
                     <th>{{ t('audit_diff_field') }}</th>

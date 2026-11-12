@@ -49,9 +49,9 @@ function submit(): void {
 
 <template>
     <FormProvider :form="form">
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100">
             <div class="card-body space-y-3">
-                <h2 class="card-title text-base">{{ t('schedule_assign_title') }}</h2>
+                <h2 class="card-title">{{ t('schedule_assign_title') }}</h2>
 
                 <form novalidate @submit.prevent="submit">
                     <SelectInput

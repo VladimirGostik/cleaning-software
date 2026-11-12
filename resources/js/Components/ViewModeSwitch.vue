@@ -19,7 +19,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <div role="group" :aria-label="label" class="tabs tabs-box tabs-sm w-fit">
+    <div role="group" :aria-label="label" class="tabs tabs-box w-fit">
         <button
             v-for="option in options"
             :key="option.value"
@@ -29,7 +29,7 @@ const emit = defineEmits<{
             :aria-pressed="modelValue === option.value"
             @click="emit('update:modelValue', option.value)"
         >
-            <component :is="option.icon" class="size-4" aria-hidden="true" />
+            <component :is="option.icon" aria-hidden="true" />
             {{ option.label }}
         </button>
     </div>

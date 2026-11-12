@@ -98,15 +98,15 @@ const noBreakdownHint = computed(() => props.category === 'service_agreement' &&
         <SelectInput field="category" :label="t('type')" :options="categoryOptions" required />
 
         <div v-if="lockedLabel !== null">
-            <p class="text-sm font-semibold text-base-content/70">{{ t('contract_contractable') }}</p>
+            <p class="text-sm font-medium text-muted">{{ t('contract_contractable') }}</p>
             <p class="font-medium">
-                <span class="text-base-content/60">{{ t(contractableTypeKey(contractableType)) }}:</span>
+                <span class="text-muted">{{ t(contractableTypeKey(contractableType)) }}:</span>
                 {{ lockedLabel }}
             </p>
         </div>
 
         <template v-else>
-            <p v-if="hintKey" class="text-sm text-base-content/60">{{ t(hintKey) }}</p>
+            <p v-if="hintKey" class="text-sm text-muted">{{ t(hintKey) }}</p>
             <RadioGroup
                 v-else-if="availableTypes.length > 1"
                 :model-value="contractableType"
@@ -146,6 +146,6 @@ const noBreakdownHint = computed(() => props.category === 'service_agreement' &&
             </template>
         </template>
 
-        <p v-if="noBreakdownHint" class="text-sm text-base-content/60">{{ t('contract_client_no_breakdown_hint') }}</p>
+        <p v-if="noBreakdownHint" class="text-sm text-muted">{{ t('contract_client_no_breakdown_hint') }}</p>
     </div>
 </template>

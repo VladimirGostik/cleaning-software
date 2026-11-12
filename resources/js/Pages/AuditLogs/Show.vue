@@ -34,7 +34,7 @@ function formatJson(data: Record<string, unknown> | null): string {
 <template>
     <Header :title="t('audit_log_detail')" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <Link href="/audit-logs" class="btn btn-ghost btn-sm">
+            <Link href="/audit-logs" class="btn btn-ghost">
                 {{ t('back') }}
             </Link>
         </template>
@@ -42,19 +42,19 @@ function formatJson(data: Record<string, unknown> | null): string {
 
     <StatusErrorAlert class="mb-4" />
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="card bg-base-100 shadow-sm">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card bg-base-100">
             <div class="card-body">
-                <h2 class="card-title text-base">
+                <h2 class="card-title">
                     {{ t('basic_info') }}
                 </h2>
-                <dl class="divide-y divide-base-200">
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('description') }}</dt>
+                <dl class="kg-list">
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('description') }}</dt>
                         <dd class="text-sm font-medium">{{ activity.description }}</dd>
                     </div>
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('event') }}</dt>
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('event') }}</dt>
                         <dd>
                             <span v-if="activity.event" class="kg-chip kg-chip--neutral kg-chip--sm">
                                 {{ activity.event }}
@@ -62,40 +62,40 @@ function formatJson(data: Record<string, unknown> | null): string {
                             <span v-else>-</span>
                         </dd>
                     </div>
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('audit_subject') }}</dt>
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('audit_subject') }}</dt>
                         <dd class="text-sm font-medium">{{ revertSubjectLabel(activity) }}</dd>
                     </div>
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('audit_revert_column') }}</dt>
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('audit_revert_column') }}</dt>
                         <dd><ActivityRevertStatus :revert="activity.revert" /></dd>
                     </div>
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('subject_type') }}</dt>
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('subject_type') }}</dt>
                         <dd class="text-sm">{{ activity.subject_type ?? '-' }}</dd>
                     </div>
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('subject_id') }}</dt>
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('subject_id') }}</dt>
                         <dd class="text-sm">{{ activity.subject_id ?? '-' }}</dd>
                     </div>
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('created_at') }}</dt>
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('created_at') }}</dt>
                         <dd class="text-sm">{{ formatDatetime(activity.created_at) }}</dd>
                     </div>
                 </dl>
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100">
             <div class="card-body">
-                <h2 class="card-title text-base">{{ t('causer') }}</h2>
-                <dl class="divide-y divide-base-200">
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('name') }}</dt>
+                <h2 class="card-title">{{ t('causer') }}</h2>
+                <dl class="kg-list">
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('name') }}</dt>
                         <dd class="text-sm font-medium">{{ activity.causer_name ?? '-' }}</dd>
                     </div>
-                    <div class="py-2 flex justify-between">
-                        <dt class="text-sm text-base-content/60">{{ t('email') }}</dt>
+                    <div class="kg-list-row justify-between">
+                        <dt class="text-sm text-muted">{{ t('email') }}</dt>
                         <dd class="text-sm">{{ activity.causer_email ?? '-' }}</dd>
                     </div>
                 </dl>
@@ -108,28 +108,25 @@ function formatJson(data: Record<string, unknown> | null): string {
             @revert="revertConfirm.openModal(activity)"
         />
 
-        <div class="card bg-base-100 shadow-sm lg:col-span-2">
+        <div class="card bg-base-100 lg:col-span-2">
             <div class="card-body">
-                <h2 class="card-title text-base">{{ t('attribute_changes') }}</h2>
+                <h2 class="card-title">{{ t('attribute_changes') }}</h2>
                 <ActivityChangesDiff :changes="activity.changes" :event="activity.event" />
             </div>
         </div>
 
-        <details
-            v-if="activity.attribute_changes || activity.properties"
-            class="card bg-base-100 shadow-sm lg:col-span-2"
-        >
-            <summary class="card-body cursor-pointer text-base font-semibold">{{ t('audit_technical_data') }}</summary>
+        <details v-if="activity.attribute_changes || activity.properties" class="card bg-base-100 lg:col-span-2">
+            <summary class="card-body cursor-pointer text-lg font-medium">{{ t('audit_technical_data') }}</summary>
             <div class="card-body pt-0">
                 <template v-if="activity.attribute_changes">
                     <h3 class="text-sm font-medium">{{ t('attribute_changes') }}</h3>
-                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
+                    <pre class="bg-base-200 rounded-card-nested p-4 text-sm overflow-x-auto">{{
                         formatJson(activity.attribute_changes)
                     }}</pre>
                 </template>
                 <template v-if="activity.properties">
                     <h3 class="text-sm font-medium">{{ t('properties') }}</h3>
-                    <pre class="bg-base-200 rounded-box p-4 text-sm overflow-x-auto">{{
+                    <pre class="bg-base-200 rounded-card-nested p-4 text-sm overflow-x-auto">{{
                         formatJson(activity.properties)
                     }}</pre>
                 </template>

@@ -16,11 +16,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
+    <li class="kg-list-row flex-col items-start gap-3 py-3 sm:flex-row sm:justify-between">
         <div class="min-w-0 space-y-1">
             <p class="font-medium">{{ t(`pending_action_${action.action}`) }}</p>
             <p class="whitespace-pre-wrap break-words text-sm">{{ action.preview }}</p>
-            <p class="text-xs text-base-content/60">
+            <p class="text-xs text-muted">
                 {{ t('pending_action_company') }}: {{ action.tenant_name }} · {{ t('pending_action_expires') }}:
                 {{ formatDatetime(action.expires_at) }}
             </p>

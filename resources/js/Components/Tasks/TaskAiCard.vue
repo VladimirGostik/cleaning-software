@@ -74,10 +74,10 @@ function press(): void {
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-3">
             <div class="flex items-center gap-2">
-                <h2 class="card-title flex-1 text-base">{{ t('task_ai_title') }}</h2>
+                <h2 class="card-title flex-1">{{ t('task_ai_title') }}</h2>
                 <TaskAiRunBadge v-if="run" :status="run.status" />
             </div>
 
@@ -89,7 +89,7 @@ function press(): void {
                     <span v-if="run.is_active" class="loading loading-spinner loading-sm" aria-hidden="true" />
                     {{ t(taskRunStatusTextKey(run)) }}
                 </p>
-                <p class="text-sm text-base-content/60">
+                <p class="text-sm text-muted">
                     {{ t('task_ai_started_by', { name: run.started_by_name }) }}
                     <template v-if="isGlobal"> · {{ run.tenant_name }}</template>
                 </p>
@@ -116,7 +116,7 @@ function press(): void {
                 <Link href="/pending-actions" class="link link-primary">
                     {{ t('task_ai_pending_link', { count: thread.pending_actions.length }) }}
                 </Link>
-                <span v-if="pendingExpiry" class="text-base-content/60">
+                <span v-if="pendingExpiry" class="text-muted">
                     · {{ t('task_ai_pending_expires', { date: formatDatetime(pendingExpiry) }) }}
                 </span>
             </div>
@@ -151,13 +151,13 @@ function press(): void {
                 </button>
             </div>
 
-            <p v-if="notConfigured" :id="NOT_CONFIGURED_ID" class="text-sm text-base-content/60">
+            <p v-if="notConfigured" :id="NOT_CONFIGURED_ID" class="text-sm text-muted">
                 {{ t('task_ai_not_configured') }}
             </p>
-            <p v-else-if="kind === 'continue' && !continuePrimary" class="text-sm text-base-content/60">
+            <p v-else-if="kind === 'continue' && !continuePrimary" class="text-sm text-muted">
                 {{ t('task_ai_continue_without_answer') }}
             </p>
-            <p v-if="kind" class="text-sm text-base-content/60">{{ t('task_ai_hint') }}</p>
+            <p v-if="kind" class="text-sm text-muted">{{ t('task_ai_hint') }}</p>
         </div>
     </div>
 </template>

@@ -31,22 +31,22 @@ const submitConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-3">
-            <h2 class="card-title text-base">{{ t('efa_card_title') }}</h2>
+            <h2 class="card-title">{{ t('efa_card_title') }}</h2>
 
             <div class="flex items-center justify-between gap-2 text-sm">
-                <span class="text-base-content/60">{{ t('efa_card_status') }}</span>
+                <span class="text-muted">{{ t('efa_card_status') }}</span>
                 <EfaStatusBadge :status="efa.status" />
             </div>
 
             <div v-if="efa.submitted_at" class="flex justify-between gap-2 text-sm">
-                <span class="text-base-content/60">{{ t('efa_card_submitted_at') }}</span>
+                <span class="text-muted">{{ t('efa_card_submitted_at') }}</span>
                 <span>{{ formatDatetime(efa.submitted_at) }}</span>
             </div>
 
             <div v-if="efa.efa_id" class="flex justify-between gap-2 text-sm">
-                <span class="text-base-content/60">{{ t('efa_card_provider_id') }}</span>
+                <span class="text-muted">{{ t('efa_card_provider_id') }}</span>
                 <span class="break-all text-right">{{ efa.efa_id }}</span>
             </div>
 
@@ -69,7 +69,7 @@ const submitConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
             <p v-if="submitError" class="text-sm text-error" role="alert">{{ submitError }}</p>
 
             <a v-if="canDownload" :href="`/invoices/${invoice.id}/efa-xml`" class="btn btn-sm w-full justify-start">
-                <ArrowDownTrayIcon class="size-5" />
+                <ArrowDownTrayIcon />
                 {{ t('efa_card_download_xml') }}
             </a>
 
@@ -79,7 +79,7 @@ const submitConfirm = useDeleteConfirm<App.Data.Invoices.InvoiceDetailData>({
                     class="btn btn-sm btn-primary w-full justify-start"
                     @click="submitConfirm.openModal(invoice)"
                 >
-                    <PaperAirplaneIcon class="size-5" />
+                    <PaperAirplaneIcon />
                     {{ t('efa_card_submit') }}
                 </button>
             </Can>

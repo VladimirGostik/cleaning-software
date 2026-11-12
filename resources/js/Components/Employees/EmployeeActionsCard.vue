@@ -46,14 +46,14 @@ const hasActions = computed(
 </script>
 
 <template>
-    <div v-if="hasActions" class="card bg-base-100 shadow-sm">
+    <div v-if="hasActions" class="card bg-base-100">
         <div class="card-body space-y-2">
             <Link
                 v-if="props.canUpdate"
                 :href="`/employees/${props.employee.id}/edit`"
                 class="btn btn-sm btn-neutral w-full justify-start"
             >
-                <PencilSquareIcon class="size-5" />
+                <PencilSquareIcon />
                 {{ t('edit') }}
             </Link>
 
@@ -63,7 +63,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-neutral w-full justify-start"
                 @click="emit('changeRole')"
             >
-                <ArrowsRightLeftIcon class="size-5" />
+                <ArrowsRightLeftIcon />
                 {{ t('employee_change_role') }}
             </button>
 
@@ -73,7 +73,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('grantAccess')"
             >
-                <KeyIcon class="size-5" />
+                <KeyIcon />
                 {{ t('employee_access_grant') }}
             </button>
 
@@ -84,7 +84,7 @@ const hasActions = computed(
                 :disabled="props.resending"
                 @click="emit('resendInvitation')"
             >
-                <ResendIcon class="size-5" />
+                <ResendIcon />
                 {{ t('employee_access_resend') }}
             </button>
 
@@ -94,7 +94,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-primary w-full justify-start"
                 @click="emit('reactivate')"
             >
-                <ArrowPathIcon class="size-5" />
+                <ArrowPathIcon />
                 {{ t('employee_reactivate') }}
             </button>
 
@@ -104,7 +104,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('revokeAccess')"
             >
-                <KeyOffIcon class="size-5" />
+                <KeyOffIcon />
                 {{ t('employee_access_revoke') }}
             </button>
 
@@ -114,7 +114,7 @@ const hasActions = computed(
                 class="btn btn-sm btn-error w-full justify-start"
                 @click="emit('deactivate')"
             >
-                <NoSymbolIcon class="size-5" />
+                <NoSymbolIcon />
                 {{ t('employee_deactivate') }}
             </button>
         </div>

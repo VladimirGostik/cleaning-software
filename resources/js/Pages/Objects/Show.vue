@@ -75,25 +75,25 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
 <template>
     <Header :title="object.name" :breadcrumbs="breadcrumbs">
         <template #actions>
-            <button v-if="canEdit" type="button" class="btn btn-neutral btn-sm" @click="ui.editOpen = true">
-                <PencilSquareIcon class="size-5" />
+            <button v-if="canEdit" type="button" class="btn btn-neutral" @click="ui.editOpen = true">
+                <PencilSquareIcon />
                 {{ t('edit') }}
             </button>
 
             <button
                 v-if="allows('delete objects') && object.is_active"
                 type="button"
-                class="btn btn-error btn-sm"
+                class="btn btn-error"
                 @click="openModal(object)"
             >
-                <NoSymbolIcon class="size-5" />
+                <NoSymbolIcon />
                 {{ t('object_deactivate') }}
             </button>
         </template>
     </Header>
 
-    <div v-if="!object.is_active" class="alert alert-warning mb-6">
-        <ExclamationTriangleIcon class="size-5" />
+    <div v-if="!object.is_active" class="alert alert-warning mb-4">
+        <ExclamationTriangleIcon />
         <span>{{ t('object_inactive_banner') }}</span>
         <button
             v-if="canEdit"
@@ -106,17 +106,17 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="space-y-6 lg:col-span-2">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div class="space-y-4 lg:col-span-2">
             <ObjectAccessCard :object="object" />
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-base">{{ t('object_special_instructions') }}</h2>
+                    <h2 class="card-title">{{ t('object_special_instructions') }}</h2>
                     <p v-if="object.special_instructions" class="whitespace-pre-wrap">
                         {{ object.special_instructions }}
                     </p>
-                    <p v-else class="text-base-content/60">{{ t('object_no_instructions') }}</p>
+                    <p v-else class="text-muted">{{ t('object_no_instructions') }}</p>
                 </div>
             </div>
 
@@ -135,7 +135,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
             <ObjectDetailCard :object="object" />
 
             <ObjectBillingCard v-if="object.billing !== null" :billing="object.billing" />

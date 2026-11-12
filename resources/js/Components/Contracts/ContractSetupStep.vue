@@ -87,18 +87,18 @@ function onContractableTypeChange(type: App.Enums.ContractableTypeEnum): void {
 </script>
 
 <template>
-    <div class="space-y-6">
-        <div class="card bg-base-100 shadow-sm">
+    <div class="space-y-4">
+        <div class="card bg-base-100">
             <div class="card-body space-y-4">
-                <h2 class="card-title text-base">{{ t('contract_section_basics') }}</h2>
+                <h2 class="card-title">{{ t('contract_section_basics') }}</h2>
 
                 <ContractBasicsFields />
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100">
             <div class="card-body space-y-4">
-                <h2 class="card-title text-base">{{ t('contract_section_subject') }}</h2>
+                <h2 class="card-title">{{ t('contract_section_subject') }}</h2>
 
                 <ContractSubjectFields
                     :context="context"
@@ -113,9 +113,9 @@ function onContractableTypeChange(type: App.Enums.ContractableTypeEnum): void {
             </div>
         </div>
 
-        <div v-if="form.category === 'employment' && form.employment" class="card bg-base-100 shadow-sm">
+        <div v-if="form.category === 'employment' && form.employment" class="card bg-base-100">
             <div class="card-body space-y-4">
-                <h2 class="card-title text-base">{{ t('contract_section_employment') }}</h2>
+                <h2 class="card-title">{{ t('contract_section_employment') }}</h2>
 
                 <EmploymentContractFields
                     :employment="form.employment"
@@ -126,7 +126,7 @@ function onContractableTypeChange(type: App.Enums.ContractableTypeEnum): void {
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100">
             <div class="card-body">
                 <TextareaInput
                     :model-value="form.notes ?? ''"

@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ArrowDownTrayIcon from '~icons/material-symbols/download-outline-rounded';
 import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
+import ListRow from '@/Components/ListRow.vue';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import AttachedFileUploadForm, { type AttachedFileConstraints } from './AttachedFileUploadForm.vue';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
@@ -57,43 +58,45 @@ const deleteConfirm = useDeleteConfirm<AttachedFile>({
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body space-y-4">
-            <h2 class="card-title text-base">{{ heading }}</h2>
+            <h2 class="card-title">{{ heading }}</h2>
 
-            <p v-if="documents.length === 0" class="text-sm text-base-content/60">
+            <p v-if="documents.length === 0" class="text-sm text-muted">
                 {{ t('attached_files_empty') }}
             </p>
 
-            <ul v-else class="divide-y divide-base-200">
-                <li v-for="doc in documents" :key="doc.id" class="flex flex-wrap items-center gap-2 py-2">
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate font-medium">{{ doc.title }}</p>
-                        <p class="text-xs text-base-content/60">{{ metaLine(doc) }}</p>
-                    </div>
-                    <a
-                        :href="doc.download_url"
-                        class="btn btn-ghost btn-sm btn-square"
-                        :aria-label="t('attached_file_download')"
-                        :title="t('attached_file_download')"
-                    >
-                        <ArrowDownTrayIcon class="size-5" />
-                    </a>
-                    <button
-                        v-if="canManage && doc.can_delete !== false"
-                        type="button"
-                        class="btn btn-ghost btn-sm btn-square text-error"
-                        :aria-label="t('attached_file_delete')"
-                        :title="t('attached_file_delete')"
-                        @click="deleteConfirm.openModal(doc)"
-                    >
-                        <TrashIcon class="size-5" />
-                    </button>
+            <ul v-else class="kg-list">
+                <li v-for="doc in documents" :key="doc.id">
+                    <ListRow :title="doc.title" :description="metaLine(doc)">
+                        <template #trailing>
+                            <div class="flex items-center gap-1">
+                                <a
+                                    :href="doc.download_url"
+                                    class="btn btn-ghost btn-square"
+                                    :aria-label="t('attached_file_download')"
+                                    :title="t('attached_file_download')"
+                                >
+                                    <ArrowDownTrayIcon />
+                                </a>
+                                <button
+                                    v-if="canManage && doc.can_delete !== false"
+                                    type="button"
+                                    class="btn btn-ghost btn-square text-error"
+                                    :aria-label="t('attached_file_delete')"
+                                    :title="t('attached_file_delete')"
+                                    @click="deleteConfirm.openModal(doc)"
+                                >
+                                    <TrashIcon />
+                                </button>
+                            </div>
+                        </template>
+                    </ListRow>
                 </li>
             </ul>
 
             <template v-if="canManage && constraints">
-                <p v-if="limitReached" class="text-sm text-base-content/60">
+                <p v-if="limitReached" class="text-sm text-muted">
                     {{ t('attached_files_limit_reached', { max: constraints.max_count }) }}
                 </p>
                 <AttachedFileUploadForm

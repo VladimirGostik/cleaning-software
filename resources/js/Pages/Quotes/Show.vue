@@ -127,7 +127,7 @@ function duplicate(): void {
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div class="space-y-6">
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100">
                 <div class="card-body space-y-6">
                     <QuotePartiesBlock :quote="quote" />
                     <QuoteMetaGrid :quote="quote" />
@@ -144,7 +144,7 @@ function duplicate(): void {
                             :currency="quote.currency"
                             :is-vat-payer="quote.is_vat_payer"
                         />
-                        <p v-if="!quote.show_totals" class="text-xs text-base-content/60">
+                        <p v-if="!quote.show_totals" class="text-xs text-muted">
                             {{ t('quote_totals_not_printed') }}
                         </p>
 
@@ -153,7 +153,7 @@ function duplicate(): void {
 
                     <QuoteDocumentPanel v-else :quote="quote" />
 
-                    <p v-if="quote.note" class="whitespace-pre-wrap text-sm text-base-content/70">
+                    <p v-if="quote.note" class="whitespace-pre-wrap text-sm text-muted">
                         {{ quote.note }}
                     </p>
                 </div>

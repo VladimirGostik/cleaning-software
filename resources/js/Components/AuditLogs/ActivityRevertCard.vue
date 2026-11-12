@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import UndoIcon from '~icons/material-symbols/undo-rounded';
+import UndoIcon from '~icons/material-symbols/undo-outline-rounded';
 import { useAuthorization } from '@/Composables/useAuthorization';
 
 const props = defineProps<{
@@ -22,16 +22,16 @@ const conflictLabels = computed(() => props.changes.filter((change) => change.co
 </script>
 
 <template>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="card bg-base-100">
         <div class="card-body">
-            <h2 class="card-title text-base">{{ t('audit_revert_action') }}</h2>
+            <h2 class="card-title">{{ t('audit_revert_action') }}</h2>
 
-            <p v-if="revert.batch_size > 1" class="text-sm text-base-content/60">
+            <p v-if="revert.batch_size > 1" class="text-sm text-muted">
                 {{ t('audit_revert_batch_hint', { count: revert.batch_size - 1 }, revert.batch_size - 1) }}
             </p>
 
             <div v-if="!isAvailable" class="space-y-2">
-                <p id="audit-revert-reason" class="text-sm text-base-content/70">{{ reasonText }}</p>
+                <p id="audit-revert-reason" class="text-sm text-muted">{{ reasonText }}</p>
 
                 <div v-if="revert.reason === 'conflict' && conflictLabels.length > 0">
                     <p class="text-sm font-medium">{{ t('audit_revert_conflicts_title') }}</p>
@@ -57,7 +57,7 @@ const conflictLabels = computed(() => props.changes.filter((change) => change.co
                     :aria-describedby="isAvailable ? undefined : 'audit-revert-reason'"
                     @click="emit('revert')"
                 >
-                    <UndoIcon class="size-5" aria-hidden="true" />
+                    <UndoIcon aria-hidden="true" />
                     {{ t('audit_revert_action') }}
                 </button>
             </div>
