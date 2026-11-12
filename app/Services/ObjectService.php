@@ -33,11 +33,11 @@ final readonly class ObjectService
         $query = QueryBuilder::for(CleaningObject::query()->visibleTo($actor))
             ->allowedFilters(
                 AllowedFilter::search(['name', 'street', 'city']),
-                AllowedFilter::dynamic('name'),
+                AllowedFilter::text('name'),
                 AllowedFilter::dynamic('type'),
                 AllowedFilter::dynamic('client_id')->uuid(),
                 AllowedFilter::dynamic('is_active')->boolean(),
-                AllowedFilter::dynamic('city'),
+                AllowedFilter::text('city'),
                 AllowedFilter::dynamic('created_at')->date(),
             )
             ->allowedSorts('name', 'type', 'city', 'is_active', 'created_at')

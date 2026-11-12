@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
@@ -11,10 +11,12 @@ import TextareaInput from '@/Components/Forms/TextareaInput.vue';
 import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
 import ContactsListField from '@/Components/Contacts/ContactsListField.vue';
+import ChevronIcon from '~icons/material-symbols/chevron-right-outline-rounded';
 
 import { OBJECT_TYPES, objectTypeKey } from '@/utils/enums';
 import { emptyBillingFormData, objectToUpsertPayload, type ObjectFormData } from './objectPayload';
 import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
+import { useDependentValidation } from '@/Composables/useDependentValidation';
 import { useAuthorization } from '@/Composables/useAuthorization';
 
 const props = defineProps<{
@@ -60,6 +62,35 @@ const form = useForm<ObjectFormData>(
           },
 );
 
+const billingAddressRequired = computed(() => !!form.billing_name);
+
+useDependentValidation(form, {
+    billing_name: ['billing_street', 'billing_city', 'billing_postal_code'],
+});
+
+const EXTRA_FIELDS = [
+    'area_sqm',
+    'floor',
+    'access_code',
+    'key_box_code',
+    'key_count',
+    'billing_peppol_participant_id',
+] as const;
+
+const moreId = useId();
+const moreOpen = ref(false);
+const moreHasError = computed(() => EXTRA_FIELDS.some((f) => !!form.errors[f]));
+
+watch(
+    moreHasError,
+    (has) => {
+        if (has) {
+            moreOpen.value = true;
+        }
+    },
+    { immediate: true },
+);
+
 const clientOptions = computed<SelectOption[]>(() => props.clients.map((c) => ({ value: c.id, label: c.name })));
 
 const typeOptions = computed<SelectOption[]>(() => OBJECT_TYPES.map((v) => ({ value: v, label: t(objectTypeKey(v)) })));
@@ -73,70 +104,33 @@ function submit(): void {
     <FormProvider :form="form">
         <form novalidate class="flex h-full flex-col" @submit.prevent="submit">
             <div class="flex-1 space-y-6 p-6">
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <SelectInput
-                        field="client_id"
-                        :label="t('client')"
-                        :options="clientOptions"
-                        :placeholder="t('select_client')"
-                        required
-                    />
-
-                    <SelectInput
-                        field="type"
-                        :label="t('object_type')"
-                        :options="typeOptions"
-                        :placeholder="t('select_type')"
-                        required
-                    />
-                </div>
-
-                <TextInput field="name" :label="t('object_name')" required autofocus />
-
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <NumberInput
-                        v-model="form.area_sqm"
-                        :label="t('object_area_sqm')"
-                        :min="0"
-                        step="any"
-                        :error="form.errors.area_sqm"
-                    />
-
-                    <NumberInput v-model="form.floor" :label="t('object_floor')" :error="form.errors.floor" />
-                </div>
-
                 <div class="space-y-4">
-                    <h2 class="text-sm font-medium text-muted">{{ t('address') }}</h2>
-
-                    <TextInput field="street" :label="t('street')" />
+                    <h2 class="text-sm font-medium text-muted">{{ t('basic_info') }}</h2>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <TextInput field="city" :label="t('city')" />
-                        <TextInput field="postal_code" :label="t('postal_code')" />
+                        <SelectInput
+                            field="client_id"
+                            :label="t('client')"
+                            :options="clientOptions"
+                            :placeholder="t('select_client')"
+                            required
+                        />
+
+                        <SelectInput
+                            field="type"
+                            :label="t('object_type')"
+                            :options="typeOptions"
+                            :placeholder="t('select_type')"
+                            required
+                        />
                     </div>
 
-                    <TextInput field="country" :label="t('country')" />
-                </div>
-
-                <div class="space-y-4">
-                    <h2 class="text-sm font-medium text-muted">{{ t('object_access') }}</h2>
-
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <TextInput field="access_code" :label="t('object_access_code')" />
-                        <TextInput field="key_box_code" :label="t('object_key_box_code')" />
-                    </div>
-
-                    <NumberInput
-                        v-model="form.key_count"
-                        :label="t('object_key_count')"
-                        :min="0"
-                        :error="form.errors.key_count"
+                    <TextInput
+                        field="name"
+                        :label="t('object_name')"
+                        required
+                        :autofocus="props.focusSection !== 'billing' || undefined"
                     />
-                </div>
-
-                <div v-if="canSeeContacts" class="space-y-4">
-                    <h2 class="text-sm font-medium text-muted">{{ t('object_contacts') }}</h2>
-                    <ContactsListField field="contacts" />
                 </div>
 
                 <div v-if="canSeeBilling" class="space-y-4">
@@ -155,30 +149,93 @@ function submit(): void {
                         <TextInput field="billing_vat_number" :label="t('client_vat_number')" />
                     </div>
 
-                    <div>
-                        <TextInput field="billing_peppol_participant_id" :label="t('peppol_participant_id')" />
-                        <p class="mt-1 text-xs text-muted">{{ t('peppol_participant_id_hint') }}</p>
+                    <TextInput field="billing_street" :label="t('street')" :required="billingAddressRequired" />
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <TextInput field="billing_city" :label="t('city')" :required="billingAddressRequired" />
+                        <TextInput
+                            field="billing_postal_code"
+                            :label="t('postal_code')"
+                            :required="billingAddressRequired"
+                        />
                     </div>
 
                     <div>
                         <TextInput field="billing_email" type="email" :label="t('object_billing_email')" />
                         <p class="mt-1 text-xs text-muted">{{ t('object_billing_email_hint') }}</p>
                     </div>
+                </div>
 
-                    <TextInput field="billing_street" :label="t('street')" />
+                <div v-if="canSeeContacts" class="space-y-4">
+                    <h2 class="text-sm font-medium text-muted">{{ t('object_contacts') }}</h2>
+                    <ContactsListField field="contacts" />
+                </div>
 
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <TextInput field="billing_city" :label="t('city')" />
-                        <TextInput field="billing_postal_code" :label="t('postal_code')" />
+                <div>
+                    <TextareaInput
+                        v-model="form.special_instructions"
+                        :label="t('object_special_instructions')"
+                        :error="form.errors.special_instructions"
+                        :rows="4"
+                    />
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-sm font-medium text-muted">{{ t('object_address') }}</h2>
+
+                    <TextInput field="street" :label="t('street')" />
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <TextInput field="city" :label="t('city')" />
+                        <TextInput field="postal_code" :label="t('postal_code')" />
+                        <TextInput field="country" :label="t('country')" />
                     </div>
                 </div>
 
-                <TextareaInput
-                    v-model="form.special_instructions"
-                    :label="t('object_special_instructions')"
-                    :error="form.errors.special_instructions"
-                    :rows="4"
-                />
+                <div class="space-y-4">
+                    <h2 class="text-sm font-medium text-muted">
+                        <button
+                            type="button"
+                            class="flex w-full items-center justify-between gap-2 text-left"
+                            :aria-expanded="moreOpen"
+                            :aria-controls="moreId"
+                            @click="moreOpen = !moreOpen"
+                        >
+                            <span>{{ t('object_more_details') }}</span>
+                            <ChevronIcon class="transition-transform" :class="{ 'rotate-90': moreOpen }" />
+                        </button>
+                    </h2>
+
+                    <div v-show="moreOpen" :id="moreId" class="space-y-4">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <NumberInput
+                                v-model="form.area_sqm"
+                                :label="t('object_area_sqm')"
+                                :min="0"
+                                step="any"
+                                :error="form.errors.area_sqm"
+                            />
+
+                            <NumberInput v-model="form.floor" :label="t('object_floor')" :error="form.errors.floor" />
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <TextInput field="access_code" :label="t('object_access_code')" />
+                            <TextInput field="key_box_code" :label="t('object_key_box_code')" />
+                            <NumberInput
+                                v-model="form.key_count"
+                                :label="t('object_key_count')"
+                                :min="0"
+                                :error="form.errors.key_count"
+                            />
+                        </div>
+
+                        <div v-if="canSeeBilling">
+                            <TextInput field="billing_peppol_participant_id" :label="t('peppol_participant_id')" />
+                            <p class="mt-1 text-xs text-muted">{{ t('object_peppol_hint') }}</p>
+                        </div>
+                    </div>
+                </div>
 
                 <ToggleInput v-if="isEdit" field="is_active" :label="t('object_is_active')" />
             </div>

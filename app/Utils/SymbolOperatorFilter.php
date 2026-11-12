@@ -15,7 +15,7 @@ final class SymbolOperatorFilter implements Filter
 {
     public function __construct(
         private readonly string $column,
-        private readonly string $likeOperator = 'like',
+        private readonly bool $text = false,
     ) {}
 
     /**
@@ -44,6 +44,8 @@ final class SymbolOperatorFilter implements Filter
 
             'between' => $this->whereBetween($query, $normalizedValue),
 
+            '=', '!=' => $this->whereEquals($query, $operator, $normalizedValue),
+
             default => $query->where($this->column, $operator, $normalizedValue),
         };
     }
@@ -57,11 +59,21 @@ final class SymbolOperatorFilter implements Filter
             return;
         }
 
-        $query->where(
-            $this->column,
-            $this->likeOperator,
-            '%'.Filters::escapeLikeValue((string) $value).'%',
-        );
+        Filters::whereContains($query, $this->column, (string) $value);
+    }
+
+    /**
+     * @param  Builder<Model>  $query
+     */
+    private function whereEquals(Builder $query, string $operator, mixed $value): void
+    {
+        if ($this->text && is_string($value)) {
+            Filters::whereTextEquals($query, $this->column, $value, $operator === '!=');
+
+            return;
+        }
+
+        $query->where($this->column, $operator, $value);
     }
 
     /**

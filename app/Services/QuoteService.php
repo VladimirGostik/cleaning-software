@@ -118,20 +118,19 @@ final readonly class QuoteService
                         return;
                     }
 
-                    $like = '%'.Filters::escapeLikeValue((string) $value).'%';
-                    $operator = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+                    $needle = (string) $value;
 
-                    $query->where(function (Builder $q) use ($like, $operator): void {
-                        $q->where('number', $operator, $like)
-                            ->orWhere('subject', $operator, $like)
-                            ->orWhere('customer_name', $operator, $like)
-                            ->orWhereHas('client', fn (Builder $c) => $c->where('name', $operator, $like));
+                    $query->where(function (Builder $q) use ($needle): void {
+                        Filters::whereContains($q, 'number', $needle);
+                        Filters::whereContains($q, 'subject', $needle, 'or');
+                        Filters::whereContains($q, 'customer_name', $needle, 'or');
+                        $q->orWhereHas('client', fn (Builder $c) => Filters::whereContains($c, 'name', $needle));
                     });
                 }),
                 AllowedFilter::dynamic('status'),
                 AllowedFilter::dynamic('kind'),
                 AllowedFilter::dynamic('client_id')->uuid(),
-                AllowedFilter::dynamic('number'),
+                AllowedFilter::text('number'),
                 AllowedFilter::dynamic('issue_date')->date(),
                 AllowedFilter::dynamic('valid_until')->date(),
                 AllowedFilter::dynamic('total')->numeric(),

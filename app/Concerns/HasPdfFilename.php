@@ -15,9 +15,13 @@ trait HasPdfFilename
 {
     public function pdfFilenameBase(): string
     {
-        $number = $this->number ?? 'draft';
-        $safe = preg_replace('/[\x00-\x1F\x7F"\/\\%]/', '', $number);
+        $safe = preg_replace('/[\x00-\x1F\x7F"\/\\%]/', '', $this->number ?? '');
 
-        return $safe !== null && $safe !== '' ? $safe : 'draft';
+        return $safe !== null && $safe !== '' ? $safe : $this->pdfFilenameFallback();
+    }
+
+    protected function pdfFilenameFallback(): string
+    {
+        return 'draft';
     }
 }

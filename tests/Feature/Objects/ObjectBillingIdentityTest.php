@@ -117,6 +117,19 @@ final class ObjectBillingIdentityTest extends TestCase
             ->assertSessionHasErrors('billing_name');
     }
 
+    public function test_billing_name_requires_street_city_and_postal_code(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('objects.store'), $this->payload($client->id, ['billing_name' => 'Dom Lipova', 'billing_street' => null, 'billing_city' => null, 'billing_postal_code' => null]))
+            ->assertSessionHasErrors(['billing_street', 'billing_city', 'billing_postal_code']);
+
+        $this->post(route('objects.store'), $this->payload($client->id, ['billing_name' => 'Dom Lipova', 'billing_street' => 'A 1', 'billing_city' => 'B', 'billing_postal_code' => '81101']))
+            ->assertSessionHasNoErrors();
+    }
+
     public function test_invalid_peppol_id_is_rejected_and_dic_scheme_is_accepted(): void
     {
         $tenant = Tenant::factory()->create();
@@ -126,7 +139,7 @@ final class ObjectBillingIdentityTest extends TestCase
         $this->post(route('objects.store'), $this->payload($client->id, ['billing_name' => 'X', 'billing_peppol_participant_id' => 'x']))
             ->assertSessionHasErrors('billing_peppol_participant_id');
 
-        $this->post(route('objects.store'), $this->payload($client->id, ['billing_name' => 'X', 'billing_peppol_participant_id' => '0245:2012345678']))
+        $this->post(route('objects.store'), $this->payload($client->id, ['billing_name' => 'X', 'billing_street' => 'A 1', 'billing_city' => 'B', 'billing_postal_code' => '81101', 'billing_peppol_participant_id' => '0245:2012345678']))
             ->assertSessionHasNoErrors();
     }
 

@@ -37,18 +37,15 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
         ?string $internalName = null,
         ?string $arrayValueDelimiter = null,
     ): static {
-        $likeOperator = self::defaultLikeOperator();
-
         return new self(
             $name,
-            new class($columns, $likeOperator) implements Filter
+            new class($columns) implements Filter
             {
                 /**
                  * @param  array<int, string>  $columns
                  */
                 public function __construct(
                     private readonly array $columns,
-                    private readonly string $likeOperator,
                 ) {}
 
                 /**
@@ -64,13 +61,7 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
 
                     $query->where(function (Builder $query) use ($value): void {
                         foreach ($this->columns as $index => $column) {
-                            $method = $index === 0 ? 'where' : 'orWhere';
-
-                            $query->{$method}(
-                                $column,
-                                $this->likeOperator,
-                                '%'.Filters::escapeLikeValue((string) $value).'%',
-                            );
+                            Filters::whereContains($query, $column, (string) $value, $index === 0 ? 'and' : 'or');
                         }
                     });
                 }
@@ -85,15 +76,13 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
         ?string $arrayValueDelimiter = null,
     ): static {
         $column = $internalName ?? $name;
-        $likeOperator = static::defaultLikeOperator();
 
         return new static(
             $name,
-            new class($column, $likeOperator) implements Filter
+            new class($column) implements Filter
             {
                 public function __construct(
                     private readonly string $column,
-                    private readonly string $likeOperator,
                 ) {}
 
                 /**
@@ -107,13 +96,20 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                         return;
                     }
 
-                    $query->where(
-                        $this->column,
-                        $this->likeOperator,
-                        '%'.Filters::escapeLikeValue((string) $value).'%',
-                    );
+                    Filters::whereContains($query, $this->column, (string) $value);
                 }
             },
+            $internalName,
+        );
+    }
+
+    public static function text(
+        string $name,
+        ?string $internalName = null,
+    ): static {
+        return new static(
+            $name,
+            new SymbolOperatorFilter(column: $internalName ?? $name, text: true),
             $internalName,
         );
     }
@@ -125,10 +121,7 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
     ): static {
         return new static(
             $name,
-            new SymbolOperatorFilter(
-                column: $internalName ?? $name,
-                likeOperator: static::defaultLikeOperator(),
-            ),
+            new SymbolOperatorFilter(column: $internalName ?? $name),
             $internalName,
         );
     }
@@ -139,16 +132,13 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
         string $column = 'id',
         ?string $arrayValueDelimiter = null,
     ): static {
-        $likeOperator = static::defaultLikeOperator();
-
         return new static(
             $name,
-            new class($relation, $column, $likeOperator) implements Filter
+            new class($relation, $column) implements Filter
             {
                 public function __construct(
                     private readonly string $relation,
                     private readonly string $column,
-                    private readonly string $likeOperator,
                 ) {}
 
                 /**
@@ -168,11 +158,7 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
                         }
 
                         $query->whereHas($this->relation, function (Builder $query) use ($value): void {
-                            $query->where(
-                                $this->column,
-                                $this->likeOperator,
-                                '%'.Filters::escapeLikeValue((string) $value).'%',
-                            );
+                            Filters::whereContains($query, $this->column, (string) $value);
                         });
 
                         return;
@@ -354,10 +340,5 @@ final class AllowedFilter extends \Spatie\QueryBuilder\AllowedFilter
         $this->validationRules = ['boolean'];
 
         return $this;
-    }
-
-    private static function defaultLikeOperator(): string
-    {
-        return config('database.default') === 'pgsql' ? 'ilike' : 'like';
     }
 }

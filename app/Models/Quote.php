@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -191,6 +192,13 @@ final class Quote extends Model
         $document = $this->getRelations()['document'] ?? $this->getRelationValue('document');
 
         return $document instanceof Document ? $document : null;
+    }
+
+    protected function pdfFilenameFallback(): string
+    {
+        $slug = Str::limit(Str::slug((string) $this->subject), 80, '');
+
+        return 'Cenova-ponuka-'.($slug !== '' ? rtrim($slug, '-') : $this->issue_date->format('Y-m-d'));
     }
 
     /** A sent quote is editable too; saving it returns it to draft (QuoteService::update). */

@@ -76,8 +76,8 @@ final class InvoiceBuyerPreviewTest extends TestCase
 
         $response->assertJsonPath('buyer.source', 'object_billing')
             ->assertJsonPath('buyer.name', 'Dom Lipova')
-            ->assertJsonPath('buyer.represented_by', 'Spravca s.r.o.')
-            ->assertJsonPath('buyer.email', null)
+            ->assertJsonPath('buyer.represented_by', null)
+            ->assertJsonPath('buyer.email', 'Faktury@Example.com')
             ->assertJsonPath('email_options', [
                 'Faktury@Example.com',
                 'objekt-a@example.com',

@@ -100,10 +100,10 @@ function toggleBoolean(): void {
 </script>
 
 <template>
-    <div class="flex flex-wrap items-center gap-1" :data-autom="`filter-${filter.property}`">
+    <div class="flex w-full flex-nowrap items-center gap-1 sm:w-auto" :data-autom="`filter-${filter.property}`">
         <select
             v-if="availableOperators.length > 1"
-            class="select max-w-40"
+            class="select w-36 shrink-0"
             :value="operator"
             @change="changeOperator(($event.target as HTMLSelectElement).value as FilterOperator)"
         >
@@ -112,12 +112,12 @@ function toggleBoolean(): void {
             </option>
         </select>
 
-        <button v-else type="button" class="btn btn-neutral no-animation pointer-events-none">
+        <button v-else type="button" class="btn btn-neutral no-animation pointer-events-none shrink-0">
             {{ filter.label }}
         </button>
 
         <template v-if="filter.type === 'enum' || filter.type === 'select' || filter.type === 'autocomplete'">
-            <select v-if="filter.multiple" v-model="selectedValues" multiple class="select min-w-48 h-20">
+            <select v-if="filter.multiple" v-model="selectedValues" multiple class="select h-20 min-w-48">
                 <option v-for="option in filter.options ?? []" :key="option.value" :value="option.value">
                     {{ option.label }}
                 </option>
@@ -125,7 +125,7 @@ function toggleBoolean(): void {
 
             <select
                 v-else
-                class="select min-w-48"
+                class="select min-w-0 flex-1 sm:w-48 sm:flex-none"
                 :value="value ?? ''"
                 @change="changeValue(($event.target as HTMLSelectElement).value || null)"
             >
@@ -162,14 +162,14 @@ function toggleBoolean(): void {
 
         <template v-else-if="operator === 'between'">
             <input
-                class="input min-w-40"
+                class="input min-w-0 flex-1 sm:w-36 sm:flex-none"
                 :type="betweenInputType"
                 :placeholder="$t('date_from')"
                 :value="betweenFrom"
                 @input="changeBetween(($event.target as HTMLInputElement).value, betweenTo)"
             />
             <input
-                class="input min-w-40"
+                class="input min-w-0 flex-1 sm:w-36 sm:flex-none"
                 :type="betweenInputType"
                 :placeholder="$t('date_to')"
                 :value="betweenTo"
@@ -179,7 +179,7 @@ function toggleBoolean(): void {
 
         <input
             v-else
-            class="input min-w-48"
+            class="input min-w-0 flex-1 sm:w-48 sm:flex-none"
             :type="
                 filter.type === 'number'
                     ? 'number'
@@ -196,7 +196,7 @@ function toggleBoolean(): void {
 
         <button
             type="button"
-            class="btn btn-square btn-neutral"
+            class="btn btn-square btn-neutral shrink-0"
             :title="$t('remove_filter')"
             :aria-label="$t('remove_filter')"
             @click="emit('remove', filter.property)"

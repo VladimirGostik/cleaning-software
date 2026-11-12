@@ -62,49 +62,21 @@ final readonly class CustomerParty
         );
     }
 
-    /** The printed buyer: a house prints only its own billing fields, nothing is taken from the client. */
-    public static function forQuote(Quote $quote): self
+    /** Whole buyer from the object billing data when it has a billing name, else whole buyer from the client. */
+    public static function forSubject(?CleaningObject $object, ?Client $client): ?self
     {
-        $object = $quote->cleaningObject;
-
         if ($object?->hasBillingIdentity()) {
             return new self(
                 name: $object->billing_name,
-                ico: $object->billing_ico,
-                dic: $object->billing_dic,
-                street: $object->billing_street,
-                city: $object->billing_city,
-                postalCode: $object->billing_postal_code,
-                email: $quote->customer_email,
-                source: CustomerPartySourceEnum::ObjectBilling,
-            );
-        }
-
-        if ($quote->client !== null) {
-            return self::forInvoice(null, $quote->client, self::fromQuote($quote));
-        }
-
-        return self::fromQuote($quote);
-    }
-
-    public static function forInvoice(?CleaningObject $object, ?Client $client, self $entered): self
-    {
-        if ($object?->hasBillingIdentity()) {
-            $ownAddress = $object->billing_street !== null || $object->billing_city !== null || $object->billing_postal_code !== null;
-
-            return new self(
-                name: $object->billing_name,
-                representative: $entered->representative,
-                representedBy: $client?->name,
                 ico: $object->billing_ico,
                 peppolParticipantId: $object->billing_peppol_participant_id,
                 dic: $object->billing_dic,
                 vatNumber: $object->billing_vat_number,
-                street: $ownAddress ? $object->billing_street : $object->street,
-                city: $ownAddress ? $object->billing_city : $object->city,
-                postalCode: $ownAddress ? $object->billing_postal_code : $object->postal_code,
+                street: $object->billing_street,
+                city: $object->billing_city,
+                postalCode: $object->billing_postal_code,
                 country: $object->country,
-                email: $entered->email,
+                email: $object->billing_email,
                 source: CustomerPartySourceEnum::ObjectBilling,
             );
         }
@@ -112,7 +84,6 @@ final readonly class CustomerParty
         if ($client !== null) {
             return new self(
                 name: $client->name,
-                representative: $entered->representative,
                 ico: $client->ico,
                 peppolParticipantId: $client->peppol_participant_id,
                 dic: $client->dic,
@@ -121,9 +92,49 @@ final readonly class CustomerParty
                 city: $client->city,
                 postalCode: $client->postal_code,
                 country: $client->country,
-                email: $entered->email,
                 source: CustomerPartySourceEnum::Client,
             );
+        }
+
+        return null;
+    }
+
+    private function with(?string $representative = null, ?string $email = null): self
+    {
+        return new self(
+            name: $this->name,
+            representative: $representative,
+            representedBy: $this->representedBy,
+            ico: $this->ico,
+            peppolParticipantId: $this->peppolParticipantId,
+            dic: $this->dic,
+            vatNumber: $this->vatNumber,
+            street: $this->street,
+            city: $this->city,
+            postalCode: $this->postalCode,
+            country: $this->country,
+            email: $email,
+            source: $this->source,
+        );
+    }
+
+    public static function forQuote(Quote $quote): self
+    {
+        $party = self::forSubject($quote->cleaningObject, $quote->client);
+
+        if ($party === null) {
+            return self::fromQuote($quote);
+        }
+
+        return $party->with(email: $quote->customer_email);
+    }
+
+    public static function forInvoice(?CleaningObject $object, ?Client $client, self $entered): self
+    {
+        $party = self::forSubject($object, $client);
+
+        if ($party !== null) {
+            return $party->with(representative: $entered->representative, email: $entered->email);
         }
 
         return new self(

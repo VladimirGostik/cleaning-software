@@ -13,6 +13,8 @@ const { t } = useI18n();
         <div class="card-body">
             <h2 class="card-title">{{ t('object_billing') }}</h2>
 
+            <p class="text-xs text-muted">{{ t('object_billing_card_hint') }}</p>
+
             <p v-if="billing.name" class="font-medium">{{ billing.name }}</p>
 
             <dl class="space-y-2 text-sm">

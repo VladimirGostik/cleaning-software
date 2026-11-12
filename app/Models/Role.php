@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\HasUuids;
+use App\Utils\Filters;
 use Database\Seeders\RoleTemplatesSeeder;
 use Illuminate\Database\Eloquent\Builder;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -37,9 +38,9 @@ final class Role extends SpatieRole
      */
     public function scopeSearch(Builder $query, string $search): Builder
     {
-        $operator = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+        Filters::whereContains($query, 'name', $search);
 
-        return $query->where('name', $operator, "%{$search}%");
+        return $query;
     }
 
     /**

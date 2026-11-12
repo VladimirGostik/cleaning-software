@@ -167,7 +167,7 @@ final class TaskCommentTest extends TestCase
 
         Notification::assertSentTo($creator, TaskCommentedNotification::class, function (TaskCommentedNotification $notification) use ($task): bool {
             return $notification->taskId === $task->id && ! str_contains(json_encode($notification->toArray($this->admin)) ?: '', 'FYI')
-                && $notification->toArray($this->admin)['url'] === route('tasks.show', $task->id);
+                && $notification->toArray($this->admin)['url'] === route('tasks.index', ['task' => $task->id]);
         });
         Notification::assertSentTo($assignee, TaskCommentedNotification::class);
         Notification::assertNotSentTo($this->admin, TaskCommentedNotification::class);

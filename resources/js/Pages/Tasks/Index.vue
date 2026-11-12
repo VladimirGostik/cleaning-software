@@ -7,12 +7,14 @@ import { TableFilters } from '@/Components/DataTable';
 import EmptyState from '@/Components/EmptyState.vue';
 import PageMainAction from '@/Components/PageMainAction.vue';
 import ViewModeSwitch from '@/Components/ViewModeSwitch.vue';
+import TaskDetailPanel from '@/Components/Tasks/TaskDetailPanel.vue';
 import TaskBoard from '@/Components/Tasks/TaskBoard.vue';
 import TaskFormDrawer from '@/Components/Tasks/TaskFormDrawer.vue';
 import TaskTable from '@/Components/Tasks/TaskTable.vue';
 import { KG_ICONS } from '@/icons/kegosIcons';
 
 import { useTaskFilters } from '@/Composables/useTaskFilters';
+import { useTaskPanel } from '@/Composables/useTaskPanel';
 import { useTaskStatusChange } from '@/Composables/useTaskStatusChange';
 import { useTaskTransition } from '@/Composables/useTaskTransition';
 import type { Breadcrumb, Paginator } from '@/types';
@@ -25,6 +27,9 @@ const props = defineProps<{
     board: App.Data.Tasks.TaskBoardData | null;
     filters?: Record<string, unknown>;
     context: App.Data.Tasks.TaskFormContextData;
+    selected_task?: App.Data.Tasks.TaskDetailData | null;
+    selected_attachments?: App.Data.Tasks.TaskAttachmentListData | null;
+    selected_thread?: App.Data.Tasks.TaskThreadData | null;
 }>();
 
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('tasks') }];
@@ -34,6 +39,7 @@ const ui = reactive({
     createStatus: null as App.Enums.TaskStatusEnum | null,
 });
 
+const panel = useTaskPanel();
 const { processingId, transition } = useTaskTransition();
 const { pending, announcement, change } = useTaskStatusChange();
 const { query, definitions, reloadOnly, hasActiveFilters, chipSignature, changeFilter, clearFilters, changeView } =
@@ -121,6 +127,15 @@ function openCreate(status: App.Enums.TaskStatusEnum | null = null): void {
             @create="openCreate"
         />
     </div>
+
+    <TaskDetailPanel
+        v-if="selected_task && selected_attachments && selected_thread"
+        :task="selected_task"
+        :attachments="selected_attachments"
+        :context="context"
+        :thread="selected_thread"
+        @close="panel.close"
+    />
 
     <TaskFormDrawer
         :open="ui.createOpen"

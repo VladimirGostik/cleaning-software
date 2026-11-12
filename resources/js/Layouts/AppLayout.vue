@@ -10,6 +10,7 @@ import { useAuthorization } from '@/Composables/useAuthorization';
 import NotificationBell from '@/Components/Notifications/NotificationBell.vue';
 import AssistantLauncher from '@/Components/Assistant/AssistantLauncher.vue';
 import { useAssistantChat } from '@/Composables/useAssistantChat';
+import { useListQueryMemory } from '@/Composables/useListQueryMemory';
 
 type NavigationItem = App.Data.NavigationItemData;
 import LogoutIcon from '~icons/material-symbols/logout-outline-rounded';
@@ -35,6 +36,7 @@ const isAddTenantOpen = ref(false);
 const canViewNotifications = computed(() => allows('view notifications'));
 const canUseAssistant = computed(() => allows('use assistant'));
 const assistant = useAssistantChat();
+const { withRememberedQuery, clear: clearListMemory } = useListQueryMemory();
 const drawerOpen = ref(false);
 const languageOpen = ref(false);
 const bottomNavItems = computed(() => mobileNavItems(navigation.value));
@@ -105,6 +107,7 @@ onUnmounted(() => {
 });
 
 function logout() {
+    clearListMemory();
     router.post('/logout');
 }
 
@@ -166,7 +169,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                         <template v-for="item in navigation" :key="item.key">
                             <li v-if="item.children.length === 0">
                                 <Link
-                                    :href="item.href"
+                                    :href="withRememberedQuery(item.href)"
                                     class="flex min-h-(--kg-nav-item-height) items-center gap-3 rounded-pill px-4 text-sm"
                                     :class="
                                         isActive(item.href)
@@ -199,7 +202,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
                                     <ul class="mt-1 flex flex-col gap-1 ps-4">
                                         <li v-for="child in item.children" :key="child.key">
                                             <Link
-                                                :href="child.href"
+                                                :href="withRememberedQuery(child.href)"
                                                 class="flex min-h-(--kg-nav-item-height) items-center gap-3 rounded-pill px-4 text-sm"
                                                 :class="
                                                     isActive(child.href)
@@ -283,7 +286,7 @@ function toastAlertClass(type: ToastMessage['type']): string {
             <Link
                 v-for="item in bottomNavItems"
                 :key="item.key"
-                :href="item.href"
+                :href="withRememberedQuery(item.href)"
                 :aria-label="translateLabel(item.label)"
                 :aria-current="isActive(item.href) ? 'page' : undefined"
             >

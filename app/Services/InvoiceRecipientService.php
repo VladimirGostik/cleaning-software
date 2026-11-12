@@ -34,7 +34,7 @@ final readonly class InvoiceRecipientService
             : null;
 
         return new InvoiceBuyerPreviewResultData(
-            buyer: InvoiceBuyerData::fromParty(CustomerParty::forInvoice($object, $client, new CustomerParty)),
+            buyer: InvoiceBuyerData::fromParty(CustomerParty::forSubject($object, $client) ?? new CustomerParty),
             email_options: $this->emailOptions($object, $client, $actor),
         );
     }

@@ -295,6 +295,17 @@ final readonly class TaskService
         });
     }
 
+    public function findVisible(string $id, User $actor): ?Task
+    {
+        if (! Str::isUuid($id)) {
+            return null;
+        }
+
+        $task = Task::query()->find($id);
+
+        return $task !== null && $actor->can('view', $task) ? $task : null;
+    }
+
     public function delete(Task $task): void
     {
         $this->db->transaction(fn () => $task->delete());
@@ -427,11 +438,9 @@ final readonly class TaskService
                         return;
                     }
 
-                    $like = '%'.Filters::escapeLikeValue((string) $value).'%';
-                    $operator = config('database.default') === 'pgsql' ? 'ilike' : 'like';
-
-                    $query->where(function (Builder $q) use ($like, $operator): void {
-                        $q->where('tasks.title', $operator, $like)->orWhere('tasks.description', $operator, $like);
+                    $query->where(function (Builder $q) use ($value): void {
+                        Filters::whereContains($q, 'tasks.title', (string) $value);
+                        Filters::whereContains($q, 'tasks.description', (string) $value, 'or');
                     });
                 }),
                 AllowedFilter::callbackClean('kind', function (Builder $query, mixed $value): void {

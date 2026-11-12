@@ -121,10 +121,10 @@ final class InvoiceObjectBuyerTest extends TestCase
         $this->assertSame('2022222222', $invoice->customer_dic);
         $this->assertSame('SK2022222222', $invoice->customer_vat_number);
         $this->assertSame('0245:2022222222', $invoice->customer_peppol_participant_id);
-        $this->assertSame('Spravca s.r.o.', $invoice->customer_represented_by);
-        $this->assertSame('Lipova 5', $invoice->customer_street);
-        $this->assertSame('Bratislava', $invoice->customer_city);
-        $this->assertSame('81101', $invoice->customer_postal_code);
+        $this->assertNull($invoice->customer_represented_by);
+        $this->assertNull($invoice->customer_street);
+        $this->assertNull($invoice->customer_city);
+        $this->assertNull($invoice->customer_postal_code);
         $this->assertSame('SK', $invoice->customer_country);
         $this->assertSame($object->name, $invoice->object_name);
     }
@@ -312,9 +312,10 @@ final class InvoiceObjectBuyerTest extends TestCase
         $this->assertStringContainsString(__('app.efa_missing_customer_dic'), $errors->first('efa'));
     }
 
-    public function test_duplicate_and_credit_note_carry_represented_by(): void
+    public function test_duplicate_and_credit_note_carry_the_snapshot_represented_by(): void
     {
         $invoice = $this->issued($this->house());
+        $invoice->forceFill(['customer_represented_by' => 'Spravca s.r.o.'])->save();
         $service = app(InvoiceService::class);
 
         $this->assertSame('Spravca s.r.o.', $service->duplicate($invoice)->customer_represented_by);
@@ -324,7 +325,8 @@ final class InvoiceObjectBuyerTest extends TestCase
     public function test_pdf_prints_represented_by_only_when_set(): void
     {
         $with = $this->create($this->house());
-        $without = $this->create(null);
+        $with->forceFill(['customer_represented_by' => 'Spravca s.r.o.']);
+        $without = $this->create($this->house());
 
         $htmlWith = View::make('pdf.invoices.kegos', ['invoice' => $with, 'qrDataUri' => null])->render();
         $htmlWithout = View::make('pdf.invoices.kegos', ['invoice' => $without, 'qrDataUri' => null])->render();

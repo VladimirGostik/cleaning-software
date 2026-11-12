@@ -80,7 +80,7 @@ final readonly class InvoiceService
         $query = QueryBuilder::for(Invoice::query())
             ->allowedFilters(
                 AllowedFilter::search(['number', 'customer_name']),
-                AllowedFilter::dynamic('number'),
+                AllowedFilter::text('number'),
                 AllowedFilter::dynamic('status'),
                 AllowedFilter::dynamic('type'),
                 AllowedFilter::callback('open', static function (Builder $query, mixed $value): void {
@@ -89,7 +89,7 @@ final readonly class InvoiceService
                     }
                 }),
                 AllowedFilter::dynamic('client_id')->uuid(),
-                AllowedFilter::dynamic('customer_name'),
+                AllowedFilter::text('customer_name'),
                 AllowedFilter::dynamic('issue_date')->date(),
                 AllowedFilter::dynamic('due_date')->date(),
                 AllowedFilter::dynamic('total')->numeric(),

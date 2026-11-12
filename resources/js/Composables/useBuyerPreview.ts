@@ -8,7 +8,7 @@ export interface BuyerPreviewParams {
     cleaning_object_id: string | null;
 }
 
-export function useBuyerPreview(params: () => BuyerPreviewParams | null) {
+export function useBuyerPreview(params: () => BuyerPreviewParams | null, url: string) {
     const preview = ref<App.Data.Invoices.InvoiceBuyerPreviewResultData | null>(null);
     const loading = ref(false);
     const error = ref(false);
@@ -38,7 +38,7 @@ export function useBuyerPreview(params: () => BuyerPreviewParams | null) {
 
         try {
             const result = await getJson<App.Data.Invoices.InvoiceBuyerPreviewResultData>(
-                `/invoices/buyer-preview?${query.toString()}`,
+                `${url}?${query.toString()}`,
                 { signal: controller.signal },
             );
             if (controller.signal.aborted) return;

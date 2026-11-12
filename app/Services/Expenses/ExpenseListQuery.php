@@ -70,11 +70,11 @@ final readonly class ExpenseListQuery
                         return;
                     }
 
-                    $like = '%'.Filters::escapeLikeValue((string) $value).'%';
-                    $operator = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+                    $needle = (string) $value;
 
-                    $query->where(function (Builder $q) use ($like, $operator): void {
-                        $q->where('expenses.supplier_name', $operator, $like)->orWhere('expenses.description', $operator, $like);
+                    $query->where(function (Builder $q) use ($needle): void {
+                        Filters::whereContains($q, 'expenses.supplier_name', $needle);
+                        Filters::whereContains($q, 'expenses.description', $needle, 'or');
                     });
                 }),
                 AllowedFilter::dynamic('status'),

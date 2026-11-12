@@ -269,6 +269,9 @@ final class PushDeliveryTest extends TestCase
         $this->assertSame('/notifications', PushRoute::fromUrl('/tasks/not-a-uuid'));
         $this->assertSame('/notifications', PushRoute::fromUrl("/tasks/{$id}/edit"));
         $this->assertSame('/notifications', PushRoute::fromUrl(null));
+        $this->assertSame("/tasks/{$id}", PushRoute::fromUrl("https://app.test/tasks?task={$id}"));
+        $this->assertSame('/notifications', PushRoute::fromUrl('https://app.test/tasks?task=not-a-uuid'));
+        $this->assertSame('/notifications', PushRoute::fromUrl("https://app.test/tasks?task[]={$id}"));
     }
 
     public function test_badge_ignores_rows_of_firms_the_user_left_and_counts_global_rows(): void

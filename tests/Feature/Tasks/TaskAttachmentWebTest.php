@@ -71,15 +71,15 @@ final class TaskAttachmentWebTest extends TestCase
         $this->webAs($this->admin, $this->alpha)->post(route('tasks.attachments.store', $task), ['file' => $this->attachmentFile('photo.jpg')]);
         $uuid = Media::query()->firstOrFail()->uuid;
 
-        $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.show', $task))
+        $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.index', ['task' => $task->id]))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->component('Tasks/Show')
-                ->where('task.attachments_count', 1)
-                ->where('attachments.can_add', true)
-                ->where('attachments.attachments.0.id', $uuid)
-                ->where('attachments.attachments.0.download_url', '/tasks/'.$task->id.'/attachments/'.$uuid)
-                ->where('attachments.constraints.max_count', 20));
+                ->component('Tasks/Index')
+                ->where('selected_task.attachments_count', 1)
+                ->where('selected_attachments.can_add', true)
+                ->where('selected_attachments.attachments.0.id', $uuid)
+                ->where('selected_attachments.attachments.0.download_url', '/tasks/'.$task->id.'/attachments/'.$uuid)
+                ->where('selected_attachments.constraints.max_count', 20));
     }
 
     public function test_download_streams_the_file_and_delete_flashes_and_removes_it(): void

@@ -53,7 +53,7 @@ final class UserFilterTest extends TestCase
 
         $sql = $this->captureUserSql($admin, '/users?filter%5Bname%5D=%21%3D%3AAlice');
 
-        $this->assertContainsSqlFragment($sql, '"name" != ?');
+        $this->assertContainsSqlFragment($sql, 'lower(f_unaccent("name"::text)) <> lower(f_unaccent(?))');
     }
 
     public function test_not_equal_filter_on_boolean_excludes_active_users(): void

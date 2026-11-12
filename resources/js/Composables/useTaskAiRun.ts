@@ -157,7 +157,7 @@ export function useTaskAiRun(options: { taskId: string; thread: () => App.Data.T
             `/tasks/${options.taskId}/ai-runs`,
             { company_id: companyId },
             {
-                only: ['thread', 'flash'],
+                only: ['selected_thread', 'flash'],
                 preserveState: true,
                 preserveScroll: true,
                 onStart: () => {

@@ -7,10 +7,13 @@ namespace App\Navigation;
 use App\Data\NavigationItemData;
 use App\Enums\NavIconEnum;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use ReflectionMethod;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class NavigationRegistry
 {
@@ -43,6 +46,62 @@ final class NavigationRegistry
         }
 
         return $this->buildTree($visible);
+    }
+
+    public function landingFor(User $user, string $tenantId, string $redirectTo): string
+    {
+        $parts = explode('?', $redirectTo, 2);
+        $path = '/'.trim($parts[0], '/');
+        $query = $parts[1] ?? '';
+        $kept = $query === '' ? $path : $path.'?'.$query;
+
+        $previousTeamId = getPermissionsTeamId();
+        setPermissionsTeamId($tenantId);
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+
+        try {
+            return $this->resolveLanding($user, $path, $kept);
+        } finally {
+            setPermissionsTeamId($previousTeamId);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+        }
+    }
+
+    private function resolveLanding(User $user, string $path, string $kept): string
+    {
+        $best = null;
+        foreach ($this->discover() as $row) {
+            $href = '/'.ltrim($row['route']->uri(), '/');
+            if (str_contains($href, '{')) {
+                continue;
+            }
+
+            if ($href === $path) {
+                return $this->canAccess($user, $row['attr']) ? $kept : '/';
+            }
+
+            $isPrefix = $href !== '/' && str_starts_with($path, $href.'/');
+            if ($isPrefix && ($best === null || strlen($href) > strlen($best['href']))) {
+                $best = ['href' => $href, 'attr' => $row['attr']];
+            }
+        }
+
+        if ($best !== null) {
+            return $this->canAccess($user, $best['attr']) ? $best['href'] : '/';
+        }
+
+        return $this->isParameterlessGetRoute($path) ? $kept : '/';
+    }
+
+    private function isParameterlessGetRoute(string $path): bool
+    {
+        try {
+            $route = $this->router->getRoutes()->match(Request::create($path));
+        } catch (NotFoundHttpException|MethodNotAllowedHttpException) {
+            return false;
+        }
+
+        return $route->parameterNames() === [];
     }
 
     /** @return array<int, array{attr: NavItem, route: Route}> */

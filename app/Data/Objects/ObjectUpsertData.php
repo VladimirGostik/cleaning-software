@@ -97,6 +97,9 @@ final class ObjectUpsertData extends Data
             ],
             'contacts' => [new AtMostOnePrimaryContact('app.object_contacts_multiple_primary')],
             'billing_name' => ['required_with:'.implode(',', array_diff(array_slice(self::BILLING_FIELDS, 1), ['billing_email']))],
+            'billing_street' => ['required_with:billing_name'],
+            'billing_city' => ['required_with:billing_name'],
+            'billing_postal_code' => ['required_with:billing_name'],
             'billing_peppol_participant_id' => [new PeppolParticipantId],
         ];
     }

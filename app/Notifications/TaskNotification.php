@@ -14,7 +14,7 @@ abstract class TaskNotification extends BaseTenantNotification
 
     protected function url(object $notifiable): string
     {
-        return route('tasks.show', $this->taskId);
+        return route('tasks.index', ['task' => $this->taskId]);
     }
 
     /** @return array<string, mixed> */

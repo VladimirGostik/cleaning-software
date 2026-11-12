@@ -9,6 +9,7 @@ use App\Enums\PaymentTypeEnum;
 use App\Enums\RecurringDefaultStateEnum;
 use App\Enums\RoundingModeEnum;
 use App\Enums\TenantColorEnum;
+use App\Models\Quote;
 use App\Models\Tenant;
 use App\Models\TenantInterface;
 use App\Models\TenantMembership;
@@ -17,10 +18,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\CreatesTaskFixtures;
 use Tests\TestCase;
 
 final class TenantControllerTest extends TestCase
 {
+    use CreatesTaskFixtures;
     use RefreshDatabase;
 
     private function withActiveMembership(User $user, bool $platformAdmin = true): Tenant
@@ -305,19 +308,74 @@ final class TenantControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_switch_with_redirect_to_lands_on_target_page(): void
+    /** @return array<string, array{0: string, 1: string}> */
+    public static function landings(): array
     {
+        return [
+            'exact nav keeps query' => ['/quotes?filter[status]=sent', '/quotes?filter[status]=sent'],
+            'detail drops to module' => ['/quotes/019e0000-0000-7000-8000-000000000000', '/quotes'],
+            'edit drops to module' => ['/quotes/019e0000-0000-7000-8000-000000000000/edit', '/quotes'],
+            'nested non-nav page' => ['/invoices/payment-import', '/invoices'],
+            'unknown path' => ['/no-such-page', '/'],
+            'dashboard' => ['/', '/'],
+        ];
+    }
+
+    #[DataProvider('landings')]
+    public function test_switch_lands_on_the_module_of_the_old_page(string $redirectTo, string $expected): void
+    {
+        $this->seedPermissionCatalog();
         $user = User::factory()->create();
-        $this->withActiveMembership($user);
-        $other = Tenant::factory()->forOwner($user)->create();
-        TenantMembership::create(['user_id' => $user->id, 'tenant_id' => $other->id, 'is_active' => true, 'joined_at' => now()]);
+        $first = $this->firm('Alpha');
+        $second = $this->firm('Beta');
+        $this->member($first, 'Admin', $user);
+        $this->member($second, 'Admin', $user);
 
-        $response = $this->actingAs($user)->post("/tenants/{$other->id}/switch", [
-            'redirect_to' => '/invoices?filter[status]=overdue',
-        ]);
+        $this->webAs($user, $first)->post("/tenants/{$second->id}/switch", ['redirect_to' => $redirectTo, 'keep_module' => true])
+            ->assertRedirect($expected);
+    }
 
-        $response->assertRedirect('/invoices?filter[status]=overdue');
-        $this->assertSame($other->id, session('active_tenant_id'));
+    public function test_switch_with_a_plain_path_lands_exactly_there(): void
+    {
+        $this->seedPermissionCatalog();
+        $user = User::factory()->create();
+        $first = $this->firm('Alpha');
+        $second = $this->firm('Beta');
+        $this->member($first, 'Admin', $user);
+        $this->member($second, 'Admin', $user);
+        $quote = Quote::factory()->create(['tenant_id' => $second->id]);
+
+        $this->webAs($user, $first)->post("/tenants/{$second->id}/switch", ['redirect_to' => "/quotes/{$quote->id}"])
+            ->assertRedirect("/quotes/{$quote->id}");
+        $this->webAs($user, $first)->post("/tenants/{$second->id}/switch", ['redirect_to' => '/expenses/import'])
+            ->assertRedirect('/expenses/import');
+    }
+
+    public function test_switch_to_a_company_without_the_module_permission_lands_on_dashboard(): void
+    {
+        $this->seedPermissionCatalog();
+        $user = User::factory()->create();
+        $first = $this->firm('Alpha');
+        $second = $this->firm('Beta');
+        $this->member($first, 'Admin', $user);
+        $this->member($second, 'Interná upratovačka', $user);
+
+        $this->webAs($user, $first)->post("/tenants/{$second->id}/switch", ['redirect_to' => '/quotes?filter[status]=sent', 'keep_module' => true])
+            ->assertRedirect('/');
+        $this->webAs($user, $first)->post("/tenants/{$second->id}/switch", ['redirect_to' => '/quotes/019e0000-0000-7000-8000-000000000000', 'keep_module' => true])
+            ->assertRedirect('/');
+    }
+
+    public function test_switch_without_redirect_to_lands_on_dashboard(): void
+    {
+        $this->seedPermissionCatalog();
+        $user = User::factory()->create();
+        $first = $this->firm('Alpha');
+        $second = $this->firm('Beta');
+        $this->member($first, 'Admin', $user);
+        $this->member($second, 'Admin', $user);
+
+        $this->webAs($user, $first)->post("/tenants/{$second->id}/switch")->assertRedirect(route('dashboard'));
     }
 
     public function test_switch_with_absolute_url_redirect_to_returns_422(): void

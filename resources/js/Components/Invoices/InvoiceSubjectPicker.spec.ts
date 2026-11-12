@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApp, defineComponent, h, reactive, ref } from 'vue';
+import { createApp, defineComponent, h, nextTick, reactive, ref } from 'vue';
 import { createI18n } from 'vue-i18n';
 import FormProvider from '@/Components/Forms/FormProvider.vue';
 import InvoiceSubjectPicker, { type SubjectMode } from './InvoiceSubjectPicker.vue';
 
 const state = vi.hoisted(() => ({
+    previewRef: null as null | { value: unknown },
     preview: null as unknown,
     form: null as unknown,
 }));
@@ -13,7 +14,7 @@ vi.mock('@/Composables/useBuyerPreview', async () => {
     const { ref: r } = await import('vue');
     return {
         useBuyerPreview: () => ({
-            preview: r(state.preview),
+            preview: (state.previewRef = r(state.preview)),
             loading: r(false),
             error: r(false),
         }),
@@ -109,6 +110,36 @@ describe('InvoiceSubjectPicker', () => {
         }
     });
 
+    it('replaces a prefilled e-mail when another subject is picked and resets it on clear', async () => {
+        state.preview = { buyer: { ...buyer, email: 'a@x.sk' }, email_options: [] };
+        render('client', {});
+        const form = state.form as Record<string, unknown>;
+        expect(form.customer_email).toBe('a@x.sk');
+
+        state.previewRef!.value = { buyer: { ...buyer, email: 'b@x.sk' }, email_options: [] };
+        await nextTick();
+        expect(form.customer_email).toBe('b@x.sk');
+
+        state.previewRef!.value = null;
+        await nextTick();
+        expect(form.customer_email).toBeNull();
+    });
+
+    it('keeps a typed e-mail when the preview changes', async () => {
+        state.preview = { buyer: { ...buyer, email: 'a@x.sk' }, email_options: [] };
+        render('client', {});
+        const form = state.form as Record<string, unknown>;
+
+        form.customer_email = 'typed@x.sk';
+        state.previewRef!.value = { buyer: { ...buyer, email: 'b@x.sk' }, email_options: [] };
+        await nextTick();
+        expect(form.customer_email).toBe('typed@x.sk');
+
+        state.previewRef!.value = null;
+        await nextTick();
+        expect(form.customer_email).toBe('typed@x.sk');
+    });
+
     it('keeps e-mail and representative across a mode change', async () => {
         const { host, mode } = render('standalone', {
             customer_email: 'keep@me.sk',
@@ -124,5 +155,15 @@ describe('InvoiceSubjectPicker', () => {
         const form = state.form as Record<string, unknown>;
         expect(form.customer_email).toBe('keep@me.sk');
         expect(form.customer_representative).toBe('Jozef');
+    });
+
+    it('prefills an empty e-mail from the buyer and never overwrites a typed one', () => {
+        state.preview = { buyer: { ...buyer, email: 'buyer@x.sk' }, email_options: [] };
+
+        render('client', {});
+        expect((state.form as Record<string, unknown>).customer_email).toBe('buyer@x.sk');
+
+        render('client', { customer_email: 'typed@x.sk' });
+        expect((state.form as Record<string, unknown>).customer_email).toBe('typed@x.sk');
     });
 });

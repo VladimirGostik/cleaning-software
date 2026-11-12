@@ -8,6 +8,7 @@ import InitialsAvatar from '@/Components/InitialsAvatar.vue';
 import { formatDatetime } from '@/utils/date';
 import { isTaskRunListWorthy } from '@/utils/taskAi';
 import { isTaskOverdue } from '@/utils/taskBoard';
+import { TASK_PANEL_PROPS, useTaskPanel } from '@/Composables/useTaskPanel';
 import type { FilterConfig, Paginator, TableColumn } from '@/types/table';
 import TaskAiRunBadge from './TaskAiRunBadge.vue';
 import TaskPriorityBadge from './TaskPriorityBadge.vue';
@@ -29,6 +30,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { href: taskHref, open: openTask } = useTaskPanel();
 
 const columns: TableColumn<Row>[] = [
     { key: 'title', label: t('task_title'), sortable: true, primary: true },
@@ -48,10 +50,18 @@ const columns: TableColumn<Row>[] = [
         :filters="filters"
         :enable-filters="false"
         :reload-only="reloadOnly"
-        :row-href="(row) => `/tasks/${row.id}`"
+        :row-href="(row) => taskHref(row.id)"
+        :open-row="(row) => openTask(row.id)"
     >
         <template #cell-title="{ row }">
-            <Link :href="`/tasks/${row.id}`" class="link link-hover font-medium">{{ row.title }}</Link>
+            <Link
+                :href="taskHref(row.id)"
+                :only="TASK_PANEL_PROPS"
+                preserve-state
+                preserve-scroll
+                class="link link-hover font-medium"
+                >{{ row.title }}</Link
+            >
         </template>
 
         <template #cell-status="{ row }">
@@ -96,7 +106,14 @@ const columns: TableColumn<Row>[] = [
 
         <template #card="{ row }">
             <div class="flex flex-col gap-2">
-                <Link :href="`/tasks/${row.id}`" class="link link-hover break-words font-medium">{{ row.title }}</Link>
+                <Link
+                    :href="taskHref(row.id)"
+                    :only="TASK_PANEL_PROPS"
+                    preserve-state
+                    preserve-scroll
+                    class="link link-hover break-words font-medium"
+                    >{{ row.title }}</Link
+                >
                 <div class="flex flex-wrap items-center gap-1">
                     <TaskStatusMenu
                         variant="chip"
@@ -136,7 +153,10 @@ const columns: TableColumn<Row>[] = [
             </button>
 
             <Link
-                :href="`/tasks/${row.id}`"
+                :href="taskHref(row.id)"
+                :only="TASK_PANEL_PROPS"
+                preserve-state
+                preserve-scroll
                 class="btn btn-ghost btn-sm btn-square"
                 :title="t('view')"
                 :aria-label="t('view')"

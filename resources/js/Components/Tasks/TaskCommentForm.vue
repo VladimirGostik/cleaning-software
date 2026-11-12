@@ -33,7 +33,7 @@ function submit(): void {
     }
 
     form.submit({
-        only: ['thread', 'flash'],
+        only: ['selected_thread', 'flash'],
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => form.reset('body'),

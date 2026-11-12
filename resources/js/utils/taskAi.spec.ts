@@ -126,16 +126,22 @@ describe('earliestPendingExpiry', () => {
 });
 
 describe('runChangeReloadProps', () => {
-    it('always includes thread and flash', () => {
+    it('always includes selected_thread and flash', () => {
         for (const status of [null, 'running', 'failed', 'done'] as const) {
-            expect(runChangeReloadProps(status)).toEqual(expect.arrayContaining(['thread', 'flash']));
+            expect(runChangeReloadProps(status)).toEqual(expect.arrayContaining(['selected_thread', 'flash']));
         }
     });
 
-    it('adds task only for a finished run that may have closed it', () => {
-        expect(runChangeReloadProps('done')).toContain('task');
-        expect(runChangeReloadProps('needs_input')).not.toContain('task');
-        expect(runChangeReloadProps(null)).not.toContain('task');
+    it('adds the task and the list props only for a finished run that may have closed it', () => {
+        expect(runChangeReloadProps('done')).toEqual(expect.arrayContaining(['selected_task', 'tasks', 'board']));
+
+        for (const status of ['needs_input', null] as const) {
+            const props = runChangeReloadProps(status);
+
+            expect(props).not.toContain('selected_task');
+            expect(props).not.toContain('tasks');
+            expect(props).not.toContain('board');
+        }
     });
 });
 

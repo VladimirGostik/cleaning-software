@@ -240,12 +240,10 @@ final readonly class InvoicePaymentImportService
         $search = trim((string) $data->search);
 
         if ($search !== '') {
-            $like = '%'.Filters::escapeLikeValue($search).'%';
-
-            $query->where(static function (Builder $query) use ($like): void {
-                $query->where('number', 'ilike', $like)
-                    ->orWhere('customer_name', 'ilike', $like)
-                    ->orWhere('variable_symbol', 'ilike', $like);
+            $query->where(static function (Builder $query) use ($search): void {
+                Filters::whereContains($query, 'number', $search);
+                Filters::whereContains($query, 'customer_name', $search, 'or');
+                Filters::whereContains($query, 'variable_symbol', $search, 'or');
             });
         }
 

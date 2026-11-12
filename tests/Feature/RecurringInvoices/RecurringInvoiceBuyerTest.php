@@ -107,7 +107,7 @@ final class RecurringInvoiceBuyerTest extends TestCase
 
         $this->assertSame(CustomerPartySourceEnum::ObjectBilling, $buyer->source);
         $this->assertSame('Bytovy dom Lipova 5', $buyer->name);
-        $this->assertSame('Spravca s.r.o.', $buyer->represented_by);
+        $this->assertNull($buyer->represented_by);
         $this->assertSame('22222222', $buyer->ico);
         $this->assertSame('2022222222', $buyer->dic);
         $this->assertSame('Lipova 5', $buyer->street);
@@ -134,7 +134,7 @@ final class RecurringInvoiceBuyerTest extends TestCase
         $this->assertSame($buyer->country, $invoice->customer_country);
     }
 
-    public function test_detail_buyer_falls_back_to_the_object_address(): void
+    public function test_detail_buyer_never_falls_back_to_the_object_address(): void
     {
         $house = $this->house(['billing_street' => null, 'billing_city' => null, 'billing_postal_code' => null]);
         $house->update(['street' => 'Objektova 9', 'city' => 'Presov', 'postal_code' => '08001']);
@@ -142,9 +142,9 @@ final class RecurringInvoiceBuyerTest extends TestCase
 
         $buyer = RecurringInvoiceDetailData::fromModel($ri)->buyer;
 
-        $this->assertSame('Objektova 9', $buyer->street);
-        $this->assertSame('Presov', $buyer->city);
-        $this->assertSame('08001', $buyer->postal_code);
+        $this->assertNull($buyer->street);
+        $this->assertNull($buyer->city);
+        $this->assertNull($buyer->postal_code);
     }
 
     public function test_detail_buyer_is_the_client_when_the_object_has_no_billing_identity(): void

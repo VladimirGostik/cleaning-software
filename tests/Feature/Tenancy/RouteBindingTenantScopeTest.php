@@ -29,7 +29,7 @@ final class RouteBindingTenantScopeTest extends TestCase
 
         $this->get(route('clients.show', $foreignClient))->assertNotFound();
         $this->get(route('clients.show', $ownClient))->assertOk();
-        $this->get(route('tasks.show', $task))->assertOk();
+        $this->get(route('tasks.show', $task))->assertRedirect(route('tasks.index', ['task' => $task->id]));
     }
 
     public function test_api_route_binding_runs_after_the_tenant_is_resolved(): void

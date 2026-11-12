@@ -81,7 +81,7 @@ describe('useTaskAttachmentUpload', () => {
 
         expect(post).toHaveBeenCalledTimes(1);
         expect(post.mock.calls[0][0]).toBe('/tasks/t1/attachments');
-        expect(optionsOf(0).only).toEqual(['attachments', 'flash']);
+        expect(optionsOf(0).only).toEqual(['selected_attachments', 'flash']);
         expect((post.mock.calls[0][1] as { file: File }).file.name).toBe('a.pdf');
         expect(api.uploading.value).toBe(true);
 
@@ -134,7 +134,7 @@ describe('useTaskAttachmentUpload', () => {
 
         expect(result).toBe(false);
         expect(api.items.value[0].error).toBe('task_attachment_unknown_result');
-        expect(router.reload).toHaveBeenCalledWith({ only: ['attachments', 'flash'] });
+        expect(router.reload).toHaveBeenCalledWith({ only: ['selected_attachments', 'flash'] });
     });
 
     it('stops the queue on cancel', async () => {
@@ -195,7 +195,7 @@ describe('useTaskAttachmentUpload', () => {
             uploadingApi();
 
             expect(
-                beforeListener!(visit('get', '/tasks/t1', { async: true, only: ['thread', 'flash'] })),
+                beforeListener!(visit('get', '/tasks/t1', { async: true, only: ['selected_thread', 'flash'] })),
             ).toBeUndefined();
             expect(confirm).not.toHaveBeenCalled();
         });
@@ -204,7 +204,9 @@ describe('useTaskAttachmentUpload', () => {
             uploadingApi();
 
             expect(beforeListener!(visit('get', '/clients'))).toBe(false);
-            expect(beforeListener!(visit('post', '/tasks/t1/comments', { only: ['thread', 'flash'] }))).toBe(false);
+            expect(beforeListener!(visit('post', '/tasks/t1/comments', { only: ['selected_thread', 'flash'] }))).toBe(
+                false,
+            );
             expect(confirm).toHaveBeenCalledTimes(2);
         });
     });

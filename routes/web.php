@@ -170,6 +170,7 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
 
     Route::get('/quotes', [QuoteController::class, 'index'])->name('quotes.index');
     Route::get('/quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
+    Route::get('/quotes/buyer-preview', [QuoteController::class, 'buyerPreview'])->name('quotes.buyer-preview');
     Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->name('quotes.show')->whereUuid('quote');
     Route::get('/quotes/{quote}/edit', [QuoteController::class, 'edit'])->name('quotes.edit')->whereUuid('quote');
     Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy')->whereUuid('quote');

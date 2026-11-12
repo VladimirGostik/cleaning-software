@@ -2,11 +2,15 @@ import { ref, type Ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { usePageProps } from '@/Composables/usePageProps';
 
+export interface TenantSwitchOptions {
+    keepModule?: boolean;
+}
+
 export interface TenantSwitchVisit {
     /** Tenant id whose switch is in flight; null when idle. */
     switchingTo: Ref<string | null>;
     /** Switches to `tenantId` when it is not the active tenant, then lands on `url`. */
-    navigate: (tenantId: string, url: string) => void;
+    navigate: (tenantId: string, url: string, options?: TenantSwitchOptions) => void;
 }
 
 /**
@@ -23,7 +27,7 @@ export function useTenantSwitchVisit(): TenantSwitchVisit {
         switchingTo.value = null;
     }
 
-    function navigate(tenantId: string, url: string): void {
+    function navigate(tenantId: string, url: string, options: TenantSwitchOptions = {}): void {
         const isCurrent = props.value.tenant.active?.id === tenantId;
 
         // Alert URLs from the BE may be absolute (`http://host/...`); TenantSwitchData.redirect_to
@@ -50,7 +54,7 @@ export function useTenantSwitchVisit(): TenantSwitchVisit {
 
         router.post(
             `/tenants/${tenantId}/switch`,
-            { redirect_to: relative },
+            options.keepModule ? { redirect_to: relative, keep_module: true } : { redirect_to: relative },
             {
                 preserveState: false,
                 onStart: () => (switchingTo.value = tenantId),

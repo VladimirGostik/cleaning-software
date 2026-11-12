@@ -57,8 +57,8 @@ final class UserController extends Controller
         )
             ->allowedFilters(
                 AllowedFilter::search(['name', 'email']),
-                AllowedFilter::dynamic('name'),
-                AllowedFilter::dynamic('email'),
+                AllowedFilter::text('name'),
+                AllowedFilter::text('email'),
                 AllowedFilter::callback('is_active', function (Builder $query, mixed $value) use ($tenantId): void {
                     if (is_array($value)) {
                         return;

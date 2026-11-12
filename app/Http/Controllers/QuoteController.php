@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Contracts\RendersQuotePdf;
 use App\Data\DocumentTemplates\DocumentTemplateOptionData;
+use App\Data\Invoices\InvoiceBuyerPreviewData;
+use App\Data\Invoices\InvoiceBuyerPreviewResultData;
 use App\Data\Quotes\QuoteAttachClientData;
 use App\Data\Quotes\QuoteConvertToContractData;
 use App\Data\Quotes\QuoteDetailData;
@@ -25,6 +27,7 @@ use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\Documents\DocumentTemplateService;
 use App\Services\Documents\QuoteTextService;
+use App\Services\InvoiceRecipientService;
 use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,6 +47,15 @@ final class QuoteController extends Controller
         private readonly QuoteTextService $text,
         private readonly DocumentTemplateService $templates,
     ) {}
+
+    #[Authorize('previewBuyer', Quote::class)]
+    public function buyerPreview(InvoiceBuyerPreviewData $data, Request $request, InvoiceRecipientService $recipients): InvoiceBuyerPreviewResultData
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return $recipients->previewBuyer($data, $actor);
+    }
 
     #[Authorize('viewAny', Quote::class)]
     #[NavItem(label: 'app.quotes', route: 'quotes.index', icon: NavIconEnum::Quotes, permission: PermissionEnum::ViewQuotes->value, order: 35)]

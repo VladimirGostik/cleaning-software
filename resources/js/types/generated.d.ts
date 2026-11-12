@@ -2288,6 +2288,7 @@ readonly swift_bic: string | null,
 };
 export type TenantSwitchData = {
 readonly redirect_to: string | null,
+readonly keep_module: boolean,
 };
 }
 }

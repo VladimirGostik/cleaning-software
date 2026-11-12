@@ -5,7 +5,9 @@ import { useI18n } from 'vue-i18n';
 import FieldError from '@/Components/Forms/FieldError.vue';
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
+import BuyerPreviewPanel from '@/Components/Invoices/BuyerPreviewPanel.vue';
 import ViewModeSwitch from '@/Components/ViewModeSwitch.vue';
+import { useBuyerPreview } from '@/Composables/useBuyerPreview';
 import PersonIcon from '~icons/material-symbols/person-outline-rounded';
 import ApartmentIcon from '~icons/material-symbols/apartment-outline-rounded';
 import EditNoteIcon from '~icons/material-symbols/edit-note-outline-rounded';
@@ -56,6 +58,20 @@ const objectOptions = computed<SelectOption[]>(() => {
         .filter((o) => o.client_id === selectedClientId.value && (o.is_active || o.id === currentObjectId))
         .map((o) => ({ value: o.id, label: o.name }));
 });
+
+const selectedObjectId = computed<string | null>(() =>
+    form ? ((form as Record<string, unknown>).cleaning_object_id as string | null) || null : null,
+);
+
+const { preview, loading, error } = useBuyerPreview(() => {
+    if (props.mode === 'manual' || !selectedClientId.value) return null;
+    if (props.mode === 'object') {
+        return selectedObjectId.value
+            ? { client_id: selectedClientId.value, cleaning_object_id: selectedObjectId.value }
+            : null;
+    }
+    return { client_id: selectedClientId.value, cleaning_object_id: null };
+}, '/quotes/buyer-preview');
 
 function clearSnapshotFields(): void {
     if (!form) return;
@@ -125,6 +141,14 @@ if (form) {
             />
         </div>
         <FieldError v-if="props.mode !== 'manual'" field="customer_name" />
+
+        <BuyerPreviewPanel
+            v-if="props.mode !== 'manual'"
+            :title="t('quote_buyer_preview_title')"
+            :preview="preview"
+            :loading="loading"
+            :error="error"
+        />
 
         <QuoteManualRecipientFields v-if="props.mode === 'manual'" />
     </div>

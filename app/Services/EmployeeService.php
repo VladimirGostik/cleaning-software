@@ -64,14 +64,16 @@ final readonly class EmployeeService
                         return;
                     }
 
-                    $like = '%'.Filters::escapeLikeValue((string) $value).'%';
-                    $operator = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+                    $needle = (string) $value;
 
-                    $query->where(function (Builder $q) use ($like, $operator): void {
-                        $q->where('first_name', $operator, $like)
-                            ->orWhere('last_name', $operator, $like)
-                            ->orWhere('contact_email', $operator, $like)
-                            ->orWhereHas('user', fn (Builder $u) => $u->where('name', $operator, $like)->orWhere('email', $operator, $like));
+                    $query->where(function (Builder $q) use ($needle): void {
+                        Filters::whereContains($q, 'first_name', $needle);
+                        Filters::whereContains($q, 'last_name', $needle, 'or');
+                        Filters::whereContains($q, 'contact_email', $needle, 'or');
+                        $q->orWhereHas('user', function (Builder $u) use ($needle): void {
+                            Filters::whereContains($u, 'name', $needle);
+                            Filters::whereContains($u, 'email', $needle, 'or');
+                        });
                     });
                 }),
                 AllowedFilter::relationExact('role', 'user.roles', 'name'),

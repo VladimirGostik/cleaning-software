@@ -7,6 +7,7 @@ import { KG_ICONS } from '@/icons/kegosIcons';
 import { formatDatetime } from '@/utils/date';
 import { isTaskRunListWorthy } from '@/utils/taskAi';
 import { isTaskOverdue } from '@/utils/taskBoard';
+import { TASK_PANEL_PROPS, useTaskPanel } from '@/Composables/useTaskPanel';
 import TaskAiRunBadge from './TaskAiRunBadge.vue';
 import TaskPriorityBadge from './TaskPriorityBadge.vue';
 import TaskStatusMenu from './TaskStatusMenu.vue';
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { href: taskHref } = useTaskPanel();
 
 const overdue = computed(() => isTaskOverdue(props.task));
 </script>
@@ -38,7 +40,14 @@ const overdue = computed(() => isTaskOverdue(props.task));
         @dragend="emit('dragend')"
     >
         <div class="flex items-start justify-between gap-2">
-            <Link :href="`/tasks/${task.id}`" class="link link-hover min-w-0 break-words font-medium" draggable="false">
+            <Link
+                :href="taskHref(task.id)"
+                :only="TASK_PANEL_PROPS"
+                preserve-state
+                preserve-scroll
+                class="link link-hover min-w-0 break-words font-medium"
+                draggable="false"
+            >
                 {{ task.title }}
             </Link>
             <TaskStatusMenu

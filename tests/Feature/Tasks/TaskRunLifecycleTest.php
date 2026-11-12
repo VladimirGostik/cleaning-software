@@ -117,19 +117,19 @@ final class TaskRunLifecycleTest extends TestCase
     public function test_the_thread_prop_is_skipped_by_a_partial_reload_that_does_not_ask_for_it(): void
     {
         $task = $this->firmTask();
-        $full = $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.show', $task))->assertOk();
+        $full = $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.index', ['task' => $task->id]))->assertOk();
         $version = data_get($full->viewData('page'), 'version');
         DB::flushQueryLog();
         DB::enableQueryLog();
 
-        $response = $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.show', $task), [
+        $response = $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.index', ['task' => $task->id]), [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $version,
-            'X-Inertia-Partial-Component' => 'Tasks/Show',
-            'X-Inertia-Partial-Data' => 'task',
+            'X-Inertia-Partial-Component' => 'Tasks/Index',
+            'X-Inertia-Partial-Data' => 'selected_task',
         ])->assertOk();
 
-        $this->assertArrayNotHasKey('thread', (array) $response->json('props'));
+        $this->assertArrayNotHasKey('selected_thread', (array) $response->json('props'));
         $this->assertSame([], array_filter(array_column(DB::getQueryLog(), 'query'), static fn (string $q): bool => str_contains($q, '"task_comments"')));
     }
 
@@ -242,7 +242,7 @@ final class TaskRunLifecycleTest extends TestCase
             $client = $this->apiAs($this->admin, $this->alpha);
             $client->getJson("/api/tasks/{$task->id}/thread")->assertOk()->assertJsonPath('latest_run.status', 'running');
             $client->getJson("/api/tasks/{$task->id}/ai-run-status")->assertOk()->assertJsonPath('status', 'running');
-            $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.show', $task))->assertOk();
+            $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.index', ['task' => $task->id]))->assertOk();
         } finally {
             TaskComment::flushEventListeners();
         }

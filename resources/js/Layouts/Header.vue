@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { useRememberedQuery } from '@/Composables/useListQueryMemory';
 import type { Breadcrumb } from '@/types';
 
 defineProps<{
     title: string;
     breadcrumbs?: Breadcrumb[];
 }>();
+
+const { withRememberedQuery } = useRememberedQuery();
 </script>
 
 <template>
@@ -14,7 +17,7 @@ defineProps<{
             <div v-if="breadcrumbs && breadcrumbs.length > 0" class="breadcrumbs py-0 text-xs text-muted">
                 <ul>
                     <li v-for="(crumb, index) in breadcrumbs" :key="index">
-                        <Link v-if="crumb.url" :href="crumb.url">
+                        <Link v-if="crumb.url" :href="withRememberedQuery(crumb.url)">
                             {{ crumb.label }}
                         </Link>
                         <span v-else>{{ crumb.label }}</span>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ChevronUpDownIcon from '~icons/material-symbols/unfold-more-outline-rounded';
 import CheckIcon from '~icons/material-symbols/check-outline-rounded';
@@ -8,6 +7,7 @@ import PlusIcon from '~icons/material-symbols/add-outline-rounded';
 import AnchoredPopover from '@/Components/AnchoredPopover.vue';
 import TenantColorDot from '@/Components/Tenants/TenantColorDot.vue';
 import { usePageProps } from '@/Composables/usePageProps';
+import { useTenantSwitchVisit } from '@/Composables/useTenantSwitchVisit';
 import type { SharedTenant } from '@/types';
 
 const props = defineProps<{ tenant: SharedTenant; compact?: boolean }>();
@@ -20,18 +20,11 @@ const { t } = useI18n();
 const pageProps = usePageProps();
 
 const open = ref(false);
-const switching = ref<string | null>(null);
+const { switchingTo, navigate } = useTenantSwitchVisit();
 
 function switchTo(id: string) {
     open.value = false;
-    router.post(
-        `/tenants/${id}/switch`,
-        {},
-        {
-            onStart: () => (switching.value = id),
-            onFinish: () => (switching.value = null),
-        },
-    );
+    navigate(id, window.location.pathname + window.location.search, { keepModule: true });
 }
 
 function addTenant() {
@@ -76,12 +69,12 @@ function addTenant() {
                     role="menuitem"
                     :class="{ 'font-medium': item.id === props.tenant.active?.id }"
                     :aria-current="item.id === props.tenant.active?.id ? 'true' : undefined"
-                    :disabled="switching !== null"
+                    :disabled="switchingTo !== null"
                     @click="switchTo(item.id)"
                 >
                     <TenantColorDot :color="item.color" />
                     <span class="truncate">{{ item.name }}</span>
-                    <span v-if="switching === item.id" class="loading loading-spinner loading-xs ml-auto" />
+                    <span v-if="switchingTo === item.id" class="loading loading-spinner loading-xs ml-auto" />
                     <CheckIcon v-else-if="item.id === props.tenant.active?.id" class="ml-auto" aria-hidden="true" />
                 </button>
             </li>

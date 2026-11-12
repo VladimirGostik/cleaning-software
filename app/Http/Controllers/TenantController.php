@@ -8,6 +8,7 @@ use App\Data\Tenants\AddTenantData;
 use App\Data\Tenants\TenantSwitchData;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Navigation\NavigationRegistry;
 use App\Services\RegistrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,12 +34,17 @@ final class TenantController extends Controller
     }
 
     #[Authorize('switchTo', 'tenant')]
-    public function switch(Tenant $tenant, TenantSwitchData $data, Request $request): RedirectResponse
+    public function switch(Tenant $tenant, TenantSwitchData $data, Request $request, NavigationRegistry $navigation): RedirectResponse
     {
         session(['active_tenant_id' => $tenant->id]);
 
         if ($data->redirect_to !== null) {
-            return redirect($data->redirect_to)->with('success', __('app.tenant_switched'));
+            /** @var User $user */
+            $user = $request->user();
+
+            $target = $data->keep_module ? $navigation->landingFor($user, $tenant->id, $data->redirect_to) : $data->redirect_to;
+
+            return redirect($target)->with('success', __('app.tenant_switched'));
         }
 
         return to_route('dashboard')->with('success', __('app.tenant_switched'));

@@ -119,7 +119,7 @@ export function useTaskAttachmentUpload(options: {
                 { file },
                 {
                     forceFormData: true,
-                    only: ['attachments', 'flash'],
+                    only: ['selected_attachments', 'flash'],
                     preserveState: true,
                     preserveScroll: true,
                     showProgress: false,
@@ -195,7 +195,7 @@ export function useTaskAttachmentUpload(options: {
         }
 
         if (unknown) {
-            router.reload({ only: ['attachments', 'flash'] });
+            router.reload({ only: ['selected_attachments', 'flash'] });
         }
     }
 

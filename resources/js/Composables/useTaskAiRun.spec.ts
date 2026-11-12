@@ -130,7 +130,7 @@ describe('polling', () => {
 
         await advance(3000);
         expect(reload).toHaveBeenCalledTimes(1);
-        expect(lastReload().only).toEqual(['thread', 'flash']);
+        expect(lastReload().only).toEqual(['selected_thread', 'flash']);
         expect(lastReload().async).toBe(true);
 
         current.value = thread(run({ status: 'needs_input', is_active: false }));
@@ -147,7 +147,7 @@ describe('polling', () => {
 
         await advance(3000);
 
-        expect(lastReload().only).toEqual(['task', 'thread', 'flash']);
+        expect(lastReload().only).toEqual(['selected_task', 'selected_thread', 'tasks', 'board', 'flash']);
     });
 
     it('reloads when the latest run id differs', async () => {
@@ -311,7 +311,7 @@ describe('start', () => {
 
         expect(post.mock.calls[0][0]).toBe('/tasks/t1/ai-runs');
         expect(post.mock.calls[0][1]).toEqual({ company_id: companyId });
-        expect(options().only).toEqual(['thread', 'flash']);
+        expect(options().only).toEqual(['selected_thread', 'flash']);
     });
 
     it('exposes validation errors and resets starting on finish', () => {

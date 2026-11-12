@@ -22,25 +22,23 @@ final readonly class MediaService
     /** @return LengthAwarePaginator<int, Media> */
     public function index(MediaIndexFilterData $filter): LengthAwarePaginator
     {
-        $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';
-
         return QueryBuilder::for(Media::inTenant(current_tenant_id())->whereNotIn('model_type', [(new Document)->getMorphClass(), (new Task)->getMorphClass()]))
             ->allowedFilters(
-                AllowedFilter::callbackClean('search', function (Builder $q, mixed $v) use ($op): void {
+                AllowedFilter::callbackClean('search', function (Builder $q, mixed $v): void {
                     if (blank($v) || ! is_scalar($v)) {
                         return;
                     }
 
-                    $like = '%'.Filters::escapeLikeValue((string) $v).'%';
+                    $needle = (string) $v;
 
-                    $q->where(function (Builder $inner) use ($like, $op): void {
-                        $inner->where('file_name', $op, $like)
-                            ->orWhere('name', $op, $like);
+                    $q->where(function (Builder $inner) use ($needle): void {
+                        Filters::whereContains($inner, 'file_name', $needle);
+                        Filters::whereContains($inner, 'name', $needle, 'or');
                     });
                 }),
                 AllowedFilter::exact('model_type'),
                 AllowedFilter::exact('collection_name'),
-                AllowedFilter::callbackClean('mime_type', function (Builder $q, mixed $v) use ($op): void {
+                AllowedFilter::callbackClean('mime_type', function (Builder $q, mixed $v): void {
                     if (blank($v) || ! is_scalar($v)) {
                         return;
                     }
@@ -48,7 +46,7 @@ final readonly class MediaService
                     $value = (string) $v;
 
                     if (str_ends_with($value, '/')) {
-                        $q->where('mime_type', $op, Filters::escapeLikeValue($value).'%');
+                        Filters::whereStartsWith($q, 'mime_type', $value);
                     } else {
                         $q->where('mime_type', '=', $value);
                     }

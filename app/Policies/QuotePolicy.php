@@ -25,6 +25,11 @@ final class QuotePolicy
         return $user->can(PermissionEnum::CreateQuotes->value);
     }
 
+    public function previewBuyer(User $user): bool
+    {
+        return $user->canAny([PermissionEnum::CreateQuotes->value, PermissionEnum::EditQuotes->value]);
+    }
+
     public function update(User $user, Quote $quote): bool
     {
         return $user->can(PermissionEnum::EditQuotes->value);

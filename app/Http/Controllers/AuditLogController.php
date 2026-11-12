@@ -29,23 +29,24 @@ final class AuditLogController extends Controller
     #[NavItem(label: 'app.audit_logs', route: 'audit-logs.index', icon: NavIconEnum::AuditLogs, permission: PermissionEnum::ViewAuditLogs->value, group: 'settings', order: 50)]
     public function index(Request $request, ActivityRevertService $reverts): Response
     {
-        $op = config('database.default') === 'pgsql' ? 'ilike' : 'like';
         $tenantId = current_tenant_id();
 
         $items = QueryBuilder::for(Activity::visibleInTenant($tenantId)->with('causer'))
             ->allowedFilters(
-                AllowedFilter::callbackClean('search', function (Builder $query, mixed $value) use ($op): void {
+                AllowedFilter::callbackClean('search', function (Builder $query, mixed $value): void {
                     if (blank($value) || ! is_scalar($value)) {
                         return;
                     }
 
-                    $like = '%'.Filters::escapeLikeValue((string) $value).'%';
+                    $needle = (string) $value;
 
-                    $query->where(function (Builder $q) use ($like, $op): void {
-                        $q->where('description', $op, $like)
-                            ->orWhere('log_name', $op, $like)
-                            ->orWhereHas('causer', fn (Builder $q2) => $q2->where('name', $op, $like)
-                                ->orWhere('email', $op, $like));
+                    $query->where(function (Builder $q) use ($needle): void {
+                        Filters::whereContains($q, 'description', $needle);
+                        Filters::whereContains($q, 'log_name', $needle, 'or');
+                        $q->orWhereHas('causer', function (Builder $causer) use ($needle): void {
+                            Filters::whereContains($causer, 'name', $needle);
+                            Filters::whereContains($causer, 'email', $needle, 'or');
+                        });
                     });
                 }),
                 AllowedFilter::dynamic('subject_type'),

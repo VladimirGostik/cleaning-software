@@ -50,7 +50,9 @@ export function earliestPendingExpiry(thread: Thread): string | null {
 }
 
 export function runChangeReloadProps(status: App.Enums.TaskRunStatusEnum | null): string[] {
-    return status === 'done' ? ['task', 'thread', 'flash'] : ['thread', 'flash'];
+    return status === 'done'
+        ? ['selected_task', 'selected_thread', 'tasks', 'board', 'flash']
+        : ['selected_thread', 'flash'];
 }
 
 export function isTaskRunListWorthy(status: App.Enums.TaskRunStatusEnum): boolean {

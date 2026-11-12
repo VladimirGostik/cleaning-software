@@ -31,10 +31,10 @@ final readonly class ClientService
         return QueryBuilder::for(Client::query())
             ->allowedFilters(
                 AllowedFilter::search(['name', 'ico']),
-                AllowedFilter::dynamic('name'),
+                AllowedFilter::text('name'),
                 AllowedFilter::dynamic('type'),
-                AllowedFilter::dynamic('city'),
-                AllowedFilter::dynamic('ico'),
+                AllowedFilter::text('city'),
+                AllowedFilter::text('ico'),
                 AllowedFilter::dynamic('created_at')->date(),
             )
             ->allowedSorts('name', 'type', 'city', 'ico', 'created_at')

@@ -15,6 +15,12 @@ final class PushRoute
     {
         $path = is_string($url) ? parse_url($url, PHP_URL_PATH) : null;
 
+        if ($path === '/tasks') {
+            parse_str((string) parse_url((string) $url, PHP_URL_QUERY), $query);
+            $taskId = $query['task'] ?? null;
+            $path = is_string($taskId) ? '/tasks/'.$taskId : $path;
+        }
+
         return is_string($path) && preg_match(self::PATTERN, $path) === 1 ? $path : self::FALLBACK;
     }
 }

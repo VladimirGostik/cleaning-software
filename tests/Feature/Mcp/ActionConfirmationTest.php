@@ -399,7 +399,7 @@ final class ActionConfirmationTest extends TestCase
         $firm = Task::factory()->forTenant($this->alpha)->createdBy($this->admin)->create();
         ['pending' => $pending] = $this->prepare(PendingActionEnum::DeleteTask, $firm->id);
 
-        $this->webAs($this->admin, $this->alpha)->get(route('tasks.show', $firm))->assertOk();
+        $this->webAs($this->admin, $this->alpha)->get(route('tasks.index', ['task' => $firm->id]))->assertOk();
         $this->webAs($this->admin, $this->alpha)->post(route('tasks.attachments.store', $firm), [
             'file' => $this->attachmentFile('photo.jpg'),
         ])->assertRedirect();

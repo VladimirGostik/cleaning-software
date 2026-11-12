@@ -171,6 +171,19 @@ final class DocumentContextBuilderTest extends TestCase
         $this->assertStringNotContainsString('border-top', implode('', array_diff_key($ctx->blocks, ['block.signatures' => 1])));
     }
 
+    public function test_quote_context_never_exposes_the_buyer_email(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $quote = Quote::factory()->create(['tenant_id' => $tenant->id, 'customer_email' => 'kupujuci@example.com']);
+        QuoteItem::factory()->create(['tenant_id' => $tenant->id, 'quote_id' => $quote->id]);
+
+        $ctx = app(DocumentContextBuilder::class)->forQuote($quote, $tenant);
+
+        $this->assertNull($ctx->values['customer.email']);
+        $this->assertStringNotContainsString('kupujuci@example.com', $ctx->blocks['block.quote_parties']);
+    }
+
     public function test_quote_without_note_totals_or_clause_renders_empty_blocks(): void
     {
         $tenant = Tenant::factory()->create(['is_vat_payer' => false]);

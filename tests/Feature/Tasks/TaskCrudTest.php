@@ -76,7 +76,7 @@ final class TaskCrudTest extends TestCase
         $response = $this->post('/tasks', ['title' => 'Call the client', 'priority' => 'high', 'due_at' => '2026-12-01 10:00']);
 
         $task = Task::query()->sole();
-        $response->assertRedirect(route('tasks.show', $task));
+        $response->assertRedirect(route('tasks.index', ['task' => $task->id]));
         $this->assertSame($this->firm->id, $task->tenant_id);
         $this->assertSame($this->admin->id, $task->created_by_user_id);
         $this->assertSame(TaskPriorityEnum::High, $task->priority);
@@ -114,9 +114,9 @@ final class TaskCrudTest extends TestCase
         $task = Task::query()->sole();
         $this->assertSame(Invoice::class, $task->taskable_type);
 
-        $this->withoutVite()->get(route('tasks.show', $task))->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('task.subject.type', 'invoice')
-            ->where('task.subject.id', $own->id)
+        $this->withoutVite()->get(route('tasks.index', ['task' => $task->id]))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('selected_task.subject.type', 'invoice')
+            ->where('selected_task.subject.id', $own->id)
             ->etc());
     }
 
@@ -142,12 +142,12 @@ final class TaskCrudTest extends TestCase
         $task = Task::factory()->forTenant($this->firm)->createdBy($this->admin)->create(['description' => 'Details']);
         $this->webAs($this->admin, $this->firm);
 
-        $this->withoutVite()->get(route('tasks.show', $task))->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('Tasks/Show', false)
-            ->where('task.id', $task->id)
-            ->where('task.description', 'Details')
-            ->where('task.created_by_name', $this->admin->name)
-            ->where('task.can', ['update' => true, 'delete' => true, 'assign' => true])
+        $this->withoutVite()->get(route('tasks.index', ['task' => $task->id]))->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Tasks/Index', false)
+            ->where('selected_task.id', $task->id)
+            ->where('selected_task.description', 'Details')
+            ->where('selected_task.created_by_name', $this->admin->name)
+            ->where('selected_task.can', ['update' => true, 'delete' => true, 'assign' => true])
             ->etc());
     }
 
@@ -159,7 +159,7 @@ final class TaskCrudTest extends TestCase
 
         $this->put(route('tasks.update', $task), [
             'title' => 'Renamed', 'priority' => 'high', 'tenant_id' => $other->id,
-        ])->assertRedirect(route('tasks.show', $task));
+        ])->assertRedirect();
 
         $task->refresh();
         $this->assertSame('Renamed', $task->title);
@@ -288,8 +288,8 @@ final class TaskCrudTest extends TestCase
         $this->assertSame(0, Task::unscopedForSystem()->count());
 
         $this->post('/tasks', ['title' => 'Object', 'priority' => 'low', 'taskable_type' => 'cleaning_object', 'taskable_id' => $object->id])->assertRedirect();
-        $this->withoutVite()->get(route('tasks.show', Task::query()->sole()))
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('task.subject.type', 'cleaning_object')->where('task.subject.id', $object->id)->etc());
+        $this->withoutVite()->get(route('tasks.index', ['task' => Task::query()->sole()->id]))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('selected_task.subject.type', 'cleaning_object')->where('selected_task.subject.id', $object->id)->etc());
     }
 
     public function test_editing_keeps_an_unchanged_subject_the_editor_cannot_view(): void

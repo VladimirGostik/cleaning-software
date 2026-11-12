@@ -59,7 +59,6 @@ final readonly class LegacyInvoiceHistoryImporter
                 if ($existing !== null) {
                     $report->add('invoice', $row['id'], $firmId, 'existing', $row['number']);
                     $this->syncPayment($existing, $row, $firmId, $actor, $report);
-                    $this->syncBuyer($existing, $row, $firmId, $report);
 
                     continue;
                 }
@@ -166,29 +165,6 @@ final readonly class LegacyInvoiceHistoryImporter
         if ($this->pay($invoice, $row, $firmId, $actor, $report)) {
             $report->add('invoice', $row['id'], $firmId, 'payment_synced', $row['number']);
         }
-    }
-
-    /** @param  array{id: int, number: string}  $row */
-    private function syncBuyer(Invoice $invoice, array $row, int $firmId, LegacyImportReport $report): void
-    {
-        if ($invoice->trashed()) {
-            return;
-        }
-
-        $object = $invoice->cleaningObject;
-
-        if ($object === null || ! $object->hasBillingIdentity()) {
-            return;
-        }
-
-        $invoice->fill(CustomerParty::forInvoice($object, $invoice->client, CustomerParty::fromEntered($invoice))->toInvoiceAttributes());
-
-        if (! $invoice->isDirty()) {
-            return;
-        }
-
-        $invoice->save();
-        $report->add('invoice', $row['id'], $firmId, 'buyer_synced', $row['number']);
     }
 
     /** @param  array{id: int, number: string, payment_date: ?CarbonImmutable}  $row */

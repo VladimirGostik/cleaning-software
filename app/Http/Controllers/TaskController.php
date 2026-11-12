@@ -38,13 +38,17 @@ final class TaskController extends Controller
         $actor = $request->user();
 
         $view = $this->resolveView($request);
+        $selected = $request->filled('task') ? $this->tasks->findVisible($request->string('task')->toString(), $actor) : null;
 
         return Inertia::render('Tasks/Index', [
             'view' => $view,
-            'tasks' => $view === TaskIndexViewEnum::Table ? $this->tasks->paginate($request, $actor) : null,
-            'board' => $view === TaskIndexViewEnum::Board ? $this->tasks->board($request, $actor) : null,
+            'tasks' => fn () => $view === TaskIndexViewEnum::Table ? $this->tasks->paginate($request, $actor) : null,
+            'board' => fn () => $view === TaskIndexViewEnum::Board ? $this->tasks->board($request, $actor) : null,
             'filters' => $request->query(),
-            'context' => $this->tasks->formContext($actor),
+            'context' => fn () => $this->tasks->formContext($actor),
+            'selected_task' => fn () => $selected === null ? null : $this->tasks->detail($selected, $actor),
+            'selected_attachments' => fn () => $selected === null ? null : $this->attachments->list($selected, $actor, 'tasks.attachments.show'),
+            'selected_thread' => fn () => $selected === null ? null : $this->threads->for($selected, $actor),
         ]);
     }
 
@@ -60,21 +64,13 @@ final class TaskController extends Controller
 
         $visibleHere = $task->tenant_id === null || $task->tenant_id === current_tenant_id();
 
-        return to_route($visibleHere ? 'tasks.show' : 'tasks.index', $visibleHere ? $task : [])->with('success', __('app.task_created'));
+        return to_route('tasks.index', $visibleHere ? ['task' => $task->id] : [])->with('success', __('app.task_created'));
     }
 
     #[Authorize('view', 'task')]
-    public function show(Task $task, Request $request): Response
+    public function show(Task $task): RedirectResponse
     {
-        /** @var User $actor */
-        $actor = $request->user();
-
-        return Inertia::render('Tasks/Show', [
-            'task' => $this->tasks->detail($task, $actor),
-            'attachments' => $this->attachments->list($task, $actor, 'tasks.attachments.show'),
-            'thread' => fn () => $this->threads->for($task, $actor),
-            'context' => $this->tasks->formContext($actor),
-        ]);
+        return to_route('tasks.index', ['task' => $task->id]);
     }
 
     #[Authorize('update', 'task')]
@@ -85,7 +81,7 @@ final class TaskController extends Controller
 
         $this->tasks->update($task, $data, $actor);
 
-        return to_route('tasks.show', $task)->with('success', __('app.task_updated'));
+        return back()->with('success', __('app.task_updated'));
     }
 
     #[Authorize('delete', 'task')]

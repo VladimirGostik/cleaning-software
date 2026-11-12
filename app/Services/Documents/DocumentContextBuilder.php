@@ -381,7 +381,7 @@ final readonly class DocumentContextBuilder
     {
         return [
             'customer.name' => $party->name,
-            'customer.email' => $quote->customer_email,
+            'customer.email' => null,
             'customer.address' => $this->address($party->street, $party->postalCode, $party->city),
             'customer.represented_by' => $party->representedBy,
             'customer.ico' => $party->ico,

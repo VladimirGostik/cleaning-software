@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\UserService;
 use App\Utils\AllowedFilter;
+use App\Utils\Filters;
 use App\Utils\SymbolOperators;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -42,8 +43,8 @@ final class UserController extends Controller
         $users = QueryBuilder::for($this->memberBaseQuery($tenantId))
             ->allowedFilters(
                 AllowedFilter::search(['name', 'email']),
-                AllowedFilter::dynamic('name'),
-                AllowedFilter::dynamic('email'),
+                AllowedFilter::text('name'),
+                AllowedFilter::text('email'),
                 AllowedFilter::callback('is_active', function (Builder $query, mixed $value) use ($tenantId): void {
                     if (is_array($value)) {
                         return;
@@ -150,11 +151,10 @@ final class UserController extends Controller
         $users = $this->memberBaseQuery($tenantId)
             ->whereHas('memberships', fn (Builder $q) => $q->where('tenant_id', $tenantId)->where('is_active', true))
             ->when($q !== '', function ($qb) use ($q) {
-                $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
-                $needle = '%'.addcslashes($q, '%_\\').'%';
-                $qb->where(fn ($inner) => $inner
-                    ->where('name', $like, $needle)
-                    ->orWhere('email', $like, $needle));
+                $qb->where(function (Builder $inner) use ($q): void {
+                    Filters::whereContains($inner, 'name', $q);
+                    Filters::whereContains($inner, 'email', $q, 'or');
+                });
             })
             ->orderBy('name')
             ->limit(20)

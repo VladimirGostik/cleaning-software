@@ -17,5 +17,6 @@ final class TenantSwitchData extends Data
     public function __construct(
         #[Nullable, StringType, Max(2000), Regex('/^\/(?![\/\\\\])/')]
         public readonly ?string $redirect_to = null,
+        public readonly bool $keep_module = false,
     ) {}
 }

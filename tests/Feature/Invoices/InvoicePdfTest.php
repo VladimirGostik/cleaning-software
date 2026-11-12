@@ -46,6 +46,17 @@ final class InvoicePdfTest extends TestCase
         $response->assertHeader('Content-Type', 'application/pdf');
     }
 
+    public function test_invoice_html_never_prints_the_buyer_email(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $invoice = Invoice::factory()->issued()->create(['tenant_id' => $tenant->id, 'customer_email' => 'kupujuci@example.com']);
+
+        $html = View::make('pdf.invoices.kegos', ['invoice' => $invoice, 'qrDataUri' => null])->render();
+
+        $this->assertStringNotContainsString('kupujuci@example.com', $html);
+    }
+
     public function test_download_pdf_draft_without_number_uses_draft_filename(): void
     {
         $tenant = Tenant::factory()->create();

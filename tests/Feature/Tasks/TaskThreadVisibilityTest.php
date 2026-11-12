@@ -74,16 +74,16 @@ final class TaskThreadVisibilityTest extends TestCase
     {
         [$task] = $this->taskWithQuestion();
 
-        $this->webAs($this->creator, $this->alpha)->withoutVite()->get(route('tasks.show', $task))
+        $this->webAs($this->creator, $this->alpha)->withoutVite()->get(route('tasks.index', ['task' => $task->id]))
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('thread.comments', 1)
-                ->where('thread.latest_run', null)
-                ->where('thread.question', null));
+                ->has('selected_thread.comments', 1)
+                ->where('selected_thread.latest_run', null)
+                ->where('selected_thread.question', null));
 
-        $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.show', $task))
+        $this->webAs($this->admin, $this->alpha)->withoutVite()->get(route('tasks.index', ['task' => $task->id]))
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('thread.comments', 2)
-                ->where('thread.latest_run.status', 'needs_input'));
+                ->has('selected_thread.comments', 2)
+                ->where('selected_thread.latest_run.status', 'needs_input'));
     }
 
     public function test_the_list_status_is_null_outside_the_audience_on_both_lists_and_in_list_tasks(): void

@@ -84,7 +84,7 @@ final class RecurringInvoiceObjectBuyerTest extends TestCase
         $invoice = Invoice::query()->where('tenant_id', $this->tenant->id)->firstOrFail();
         $this->assertSame('Bytovy dom Lipova 5', $invoice->customer_name);
         $this->assertSame('0245:2022222222', $invoice->customer_peppol_participant_id);
-        $this->assertSame('Spravca s.r.o.', $invoice->customer_represented_by);
+        $this->assertNull($invoice->customer_represented_by);
     }
 
     public function test_client_linked_template_keeps_the_client_peppol_id(): void

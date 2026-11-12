@@ -52,12 +52,11 @@ final readonly class JobService
                         return;
                     }
 
-                    $like = '%'.Filters::escapeLikeValue((string) $value).'%';
-                    $operator = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+                    $needle = (string) $value;
 
-                    $query->where(function (Builder $q) use ($like, $operator): void {
-                        $q->where('note', $operator, $like)
-                            ->orWhereHas('cleaningObject', fn (Builder $c) => $c->where('name', $operator, $like));
+                    $query->where(function (Builder $q) use ($needle): void {
+                        Filters::whereContains($q, 'note', $needle);
+                        $q->orWhereHas('cleaningObject', fn (Builder $c) => Filters::whereContains($c, 'name', $needle));
                     });
                 }),
                 AllowedFilter::dynamic('status'),

@@ -7,7 +7,7 @@ import RadioGroup, { type RadioOption } from '@/Components/Forms/RadioGroup.vue'
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import TextInput from '@/Components/Forms/TextInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
-import CustomerPartyDetails from '@/Components/Invoices/CustomerPartyDetails.vue';
+import BuyerPreviewPanel from '@/Components/Invoices/BuyerPreviewPanel.vue';
 import { useBuyerPreview } from '@/Composables/useBuyerPreview';
 
 export type SubjectMode = 'client' | 'object' | 'standalone';
@@ -58,14 +58,25 @@ const { preview, loading, error } = useBuyerPreview(() => {
             : null;
     }
     return { client_id: selectedClientId.value, cleaning_object_id: null };
-});
+}, '/invoices/buyer-preview');
 
-const sourceNote = computed<string | null>(() => {
-    if (!preview.value) return null;
-    if (preview.value.buyer.source === 'object_billing') return t('invoice_buyer_preview_source_object_billing');
-    if (preview.value.buyer.source === 'client') return t('invoice_buyer_preview_source_client');
-    return null;
-});
+let lastPrefill: string | null = null;
+
+watch(
+    preview,
+    (result) => {
+        if (!form) return;
+        const f = form as Record<string, unknown>;
+        const email = result?.buyer.email ?? null;
+        const current = (f.customer_email as string | null) || null;
+        const replaceable = current === null || current === lastPrefill;
+
+        if (!replaceable) return;
+        if (current !== email) f.customer_email = email;
+        lastPrefill = email;
+    },
+    { immediate: true },
+);
 
 function clearCustomerFields(): void {
     if (!form) return;
@@ -137,20 +148,13 @@ if (form) {
             required
         />
 
-        <div
-            v-if="props.mode !== 'standalone' && (loading || error || preview)"
-            class="rounded-card-nested bg-base-200 p-4"
-        >
-            <h3 class="text-sm font-medium text-muted">{{ t('invoice_buyer_preview_title') }}</h3>
-            <span v-if="loading" class="loading loading-spinner loading-sm" />
-            <div v-else-if="error" class="alert alert-warning mt-2">
-                <span>{{ t('invoice_buyer_preview_failed') }}</span>
-            </div>
-            <template v-else-if="preview">
-                <CustomerPartyDetails :party="preview.buyer" class="mt-2" />
-                <p v-if="sourceNote" class="mt-2 text-xs text-muted">{{ sourceNote }}</p>
-            </template>
-        </div>
+        <BuyerPreviewPanel
+            v-if="props.mode !== 'standalone'"
+            :title="t('invoice_buyer_preview_title')"
+            :preview="preview"
+            :loading="loading"
+            :error="error"
+        />
 
         <div v-if="props.mode === 'standalone'" class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextInput field="customer_name" :label="t('invoice_customer_name')" required />

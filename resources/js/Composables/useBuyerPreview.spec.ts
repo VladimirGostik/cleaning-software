@@ -15,7 +15,7 @@ function mountPreview(source: { value: BuyerPreviewParams | null }) {
     const app = createApp(
         defineComponent({
             setup() {
-                result = useBuyerPreview(() => source.value);
+                result = useBuyerPreview(() => source.value, '/invoices/buyer-preview');
                 return () => h('div');
             },
         }),
@@ -60,6 +60,25 @@ describe('useBuyerPreview', () => {
         expect(http.getJson.mock.calls[0][0]).toBe('/invoices/buyer-preview?client_id=c1&cleaning_object_id=');
         expect(result.preview.value?.email_options).toEqual(['a@b.sk']);
         expect(result.loading.value).toBe(false);
+    });
+
+    it('requests the given base path', async () => {
+        http.getJson.mockResolvedValue(resultData('a@b.sk'));
+        const source = ref<BuyerPreviewParams | null>({ client_id: 'c1', cleaning_object_id: 'o1' });
+        let result!: ReturnType<typeof useBuyerPreview>;
+        createApp(
+            defineComponent({
+                setup() {
+                    result = useBuyerPreview(() => source.value, '/quotes/buyer-preview');
+                    return () => h('div');
+                },
+            }),
+        ).mount(document.createElement('div'));
+
+        await vi.advanceTimersByTimeAsync(300);
+
+        expect(http.getJson.mock.calls[0][0]).toBe('/quotes/buyer-preview?client_id=c1&cleaning_object_id=o1');
+        expect(result.preview.value).not.toBeNull();
     });
 
     it('aborts a superseded request', async () => {
