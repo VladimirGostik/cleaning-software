@@ -3,12 +3,16 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DocumentSheet from '@/Components/Documents/DocumentSheet.vue';
 
-const props = defineProps<{
-    preview: App.Data.Documents.DocumentRenderData | null;
-    loading: boolean;
-    error: string | null;
-    tokens: readonly App.Data.DocumentTemplates.DocumentTokenData[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        preview: App.Data.Documents.DocumentRenderData | null;
+        loading: boolean;
+        error: string | null;
+        tokens: readonly App.Data.DocumentTemplates.DocumentTokenData[];
+        variant?: 'letterhead' | 'kegos';
+    }>(),
+    { variant: 'letterhead' },
+);
 
 const { t } = useI18n();
 
@@ -37,6 +41,7 @@ const unknownTokens = computed(() => props.preview?.unknown_tokens ?? []);
                 :tokens="tokens"
                 :letterhead="preview.letterhead"
                 :footer="preview.footer"
+                :variant="variant"
             />
         </div>
         <p v-else-if="!loading && !error" class="shrink-0 text-sm text-base-content/60">

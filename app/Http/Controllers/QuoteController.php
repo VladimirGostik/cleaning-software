@@ -196,6 +196,17 @@ final class QuoteController extends Controller
     #[Authorize('downloadPdf', 'quote')]
     public function pdf(Quote $quote, RendersQuotePdf $pdfService): Response
     {
+        return $this->pdfResponse($quote, $pdfService, HeaderUtils::DISPOSITION_ATTACHMENT);
+    }
+
+    #[Authorize('downloadPdf', 'quote')]
+    public function preview(Quote $quote, RendersQuotePdf $pdfService): Response
+    {
+        return $this->pdfResponse($quote, $pdfService, HeaderUtils::DISPOSITION_INLINE);
+    }
+
+    private function pdfResponse(Quote $quote, RendersQuotePdf $pdfService, string $disposition): Response
+    {
         if ($quote->kind === QuoteKindEnum::Document) {
             $media = $quote->document?->getFirstMedia('file');
 
@@ -210,21 +221,17 @@ final class QuoteController extends Controller
                     fpassthru($stream);
                 },
                 $media->file_name,
-                ['Content-Type' => (string) $media->mime_type],
+                ['Content-Type' => (string) $media->mime_type, 'Cache-Control' => 'private, no-store'],
+                $disposition,
             );
         }
 
-        $pdfContent = $pdfService->render($quote);
-
         $filename = $quote->pdfFilenameBase().'.pdf';
 
-        return response($pdfContent, 200, [
+        return response($pdfService->render($quote), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => HeaderUtils::makeDisposition(
-                HeaderUtils::DISPOSITION_ATTACHMENT,
-                $filename,
-                Str::ascii($filename),
-            ),
+            'Content-Disposition' => HeaderUtils::makeDisposition($disposition, $filename, Str::ascii($filename)),
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 
@@ -239,6 +246,8 @@ final class QuoteController extends Controller
 
     private function formContext(Tenant $tenant, ?string $keepObjectId = null): QuoteFormContextData
     {
+        $default = $this->text->defaultTemplate($tenant->id);
+
         return QuoteFormContextData::fromTenant(
             $tenant,
             $this->clientOptions(),
@@ -248,6 +257,8 @@ final class QuoteController extends Controller
                 $this->templates->options(DocumentTypeEnum::Quote),
             ),
             $this->text->tokens(),
+            $default?->id,
+            $this->text->bodyOf($default),
         );
     }
 }

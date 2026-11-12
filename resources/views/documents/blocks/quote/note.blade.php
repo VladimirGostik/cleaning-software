@@ -1,0 +1,1 @@
+@if (filled($text ?? null))<p style="margin: 3.5mm 0 3mm 0; font-size: 8pt; letter-spacing: 0.22em; font-weight: 600; color: #FF5A1F; text-transform: uppercase;">{{ $label }}</p><p style="margin: 0; white-space: pre-line;">{{ $text }}</p>@endif

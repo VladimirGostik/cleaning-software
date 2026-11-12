@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import ListIcon from '~icons/material-symbols/list-alt-outline-rounded';
+import DocumentIcon from '~icons/material-symbols/description-outline-rounded';
 
-import RadioGroup, { type RadioOption } from '@/Components/Forms/RadioGroup.vue';
+import ViewModeSwitch from '@/Components/ViewModeSwitch.vue';
 import QuoteKindBadge from './QuoteKindBadge.vue';
-import { enumOptions, QUOTE_KINDS, quoteKindKey } from '@/utils/enums';
+import { QUOTE_KINDS, quoteKindKey } from '@/utils/enums';
 
 const props = defineProps<{
     modelValue: App.Enums.QuoteKindEnum;
@@ -18,34 +20,25 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const kindOptions = computed<RadioOption[]>(() => enumOptions(QUOTE_KINDS, quoteKindKey, t));
+const icons = { itemized: ListIcon, document: DocumentIcon } as const;
 
-const hintKey = computed(() =>
-    props.modelValue === 'document' ? 'quote_kind_document_hint' : 'quote_kind_itemized_hint',
+const options = computed(() =>
+    QUOTE_KINDS.map((kind) => ({ value: kind, label: t(quoteKindKey(kind)), icon: icons[kind] })),
 );
-
-function onSelect(value: string): void {
-    emit('update:modelValue', value as App.Enums.QuoteKindEnum);
-}
 </script>
 
 <template>
-    <div v-if="!props.locked" class="space-y-2">
-        <RadioGroup
+    <div v-if="!props.locked" :class="{ 'pointer-events-none opacity-60': props.disabled }">
+        <ViewModeSwitch
             :model-value="props.modelValue"
+            :options="options"
             :label="t('quote_form_kind')"
-            :options="kindOptions"
-            :disabled="props.disabled"
-            @update:model-value="onSelect"
+            @update:model-value="emit('update:modelValue', $event as App.Enums.QuoteKindEnum)"
         />
-        <p class="text-xs text-base-content/60">{{ t(hintKey) }}</p>
     </div>
 
-    <div v-else class="space-y-2">
-        <h2 class="card-title text-base">
-            {{ t('quote_kind') }}
-            <QuoteKindBadge :kind="props.modelValue" />
-        </h2>
-        <p class="text-xs text-base-content/60">{{ t('quote_kind_locked') }}</p>
+    <div v-else class="flex items-center gap-2" :title="t('quote_kind_locked')">
+        <span class="text-sm text-base-content/70">{{ t('quote_kind') }}</span>
+        <QuoteKindBadge :kind="props.modelValue" />
     </div>
 </template>

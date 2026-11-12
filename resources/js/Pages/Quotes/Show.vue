@@ -21,8 +21,11 @@ import QuoteConvertToContractModal from '@/Components/Quotes/QuoteConvertToContr
 import QuoteItemsTable from '@/Components/Quotes/QuoteItemsTable.vue';
 import QuoteTotalsSplit from '@/Components/Quotes/QuoteTotalsSplit.vue';
 import QuoteIncludedList from '@/Components/Quotes/QuoteIncludedList.vue';
+import DocumentPdfPreviewModal from '@/Components/Documents/DocumentPdfPreviewModal.vue';
 
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
+import { useDocumentPdfPreview } from '@/Composables/useDocumentPdfPreview';
+import { getBlob } from '@/utils/http';
 import { formatDate } from '@/utils/date';
 import { periodTotalsFromData } from '@/utils/quoteBilling';
 import type { Breadcrumb } from '@/types';
@@ -35,6 +38,10 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+
+const pdf = useDocumentPdfPreview({
+    load: (signal) => getBlob(`/quotes/${props.quote.id}/preview`, { signal }),
+});
 
 const periodTotals = computed(() => periodTotalsFromData(props.quote.period_totals));
 
@@ -137,6 +144,9 @@ function duplicate(): void {
                             :currency="quote.currency"
                             :is-vat-payer="quote.is_vat_payer"
                         />
+                        <p v-if="!quote.show_totals" class="text-xs text-base-content/60">
+                            {{ t('quote_totals_not_printed') }}
+                        </p>
 
                         <QuoteIncludedList :text="quote.included_text" />
                     </template>
@@ -160,6 +170,7 @@ function duplicate(): void {
                 @delete="deleteConfirm.openModal(quote)"
                 @convert-invoice="onConvertInvoice"
                 @convert-contract="ui.convertContractOpen = true"
+                @preview="pdf.open"
             />
             <QuoteLinksCard :quote="quote" />
 
@@ -175,6 +186,14 @@ function duplicate(): void {
     </div>
 
     <QuoteTextDocumentPanel v-if="quote.text_document" class="mt-6" :text-document="quote.text_document" />
+
+    <DocumentPdfPreviewModal
+        :is-open="pdf.isOpen.value"
+        :pdf-url="pdf.pdfUrl.value"
+        :loading="pdf.loading.value"
+        :error="pdf.error.value"
+        @close="pdf.close"
+    />
 
     <ConfirmDeleteModal
         :is-open="sendConfirm.state.isOpen"

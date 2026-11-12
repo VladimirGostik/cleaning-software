@@ -11,7 +11,6 @@ use App\Models\Tenant;
 use App\Services\Documents\DocumentLocale;
 use App\Services\Documents\DocumentPdfRenderer;
 use App\Services\Documents\QuoteTextService;
-use Spatie\LaravelPdf\Facades\Pdf;
 
 final readonly class QuotePdfService implements RendersQuotePdf
 {
@@ -26,31 +25,33 @@ final readonly class QuotePdfService implements RendersQuotePdf
     {
         $quote->loadMissing(['items', 'client', 'cleaningObject', 'document']);
 
+        return $this->generate(
+            $quote,
+            $this->text->printBody($quote),
+            $quote->textDocument()->show_header ?? true,
+            $quote->textDocument()->show_footer ?? true,
+        );
+    }
+
+    /** PDF of an unsaved quote (form preview) with the text the form would store. */
+    public function renderPreview(Quote $quote, string $tokenBody, bool $showHeader, bool $showFooter): string
+    {
+        return $this->generate($quote, $this->text->printBody($quote, $tokenBody), $showHeader, $showFooter);
+    }
+
+    private function generate(Quote $quote, string $body, bool $showHeader, bool $showFooter): string
+    {
         // Not `current_tenant_id()` — rendering must also work from queue/console callers with no bound tenant.
         $tenant = Tenant::withoutGlobalScopes()->findOrFail($quote->tenant_id);
 
-        $body = $this->text->resolvedBody($quote);
-
-        if ($body !== null && $quote->document !== null) {
-            return $this->pdf->render(
-                $quote->subject ?? $quote->number ?? $this->locale->run(fn (): string => __('app.quote_pdf_title')),
-                $body,
-                $tenant,
-                DocumentTypeEnum::Quote,
-                $quote->document->show_header,
-                $quote->document->show_footer,
-            );
-        }
-
-        return $this->locale->run(fn (): string => Pdf::view('pdf.quotes.default', [
-            'quote' => $quote,
-            'tenant' => $tenant,
-        ])
-            ->format('A4')
-            ->portrait()
-            ->headerHtml('<div></div>')
-            ->footerView('pdf.quotes.footer', ['tenant' => $tenant])
-            ->margins(14, 18, 20, 18)
-            ->generatePdfContent());
+        return $this->pdf->render(
+            $quote->subject ?? $quote->number ?? $this->locale->run(fn (): string => __('app.quote_pdf_title')),
+            $body,
+            $tenant,
+            DocumentTypeEnum::Quote,
+            $showHeader,
+            $showFooter,
+            $quote->number,
+        );
     }
 }

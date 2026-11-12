@@ -44,6 +44,8 @@ final class QuoteFormContextData extends Data
         /** @var string[] */
         public readonly array $footer,
         public readonly ?string $default_included_text,
+        public readonly ?string $default_template_id,
+        public readonly string $default_body,
     ) {}
 
     /**
@@ -52,7 +54,7 @@ final class QuoteFormContextData extends Data
      * @param  array<int, QuoteTemplateOptionData>  $templates
      * @param  array<int, DocumentTokenData>  $tokens
      */
-    public static function fromTenant(Tenant $tenant, array $clients, array $objects, array $templates, array $tokens): self
+    public static function fromTenant(Tenant $tenant, array $clients, array $objects, array $templates, array $tokens, ?string $defaultTemplateId, string $defaultBody): self
     {
         /** @var array<int, float> $vatRateOptions */
         $vatRateOptions = array_map(
@@ -82,8 +84,10 @@ final class QuoteFormContextData extends Data
             templates: $templates,
             tokens: $tokens,
             letterhead: DocumentFrame::letterhead($tenant),
-            footer: DocumentFrame::footer($tenant),
+            footer: DocumentFrame::quoteFooter($tenant),
             default_included_text: $tenant->interface?->default_quote_included_text,
+            default_template_id: $defaultTemplateId,
+            default_body: $defaultBody,
         );
     }
 }

@@ -21,7 +21,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Name('update_quote_draft')]
-#[Description('Changes a draft quote. Omitted fields stay as they are; items, when given, replace all lines. Only drafts are editable.')]
+#[Description('Changes a draft quote. Omitted fields stay as they are (the quote text and print options too); items, when given, replace all lines. Only drafts are editable.')]
 #[IsDestructive]
 final class UpdateQuoteDraftTool extends TenantTool
 {
@@ -38,7 +38,7 @@ final class UpdateQuoteDraftTool extends TenantTool
 
         Gate::forUser($user)->authorize('update', $quote);
 
-        // The web editor may reopen a sent quote; this tool sends no text document, so it stays draft-only.
+        // The web editor may reopen a sent quote; this tool stays draft-only.
         if ($quote->status !== QuoteStatusEnum::Draft) {
             throw ValidationException::withMessages(['status' => [__('app.quote_not_editable')]]);
         }

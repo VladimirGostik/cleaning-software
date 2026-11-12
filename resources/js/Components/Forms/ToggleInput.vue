@@ -11,6 +11,7 @@ const props = defineProps<{
     label: string;
     error?: string | null;
     disabled?: boolean;
+    labelClass?: string;
 }>();
 
 const emit = defineEmits<{
@@ -38,7 +39,7 @@ function onNativeChange(event: Event) {
 
 <template>
     <fieldset class="fieldset">
-        <legend class="fieldset-legend">{{ label }}</legend>
+        <legend class="fieldset-legend" :class="labelClass">{{ label }}</legend>
         <input
             v-bind="$attrs"
             :checked="resolvedValue"

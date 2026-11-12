@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
 use App\Models\DocumentTemplate;
+use App\Services\Documents\DocumentTemplateCatalogue;
 use Illuminate\Database\Seeder;
 
 final class DocumentTemplateSeeder extends Seeder
@@ -353,26 +354,7 @@ final class DocumentTemplateSeeder extends Seeder
 
     private function quote(): string
     {
-        return $this->heading('Cenová ponuka {{quote.number}}')
-            .'<p><strong>Pre:</strong> {{customer.name}}</p>'
-            .'<p>{{customer.address}}</p>'
-            .'<p>{{customer.email}}</p>'
-            .'<p>Dátum vystavenia: {{quote.issue_date}}</p>'
-            .'<p>{{quote.subject}}</p>'
-            .'<p>{{if.has_object}}Objekt: {{object.name}}, {{object.address}}</p>'
-            .'<h2>Ponúkané služby</h2>'
-            .'<p>{{block.quote_items}}</p>'
-            .'<p>{{block.quote_totals}}</p>'
-            .'<h2>Podmienky ponuky</h2>'
-            .$this->list([
-                'Ponuka platí do {{quote.valid_until}}.',
-                'Ponuka má informatívny charakter a nie je návrhom na uzavretie zmluvy podľa § 43a ods. 1 zákona č. 40/1964 Zb. Občiansky zákonník v znení neskorších predpisov. Záväzok poskytnúť služby vznikne až uzavretím písomnej zmluvy.',
-                'Ceny vychádzajú z údajov známych v deň vystavenia ponuky. Pri zmene rozsahu alebo podmienok služieb možno ponuku upraviť.',
-                '{{if.vat_payer}}K cene bez dane sa pripočítava daň z pridanej hodnoty v sadzbe podľa právnych predpisov účinných ku dňu dodania služby.',
-                'Podpis na tejto ponuke potvrdzuje záujem o ponúkané služby a nie je uzavretím zmluvy.',
-            ])
-            .'<p>{{quote.note}}</p>'
-            .'<p>{{block.signatures}}</p>';
+        return app(DocumentTemplateCatalogue::class)->skeleton(DocumentTypeEnum::Quote);
     }
 
     private function employmentParties(): string

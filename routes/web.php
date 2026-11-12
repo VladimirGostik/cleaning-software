@@ -33,6 +33,7 @@ use App\Http\Controllers\PendingActionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileMcpTokenController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuotePreviewController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ScheduledJobController;
@@ -178,6 +179,13 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::post('/quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate')->whereUuid('quote');
     Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice'])->name('quotes.convert-to-invoice')->whereUuid('quote');
     Route::get('/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('quotes.pdf')->whereUuid('quote');
+    Route::middleware(['throttle:document-preview'])->group(function (): void {
+        Route::get('/quotes/{quote}/preview', [QuoteController::class, 'preview'])->name('quotes.preview')->whereUuid('quote');
+        Route::post('/quotes/preview-pdf', [QuotePreviewController::class, 'pdf'])->name('quotes.preview-pdf');
+        Route::post('/quotes/{quote}/preview-pdf', [QuotePreviewController::class, 'pdfFor'])->name('quotes.preview-pdf.existing')->whereUuid('quote');
+        Route::post('/quotes/text-preview', [QuotePreviewController::class, 'text'])->name('quotes.text-preview');
+        Route::post('/quotes/{quote}/text-preview', [QuotePreviewController::class, 'textFor'])->name('quotes.text-preview.existing')->whereUuid('quote');
+    });
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/quotes', [QuoteController::class, 'store'])->name('quotes.store');
         Route::match(['PUT', 'PATCH'], '/quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update')->whereUuid('quote');

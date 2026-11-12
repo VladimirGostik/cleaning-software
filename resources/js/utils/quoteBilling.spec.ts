@@ -101,7 +101,7 @@ describe('display helpers', () => {
     it('labels a single monthly item', () => {
         const row = item({ billing_period: 'monthly', unit_price: 70 });
         expect(quoteQuantityLabel(row, t, 'sk')).toBe('mesačne');
-        expect(quoteUnitPriceLabel(row, 'EUR', t, money, 'sk')).toBe('70,00 € / mesiac');
+        expect(quoteUnitPriceLabel(row, 'EUR', t, money, 'sk')).toBe('70,00 € / mes.');
         expect(quoteLineAmountLabel(row, false, 'EUR', t, money)).toBe('70,00 € / mes.');
     });
 
@@ -142,10 +142,26 @@ describe('display helpers', () => {
         expect(quoteUnitPriceLabel(row, 'EUR', t, money, 'sk')).toBe('70,00 € / upratovanie');
     });
 
-    it('uses the period noun for a recurring single item without a unit', () => {
-        expect(quoteUnitPriceLabel(item({ billing_period: 'monthly' }), 'EUR', t, money, 'sk')).toBe(
-            '100,00 € / mesiac',
+    it('uses the short suffix for a recurring single item without a unit', () => {
+        expect(quoteUnitPriceLabel(item({ billing_period: 'monthly' }), 'EUR', t, money, 'sk')).toBe('100,00 € / mes.');
+    });
+
+    it('treats the period word as no unit on a recurring single item', () => {
+        expect(quoteUnitPriceLabel(item({ billing_period: 'monthly', unit: 'Mesiac' }), 'EUR', t, money, 'sk')).toBe(
+            '100,00 € / mes.',
         );
+        expect(quoteUnitPriceLabel(item({ billing_period: 'yearly', unit: 'rok' }), 'EUR', t, money, 'sk')).toBe(
+            '100,00 € / rok',
+        );
+    });
+
+    it('keeps a real unit and the unit of a multiple recurring item', () => {
+        expect(quoteUnitPriceLabel(item({ billing_period: 'monthly', unit: 'paušál' }), 'EUR', t, money, 'sk')).toBe(
+            '100,00 € / paušál',
+        );
+        expect(
+            quoteUnitPriceLabel(item({ billing_period: 'monthly', quantity: 2, unit: 'mes.' }), 'EUR', t, money, 'sk'),
+        ).toBe('100,00 € / mes.');
     });
 
     it('prints no unit for a recurring multiple item without a unit', () => {

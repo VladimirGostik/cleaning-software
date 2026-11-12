@@ -13,6 +13,12 @@ const props = defineProps<{
     currency: App.Enums.CurrencyEnum;
     isVatPayer: boolean;
     periodTotals: readonly QuotePeriodTotals[];
+    showTotals: boolean;
+    previewLoading: boolean;
+}>();
+
+const emit = defineEmits<{
+    preview: [];
 }>();
 
 const { t } = useI18n();
@@ -47,6 +53,20 @@ const { t } = useI18n();
                 :currency="props.currency"
                 :is-vat-payer="props.isVatPayer"
             />
+            <p v-if="props.kind === 'itemized' && !props.showTotals" class="text-xs text-base-content/60">
+                {{ t('quote_totals_not_printed') }}
+            </p>
+
+            <button
+                v-if="props.kind === 'itemized'"
+                type="button"
+                class="btn btn-sm btn-neutral w-full"
+                :disabled="props.previewLoading"
+                @click="emit('preview')"
+            >
+                <span v-if="props.previewLoading" class="loading loading-spinner loading-xs" />
+                {{ t('preview') }}
+            </button>
         </div>
     </div>
 </template>

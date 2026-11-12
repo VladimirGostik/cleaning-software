@@ -389,4 +389,23 @@ final class McpToolsReadTest extends TestCase
 
         $this->artisanCommand('schedule:list')->expectsOutputToContain('sanctum:prune-expired --hours=24')->assertSuccessful();
     }
+
+    public function test_get_quote_returns_the_buyer_fields_and_flags(): void
+    {
+        $quote = Quote::factory()->withoutClient()->create([
+            'tenant_id' => $this->alpha->id,
+            'customer_represented_by' => 'Správca',
+            'customer_ico' => '1',
+            'customer_dic' => '2',
+            'show_totals' => false,
+        ]);
+
+        $result = $this->callTool($this->token, 'get_quote', ['company_id' => $this->alpha->id, 'quote_id' => $quote->id]);
+
+        $this->assertSame('Správca', $result->get('customer_represented_by'));
+        $this->assertSame('1', $result->get('customer_ico'));
+        $this->assertSame('2', $result->get('customer_dic'));
+        $this->assertFalse($result->get('show_totals'));
+        $this->assertTrue($result->get('show_vat_note'));
+    }
 }

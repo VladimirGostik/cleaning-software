@@ -16,6 +16,7 @@ final class DocumentStyleAttributeSanitizer implements AttributeSanitizerInterfa
         'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
         'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-collapse', 'border-spacing',
         'border-color', 'border-style', 'border-width', 'white-space', 'table-layout',
+        'letter-spacing', 'text-transform', 'font-variant-numeric', 'page-break-inside',
     ];
 
     public function getSupportedElements(): ?array

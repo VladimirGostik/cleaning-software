@@ -3,9 +3,12 @@ import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import FieldError from '@/Components/Forms/FieldError.vue';
-import RadioGroup, { type RadioOption } from '@/Components/Forms/RadioGroup.vue';
 import SelectInput, { type SelectOption } from '@/Components/Forms/SelectInput.vue';
 import { useFormContext } from '@/Components/Forms/useFormContext';
+import ViewModeSwitch from '@/Components/ViewModeSwitch.vue';
+import PersonIcon from '~icons/material-symbols/person-outline-rounded';
+import ApartmentIcon from '~icons/material-symbols/apartment-outline-rounded';
+import EditNoteIcon from '~icons/material-symbols/edit-note-outline-rounded';
 import QuoteManualRecipientFields from './QuoteManualRecipientFields.vue';
 
 export type QuoteSubjectMode = 'client' | 'object' | 'manual';
@@ -16,6 +19,9 @@ const SNAPSHOT_FIELDS = [
     'customer_street',
     'customer_city',
     'customer_postal_code',
+    'customer_represented_by',
+    'customer_ico',
+    'customer_dic',
 ] as const;
 
 const props = defineProps<{
@@ -31,10 +37,10 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const form = useFormContext();
 
-const modeOptions = computed<RadioOption[]>(() => [
-    { value: 'client', label: t('quote_subject_mode_client') },
-    { value: 'object', label: t('quote_subject_mode_object') },
-    { value: 'manual', label: t('quote_subject_mode_manual') },
+const modeOptions = computed(() => [
+    { value: 'client', label: t('quote_subject_mode_client'), icon: PersonIcon },
+    { value: 'object', label: t('quote_subject_mode_object'), icon: ApartmentIcon },
+    { value: 'manual', label: t('quote_subject_mode_manual'), icon: EditNoteIcon },
 ]);
 
 const clientOptions = computed<SelectOption[]>(() => props.clients.map((c) => ({ value: c.id, label: c.name })));
@@ -89,32 +95,36 @@ if (form) {
 
 <template>
     <div class="space-y-4">
-        <RadioGroup
-            :model-value="props.mode"
-            :label="t('quote_subject_mode')"
-            :options="modeOptions"
-            @update:model-value="onModeChange"
-        />
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <slot name="leading" />
+            <ViewModeSwitch
+                :model-value="props.mode"
+                :label="t('quote_subject_mode')"
+                :options="modeOptions"
+                @update:model-value="onModeChange"
+            />
+        </div>
 
-        <SelectInput
-            v-if="props.mode === 'client' || props.mode === 'object'"
-            field="client_id"
-            :label="t('client')"
-            :options="clientOptions"
-            :placeholder="t('select_client')"
-            required
-        />
+        <div v-if="props.mode !== 'manual'" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <SelectInput
+                field="client_id"
+                :label="t('client')"
+                :options="clientOptions"
+                :placeholder="t('select_client')"
+                required
+            />
+
+            <SelectInput
+                v-if="props.mode === 'object'"
+                field="cleaning_object_id"
+                :label="t('quote_object')"
+                :options="objectOptions"
+                :placeholder="t('invoice_select_object')"
+                :disabled="!selectedClientId"
+                required
+            />
+        </div>
         <FieldError v-if="props.mode !== 'manual'" field="customer_name" />
-
-        <SelectInput
-            v-if="props.mode === 'object'"
-            field="cleaning_object_id"
-            :label="t('quote_object')"
-            :options="objectOptions"
-            :placeholder="t('invoice_select_object')"
-            :disabled="!selectedClientId"
-            required
-        />
 
         <QuoteManualRecipientFields v-if="props.mode === 'manual'" />
     </div>

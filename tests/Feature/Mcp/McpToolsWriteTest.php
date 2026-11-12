@@ -11,6 +11,7 @@ use App\Enums\ExpenseStatusEnum;
 use App\Enums\TaskSourceEnum;
 use App\Enums\TaskStatusEnum;
 use App\Models\Client;
+use App\Models\DocumentTemplate;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -194,6 +195,60 @@ final class McpToolsWriteTest extends TestCase
         $this->assertSame('30.00', $quote->total);
         $this->assertSame($client->id, $quote->client_id);
         $this->assertCount(1, $quote->items);
+    }
+
+    public function test_create_quote_draft_stores_the_buyer_fields_flags_and_template_text(): void
+    {
+        $template = DocumentTemplate::factory()->global()->quote()->create(['body' => '<p>{{customer.name}}</p><p>{{block.quote_items}}</p>']);
+
+        $created = $this->callTool($this->token, 'create_quote_draft', [
+            'company_id' => $this->alpha->id,
+            'customer_name' => 'Dom Rajčianska 32',
+            'customer_represented_by' => 'Správca s.r.o.',
+            'customer_ico' => '35683073',
+            'customer_dic' => '2020905865',
+            'show_totals' => false,
+            'show_vat_note' => false,
+            'issue_date' => '2026-11-02',
+            'valid_until' => '2026-12-02',
+            'items' => [['description' => 'Windows', 'quantity' => 1, 'unit_price' => 30]],
+        ]);
+
+        $this->assertFalse($created->isError, $created->text);
+        $quote = Quote::findOrFail($created->string('id'));
+        $this->assertSame('Dom Rajčianska 32', $quote->customer_name);
+        $this->assertSame(['Správca s.r.o.', '35683073', '2020905865'], [$quote->customer_represented_by, $quote->customer_ico, $quote->customer_dic]);
+        $this->assertFalse($quote->show_totals);
+        $this->assertFalse($quote->show_vat_note);
+        $this->assertSame($template->body, $quote->textDocument()?->body);
+        $this->assertSame($template->id, $quote->textDocument()->document_template_id);
+    }
+
+    public function test_update_quote_draft_that_changes_only_valid_until_keeps_the_text_and_the_flags(): void
+    {
+        $create = $this->callTool($this->token, 'create_quote_draft', [
+            'company_id' => $this->alpha->id,
+            'customer_name' => 'Acme',
+            'show_totals' => false,
+            'issue_date' => '2026-11-02',
+            'valid_until' => '2026-12-02',
+            'items' => [['description' => 'Windows', 'quantity' => 1, 'unit_price' => 30]],
+        ]);
+        $quote = Quote::findOrFail($create->string('id'));
+        $quote->textDocument()?->update(['body' => '<p>{{quote.subject}} edited</p>', 'show_header' => false]);
+
+        $result = $this->callTool($this->token, 'update_quote_draft', [
+            'company_id' => $this->alpha->id,
+            'quote_id' => $quote->id,
+            'valid_until' => '2026-12-20',
+        ]);
+
+        $this->assertFalse($result->isError, $result->text);
+        $quote->refresh();
+        $this->assertSame('2026-12-20', $quote->valid_until->toDateString());
+        $this->assertSame('<p>{{quote.subject}} edited</p>', $quote->textDocument()?->body);
+        $this->assertFalse((bool) $quote->textDocument()->show_header);
+        $this->assertFalse($quote->show_totals);
     }
 
     public function test_quote_draft_keeps_billing_period_per_row_and_returns_period_totals(): void

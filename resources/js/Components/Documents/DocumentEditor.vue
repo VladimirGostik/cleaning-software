@@ -9,8 +9,9 @@ withDefaults(
         letterhead?: App.Data.Documents.DocumentLetterheadData | null;
         footer?: string[];
         settingsUrl?: string | null;
+        variant?: 'letterhead' | 'kegos';
     }>(),
-    { letterhead: null, footer: () => [], settingsUrl: null },
+    { letterhead: null, footer: () => [], settingsUrl: null, variant: 'letterhead' },
 );
 </script>
 
@@ -26,10 +27,16 @@ withDefaults(
             </div>
         </div>
         <div class="document-desk min-h-0 flex-1">
-            <article class="document-page flex flex-col">
-                <DocumentFrame part="header" :letterhead="letterhead" :settings-url="settingsUrl" labelled />
+            <article class="document-page flex flex-col" :class="{ 'document-page--quote': variant === 'kegos' }">
+                <DocumentFrame
+                    part="header"
+                    :letterhead="letterhead"
+                    :variant="variant"
+                    :settings-url="settingsUrl"
+                    labelled
+                />
                 <EditorContent v-if="editor" :editor="editor" class="flex flex-1 flex-col" />
-                <DocumentFrame part="footer" :footer="footer" :settings-url="settingsUrl" labelled />
+                <DocumentFrame part="footer" :footer="footer" :variant="variant" :settings-url="settingsUrl" labelled />
             </article>
         </div>
     </div>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import CustomerPartyDetails from '@/Components/Invoices/CustomerPartyDetails.vue';
 import QuoteRoughBadge from './QuoteRoughBadge.vue';
 
 const props = defineProps<{
@@ -8,6 +10,9 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+
+const buyerName = computed(() => props.quote.buyer.name ?? props.quote.customer_name);
+const linksToClient = computed(() => props.quote.client_id !== null && props.quote.buyer.source === 'client');
 </script>
 
 <template>
@@ -16,22 +21,14 @@ const { t } = useI18n();
             <h3 class="text-sm font-semibold text-base-content/70">{{ t('quote_section_customer') }}</h3>
 
             <p class="flex items-center gap-2 font-medium">
-                <Link v-if="props.quote.client_id" :href="`/clients/${props.quote.client_id}`" class="link link-hover">
-                    {{ props.quote.customer_name }}
+                <Link v-if="linksToClient" :href="`/clients/${props.quote.client_id}`" class="link link-hover">
+                    {{ buyerName }}
                 </Link>
-                <span v-else>{{ props.quote.customer_name }}</span>
+                <span v-else>{{ buyerName }}</span>
                 <QuoteRoughBadge v-if="props.quote.client_id === null" />
             </p>
 
-            <template v-if="props.quote.client_id === null">
-                <p v-if="props.quote.customer_street">{{ props.quote.customer_street }}</p>
-                <p v-if="props.quote.customer_postal_code || props.quote.customer_city">
-                    {{ [props.quote.customer_postal_code, props.quote.customer_city].filter(Boolean).join(' ') }}
-                </p>
-                <p v-if="props.quote.customer_email" class="text-sm text-base-content/60">
-                    {{ props.quote.customer_email }}
-                </p>
-            </template>
+            <CustomerPartyDetails :party="{ ...props.quote.buyer, name: null }" />
         </div>
 
         <div>

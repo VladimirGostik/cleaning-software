@@ -68,6 +68,14 @@ export function quoteQuantityLabel(
     return item.quantity === 1 ? adverb : `${quantity}× ${adverb}`;
 }
 
+function isPeriodWordOrEmpty(item: Pick<QuoteBillingItem, 'billing_period'>, unit: string, t: Translate): boolean {
+    if (unit === '') return true;
+
+    const words = [t(quoteBillingUnitKey(item.billing_period)), t(quoteBillingSuffixKey(item.billing_period))];
+
+    return words.some((word) => word.toLowerCase() === unit.toLowerCase());
+}
+
 export function quoteUnitPriceLabel(
     item: Pick<QuoteBillingItem, 'billing_period' | 'quantity' | 'unit' | 'unit_price' | 'discount_percent'>,
     currency: App.Enums.CurrencyEnum,
@@ -76,11 +84,12 @@ export function quoteUnitPriceLabel(
     locale: string,
 ): string {
     let label = money(item.unit_price, currency);
+    const unit = (item.unit ?? '').trim();
 
-    if (item.unit) {
-        label += ` / ${item.unit}`;
-    } else if (isRecurringPeriod(item.billing_period) && item.quantity === 1) {
-        label += ` / ${t(quoteBillingUnitKey(item.billing_period))}`;
+    if (isRecurringPeriod(item.billing_period) && toNumber(item.quantity) === 1 && isPeriodWordOrEmpty(item, unit, t)) {
+        label += ` / ${t(quoteBillingSuffixKey(item.billing_period))}`;
+    } else if (unit !== '') {
+        label += ` / ${unit}`;
     }
 
     if (item.discount_percent > 0) {

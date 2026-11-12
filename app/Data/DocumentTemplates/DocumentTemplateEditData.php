@@ -40,6 +40,8 @@ final class DocumentTemplateEditData extends Data
         public readonly DocumentLetterheadData $letterhead,
         /** @var string[] */
         public readonly array $footer,
+        /** @var string[] */
+        public readonly array $quote_footer,
         public readonly DocumentTemplateCanData $can,
     ) {}
 
@@ -64,6 +66,7 @@ final class DocumentTemplateEditData extends Data
             tokens: $catalogue->forType($template->type),
             letterhead: DocumentFrame::letterhead($tenant),
             footer: DocumentFrame::footer($tenant),
+            quote_footer: DocumentFrame::quoteFooter($tenant),
             can: new DocumentTemplateCanData(
                 update: $user->can('update', $template),
                 delete: $user->can('delete', $template),

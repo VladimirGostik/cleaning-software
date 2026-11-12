@@ -1,0 +1,10 @@
+<table style="width: 100%; border-collapse: collapse; margin: 0 0 3.5mm 0;"><thead><tr>
+<th style="text-align: left; padding: 0 0 2mm 0; font-size: 8pt; font-weight: 500; color: #5A6661; letter-spacing: 0.06em; border-bottom: 1px solid #C9CFCC;">{{ $headers['service'] }}</th>
+<th style="text-align: center; width: 26mm; padding: 0 0 2mm 3mm; font-size: 8pt; font-weight: 500; color: #5A6661; letter-spacing: 0.06em; border-bottom: 1px solid #C9CFCC;">{{ $headers['quantity'] }}</th>
+<th style="text-align: right; width: 42mm; padding: 0 0 2mm 3mm; font-size: 8pt; font-weight: 500; color: #5A6661; letter-spacing: 0.06em; border-bottom: 1px solid #C9CFCC;">{{ $headers['unit_price'] }}</th>
+<th style="text-align: right; width: 37mm; padding: 0 0 2mm 3mm; font-size: 8pt; font-weight: 500; color: #5A6661; letter-spacing: 0.06em; border-bottom: 1px solid #C9CFCC;">{{ $headers['total'] }}</th>
+</tr></thead><tbody>
+@foreach ($rows as $row)
+<tr style="page-break-inside: avoid;"><td style="padding: 1.9mm 0; border-bottom: 1px solid #E9ECEA;"><p style="margin: 0; font-size: 10.5pt; font-weight: 600;">{{ $row['description'] }}</p>@if (filled($row['note']))<p style="margin: 0.9mm 0 0 0; padding-right: 6mm; font-size: 9pt; color: #5A6661; white-space: pre-line;">{{ $row['note'] }}</p>@endif</td><td style="text-align: center; width: 26mm; padding: 1.9mm 0 1.9mm 3mm; border-bottom: 1px solid #E9ECEA; color: #5A6661; white-space: nowrap;">{{ $row['quantity'] }}</td><td style="text-align: right; width: 42mm; padding: 1.9mm 0 1.9mm 3mm; border-bottom: 1px solid #E9ECEA; color: #5A6661; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ $row['unit_price'] }}</td><td style="text-align: right; width: 37mm; padding: 1.9mm 0 1.9mm 3mm; border-bottom: 1px solid #E9ECEA; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ $row['amount'] }}@if ($row['suffix']) <span style="font-weight: 400; color: #5A6661;">/ {{ $row['suffix'] }}</span>@endif</td></tr>
+@endforeach
+</tbody></table>

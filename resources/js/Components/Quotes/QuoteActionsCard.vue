@@ -9,6 +9,7 @@ import DocumentDuplicateIcon from '~icons/material-symbols/content-copy-outline-
 import PaperAirplaneIcon from '~icons/material-symbols/send-outline-rounded';
 import PencilSquareIcon from '~icons/material-symbols/edit-outline-rounded';
 import ReceiptPercentIcon from '~icons/material-symbols/request-quote-outline-rounded';
+import VisibilityIcon from '~icons/material-symbols/visibility-outline-rounded';
 import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import XCircleIcon from '~icons/material-symbols/cancel-outline-rounded';
 
@@ -28,6 +29,7 @@ const emit = defineEmits<{
     delete: [];
     convertInvoice: [];
     convertContract: [];
+    preview: [];
 }>();
 
 const { t } = useI18n();
@@ -131,6 +133,16 @@ const canConvertContract = computed(() => props.quote.client_id !== null && prop
                     </p>
                 </div>
             </Can>
+
+            <button
+                v-if="canDownloadPdf"
+                type="button"
+                class="btn btn-sm btn-neutral w-full justify-start"
+                @click="emit('preview')"
+            >
+                <VisibilityIcon class="size-5" />
+                {{ t('preview') }}
+            </button>
 
             <a
                 v-if="canDownloadPdf"

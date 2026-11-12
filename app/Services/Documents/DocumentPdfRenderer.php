@@ -29,8 +29,33 @@ final readonly class DocumentPdfRenderer
         DocumentTypeEnum $type,
         bool $showHeader = true,
         bool $showFooter = true,
+        ?string $reference = null,
     ): string {
-        return $this->locale->run(fn (): string => $this->generate($title, $bodyHtml, $tenant, $type, $showHeader, $showFooter));
+        return $this->locale->run(fn (): string => $type === DocumentTypeEnum::Quote
+            ? $this->generateQuote($title, $bodyHtml, $tenant, $showHeader, $showFooter, $reference)
+            : $this->generate($title, $bodyHtml, $tenant, $type, $showHeader, $showFooter));
+    }
+
+    private function generateQuote(
+        string $title,
+        string $bodyHtml,
+        Tenant $tenant,
+        bool $showHeader,
+        bool $showFooter,
+        ?string $reference,
+    ): string {
+        return Pdf::view('pdf.quotes.default', [
+            'title' => $title,
+            'body' => $this->renderer->highlightMissing($bodyHtml, DocumentTypeEnum::Quote),
+            'reference' => $reference,
+            'showHeader' => $showHeader,
+        ])
+            ->format('A4')
+            ->portrait()
+            ->headerHtml('<div></div>')
+            ->footerView('pdf.quotes.footer', ['show' => $showFooter, 'lines' => DocumentFrame::quoteFooter($tenant)])
+            ->margins(14, 18, 17, 18)
+            ->generatePdfContent();
     }
 
     private function generate(

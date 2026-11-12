@@ -13,6 +13,8 @@ defineProps<{
     tokens: App.Data.DocumentTemplates.DocumentTokenCatalogData;
     letterhead: App.Data.Documents.DocumentLetterheadData;
     footer: string[];
+    // eslint-disable-next-line vue/prop-name-casing -- prop name is the BE contract key
+    quote_footer: string[];
 }>();
 
 const { t } = useI18n();
@@ -34,5 +36,6 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
         :is-global="isGlobal"
         :letterhead="letterhead"
         :footer="footer"
+        :quote-footer="quote_footer"
     />
 </template>

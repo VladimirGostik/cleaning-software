@@ -15,6 +15,7 @@ use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
+use App\Support\CustomerParty;
 use App\Support\Formats;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\View;
@@ -102,7 +103,7 @@ final readonly class DocumentContextBuilder
 
         if ($quote !== null) {
             $quote->loadMissing(['items', 'client', 'cleaningObject']);
-            $values = [...$values, ...$this->quoteValues($quote)];
+            $values = [...$values, ...$this->quoteValues($quote, $tenant, $this->contractQuoteParty($quote))];
         }
 
         $flags = [
@@ -136,7 +137,7 @@ final readonly class DocumentContextBuilder
 
         $values = [
             ...$this->tenantValues($tenant),
-            ...$this->quoteValues($quote),
+            ...$this->quoteValues($quote, $tenant, CustomerParty::forQuote($quote)),
             'date.today' => now()->format(Formats::DATE),
         ];
 
@@ -152,8 +153,10 @@ final readonly class DocumentContextBuilder
                 'if.has_object' => $quote->cleaning_object_id !== null,
             ],
             [
-                'block.quote_items' => $this->quoteItemsBlock($quote),
-                'block.quote_totals' => $this->quoteTotalsBlock($quote),
+                'block.quote_parties' => $this->renderBlock('quote.parties', $this->quoteDisplay->partiesData($quote, $tenant)),
+                'block.quote_note' => $this->renderBlock('quote.note', $this->quoteDisplay->noteData($quote) ?? []),
+                'block.quote_items' => $this->renderBlock('quote.items', $this->quoteDisplay->itemsData($quote)),
+                'block.quote_totals' => $this->renderQuoteTotals($quote),
                 'block.signatures' => $this->signaturesBlock(),
             ],
         );
@@ -228,6 +231,10 @@ final readonly class DocumentContextBuilder
             'quote.number' => 'CP-2026-001',
             'quote.subject' => 'Pravidelné upratovanie',
             'quote.note' => 'Ceny sú uvedené bez DPH.',
+            'quote.dated_line' => 'Bratislava, '.__('app.quote_pdf_dated').' '.now()->format(Formats::DATE),
+            'customer.represented_by' => 'Správcovská s.r.o.',
+            'customer.ico' => '35683073',
+            'customer.dic' => '2020905865',
         ];
 
         $flags = [
@@ -251,7 +258,7 @@ final readonly class DocumentContextBuilder
                 'headers' => $this->quoteItemHeaders(),
                 'rows' => [
                     ['description' => 'Jednorazové umývanie okien', 'note' => 'Vrátane rámov a parapetov.', 'quantity' => '1×', 'unit_price' => '300,00 EUR', 'total' => '300,00 EUR'],
-                    ['description' => 'Pravidelné upratovanie kancelárií', 'note' => null, 'quantity' => 'mesačne', 'unit_price' => '120,00 EUR / mesiac', 'total' => '120,00 EUR / mes.'],
+                    ['description' => 'Pravidelné upratovanie kancelárií', 'note' => null, 'quantity' => 'mesačne', 'unit_price' => '120,00 EUR / mes.', 'total' => '120,00 EUR / mes.'],
                 ],
             ]),
             'block.quote_totals' => $this->renderBlock('quote-totals', [
@@ -262,7 +269,60 @@ final readonly class DocumentContextBuilder
             ]),
         ];
 
+        if ($type === DocumentTypeEnum::Quote) {
+            $blocks = [...$blocks, ...$this->quoteSampleBlocks($values)];
+        }
+
         return new DocumentRenderContext($values, $flags, $blocks);
+    }
+
+    /**
+     * @param  array<string, string|null>  $values
+     * @return array<string, string>
+     */
+    private function quoteSampleBlocks(array $values): array
+    {
+        $buyerLines = [
+            __('app.quote_pdf_represented_by').':',
+            $values['customer.represented_by'],
+            'Stredná 7',
+            '811 04 Bratislava',
+            __('app.quote_pdf_ico').': '.$values['customer.ico'],
+            __('app.quote_pdf_dic').': '.$values['customer.dic'],
+        ];
+
+        return [
+            'block.quote_parties' => $this->renderBlock('quote.parties', [
+                'provider' => ['label' => __('app.quote_pdf_provider'), 'name' => $values['tenant.name'], 'lines' => ['Hlavná 1', '811 01 Bratislava', __('app.quote_pdf_ico').': '.$values['tenant.ico'], __('app.quote_pdf_dic').': '.$values['tenant.dic']]],
+                'buyer' => ['label' => __('app.quote_pdf_orderer'), 'name' => $values['customer.name'], 'lines' => $buyerLines],
+                'dates' => [
+                    ['label' => __('app.quote_pdf_issue_date'), 'value' => (string) $values['quote.issue_date']],
+                    ['label' => __('app.quote_pdf_valid_until_long'), 'value' => (string) $values['quote.valid_until']],
+                ],
+            ]),
+            'block.quote_note' => $this->renderBlock('quote.note', ['label' => __('app.quote_pdf_note'), 'text' => $values['quote.note']]),
+            'block.quote_items' => $this->renderBlock('quote.items', [
+                'headers' => [
+                    'service' => __('app.quote_pdf_col_service'),
+                    'quantity' => __('app.quote_pdf_item_quantity'),
+                    'unit_price' => __('app.quote_pdf_col_unit_price'),
+                    'total' => __('app.quote_pdf_col_line_total'),
+                ],
+                'rows' => [
+                    ['description' => 'Jednorazové umývanie okien', 'note' => 'Vrátane rámov a parapetov.', 'quantity' => '1×', 'unit_price' => '300,00 EUR', 'amount' => '300,00 EUR', 'suffix' => null],
+                    ['description' => 'Pravidelné upratovanie kancelárií', 'note' => null, 'quantity' => 'mesačne', 'unit_price' => '120,00 EUR / mes.', 'amount' => '120,00 EUR', 'suffix' => 'mes.'],
+                ],
+            ]),
+            'block.quote_totals' => $this->renderBlock('quote.totals', [
+                'included' => ['label' => __('app.quote_pdf_included'), 'lines' => ['Práca a čistiace prostriedky', 'Doprava']],
+                'groups' => [
+                    ['label' => QuoteBillingPeriodEnum::OneOff->label(), 'net' => null, 'vat' => null, 'total' => '300,00 EUR', 'suffix' => null],
+                    ['label' => QuoteBillingPeriodEnum::Monthly->label(), 'net' => null, 'vat' => null, 'total' => '120,00 EUR', 'suffix' => 'mes.'],
+                ],
+                'labels' => ['excl_vat' => __('app.quote_pdf_excl_vat'), 'vat' => __('app.document_quote_vat')],
+                'clause' => null,
+            ]),
+        ];
     }
 
     /** @return array<string, string|null> */
@@ -317,16 +377,15 @@ final readonly class DocumentContextBuilder
     }
 
     /** @return array<string, string|null> */
-    private function quoteValues(Quote $quote): array
+    private function quoteValues(Quote $quote, Tenant $tenant, CustomerParty $party): array
     {
-        $client = $quote->client;
-
         return [
-            'customer.name' => $client->name ?? $quote->customer_name,
+            'customer.name' => $party->name,
             'customer.email' => $quote->customer_email,
-            'customer.address' => $client !== null
-                ? $this->address($client->street, $client->postal_code, $client->city)
-                : $this->address($quote->customer_street, $quote->customer_postal_code, $quote->customer_city),
+            'customer.address' => $this->address($party->street, $party->postalCode, $party->city),
+            'customer.represented_by' => $party->representedBy,
+            'customer.ico' => $party->ico,
+            'customer.dic' => $party->dic,
             'quote.issue_date' => $quote->issue_date->format(Formats::DATE),
             'quote.valid_until' => $quote->valid_until->format(Formats::DATE),
             'quote.total' => $this->quoteDisplay->totalsLine($quote),
@@ -337,7 +396,23 @@ final readonly class DocumentContextBuilder
             'quote.number' => $quote->number,
             'quote.subject' => $quote->subject,
             'quote.note' => $quote->note,
+            'quote.dated_line' => $this->quoteDisplay->datedLine($quote, $tenant),
         ];
+    }
+
+    /** Contracts keep the client as the party, also when the quote itself prints a house. */
+    private function contractQuoteParty(Quote $quote): CustomerParty
+    {
+        $entered = CustomerParty::fromQuote($quote);
+
+        return $quote->client !== null ? CustomerParty::forInvoice(null, $quote->client, $entered) : $entered;
+    }
+
+    private function renderQuoteTotals(Quote $quote): string
+    {
+        $data = $this->quoteDisplay->totalsData($quote);
+
+        return $data === null ? '' : $this->renderBlock('quote.totals', $data);
     }
 
     private function partiesBlock(Tenant $tenant, ?Client $client, ?CleaningObject $object, ?TenantMembership $employee): string

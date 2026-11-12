@@ -793,6 +793,11 @@ final class QuoteServiceTest extends TestCase
             'customer_street' => 'Leadova 5',
             'customer_city' => 'Zvolen',
             'customer_postal_code' => '960 01',
+            'customer_represented_by' => 'Správca s.r.o.',
+            'customer_ico' => '35683073',
+            'customer_dic' => '2020905865',
+            'show_totals' => false,
+            'show_vat_note' => false,
             'is_vat_payer' => true,
             'vat_rate' => '20.00',
             'currency' => 'CZK',
@@ -950,5 +955,30 @@ final class QuoteServiceTest extends TestCase
         $copy = app(QuoteService::class)->duplicate($source);
 
         $this->assertSame('2026-11-14', $copy->valid_until->toDateString());
+    }
+
+    public function test_preview_model_is_unsaved_with_priced_items_and_totals(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false]);
+        $this->bindTenant($tenant);
+        $data = QuoteUpsertData::from([
+            'client_id' => null, 'cleaning_object_id' => null, 'subject' => 'S', 'issue_date' => '2026-11-11', 'valid_until' => '2026-12-11', 'note' => null,
+            'customer_name' => 'Acme', 'customer_ico' => '1', 'show_totals' => false, 'kind' => 'itemized', 'currency' => 'EUR', 'number' => null,
+            'items' => [
+                ['id' => null, 'description' => 'A', 'frequency' => null, 'quantity' => 2, 'unit' => null, 'unit_price' => 10, 'discount_percent' => 0, 'vat_rate' => 0, 'billing_period' => 'one_off'],
+                ['id' => null, 'description' => 'B', 'frequency' => null, 'quantity' => 1, 'unit' => null, 'unit_price' => 5, 'discount_percent' => 0, 'vat_rate' => 0, 'billing_period' => 'monthly'],
+            ],
+        ]);
+
+        $quote = app(QuoteService::class)->previewModel($data);
+
+        $this->assertFalse($quote->exists);
+        $this->assertSame(0, Quote::query()->count());
+        $this->assertSame(0, QuoteItem::query()->count());
+        $this->assertCount(2, $quote->items);
+        $this->assertSame('25.00', (string) $quote->total);
+        $this->assertSame(['one_off', 'monthly'], array_column((array) $quote->period_totals, 'billing_period'));
+        $this->assertFalse($quote->show_totals);
+        $this->assertSame('1', $quote->customer_ico);
     }
 }

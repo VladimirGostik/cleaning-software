@@ -12,141 +12,18 @@ use App\Models\CleaningObject;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Tenant;
-use App\Services\Documents\DocumentLocale;
+use App\Services\Documents\DocumentFrame;
+use App\Services\Documents\QuoteTextService;
+use App\Services\Pdf\QuotePdfService;
 use App\Services\QuoteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\View;
+use Spatie\LaravelPdf\Facades\Pdf;
 use Tests\TestCase;
 
 final class QuotePdfTest extends TestCase
 {
     use RefreshDatabase;
-
-    public function test_item_note_is_rendered_in_pdf_html(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
-
-        $quote = app(QuoteService::class)->create(QuoteUpsertData::from([
-            'client_id' => null,
-            'cleaning_object_id' => null,
-            'subject' => 'Office cleaning',
-            'issue_date' => now()->toDateString(),
-            'valid_until' => now()->addDays(30)->toDateString(),
-            'note' => null,
-            'items' => [new QuoteItemData(
-                id: null,
-                description: 'Cleaning service',
-                frequency: null,
-                quantity: 2,
-                unit: 'hod',
-                unit_price: 30,
-                discount_percent: 0,
-                vat_rate: 23,
-                note: 'Watch out for the fragile vase',
-            )],
-            'customer_name' => 'Acme s.r.o.',
-            'customer_email' => null,
-            'customer_street' => null,
-            'customer_city' => null,
-            'customer_postal_code' => null,
-            'number' => null,
-            'document_uuid' => null,
-            'kind' => QuoteKindEnum::Itemized->value,
-            'currency' => 'EUR',
-        ]), null, 'sess-1');
-
-        $quote->loadMissing(['items', 'client', 'cleaningObject']);
-
-        $html = View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])->render();
-
-        $this->assertStringContainsString('Watch out for the fragile vase', $html);
-    }
-
-    public function test_item_without_note_does_not_render_empty_note_line(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
-
-        $quote = app(QuoteService::class)->create(QuoteUpsertData::from([
-            'client_id' => null,
-            'cleaning_object_id' => null,
-            'subject' => 'Office cleaning',
-            'issue_date' => now()->toDateString(),
-            'valid_until' => now()->addDays(30)->toDateString(),
-            'note' => null,
-            'items' => [new QuoteItemData(
-                id: null,
-                description: 'Cleaning service',
-                frequency: null,
-                quantity: 2,
-                unit: 'hod',
-                unit_price: 30,
-                discount_percent: 0,
-                vat_rate: 23,
-            )],
-            'customer_name' => 'Acme s.r.o.',
-            'customer_email' => null,
-            'customer_street' => null,
-            'customer_city' => null,
-            'customer_postal_code' => null,
-            'number' => null,
-            'document_uuid' => null,
-            'kind' => QuoteKindEnum::Itemized->value,
-            'currency' => 'EUR',
-        ]), null, 'sess-1');
-
-        $quote->loadMissing(['items', 'client', 'cleaningObject']);
-
-        $html = View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])->render();
-
-        $this->assertStringContainsString('Cleaning service', $html);
-    }
-
-    public function test_quote_renders_kegos_header_currency_format_and_tenant_footer(): void
-    {
-        $tenant = Tenant::factory()->create(['name' => 'Quote Footer s.r.o.', 'ico' => '11223344']);
-        $this->bindTenant($tenant);
-
-        $quote = app(QuoteService::class)->create(QuoteUpsertData::from([
-            'client_id' => null,
-            'cleaning_object_id' => null,
-            'subject' => 'Office cleaning',
-            'issue_date' => now()->toDateString(),
-            'valid_until' => now()->addDays(30)->toDateString(),
-            'note' => null,
-            'items' => [new QuoteItemData(
-                id: null,
-                description: 'Cleaning service',
-                frequency: null,
-                quantity: 1,
-                unit: 'hod',
-                unit_price: 1250,
-                discount_percent: 0,
-                vat_rate: 23,
-            )],
-            'customer_name' => 'Acme s.r.o.',
-            'customer_email' => null,
-            'customer_street' => null,
-            'customer_city' => null,
-            'customer_postal_code' => null,
-            'number' => null,
-            'document_uuid' => null,
-            'kind' => QuoteKindEnum::Itemized->value,
-            'currency' => 'EUR',
-        ]), null, 'sess-1');
-        $quote->loadMissing(['items', 'client', 'cleaningObject']);
-
-        $html = View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])->render();
-        $footer = View::make('pdf.quotes.footer', ['tenant' => $tenant])->render();
-
-        $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
-        $this->assertStringContainsString('class="q-rule"', $html);
-        $this->assertStringContainsString("1\u{00A0}250,00\u{00A0}EUR", $html);
-        $this->assertStringContainsString('Quote Footer s.r.o.', $footer);
-        $this->assertStringContainsString('11223344', $footer);
-        $this->assertStringNotContainsString('totalPages', $footer);
-    }
 
     /** @param list<QuoteItemData> $items */
     private function makeQuote(Tenant $tenant, array $items, ?string $includedText = null, ?string $clientId = null): Quote
@@ -191,9 +68,9 @@ final class QuotePdfTest extends TestCase
         );
     }
 
-    private function render(Quote $quote, Tenant $tenant): string
+    private function html(Quote $quote): string
     {
-        return app(DocumentLocale::class)->run(fn (): string => View::make('pdf.quotes.default', ['quote' => $quote, 'tenant' => $tenant])->render());
+        return html_entity_decode(app(QuoteTextService::class)->printBody($quote));
     }
 
     private function text(string $html): string
@@ -211,15 +88,79 @@ final class QuotePdfTest extends TestCase
         ];
     }
 
+    public function test_item_note_is_rendered_and_an_item_without_note_prints_no_note_line(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $with = $this->makeQuote($tenant, [new QuoteItemData(id: null, description: 'Cleaning service', frequency: null, quantity: 2, unit: 'hod', unit_price: 30, discount_percent: 0, vat_rate: 23, note: 'Watch out for the fragile vase')]);
+        $without = $this->makeQuote($tenant, [$this->item('Cleaning service', QuoteBillingPeriodEnum::OneOff, 2, 30)]);
+
+        $this->assertStringContainsString('Watch out for the fragile vase', $this->html($with));
+        $this->assertStringContainsString('Cleaning service', $this->html($without));
+        $this->assertStringNotContainsString('padding-right: 6mm', $this->html($without));
+    }
+
+    public function test_shell_prints_the_kegos_top_row_reference_and_body_container(): void
+    {
+        $html = View::make('pdf.quotes.default', ['title' => 'T', 'body' => '<p>x</p>', 'reference' => 'CP-1', 'showHeader' => true])->render();
+
+        $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
+        $this->assertStringContainsString('viewBox="8 12 711.8 78"', $html);
+        $this->assertStringContainsString('CP-1', $html);
+        $this->assertStringContainsString('class="document-body document-body--quote"', $html);
+        $this->assertStringNotContainsString('<img', $html);
+
+        $hidden = View::make('pdf.quotes.default', ['title' => 'T', 'body' => '<p>x</p>', 'reference' => 'CP-1', 'showHeader' => false])->render();
+        $this->assertStringNotContainsString('aria-label="Kegos Clean"', $hidden);
+    }
+
+    public function test_footer_prints_both_columns_and_is_empty_when_switched_off(): void
+    {
+        $tenant = Tenant::factory()->create(['name' => 'Quote Footer s.r.o.', 'ico' => '11223344']);
+        $lines = DocumentFrame::quoteFooter($tenant);
+
+        $footer = View::make('pdf.quotes.footer', ['show' => true, 'lines' => $lines])->render();
+        $off = View::make('pdf.quotes.footer', ['show' => false, 'lines' => $lines])->render();
+
+        $this->assertStringContainsString('Quote Footer s.r.o.', $footer);
+        $this->assertStringContainsString('IČO 11223344', $footer);
+        $this->assertStringNotContainsString('totalPages', $footer);
+        $this->assertStringNotContainsString('Quote Footer s.r.o.', $off);
+    }
+
+    public function test_every_itemized_quote_renders_through_the_kegos_shell(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $quote = $this->makeQuote($tenant, $this->mixedItems());
+        $fake = Pdf::fake();
+
+        app(QuotePdfService::class)->render($quote);
+
+        $fake->assertViewIs('pdf.quotes.default');
+        $fake->assertSee(['Ponuková cena', 'Window cleaning']);
+    }
+
+    public function test_default_text_prints_heading_subject_and_dates_in_the_kegos_order(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $quote = $this->makeQuote($tenant, $this->mixedItems());
+
+        $text = $this->text($this->html($quote));
+
+        $this->assertLessThan(strpos($text, 'Poskytovateľ'), strpos($text, 'Ponuková cena Office cleaning'));
+        $this->assertStringContainsString('Dátum vystavenia: 3. 11. 2026 · Platnosť ponuky do: 3. 12. 2026', $text);
+        $this->assertLessThan(strpos($text, 'Popis služby'), strpos($text, 'Ponuka služieb'));
+        $this->assertStringContainsString('S pozdravom, '.$tenant->name, $text);
+    }
+
     public function test_mixed_periods_render_cells_and_split_totals_without_combined_total(): void
     {
         $tenant = Tenant::factory()->create(['is_vat_payer' => false]);
         $quote = $this->makeQuote($tenant, $this->mixedItems());
 
-        $text = $this->text($this->render($quote, $tenant));
+        $text = $this->text($this->html($quote));
 
         $this->assertStringContainsString('1× 300,00 EUR 300,00 EUR', $text);
-        $this->assertStringContainsString('mesačne 70,00 EUR / mesiac 70,00 EUR / mes.', $text);
+        $this->assertStringContainsString('mesačne 70,00 EUR / mes. 70,00 EUR / mes.', $text);
         $this->assertStringContainsString('2× mesačne 25,00 EUR / upratovanie 50,00 EUR / mes.', $text);
         $this->assertStringContainsString('Jednorazovo 300,00 EUR', $text);
         $this->assertStringContainsString('Mesačne 120,00 EUR / mes.', $text);
@@ -236,7 +177,7 @@ final class QuotePdfTest extends TestCase
             $this->item('Carpets', QuoteBillingPeriodEnum::OneOff, 2, 50),
         ]);
 
-        $text = $this->text($this->render($quote, $tenant));
+        $text = $this->text($this->html($quote));
 
         $this->assertStringContainsString('Spolu 400,00 EUR', $text);
         $this->assertStringNotContainsString('Jednorazovo', $text);
@@ -252,7 +193,7 @@ final class QuotePdfTest extends TestCase
             $this->item('D', QuoteBillingPeriodEnum::Yearly, 4, 200, null, 0, 20),
         ]);
 
-        $text = $this->text($this->render($quote, $tenant));
+        $text = $this->text($this->html($quote));
 
         $this->assertStringContainsString('Jednorazovo s DPH 120,00 EUR', $text);
         $this->assertStringContainsString('Mesačne s DPH 60,00 EUR / mes.', $text);
@@ -268,7 +209,7 @@ final class QuotePdfTest extends TestCase
         $tenant = Tenant::factory()->create();
         $quote = $this->makeQuote($tenant, [$this->item('A', QuoteBillingPeriodEnum::OneOff, 1, 100, null, 10)]);
 
-        $text = $this->text($this->render($quote, $tenant));
+        $text = $this->text($this->html($quote));
 
         $this->assertStringContainsString('100,00 EUR, zľava 10 %', $text);
         $this->assertStringNotContainsString($quote->status->label(), $text);
@@ -280,24 +221,23 @@ final class QuotePdfTest extends TestCase
         $with = $this->makeQuote($tenant, $this->mixedItems(), "  Labour \n\n Material  \n");
         $without = $this->makeQuote($tenant, $this->mixedItems(), null);
 
-        $htmlWith = $this->render($with, $tenant);
+        $textWith = $this->text($this->html($with));
 
-        $this->assertStringContainsString('<li>Labour</li>', $htmlWith);
-        $this->assertStringContainsString('<li>Material</li>', $htmlWith);
-        $this->assertStringNotContainsString('<ul class="q-inc"', $this->render($without, $tenant));
+        $this->assertStringContainsString('V cene je zahrnuté ● Labour ● Material', $textWith);
+        $this->assertStringNotContainsString('V cene je zahrnuté', $this->text($this->html($without)));
     }
 
     public function test_closing_line_uses_signing_place_then_city_then_bare_date(): void
     {
         $tenant = Tenant::factory()->create(['signing_place' => 'Vo Zvolene', 'city' => 'Bratislava']);
         $quote = $this->makeQuote($tenant, $this->mixedItems());
-        $this->assertStringContainsString('Vo Zvolene, dňa 3. 11. 2026', $this->text($this->render($quote, $tenant)));
+        $this->assertStringContainsString('Vo Zvolene, dňa 3. 11. 2026', $this->text($this->html($quote)));
 
         $tenant->update(['signing_place' => null]);
-        $this->assertStringContainsString('Bratislava, dňa 3. 11. 2026', $this->text($this->render($quote, $tenant->refresh())));
+        $this->assertStringContainsString('Bratislava, dňa 3. 11. 2026', $this->text($this->html($quote)));
 
         $tenant->update(['city' => null]);
-        $this->assertStringContainsString('Dňa 3. 11. 2026', $this->text($this->render($quote, $tenant->refresh())));
+        $this->assertStringContainsString('Dňa 3. 11. 2026', $this->text($this->html($quote)));
     }
 
     public function test_orderer_prints_client_ico_and_dic(): void
@@ -307,7 +247,7 @@ final class QuotePdfTest extends TestCase
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'ico' => '35683073', 'dic' => '2020905865']);
         $quote = $this->makeQuote($tenant, $this->mixedItems(), null, $client->id);
 
-        $text = $this->text($this->render($quote, $tenant));
+        $text = $this->text($this->html($quote));
 
         $this->assertStringContainsString('IČO: 35683073', $text);
         $this->assertStringContainsString('DIČ: 2020905865', $text);
@@ -322,22 +262,10 @@ final class QuotePdfTest extends TestCase
         $quote = $this->makeQuote($tenant, $this->mixedItems(), null, $client->id);
         $quote->update(['cleaning_object_id' => $object->id, 'note' => 'Cleaning on weekends only']);
 
-        $text = $this->text($this->render($quote->load(['items', 'client', 'cleaningObject']), $tenant));
+        $text = $this->text($this->html($quote->load(['items', 'client', 'cleaningObject'])));
 
         $this->assertStringNotContainsString('Rajčianska 32', $text);
         $this->assertLessThan(strpos($text, 'Popis služby'), strpos($text, 'Cleaning on weekends only'));
-    }
-
-    public function test_default_quote_prints_the_system_logo(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $quote = $this->makeQuote($tenant, $this->mixedItems());
-
-        $html = $this->render($quote, $tenant);
-
-        $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
-        $this->assertStringContainsString('viewBox="8 12 711.8 78"', $html);
-        $this->assertStringNotContainsString('<img', $html);
     }
 
     public function test_invoice_header_partial_prints_the_system_logo(): void
@@ -346,5 +274,24 @@ final class QuotePdfTest extends TestCase
 
         $this->assertStringContainsString('aria-label="Kegos Clean"', $html);
         $this->assertStringNotContainsString('<img', $html);
+    }
+
+    public function test_recurring_single_item_uses_the_short_period_suffix_in_both_price_cells(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false]);
+        $quote = $this->makeQuote($tenant, [
+            $this->item('Paušál', QuoteBillingPeriodEnum::Monthly, 1, 30, 'mesiac'),
+            $this->item('Servis', QuoteBillingPeriodEnum::Monthly, 1, 40, 'paušál'),
+            $this->item('Okná', QuoteBillingPeriodEnum::Yearly, 1, 90),
+            $this->item('Dvakrát', QuoteBillingPeriodEnum::Monthly, 2, 25),
+        ]);
+
+        $text = $this->text($this->html($quote));
+
+        $this->assertStringContainsString('ročne 90,00 EUR / rok 90,00 EUR / rok', $text);
+        $this->assertStringContainsString('mesačne 30,00 EUR / mes. 30,00 EUR / mes.', $text);
+        $this->assertStringContainsString('mesačne 40,00 EUR / paušál 40,00 EUR / mes.', $text);
+        $this->assertStringContainsString('2× mesačne 25,00 EUR 50,00 EUR / mes.', $text);
+        $this->assertStringNotContainsString('/ mesiac', $text);
     }
 }

@@ -64,6 +64,7 @@ final class DocumentTemplateController extends Controller
             'tokens' => $this->catalogue->catalog(),
             'letterhead' => DocumentFrame::letterhead($tenant),
             'footer' => DocumentFrame::footer($tenant),
+            'quote_footer' => DocumentFrame::quoteFooter($tenant),
         ]);
     }
 

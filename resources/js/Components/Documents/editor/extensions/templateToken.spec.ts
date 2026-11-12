@@ -99,3 +99,28 @@ describe('TemplateBlockToken', () => {
         expect(e.view.dom.querySelector('[data-template-block]')!.getAttribute('style')).toBeNull();
     });
 });
+
+describe('preview display', () => {
+    it('shows the value in a chip and keeps the key for the stored form', () => {
+        const e = create(
+            '<p><span data-template-token="tenant.name" data-label="Názov" data-kind="text" data-value="Kegos"></span></p>',
+        );
+
+        const chip = e.view.dom.querySelector('[data-template-token="tenant.name"]')!;
+        expect(chip.textContent).toBe('Kegos');
+        expect(chip.className).toContain('document-value-chip');
+        expect(chip.hasAttribute('data-value')).toBe(false);
+    });
+
+    it('renders the block html through the node view without leaking it into getHTML', () => {
+        const html = '&lt;table&gt;&lt;tr&gt;&lt;td&gt;Podpis&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;';
+        const e = create(
+            `<div data-template-block="block.signatures" data-label="Podpisy" data-preview="${html}"></div>`,
+        );
+
+        const block = e.view.dom.querySelector('[data-template-block="block.signatures"]')!;
+        expect(block.querySelector('td')?.textContent).toBe('Podpis');
+        expect(e.getHTML()).not.toContain('<table');
+        expect(e.getHTML()).toContain('data-preview-hash');
+    });
+});

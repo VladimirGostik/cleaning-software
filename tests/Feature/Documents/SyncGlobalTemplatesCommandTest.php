@@ -11,6 +11,7 @@ use App\Models\DocumentTemplate;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Scopes\TenantOrGlobalScope;
+use App\Services\Documents\DocumentTemplateCatalogue;
 use App\Services\Documents\DocumentTemplateService;
 use Database\Seeders\DocumentTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -113,5 +114,19 @@ final class SyncGlobalTemplatesCommandTest extends TestCase
 
         $this->artisanCommand('documents:sync-global-templates', ['--force' => true])->assertSuccessful();
         $this->assertNotSame('<p>old</p>', $this->global()->body);
+    }
+
+    public function test_the_global_quote_template_is_the_kegos_skeleton_and_the_sync_restores_it(): void
+    {
+        $quote = fn (): DocumentTemplate => DocumentTemplate::query()->withoutGlobalScope(TenantOrGlobalScope::class)
+            ->whereNull('tenant_id')->where('type', DocumentTypeEnum::Quote->value)->firstOrFail();
+        $skeleton = app(DocumentTemplateCatalogue::class)->skeleton(DocumentTypeEnum::Quote);
+
+        $this->assertSame($skeleton, $quote()->body);
+
+        $quote()->update(['body' => '<p>old plain quote</p>']);
+        $this->artisanCommand('documents:sync-global-templates')->assertSuccessful();
+
+        $this->assertSame($skeleton, $quote()->body);
     }
 }

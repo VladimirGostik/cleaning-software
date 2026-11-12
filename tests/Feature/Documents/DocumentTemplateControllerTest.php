@@ -179,4 +179,26 @@ final class DocumentTemplateControllerTest extends TestCase
             'body' => '<p>{{tenant.name}}</p>', 'type' => 'service_agreement', 'show_header' => true, 'show_footer' => true,
         ])->assertOk()->assertHeader('Content-Type', 'application/pdf');
     }
+
+    public function test_create_and_edit_carry_the_quote_footer(): void
+    {
+        $tenant = Tenant::factory()->create(['name' => 'Firma s.r.o.', 'ico' => '123', 'dic' => null]);
+        $this->actingAsTenantUser('Admin', $tenant);
+        $template = DocumentTemplate::factory()->quote()->create(['tenant_id' => $tenant->id]);
+
+        $this->get(route('document-templates.create', ['type' => 'quote']))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('quote_footer.1', 'IČO 123')->has('quote_footer', 2));
+        $this->get(route('document-templates.edit', $template))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('template.quote_footer.1', 'IČO 123'));
+    }
+
+    public function test_quote_preview_returns_the_quote_footer_and_pdf_renders(): void
+    {
+        $tenant = Tenant::factory()->create(['ico' => '123', 'dic' => null]);
+        $this->actingAsTenantUser('Admin', $tenant);
+        $body = ['body' => '<p>{{block.quote_items}}</p>', 'type' => 'quote', 'show_header' => true, 'show_footer' => true];
+
+        $this->postJson(route('document-templates.preview'), $body)->assertOk()->assertJsonPath('footer.1', 'IČO 123');
+        $this->post(route('document-templates.preview-pdf'), $body)->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    }
 }

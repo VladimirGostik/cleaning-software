@@ -52,11 +52,39 @@ final readonly class CustomerParty
     {
         return new self(
             name: $source->customer_name,
+            representedBy: $source->customer_represented_by,
+            ico: $source->customer_ico,
+            dic: $source->customer_dic,
             street: $source->customer_street,
             city: $source->customer_city,
             postalCode: $source->customer_postal_code,
             email: $source->customer_email,
         );
+    }
+
+    /** The printed buyer: a house prints only its own billing fields, nothing is taken from the client. */
+    public static function forQuote(Quote $quote): self
+    {
+        $object = $quote->cleaningObject;
+
+        if ($object?->hasBillingIdentity()) {
+            return new self(
+                name: $object->billing_name,
+                ico: $object->billing_ico,
+                dic: $object->billing_dic,
+                street: $object->billing_street,
+                city: $object->billing_city,
+                postalCode: $object->billing_postal_code,
+                email: $quote->customer_email,
+                source: CustomerPartySourceEnum::ObjectBilling,
+            );
+        }
+
+        if ($quote->client !== null) {
+            return self::forInvoice(null, $quote->client, self::fromQuote($quote));
+        }
+
+        return self::fromQuote($quote);
     }
 
     public static function forInvoice(?CleaningObject $object, ?Client $client, self $entered): self
@@ -148,6 +176,9 @@ final readonly class CustomerParty
             'customer_street' => $this->street,
             'customer_city' => $this->city,
             'customer_postal_code' => $this->postalCode,
+            'customer_represented_by' => $this->representedBy,
+            'customer_ico' => $this->ico,
+            'customer_dic' => $this->dic,
         ];
     }
 }

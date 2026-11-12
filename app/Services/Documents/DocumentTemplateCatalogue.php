@@ -72,6 +72,9 @@ final readonly class DocumentTemplateCatalogue
             'customer.name' => [Kind::Text, Group::Customer],
             'customer.email' => [Kind::Optional, Group::Customer],
             'customer.address' => [Kind::Optional, Group::Customer],
+            'customer.represented_by' => [Kind::Optional, Group::Customer],
+            'customer.ico' => [Kind::Optional, Group::Customer],
+            'customer.dic' => [Kind::Optional, Group::Customer],
             'quote.issue_date' => [Kind::Text, Group::Quote],
             'quote.valid_until' => [Kind::Text, Group::Quote],
             'quote.total' => [Kind::Text, Group::Quote],
@@ -82,6 +85,7 @@ final readonly class DocumentTemplateCatalogue
             'quote.number' => [Kind::Optional, Group::Quote],
             'quote.subject' => [Kind::Optional, Group::Quote],
             'quote.note' => [Kind::Optional, Group::Quote],
+            'quote.dated_line' => [Kind::Optional, Group::Quote],
             'if.fixed_term' => [Kind::Flag, Group::Conditions],
             'if.indefinite_term' => [Kind::Flag, Group::Conditions],
             'if.has_object' => [Kind::Flag, Group::Conditions],
@@ -90,6 +94,8 @@ final readonly class DocumentTemplateCatalogue
             'block.parties' => [Kind::Block, Group::Blocks],
             'block.employment_terms' => [Kind::Block, Group::Blocks],
             'block.signatures' => [Kind::Block, Group::Blocks],
+            'block.quote_parties' => [Kind::Block, Group::Blocks],
+            'block.quote_note' => [Kind::Block, Group::Blocks],
             'block.quote_items' => [Kind::Block, Group::Blocks],
             'block.quote_totals' => [Kind::Block, Group::Blocks],
         ];
@@ -149,7 +155,7 @@ final readonly class DocumentTemplateCatalogue
     public function skeleton(DocumentTypeEnum $type, bool $withQuoteBlocks = false): string
     {
         if ($type === DocumentTypeEnum::Quote) {
-            return '<p>{{block.quote_items}}</p><p>{{block.quote_totals}}</p><p>{{block.signatures}}</p>';
+            return $this->quoteSkeleton();
         }
 
         $html = '<p>{{block.parties}}</p>';
@@ -165,6 +171,21 @@ final readonly class DocumentTemplateCatalogue
         return $html.'<p>{{block.signatures}}</p>';
     }
 
+    private function quoteSkeleton(): string
+    {
+        return app(DocumentLocale::class)->run(fn (): string => '<h1>'.e(__('app.quote_pdf_heading')).'</h1>'
+            .'<p>{{quote.subject}}</p>'
+            .'<hr>'
+            .'<p>{{block.quote_parties}}</p>'
+            .'<p>{{block.quote_note}}</p>'
+            .'<h2>'.e(__('app.quote_pdf_offer')).'</h2>'
+            .'<p>{{block.quote_items}}</p>'
+            .'<p>{{block.quote_totals}}</p>'
+            .'<p>{{quote.dated_line}}</p>'
+            .'<p>'.e(__('app.quote_pdf_regards')).'</p>'
+            .'<p><strong>{{tenant.name}}</strong></p>');
+    }
+
     private function isAvailable(DocumentTypeEnum $type, string $key, Group $group): bool
     {
         if ($type === DocumentTypeEnum::Quote) {
@@ -172,7 +193,7 @@ final readonly class DocumentTemplateCatalogue
                 Group::Tenant, Group::Customer, Group::Object, Group::Quote => true,
                 Group::Conditions => in_array($key, ['if.vat_payer', 'if.has_object'], true),
                 Group::Contract => $key === 'date.today',
-                Group::Blocks => in_array($key, ['block.quote_items', 'block.quote_totals', 'block.signatures'], true),
+                Group::Blocks => in_array($key, ['block.quote_parties', 'block.quote_note', 'block.quote_items', 'block.quote_totals', 'block.signatures'], true),
                 default => false,
             };
         }

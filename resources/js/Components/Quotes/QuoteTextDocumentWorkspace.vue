@@ -6,6 +6,7 @@ import XMarkIcon from '~icons/material-symbols/close-outline-rounded';
 import DocumentFrameToggles from '@/Components/Documents/DocumentFrameToggles.vue';
 import DocumentTokenEditor from '@/Components/Documents/DocumentTokenEditor.vue';
 import DocumentTokenPicker from '@/Components/Documents/DocumentTokenPicker.vue';
+import type { TokenPreview } from '@/Components/Documents/editor/extensions/templateTokenHtml';
 import { useFullscreenWorkspace } from '@/Composables/useFullscreenWorkspace';
 
 defineProps<{
@@ -14,6 +15,7 @@ defineProps<{
     footer: string[];
     error?: string | null;
     settingsUrl?: string | null;
+    preview: TokenPreview | null;
 }>();
 
 const body = defineModel<string>('body', { required: true });
@@ -106,6 +108,8 @@ watch(fullscreen, (on) => {
                     :letterhead="showHeader ? letterhead : null"
                     :footer="showFooter ? footer : []"
                     :settings-url="settingsUrl"
+                    :preview="preview"
+                    variant="kegos"
                 />
                 <aside class="min-h-0 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-3">
                     <DocumentTokenPicker :tokens="tokens" @pick="editor?.insertToken($event)" />

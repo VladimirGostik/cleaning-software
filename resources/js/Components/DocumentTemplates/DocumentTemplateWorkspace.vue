@@ -42,8 +42,10 @@ const props = withDefaults(
         isGlobal?: boolean;
         letterhead: App.Data.Documents.DocumentLetterheadData;
         footer: string[];
+        quoteFooter?: string[];
     }>(),
     {
+        quoteFooter: () => [],
         template: null,
         catalog: null,
         initialType: 'service_agreement',
@@ -86,7 +88,10 @@ const tokens = computed<readonly TokenDef[]>(
 const tokensByKey = computed(() => new Map(tokens.value.map((def) => [def.key, def])));
 
 const editLetterhead = computed(() => (form.show_header ? props.letterhead : null));
-const editFooter = computed(() => (form.show_footer ? props.footer : []));
+const isQuote = computed(() => form.type === 'quote');
+const frameVariant = computed(() => (isQuote.value ? 'kegos' : 'letterhead'));
+const frameFooter = computed(() => (isQuote.value ? props.quoteFooter : props.footer));
+const editFooter = computed(() => (form.show_footer ? frameFooter.value : []));
 const settingsUrl = computed(() => (allows('manage billing settings') ? '/settings/invoicing' : null));
 
 function previewPayload(): App.Data.DocumentTemplates.DocumentTemplatePreviewData {
@@ -253,6 +258,7 @@ function submit(): void {
                                 :readonly="readonly"
                                 :letterhead="editLetterhead"
                                 :footer="editFooter"
+                                :variant="frameVariant"
                                 :settings-url="settingsUrl"
                             />
                         </div>
@@ -278,6 +284,7 @@ function submit(): void {
                             :loading="loading"
                             :error="error"
                             :tokens="tokens"
+                            :variant="frameVariant"
                         />
                     </div>
                 </div>

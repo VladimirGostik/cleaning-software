@@ -3,7 +3,12 @@ import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DocumentEditor from '@/Components/Documents/DocumentEditor.vue';
 import { TemplateBlockToken, TemplateToken } from '@/Components/Documents/editor/extensions/templateToken';
-import { editorToStoredHtml, storedToEditorHtml } from '@/Components/Documents/editor/extensions/templateTokenHtml';
+import {
+    editorToStoredHtml,
+    storedToEditorHtml,
+    type TokenPreview,
+} from '@/Components/Documents/editor/extensions/templateTokenHtml';
+import { DOCUMENT_PARSE_OPTIONS } from '@/Components/Documents/editor/documentEditorKit';
 import { useDocumentEditor } from '@/Composables/useDocumentEditor';
 
 type DocumentTokenDef = App.Data.DocumentTemplates.DocumentTokenData;
@@ -18,6 +23,8 @@ const props = withDefaults(
         letterhead?: App.Data.Documents.DocumentLetterheadData | null;
         footer?: string[];
         settingsUrl?: string | null;
+        variant?: 'letterhead' | 'kegos';
+        preview?: TokenPreview | null;
     }>(),
     {
         error: null,
@@ -26,6 +33,8 @@ const props = withDefaults(
         letterhead: null,
         footer: () => [],
         settingsUrl: null,
+        variant: 'letterhead',
+        preview: null,
     },
 );
 
@@ -44,9 +53,19 @@ const { editor } = useDocumentEditor({
     extraExtensions: [TemplateToken, TemplateBlockToken],
     textAlignTypes: ['templateBlock'],
     editable: !props.readonly,
-    toEditorHtml: (stored) => storedToEditorHtml(stored, defsByKey.value),
+    toEditorHtml: (stored) => storedToEditorHtml(stored, defsByKey.value, props.preview),
     fromEditorHtml: editorToStoredHtml,
 });
+
+watch(
+    () => props.preview,
+    () => {
+        editor.value?.commands.setContent(storedToEditorHtml(props.modelValue, defsByKey.value, props.preview), {
+            emitUpdate: false,
+            parseOptions: DOCUMENT_PARSE_OPTIONS,
+        });
+    },
+);
 
 watch(
     () => props.readonly,
@@ -104,7 +123,13 @@ defineExpose({ insertToken, focusToken });
             class="min-h-0 flex-1 overflow-hidden rounded-box border border-base-300 bg-base-100"
             :class="{ 'border-error': error }"
         >
-            <DocumentEditor :editor="editor" :letterhead="letterhead" :footer="footer" :settings-url="settingsUrl" />
+            <DocumentEditor
+                :editor="editor"
+                :letterhead="letterhead"
+                :footer="footer"
+                :variant="variant"
+                :settings-url="settingsUrl"
+            />
         </div>
 
         <p v-if="error" class="text-error text-sm" role="alert">{{ error }}</p>

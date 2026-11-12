@@ -1,6 +1,11 @@
 type DocumentTokenDef = App.Data.DocumentTemplates.DocumentTokenData;
 type DocumentTokenKind = App.Enums.DocumentTokenKindEnum;
 
+export interface TokenPreview {
+    values: Record<string, string | null>;
+    blocks: Record<string, string>;
+}
+
 const SEGMENT = '[a-z][a-z0-9_]*';
 const KEY = `${SEGMENT}(?:\\.${SEGMENT})*`;
 const BLOCK_P_RE = new RegExp(
@@ -66,18 +71,28 @@ function mapTextSegments(html: string, replace: (text: string) => string): strin
         .join('');
 }
 
-export function storedToEditorHtml(html: string, defs: Record<string, DocumentTokenDef>): string {
+export function storedToEditorHtml(
+    html: string,
+    defs: Record<string, DocumentTokenDef>,
+    preview: TokenPreview | null = null,
+): string {
     const withBlocks = html.replace(BLOCK_P_RE, (_m, attributes: string | undefined, key: string) => {
         const style = blockStyle(STYLE_ATTR_RE.exec(attributes ?? '')?.[1] ?? '');
         const styleAttribute = style === '' ? '' : ` style="${style}"`;
 
-        return `<div data-template-block="${key}" data-label="${escapeHtml(labelOf(key, defs))}"${styleAttribute}></div>`;
+        const rendered = preview?.blocks[key];
+        const previewAttribute = rendered ? ` data-preview="${escapeHtml(rendered)}"` : '';
+
+        return `<div data-template-block="${key}" data-label="${escapeHtml(labelOf(key, defs))}"${previewAttribute}${styleAttribute}></div>`;
     });
 
     return mapTextSegments(withBlocks, (text) =>
         text.replace(TOKEN_RE, (_m, key: string) => {
             const kind = kindOf(key, defs);
-            return `<span data-template-token="${key}" data-kind="${kind}" data-label="${escapeHtml(labelOf(key, defs))}"></span>`;
+            const value = kind === 'flag' ? null : preview?.values[key];
+            const valueAttribute = value ? ` data-value="${escapeHtml(value)}"` : '';
+
+            return `<span data-template-token="${key}" data-kind="${kind}" data-label="${escapeHtml(labelOf(key, defs))}"${valueAttribute}></span>`;
         }),
     );
 }

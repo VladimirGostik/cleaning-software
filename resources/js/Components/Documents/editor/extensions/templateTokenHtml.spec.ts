@@ -132,3 +132,34 @@ describe('usedTokenKeys', () => {
         expect(usedTokenKeys('<p>Ahoj $x @php</p>')).toEqual([]);
     });
 });
+
+describe('preview values and blocks', () => {
+    const preview = {
+        values: { 'tenant.name': 'Kegos s.r.o.', 'tenant.dic': null, 'if.vat_payer': 'yes' },
+        blocks: { 'block.signatures': '<table><tr><td>Podpis</td></tr></table>' },
+    };
+
+    it('carries the value on a text chip and skips empty values and flags', () => {
+        const editor = storedToEditorHtml('<p>{{tenant.name}} {{tenant.dic}} {{if.vat_payer}}</p>', defs, preview);
+
+        expect(editor).toContain(
+            'data-template-token="tenant.name" data-kind="text" data-label="Názov firmy" data-value="Kegos s.r.o."',
+        );
+        expect(editor.match(/data-value=/g)).toHaveLength(1);
+    });
+
+    it('carries the rendered block html escaped in an attribute', () => {
+        const editor = storedToEditorHtml('<p>{{block.signatures}}</p>', defs, preview);
+
+        expect(editor).toContain('data-preview="&lt;table&gt;');
+        expect(editor).not.toContain('<table>');
+    });
+
+    it.each([['<p>Firma {{tenant.name}} a {{tenant.dic}}</p>'], ['<p>x</p><p>{{block.signatures}}</p>']])(
+        'stored html round trip is unchanged with a preview: %s',
+        (stored) => {
+            expect(editorToStoredHtml(storedToEditorHtml(stored, defs, preview))).toBe(stored);
+            expect(editorToStoredHtml(storedToEditorHtml(stored, defs))).toBe(stored);
+        },
+    );
+});

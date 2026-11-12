@@ -38,13 +38,13 @@ use App\Models\TenantInterface;
 use App\Models\User;
 use App\Services\Documents\DocumentHtmlSanitizer;
 use App\Services\Documents\DocumentTemplateCatalogue;
-use App\Services\Documents\DocumentTemplateRenderer;
 use App\Services\Documents\QuoteTextService;
 use App\Support\CustomerParty;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
@@ -60,7 +60,6 @@ final readonly class QuoteService
         private DocumentItemService $items,
         private DatabaseManager $db,
         private QuoteTextService $text,
-        private DocumentTemplateRenderer $renderer,
         private DocumentHtmlSanitizer $sanitizer,
         private DocumentTemplateCatalogue $catalogue,
     ) {}
@@ -192,6 +191,26 @@ final readonly class QuoteService
         });
     }
 
+    /** Unsaved quote with priced items for the previews; nothing is written. */
+    public function previewModel(QuoteUpsertData $data, ?Quote $existing = null): Quote
+    {
+        $tenant = Tenant::withoutGlobalScopes()->findOrFail($existing->tenant_id ?? current_tenant_id());
+
+        $quote = new Quote([
+            ...$this->buildAttributes($data, $tenant),
+            'tenant_id' => $tenant->id,
+            'status' => QuoteStatusEnum::Draft,
+        ]);
+
+        $quote->setRelation('items', new EloquentCollection(array_map(
+            static fn (array $row): QuoteItem => new QuoteItem($row),
+            $this->items->pricedRows($data->items, (bool) $tenant->is_vat_payer),
+        )));
+        $quote->forceFill($this->totalsFor($quote));
+
+        return $quote;
+    }
+
     public function send(Quote $quote): Quote
     {
         $this->guardLifecycleTransition($quote, QuoteStatusEnum::Sent);
@@ -205,14 +224,10 @@ final readonly class QuoteService
         }
 
         return $this->db->transaction(function () use ($quote): Quote {
-            $resolved = $this->text->resolvedBody($quote);
+            $resolved = $this->sanitizer->sanitize($this->text->printBody($quote));
+            $document = $quote->textDocument() ?? $this->defaultDocument($quote);
 
-            if ($resolved !== null) {
-                $quote->document?->update([
-                    'draft_body' => $quote->document->body,
-                    'body' => $this->sanitizer->sanitize($resolved),
-                ]);
-            }
+            $document->update(['draft_body' => $document->body, 'body' => $resolved]);
 
             $quote->update(['status' => QuoteStatusEnum::Sent, 'sent_at' => now()]);
 
@@ -476,33 +491,44 @@ final readonly class QuoteService
             return;
         }
 
-        $body = $data->document_body;
+        $body = $this->text->explicitBody($data);
 
-        if ($body === null && $data->document_template_id !== null) {
-            $body = DocumentTemplate::query()->find($data->document_template_id)?->body;
-        }
+        $title = $quote->subject ?? $quote->number ?? __('app.quote_pdf_title');
 
         if ($body === null) {
-            $quote->document()->delete();
+            $existing = $quote->document()->first();
+
+            if ($existing?->body === null) {
+                $this->defaultDocument($quote);
+
+                return;
+            }
+
+            $existing->update(['title' => $title, 'body' => $existing->draft_body ?? $existing->body, 'draft_body' => null]);
 
             return;
         }
 
-        $unknown = $this->renderer->violations(DocumentTypeEnum::Quote, $body);
-
-        if ($unknown !== []) {
-            throw ValidationException::withMessages([
-                'document_body' => [__('app.document_template_unknown_tokens', ['tokens' => implode(', ', $unknown)])],
-            ]);
-        }
-
-        $document = $this->quoteDocument($quote, $this->sanitizer->sanitize($body));
+        $document = $this->quoteDocument($quote, $body);
         $document->update([
             'document_template_id' => $data->document_template_id,
-            'title' => $quote->subject ?? $quote->number ?? __('app.quote_pdf_title'),
+            'title' => $title,
             'show_header' => $data->document_show_header,
             'show_footer' => $data->document_show_footer,
         ]);
+    }
+
+    private function defaultDocument(Quote $quote): Document
+    {
+        $template = $this->text->defaultTemplate($quote->tenant_id);
+        $document = $this->quoteDocument($quote, $this->sanitizer->sanitize($template->body ?? $this->catalogue->skeleton(DocumentTypeEnum::Quote)));
+        $document->update([
+            'document_template_id' => $template?->id,
+            'show_header' => $template->show_header ?? true,
+            'show_footer' => $template->show_footer ?? true,
+        ]);
+
+        return $document;
     }
 
     private function quoteDocument(Quote $quote, ?string $body): Document
@@ -582,6 +608,14 @@ final readonly class QuoteService
     {
         $quote->load('items');
 
+        return $this->totalsFor($quote);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function totalsFor(Quote $quote): array
+    {
         $totals = $this->items->totals($quote->items, $quote->is_vat_payer);
 
         $periodTotals = [];
@@ -636,6 +670,8 @@ final readonly class QuoteService
             'currency' => $data->currency,
             'note' => $data->note,
             'included_text' => $data->included_text,
+            'show_totals' => $data->show_totals,
+            'show_vat_note' => $data->show_vat_note,
             ...($hasClient ? new CustomerParty : CustomerParty::fromQuote($data))->toQuoteAttributes(),
         ];
     }

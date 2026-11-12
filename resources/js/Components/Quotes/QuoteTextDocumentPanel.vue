@@ -38,6 +38,7 @@ const summary = computed(() => t('document_missing_summary', { count: missing.va
                 :tokens="textDocument.tokens"
                 :letterhead="textDocument.show_header ? textDocument.letterhead : null"
                 :footer="textDocument.show_footer ? textDocument.footer : []"
+                variant="kegos"
             />
         </div>
     </div>

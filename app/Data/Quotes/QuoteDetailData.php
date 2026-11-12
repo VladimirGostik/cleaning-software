@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Quotes;
 
+use App\Data\Invoices\InvoiceBuyerData;
 use App\Data\Invoices\VatBreakdownLineData;
 use App\Data\MediaFileData;
 use App\Enums\CurrencyEnum;
@@ -14,6 +15,7 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Services\Documents\QuoteTextService;
+use App\Support\CustomerParty;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -49,6 +51,12 @@ final class QuoteDetailData extends Data
         public readonly ?string $customer_street,
         public readonly ?string $customer_city,
         public readonly ?string $customer_postal_code,
+        public readonly ?string $customer_represented_by,
+        public readonly ?string $customer_ico,
+        public readonly ?string $customer_dic,
+        public readonly bool $show_totals,
+        public readonly bool $show_vat_note,
+        public readonly InvoiceBuyerData $buyer,
         /** @var QuoteItemData[] */
         #[DataCollectionOf(QuoteItemData::class)]
         public readonly array $items,
@@ -103,6 +111,12 @@ final class QuoteDetailData extends Data
             customer_street: $quote->customer_street,
             customer_city: $quote->customer_city,
             customer_postal_code: $quote->customer_postal_code,
+            customer_represented_by: $quote->customer_represented_by,
+            customer_ico: $quote->customer_ico,
+            customer_dic: $quote->customer_dic,
+            show_totals: $quote->show_totals,
+            show_vat_note: $quote->show_vat_note,
+            buyer: InvoiceBuyerData::fromParty(CustomerParty::forQuote($quote)),
             items: $quote->items->map(fn (QuoteItem $item) => QuoteItemData::fromModel($item))->all(),
             vat_breakdown: array_map(fn (array $l) => VatBreakdownLineData::from($l), $quote->vat_breakdown ?? []),
             period_totals: QuotePeriodTotalsData::collectFrom($quote->period_totals),

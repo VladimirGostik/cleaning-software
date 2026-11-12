@@ -112,6 +112,7 @@ function post(path: 'customize' | 'acknowledge'): void {
         :template="template"
         :letterhead="template.letterhead"
         :footer="template.footer"
+        :quote-footer="template.quote_footer"
     />
 
     <ConfirmDeleteModal

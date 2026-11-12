@@ -77,3 +77,58 @@
     background: #fff0e8;
     color: inherit;
 }
+
+.document-body--quote,
+.document-page--quote .document-body {
+    font-size: 10pt;
+    line-height: 1.45;
+}
+
+.document-body--quote h1,
+.document-page--quote .document-body h1 {
+    font-size: 21pt;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin: 5.5mm 0 2.5mm;
+}
+
+.document-body--quote h1 + p,
+.document-page--quote .document-body h1 + p {
+    font-size: 12.5pt;
+    color: #5a6661;
+    margin: 0 0 4.3mm;
+}
+
+.document-body--quote hr,
+.document-page--quote .document-body hr {
+    width: 18mm;
+    height: 0;
+    margin: 0 0 4.3mm;
+    border: none;
+    border-top: 3pt solid #ff5a1f;
+}
+
+.document-body--quote h2,
+.document-page--quote .document-body h2 {
+    margin: 4mm 0 3.5mm;
+    font-size: 8pt;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    line-height: 1.45;
+    color: #ff5a1f;
+    text-transform: uppercase;
+}
+
+.document-body--quote table:not(:has(td[style*='border-top'])),
+.document-page--quote .document-body table:not(:has(td[style*='border-top'])) {
+    width: 100% !important;
+    margin-inline: 0 !important;
+}
+
+.document-body--quote td,
+.document-body--quote th,
+.document-page--quote .document-body td,
+.document-page--quote .document-body th {
+    padding: 0;
+}

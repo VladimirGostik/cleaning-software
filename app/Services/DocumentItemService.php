@@ -36,13 +36,27 @@ final readonly class DocumentItemService
      */
     public function replacePriced(HasMany $items, array $rows, bool $isVatPayer): void
     {
-        $this->store($items, $rows, fn (array $values): array => $this->totals->line(
-            (float) $values['quantity'],
-            (float) $values['unit_price'],
-            (float) $values['discount_percent'],
-            (float) $values['vat_rate'],
-            $isVatPayer,
-        ));
+        $this->store($items, $rows, fn (array $values): array => $this->line($values, $isVatPayer));
+    }
+
+    /**
+     * Priced rows for a document that is not saved (previews).
+     *
+     * @param  array<Data>  $rows
+     * @return list<array<string, scalar|null>>
+     */
+    public function pricedRows(array $rows, bool $isVatPayer): array
+    {
+        $priced = [];
+
+        foreach ($rows as $position => $row) {
+            /** @var array<string, scalar|null> $values */
+            $values = $row->except('id', 'line_base', 'line_vat', 'line_total')->toArray();
+
+            $priced[] = [...$values, ...$this->line($values, $isVatPayer), 'position' => $position];
+        }
+
+        return $priced;
     }
 
     /**
@@ -63,6 +77,21 @@ final readonly class DocumentItemService
         }
 
         return $this->totals->totals($lines, $isVatPayer, $roundingMode);
+    }
+
+    /**
+     * @param  array<string, scalar|null>  $values
+     * @return array<string, float>
+     */
+    private function line(array $values, bool $isVatPayer): array
+    {
+        return $this->totals->line(
+            (float) $values['quantity'],
+            (float) $values['unit_price'],
+            (float) $values['discount_percent'],
+            (float) $values['vat_rate'],
+            $isVatPayer,
+        );
     }
 
     /**

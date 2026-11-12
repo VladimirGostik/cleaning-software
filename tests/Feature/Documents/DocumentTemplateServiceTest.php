@@ -213,4 +213,47 @@ final class DocumentTemplateServiceTest extends TestCase
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, DocumentTemplate::query()->where('parent_id', $global->id)->count());
     }
+
+    public function test_default_for_prefers_firm_rows_over_global_and_skips_overridden_globals(): void
+    {
+        $default = fn (): ?string => $this->service->defaultFor(DocumentTypeEnum::Quote, $this->tenant->id)?->id;
+
+        $this->assertNull($default());
+
+        $global = DocumentTemplate::factory()->global()->quote()->create(['name' => 'A global']);
+        $this->assertSame($global->id, $default());
+
+        $own = DocumentTemplate::factory()->quote()->forTenant($this->tenant)->create(['name' => 'Z own']);
+        $this->assertSame($own->id, $default());
+
+        $own->update(['is_active' => false]);
+        $override = $this->service->customize($global, $this->tenant);
+        $this->assertSame($override->id, $default());
+    }
+
+    public function test_default_for_ignores_other_firms_and_works_without_a_bound_tenant(): void
+    {
+        $other = Tenant::factory()->create();
+        DocumentTemplate::factory()->quote()->forTenant($other)->create();
+        app()->forgetInstance('current_tenant_id');
+
+        $this->assertNull($this->service->defaultFor(DocumentTypeEnum::Quote, $this->tenant->id));
+    }
+
+    public function test_quote_preview_uses_the_quote_footer_and_sample_blocks_while_other_types_keep_the_letterhead_footer(): void
+    {
+        $data = new DocumentTemplatePreviewData('<p>{{block.quote_parties}}</p><p>{{block.quote_items}}</p>', DocumentTypeEnum::Quote, true, true, null);
+
+        $quote = $this->service->preview($data, $this->tenant);
+
+        $this->assertCount(2, $quote->footer);
+        $this->assertNotNull($quote->letterhead);
+        $this->assertStringContainsString('Jednorazové umývanie okien', $quote->html);
+        $this->assertStringContainsString('V zastúpení:', $quote->html);
+        $this->assertStringContainsString('Správcovská s.r.o.', $quote->html);
+
+        $agreement = $this->service->preview(new DocumentTemplatePreviewData('<p>{{block.quote_items}}</p>', DocumentTypeEnum::ServiceAgreement, true, true, null), $this->tenant);
+        $this->assertStringNotContainsString('letter-spacing', $agreement->html);
+        $this->assertStringContainsString('border-bottom: 1px solid #333333', $agreement->html);
+    }
 }

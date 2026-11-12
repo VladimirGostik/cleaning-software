@@ -53,6 +53,12 @@ final class QuoteUpsertData extends Data
         #[Nullable]
         public readonly ?string $customer_postal_code = null,
         #[Nullable]
+        public readonly ?string $customer_represented_by = null,
+        #[Nullable]
+        public readonly ?string $customer_ico = null,
+        #[Nullable]
+        public readonly ?string $customer_dic = null,
+        #[Nullable]
         public readonly ?string $number = null,
         #[Nullable]
         public readonly ?string $document_uuid = null,
@@ -64,6 +70,8 @@ final class QuoteUpsertData extends Data
         public readonly ?string $included_text = null,
         public readonly bool $document_show_header = true,
         public readonly bool $document_show_footer = true,
+        public readonly bool $show_totals = true,
+        public readonly bool $show_vat_note = true,
         public readonly QuoteKindEnum $kind = QuoteKindEnum::Itemized,
         public readonly CurrencyEnum $currency = CurrencyEnum::EUR,
     ) {}
@@ -89,7 +97,7 @@ final class QuoteUpsertData extends Data
             'client_id' => [
                 'nullable',
                 'string',
-                'prohibits:customer_name,customer_email,customer_street,customer_city,customer_postal_code',
+                'prohibits:customer_name,customer_email,customer_street,customer_city,customer_postal_code,customer_represented_by,customer_ico,customer_dic',
                 Rule::exists('clients', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
             ],
             'cleaning_object_id' => [
@@ -111,6 +119,11 @@ final class QuoteUpsertData extends Data
             'customer_street' => ['nullable', 'string', 'max:255'],
             'customer_city' => ['nullable', 'string', 'max:255'],
             'customer_postal_code' => ['nullable', 'string', 'max:16'],
+            'customer_represented_by' => ['nullable', 'string', 'max:255'],
+            'customer_ico' => ['nullable', 'string', 'max:20'],
+            'customer_dic' => ['nullable', 'string', 'max:20'],
+            'show_totals' => ['boolean'],
+            'show_vat_note' => ['boolean'],
             'issue_date' => ['required', 'date'],
             'valid_until' => ['required', 'date', 'after_or_equal:issue_date'],
             'kind' => [

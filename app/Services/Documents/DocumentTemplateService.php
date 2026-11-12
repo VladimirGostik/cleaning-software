@@ -12,6 +12,7 @@ use App\Enums\DocumentTypeEnum;
 use App\Enums\EmploymentContractTypeEnum;
 use App\Models\DocumentTemplate;
 use App\Models\Tenant;
+use App\Scopes\TenantOrGlobalScope;
 use App\Utils\AllowedFilter;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
@@ -78,6 +79,25 @@ final readonly class DocumentTemplateService
             ->get();
 
         return array_values($templates->all());
+    }
+
+    /** Firm rows (override or own) before global ones, then by name; globals the firm has overridden are skipped. */
+    public function defaultFor(DocumentTypeEnum $type, string $tenantId): ?DocumentTemplate
+    {
+        return DocumentTemplate::query()
+            ->withoutGlobalScope(TenantOrGlobalScope::class)
+            ->active()
+            ->where('type', $type->value)
+            ->where(fn (Builder $query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))
+            ->whereNotIn('id', DocumentTemplate::query()
+                ->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->whereNotNull('parent_id')
+                ->whereNull('deleted_at')
+                ->select('parent_id'))
+            ->orderByRaw('tenant_id is null')
+            ->orderBy('name')
+            ->first();
     }
 
     public function create(DocumentTemplateUpsertData $data, ?Tenant $tenant): DocumentTemplate
@@ -206,7 +226,7 @@ final readonly class DocumentTemplateService
             )),
             unknown_tokens: $this->renderer->violations($data->type, $data->body),
             letterhead: $data->show_header ? DocumentFrame::letterhead($tenant) : null,
-            footer: $data->show_footer ? DocumentFrame::footer($tenant) : [],
+            footer: $data->show_footer ? DocumentFrame::footer($tenant, $data->type) : [],
         );
     }
 
@@ -219,6 +239,7 @@ final readonly class DocumentTemplateService
             $data->type,
             $data->show_header,
             $data->show_footer,
+            $data->type === DocumentTypeEnum::Quote ? 'CP-2026-001' : null,
         );
     }
 

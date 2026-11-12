@@ -17,7 +17,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 final class QuoteTextDocumentData extends Data
 {
     public function __construct(
-        public readonly string $id,
+        public readonly ?string $id,
         public readonly ?string $document_template_id,
         public readonly ?string $document_template_name,
         public readonly string $body,
@@ -34,32 +34,34 @@ final class QuoteTextDocumentData extends Data
         public readonly array $footer,
     ) {}
 
-    /** $raw = body with tokens for the editor (a sent quote gives back the text kept at send); otherwise the body as it prints right now. */
+    /** $raw = token text for the editor (a sent quote gives back the text kept at send); otherwise the text as it prints right now. */
     public static function fromQuote(Quote $quote, QuoteTextService $text, bool $raw = false): ?self
     {
-        $quote->loadMissing('document.template');
-        $document = $quote->document;
-
-        if ($document === null || $document->body === null) {
+        if ($quote->isDocument()) {
             return null;
         }
 
+        $quote->loadMissing('document.template');
+        $document = $quote->textDocument();
+        $resolved = $text->resolveFor($quote);
+        $template = $document !== null ? $document->template : $resolved['default'];
+
         $tenant = $text->tenant($quote);
         $editing = $raw && $quote->isEditable();
-        $frozen = ! $editing && $text->isFrozen($quote);
+        $frozen = ! $editing && $document?->body !== null && $text->isFrozen($quote);
 
         return new self(
-            id: $document->id,
-            document_template_id: $document->document_template_id,
-            document_template_name: $document->template?->name,
-            body: $editing ? ($document->draft_body ?? $document->body) : (string) $text->resolvedBody($quote),
-            show_header: $document->show_header,
-            show_footer: $document->show_footer,
+            id: $document?->id,
+            document_template_id: $document !== null ? $document->document_template_id : $template?->id,
+            document_template_name: $template?->name,
+            body: $editing ? $resolved['token'] : $resolved['print'],
+            show_header: $document->show_header ?? true,
+            show_footer: $document->show_footer ?? true,
             is_frozen: $frozen,
-            missing_tokens: $text->missingTokens($quote),
+            missing_tokens: $resolved['missing'],
             tokens: $text->tokens(),
             letterhead: DocumentFrame::letterhead($tenant),
-            footer: DocumentFrame::footer($tenant),
+            footer: DocumentFrame::quoteFooter($tenant),
         );
     }
 }

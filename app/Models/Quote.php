@@ -37,6 +37,11 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $customer_street
  * @property string|null $customer_city
  * @property string|null $customer_postal_code
+ * @property string|null $customer_represented_by
+ * @property string|null $customer_ico
+ * @property string|null $customer_dic
+ * @property bool $show_totals
+ * @property bool $show_vat_note
  * @property Carbon $issue_date
  * @property Carbon $valid_until
  * @property Carbon|null $sent_at
@@ -72,6 +77,11 @@ use Spatie\Activitylog\Support\LogOptions;
     'customer_street',
     'customer_city',
     'customer_postal_code',
+    'customer_represented_by',
+    'customer_ico',
+    'customer_dic',
+    'show_totals',
+    'show_vat_note',
     'issue_date',
     'valid_until',
     'sent_at',
@@ -108,6 +118,8 @@ final class Quote extends Model
             'accepted_at' => 'datetime',
             'rejected_at' => 'datetime',
             'is_vat_payer' => 'boolean',
+            'show_totals' => 'boolean',
+            'show_vat_note' => 'boolean',
             'vat_rate' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'vat_amount' => 'decimal:2',
@@ -171,6 +183,14 @@ final class Quote extends Model
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
+    }
+
+    /** Larastan types the MorphOne property as non-null, but a quote without text has none. */
+    public function textDocument(): ?Document
+    {
+        $document = $this->getRelations()['document'] ?? $this->getRelationValue('document');
+
+        return $document instanceof Document ? $document : null;
     }
 
     /** A sent quote is editable too; saving it returns it to draft (QuoteService::update). */

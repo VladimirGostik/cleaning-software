@@ -20,7 +20,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Name('create_quote_draft')]
-#[Description('Creates an itemized quote as a draft. Sending it is a separate two-step action (prepare_action send_quote).')]
+#[Description('Creates an itemized quote as a draft. It always prints from the company\'s quote template; you do not pick or write the text. Sending it is a separate two-step action (prepare_action send_quote).')]
 #[IsDestructive(false)]
 final class CreateQuoteDraftTool extends TenantTool
 {

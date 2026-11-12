@@ -101,15 +101,19 @@ final class DocumentContextBuilderTest extends TestCase
         $this->assertNull($ctx->values['quote.total_quarterly']);
         $this->assertNull($ctx->values['quote.total_yearly']);
         $items = $ctx->blocks['block.quote_items'];
-        $this->assertStringContainsString('<strong>Schody</strong>', $items);
+        $this->assertStringContainsString('>Schody</p>', $items);
         $this->assertStringContainsString('Zametanie', $items);
         $this->assertStringContainsString('2× mesačne', $items);
-        $this->assertStringContainsString("50,00\u{00A0}EUR / mes.", $items);
-        $this->assertStringContainsString("120,00\u{00A0}EUR / mes.", $ctx->blocks['block.quote_totals']);
+        $this->assertStringContainsString("50,00\u{00A0}EUR <span", $items);
+        $this->assertStringContainsString('/ mes.', $items);
+        $this->assertStringContainsString("120,00\u{00A0}EUR", $ctx->blocks['block.quote_totals']);
         $this->assertStringNotContainsString('(', $items);
-        $sanitized = app(DocumentHtmlSanitizer::class)->sanitize($items);
-        $this->assertStringContainsString('<strong>Schody</strong>', $sanitized);
+        $sanitized = app(DocumentHtmlSanitizer::class)->sanitize($items.$ctx->blocks['block.quote_parties']);
+        $this->assertStringContainsString('>Schody</p>', $sanitized);
         $this->assertStringContainsString('Zametanie', $sanitized);
+        $this->assertStringContainsString('font-variant-numeric: tabular-nums', $sanitized);
+        $this->assertStringContainsString('letter-spacing: 0.22em', $sanitized);
+        $this->assertStringContainsString('text-transform: uppercase', $sanitized);
     }
 
     public function test_period_tokens_are_optional_quote_tokens_with_labels(): void
@@ -143,5 +147,105 @@ final class DocumentContextBuilderTest extends TestCase
 
         $this->assertSame('CleanCo {{unknown.token}} ', $once);
         $this->assertSame($once, $service->resolve($once, ['tenant.name' => 'CleanCo']));
+    }
+
+    public function test_quote_context_uses_kegos_blocks_and_the_structured_buyer(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false, 'signing_place' => 'Zvolen']);
+        $this->bindTenant($tenant);
+        $quote = Quote::factory()->withRepresentedBuyer()->create([
+            'tenant_id' => $tenant->id, 'customer_name' => 'Dom 32', 'customer_represented_by' => 'Správca', 'customer_ico' => '1', 'customer_dic' => '2',
+            'note' => 'Poznámka', 'included_text' => 'Práca', 'issue_date' => '2026-11-11',
+        ]);
+        QuoteItem::factory()->create(['tenant_id' => $tenant->id, 'quote_id' => $quote->id]);
+
+        $ctx = app(DocumentContextBuilder::class)->forQuote($quote, $tenant);
+
+        $this->assertSame('Správca', $ctx->values['customer.represented_by']);
+        $this->assertSame('1', $ctx->values['customer.ico']);
+        $this->assertSame('2', $ctx->values['customer.dic']);
+        $this->assertSame('Zvolen, dňa 11. 11. 2026', $ctx->values['quote.dated_line']);
+        $this->assertStringContainsString('Poznámka', $ctx->blocks['block.quote_note']);
+        $this->assertStringContainsString('Správca', $ctx->blocks['block.quote_parties']);
+        $this->assertStringContainsString('letter-spacing', $ctx->blocks['block.quote_items'].$ctx->blocks['block.quote_totals']);
+        $this->assertStringNotContainsString('border-top', implode('', array_diff_key($ctx->blocks, ['block.signatures' => 1])));
+    }
+
+    public function test_quote_without_note_totals_or_clause_renders_empty_blocks(): void
+    {
+        $tenant = Tenant::factory()->create(['is_vat_payer' => false]);
+        $this->bindTenant($tenant);
+        $quote = Quote::factory()->create(['tenant_id' => $tenant->id, 'note' => null, 'included_text' => null, 'show_totals' => false, 'show_vat_note' => false]);
+
+        $ctx = app(DocumentContextBuilder::class)->forQuote($quote, $tenant);
+
+        $this->assertSame('', $ctx->blocks['block.quote_note']);
+        $this->assertSame('', $ctx->blocks['block.quote_totals']);
+    }
+
+    public function test_contract_context_keeps_the_plain_quote_blocks(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $quote = Quote::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'cleaning_object_id' => $object->id]);
+        QuoteItem::factory()->create(['tenant_id' => $tenant->id, 'quote_id' => $quote->id]);
+
+        $ctx = app(DocumentContextBuilder::class)->forContract($object, $tenant, $this->terms('cleaning_object', $object->id), $quote);
+
+        $this->assertStringContainsString('border-bottom: 1px solid #333333', $ctx->blocks['block.quote_items']);
+        $this->assertStringNotContainsString('letter-spacing', $ctx->blocks['block.quote_items']);
+        $this->assertArrayNotHasKey('block.quote_parties', $ctx->blocks);
+    }
+
+    public function test_new_quote_tokens_are_optional_and_service_agreements_see_only_the_dated_line(): void
+    {
+        $catalogue = app(DocumentTemplateCatalogue::class);
+        $quoteKeys = $catalogue->keysForType(DocumentTypeEnum::Quote);
+        $agreementKeys = $catalogue->keysForType(DocumentTypeEnum::ServiceAgreement);
+
+        foreach (['quote.dated_line', 'customer.represented_by', 'customer.ico', 'customer.dic'] as $key) {
+            $this->assertSame(DocumentTokenKindEnum::Optional, $catalogue->kindOf($key));
+            $this->assertContains($key, $quoteKeys);
+        }
+        foreach (['block.quote_parties', 'block.quote_note'] as $key) {
+            $this->assertSame(DocumentTokenKindEnum::Block, $catalogue->kindOf($key));
+            $this->assertContains($key, $quoteKeys);
+            $this->assertNotContains($key, $agreementKeys);
+        }
+        $this->assertContains('quote.dated_line', $agreementKeys);
+        $this->assertNotContains('customer.ico', $agreementKeys);
+    }
+
+    public function test_quote_skeleton_uses_only_available_tokens(): void
+    {
+        $catalogue = app(DocumentTemplateCatalogue::class);
+        $skeleton = $catalogue->skeleton(DocumentTypeEnum::Quote);
+
+        preg_match_all(DocumentTemplateCatalogue::TOKEN_PATTERN, $skeleton, $matches);
+
+        $this->assertSame([], array_values(array_diff($matches[1], $catalogue->keysForType(DocumentTypeEnum::Quote))));
+        $this->assertStringStartsWith('<h1>', $skeleton);
+        $this->assertStringContainsString('<hr>', $skeleton);
+    }
+
+    public function test_contract_from_a_quote_for_a_house_keeps_the_client_as_the_party(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Klient s.r.o.', 'ico' => '999']);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'billing_name' => 'Bytový dom', 'billing_ico' => '777']);
+        $quote = Quote::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id, 'cleaning_object_id' => $object->id]);
+        QuoteItem::factory()->create(['tenant_id' => $tenant->id, 'quote_id' => $quote->id]);
+
+        $contract = app(DocumentContextBuilder::class)->forContract($object, $tenant, $this->terms('cleaning_object', $object->id), $quote);
+        $printed = app(DocumentContextBuilder::class)->forQuote($quote, $tenant);
+
+        $this->assertSame('Klient s.r.o.', $contract->values['customer.name']);
+        $this->assertSame('999', $contract->values['customer.ico']);
+        $this->assertSame('Bytový dom', $printed->values['customer.name']);
+        $this->assertSame('777', $printed->values['customer.ico']);
+        $this->assertNull($printed->values['customer.represented_by']);
     }
 }

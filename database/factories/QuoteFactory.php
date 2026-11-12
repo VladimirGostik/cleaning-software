@@ -48,6 +48,8 @@ final class QuoteFactory extends Factory
             'total' => '100.00',
             'vat_breakdown' => null,
             'note' => null,
+            'show_totals' => true,
+            'show_vat_note' => true,
         ];
     }
 
@@ -111,6 +113,17 @@ final class QuoteFactory extends Factory
         return $this->state(fn () => [
             'client_id' => null,
             'cleaning_object_id' => null,
+        ]);
+    }
+
+    public function withRepresentedBuyer(): static
+    {
+        return $this->state(fn () => [
+            'client_id' => null,
+            'cleaning_object_id' => null,
+            'customer_represented_by' => fake()->company(),
+            'customer_ico' => fake()->numerify('########'),
+            'customer_dic' => fake()->numerify('##########'),
         ]);
     }
 
