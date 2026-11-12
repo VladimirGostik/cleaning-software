@@ -161,7 +161,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                             v-if="task.can.update"
                             type="button"
                             role="menuitem"
-                            class="flex min-h-11 items-center gap-2 rounded-tile-sm px-3 text-left hover:bg-base-100"
+                            class="flex min-h-(--kg-menu-item-height) items-center gap-2 rounded-tile-sm px-3 text-left hover:bg-base-100"
                             :disabled="uploading"
                             @click="((ui.moreOpen = false), (ui.editOpen = true))"
                         >
@@ -172,7 +172,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                             v-if="task.can.delete"
                             type="button"
                             role="menuitem"
-                            class="flex min-h-11 items-center gap-2 rounded-tile-sm px-3 text-left text-error hover:bg-base-100"
+                            class="flex min-h-(--kg-menu-item-height) items-center gap-2 rounded-tile-sm px-3 text-left text-error hover:bg-base-100"
                             :disabled="uploading"
                             @click="((ui.moreOpen = false), openModal(task))"
                         >

@@ -89,7 +89,7 @@ function choose(status: App.Enums.TaskStatusEnum): void {
                 :key="option"
                 type="button"
                 role="menuitemradio"
-                class="flex items-center justify-between gap-3 min-h-11 rounded-tile-sm px-3 text-left hover:bg-base-100 focus-visible:bg-base-100"
+                class="flex items-center justify-between gap-3 min-h-(--kg-menu-item-height) rounded-tile-sm px-3 text-left hover:bg-base-100 focus-visible:bg-base-100"
                 :aria-checked="option === status"
                 :data-autofocus="option === status ? '' : undefined"
                 @click="choose(option)"

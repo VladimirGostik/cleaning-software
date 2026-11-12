@@ -288,7 +288,7 @@ function onSettingsSaved(): void {
                 <template #buttons="{ row }">
                     <Link
                         :href="`/invoices/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
@@ -298,7 +298,7 @@ function onSettingsSaved(): void {
                     <button
                         v-if="allows('edit invoices') && row.status === 'draft'"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('invoice_action_issue')"
                         :aria-label="t('invoice_action_issue')"
                         @click="ui.issueFor = row.id"
@@ -309,7 +309,7 @@ function onSettingsSaved(): void {
                     <button
                         v-if="allows('edit invoices') && ['issued', 'overdue'].includes(row.status)"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="payLabel(row.is_credit_note)"
                         :aria-label="payLabel(row.is_credit_note)"
                         @click="ui.payFor = row"
@@ -320,7 +320,7 @@ function onSettingsSaved(): void {
                     <button
                         v-if="allows('create invoices')"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('invoice_action_duplicate')"
                         :aria-label="t('invoice_action_duplicate')"
                         @click="duplicate(row.id)"
@@ -331,7 +331,7 @@ function onSettingsSaved(): void {
                     <button
                         v-if="allows('cancel invoices') && ['issued', 'overdue'].includes(row.status)"
                         type="button"
-                        class="btn btn-ghost btn-square text-warning"
+                        class="btn btn-ghost btn-sm btn-square text-warning"
                         :title="t('invoice_action_cancel')"
                         :aria-label="t('invoice_action_cancel')"
                         @click="cancelConfirm.openModal(row)"

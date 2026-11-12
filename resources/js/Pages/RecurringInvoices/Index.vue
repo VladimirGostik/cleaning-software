@@ -175,7 +175,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                 <template #buttons="{ row }">
                     <Link
                         :href="`/recurring-invoices/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
@@ -185,7 +185,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                     <button
                         v-if="allows('edit recurring_invoices') && row.status === 'active'"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('recurring_invoice_action_pause')"
                         :aria-label="t('recurring_invoice_action_pause')"
                         @click="pauseConfirm.openModal(row)"
@@ -196,7 +196,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                     <button
                         v-if="allows('edit recurring_invoices') && row.status === 'paused'"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('recurring_invoice_action_resume')"
                         :aria-label="t('recurring_invoice_action_resume')"
                         @click="resumeConfirm.openModal(row)"
@@ -207,7 +207,7 @@ const cancelConfirm = useDeleteConfirm<App.Data.RecurringInvoices.RecurringInvoi
                     <button
                         v-if="allows('delete recurring_invoices') && ['active', 'paused'].includes(row.status)"
                         type="button"
-                        class="btn btn-ghost btn-square text-warning"
+                        class="btn btn-ghost btn-sm btn-square text-warning"
                         :title="t('recurring_invoice_action_cancel')"
                         :aria-label="t('recurring_invoice_action_cancel')"
                         @click="cancelConfirm.openModal(row)"

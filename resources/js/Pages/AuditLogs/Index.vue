@@ -106,7 +106,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     <button
                         v-if="canRevert(row)"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('audit_revert_action')"
                         :aria-label="t('audit_revert_action')"
                         @click.stop="revertConfirm.openModal(row as App.Data.ActivityLogListItemData)"
@@ -115,7 +115,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     </button>
                     <Link
                         :href="`/audit-logs/${(row as App.Data.ActivityLogListItemData).id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('details')"
                         :aria-label="t('details')"
                     >

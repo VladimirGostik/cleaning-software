@@ -243,7 +243,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 <template #buttons="{ row }">
                     <Link
                         :href="`/expenses/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >

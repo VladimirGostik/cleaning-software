@@ -206,7 +206,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                 <template #buttons="{ row }">
                     <Link
                         :href="`/quotes/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
@@ -216,7 +216,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                     <button
                         v-if="allows('send quotes') && row.status === 'draft' && row.kind === 'itemized'"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('quote_action_send')"
                         :aria-label="t('quote_action_send')"
                         @click="sendConfirm.openModal(row)"
@@ -227,7 +227,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                     <button
                         v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('quote_action_accept')"
                         :aria-label="t('quote_action_accept')"
                         @click="acceptConfirm.openModal(row)"
@@ -238,7 +238,7 @@ const rejectConfirm = useDeleteConfirm<App.Data.Quotes.QuoteListItemData>({
                     <button
                         v-if="allows('approve quotes') && row.status === 'sent' && row.kind === 'itemized'"
                         type="button"
-                        class="btn btn-ghost btn-square text-warning"
+                        class="btn btn-ghost btn-sm btn-square text-warning"
                         :title="t('quote_action_reject')"
                         :aria-label="t('quote_action_reject')"
                         @click="rejectConfirm.openModal(row)"

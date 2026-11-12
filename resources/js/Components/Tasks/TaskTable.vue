@@ -126,7 +126,7 @@ const columns: TableColumn<Row>[] = [
             <button
                 v-if="row.can_update && row.is_active"
                 type="button"
-                class="btn btn-ghost btn-square"
+                class="btn btn-ghost btn-sm btn-square"
                 :title="t('task_complete')"
                 :aria-label="t('task_complete')"
                 :disabled="processingId === row.id"
@@ -137,7 +137,7 @@ const columns: TableColumn<Row>[] = [
 
             <Link
                 :href="`/tasks/${row.id}`"
-                class="btn btn-ghost btn-square"
+                class="btn btn-ghost btn-sm btn-square"
                 :title="t('view')"
                 :aria-label="t('view')"
             >

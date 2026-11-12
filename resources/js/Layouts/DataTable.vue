@@ -178,7 +178,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                                     <a
                                         v-if="canEdit && editUrl"
                                         :href="editUrl(row)"
-                                        class="btn btn-ghost btn-square"
+                                        class="btn btn-ghost btn-sm btn-square"
                                         :title="$t('edit')"
                                     >
                                         <PencilSquareIcon />
@@ -187,7 +187,7 @@ const skeletonCount = computed(() => Math.min(props.perPage, 5));
                                     <div v-if="canDeleteThisRow(row)" class="relative">
                                         <button
                                             type="button"
-                                            class="btn btn-ghost btn-square text-error"
+                                            class="btn btn-ghost btn-sm btn-square text-error"
                                             :title="$t('delete')"
                                             @click="openDeletePopover(index)"
                                         >

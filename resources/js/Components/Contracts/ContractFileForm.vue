@@ -138,21 +138,22 @@ function submit(): void {
 
                     <ContractBasicsFields />
 
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div class="flex items-center md:mt-9 md:h-10">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-end">
+                        <div class="flex min-h-(--kg-field-height) items-center">
                             <CheckboxInput field="is_signed" :label="t('contract_is_signed')" />
                         </div>
 
-                        <div v-if="form.is_signed" class="space-y-1">
-                            <DateInput
-                                :model-value="form.signed_on"
-                                :label="t('contract_signed_on')"
-                                :max="today"
-                                :error="form.errors.signed_on"
-                                @update:model-value="updateSignedOn"
-                            />
-                            <p class="text-xs text-muted">{{ t('contract_signed_on_hint') }}</p>
-                        </div>
+                        <DateInput
+                            v-if="form.is_signed"
+                            :model-value="form.signed_on"
+                            :label="t('contract_signed_on')"
+                            :max="today"
+                            :error="form.errors.signed_on"
+                            @update:model-value="updateSignedOn"
+                        />
+                        <p v-if="form.is_signed" class="text-xs text-muted md:col-start-2">
+                            {{ t('contract_signed_on_hint') }}
+                        </p>
                     </div>
                 </div>
             </div>

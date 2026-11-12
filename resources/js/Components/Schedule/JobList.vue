@@ -79,7 +79,12 @@ const columns: TableColumn<App.Data.Schedule.JobListItemData>[] = [
         </template>
 
         <template #buttons="{ row }">
-            <Link :href="`/jobs/${row.id}`" class="btn btn-ghost btn-square" :title="t('view')" :aria-label="t('view')">
+            <Link
+                :href="`/jobs/${row.id}`"
+                class="btn btn-ghost btn-sm btn-square"
+                :title="t('view')"
+                :aria-label="t('view')"
+            >
                 <EyeIcon />
             </Link>
         </template>

@@ -160,7 +160,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 <template #buttons="{ row }">
                     <Link
                         :href="`/employees/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
@@ -169,7 +169,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                     <Link
                         v-if="allows('edit employees')"
                         :href="`/employees/${row.id}/edit`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('edit')"
                         :aria-label="t('edit')"
                     >

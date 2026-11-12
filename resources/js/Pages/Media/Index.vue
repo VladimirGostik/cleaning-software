@@ -119,7 +119,7 @@ const filterDefinitions = computed<FilterConfig[]>(() => [
                 <template #buttons="{ row }">
                     <Link
                         :href="`/media/${(row as App.Data.MediaListItemData).id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('details')"
                         :aria-label="t('details')"
                     >

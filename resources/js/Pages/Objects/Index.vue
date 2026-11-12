@@ -208,7 +208,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 <template #buttons="{ row }">
                     <Link
                         :href="`/objects/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
@@ -218,7 +218,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <button
                         v-if="allows('delete objects') && row.is_active"
                         type="button"
-                        class="btn btn-ghost btn-square text-warning"
+                        class="btn btn-ghost btn-sm btn-square text-warning"
                         :title="t('object_deactivate')"
                         :aria-label="t('object_deactivate')"
                         @click="openModal(row)"

@@ -134,7 +134,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                 <template #buttons="{ row }">
                     <Link
                         :href="`/clients/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
@@ -144,7 +144,7 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
                     <button
                         v-if="allows('delete clients')"
                         type="button"
-                        class="btn btn-ghost btn-square text-error"
+                        class="btn btn-ghost btn-sm btn-square text-error"
                         :title="t('delete')"
                         :aria-label="t('delete')"
                         @click="openModal(row)"

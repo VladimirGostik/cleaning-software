@@ -57,7 +57,7 @@ function addTenant() {
             <button
                 v-else
                 type="button"
-                class="flex min-h-11 w-full items-center gap-2 rounded-tile bg-(--kg-control-bg) px-3 text-left text-sm font-medium text-base-content"
+                class="flex min-h-(--kg-nav-item-height) w-full items-center gap-2 rounded-tile bg-(--kg-control-bg) px-3 text-left text-sm font-medium text-base-content"
                 aria-haspopup="menu"
                 :aria-expanded="isOpen"
                 :aria-label="t('tenant_switch')"

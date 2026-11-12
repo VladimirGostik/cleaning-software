@@ -34,7 +34,7 @@ function submit(): void {
 <template>
     <form novalidate class="space-y-2" @submit.prevent="submit">
         <div class="flex items-end gap-2">
-            <div class="flex-1 [&_fieldset]:pb-0">
+            <div class="flex-1">
                 <FileInput
                     :label="t(multiple ? 'bank_statement_files' : 'bank_statement_file')"
                     accept=".xml,text/xml,application/xml"
@@ -43,11 +43,7 @@ function submit(): void {
                     @update:files="onFiles"
                 />
             </div>
-            <button
-                type="submit"
-                class="btn btn-neutral h-12 min-h-12"
-                :disabled="loading || disabled || files.length === 0"
-            >
+            <button type="submit" class="btn btn-neutral" :disabled="loading || disabled || files.length === 0">
                 <span v-if="loading" class="loading loading-spinner loading-xs" />
                 {{ t('bank_statement_preview') }}
             </button>

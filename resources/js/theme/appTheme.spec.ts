@@ -207,7 +207,6 @@ describe('app-theme contract', () => {
         expect(vars.get('--depth')).toBe('0');
         expect(vars.get('--noise')).toBe('0');
         expect(vars.get('--kg-sidebar-width')).toBe('15rem');
-        expect(vars.get('--kg-nav-item-height')).toBe('2.75rem');
         expect(vars.get('--kg-bottom-nav-height')).toBe('3.375rem');
     });
 
@@ -297,5 +296,87 @@ describe('app-theme contract', () => {
 
     it("no longer frames every card (.card:not([class*='border']))", () => {
         expect(css).not.toContain(".card:not([class*='border'])");
+    });
+});
+
+describe('density contract', () => {
+    const themeRules = rules.filter((r) => r.selector === "[data-theme='app-theme']");
+    const desktop = themeRules[0].decls;
+    const touch = (
+        themeRules.find((r) => r.decls.get('--kg-bottom-nav-clearance')?.startsWith('calc')) ?? themeRules[0]
+    ).decls;
+
+    const DENSITY: Record<string, [string, string]> = {
+        '--kg-field-height': ['2.5rem', '3rem'],
+        '--kg-btn-height': ['2.5rem', '2.75rem'],
+        '--kg-btn-height-sm': ['2rem', '2.25rem'],
+        '--kg-nav-item-height': ['2.25rem', '2.75rem'],
+        '--kg-menu-item-height': ['2.25rem', '2.75rem'],
+        '--kg-row-height': ['2.75rem', '3.25rem'],
+        '--kg-row-gap': ['0.25rem', '0.5rem'],
+    };
+
+    const declsOf = (selector: string, prop: string): string[] =>
+        outsideDocument
+            .filter((r) => r.selector.split(/,(?![^(]*\))/).some((s) => s.trim() === selector))
+            .map((r) => r.decls.get(prop))
+            .filter((v): v is string => v !== undefined);
+
+    const remValue = (v: string) => Number.parseFloat(v);
+
+    it.each(Object.entries(DENSITY))('declares %s for desktop and touch', (name, [wide, narrow]) => {
+        expect(desktop.get(name)).toBe(wide);
+        expect(touch.get(name)).toBe(narrow);
+    });
+
+    it.each([
+        ['.input', '--size', 'var(--kg-field-height)'],
+        ['.select', '--size', 'var(--kg-field-height)'],
+        ['.textarea', '--size', 'var(--kg-field-height)'],
+        ['.file-input', '--size', 'var(--kg-field-height)'],
+        ['.btn', '--size', 'var(--kg-btn-height)'],
+        ['.btn-sm', '--size', 'var(--kg-btn-height-sm)'],
+        ['.table tbody tr', 'height', 'var(--kg-row-height)'],
+        ['.table', 'border-spacing', '0 var(--kg-row-gap)'],
+        ['.kg-list', 'gap', 'var(--kg-row-gap)'],
+        ['.kg-list-row', 'min-height', 'var(--kg-row-height)'],
+        ['.dropdown-content.menu li > *', 'min-height', 'var(--kg-menu-item-height)'],
+    ])('%s %s consumes the density token', (selector, prop, value) => {
+        expect(declsOf(selector, prop)).toContain(value);
+    });
+
+    it('lets square and circle buttons follow the size modifier', () => {
+        const offenders = outsideDocument
+            .filter((r) => r.decls.has('--size'))
+            .flatMap((r) => r.selector.split(/,(?![^(]*\))/).map((s) => s.trim()))
+            .filter((s) => /\.btn-(square|circle)/.test(s) && !/\.btn-(sm|lg|xs|md)/.test(s));
+        expect(offenders).toEqual([]);
+    });
+
+    it('keeps table cells and fieldsets tight', () => {
+        const pad = (sel: string) => declsOf(sel, 'padding-block').map(remValue);
+        expect(pad('.table tbody :is(td, th):not([colspan])').length).toBeGreaterThan(0);
+        expect(pad('.table tbody :is(td, th):not([colspan])').every((v) => v <= 0.25)).toBe(true);
+        expect(declsOf('.table tbody :is(td, th)', 'padding-block')).toEqual([]);
+        expect(pad('.table thead th').length).toBeGreaterThan(0);
+        expect(pad('.table thead th').every((v) => v <= 0.25)).toBe(true);
+        expect(declsOf('.fieldset', 'padding-block')).toContain('0');
+        expect(pad('.fieldset-legend').length).toBeGreaterThan(0);
+        expect(pad('.fieldset-legend').every((v) => v <= 0.25)).toBe(true);
+    });
+
+    it('sizes the tabs box from the button height', () => {
+        expect(declsOf('.tabs-box .tab', 'height')).toContain('calc(var(--kg-btn-height) - 0.5rem)');
+    });
+
+    it('has no literal rem --size outside -lg and the touch primary rule', () => {
+        const literal = outsideDocument.filter((r) => {
+            const v = r.decls.get('--size');
+            if (v === undefined || !/^[\d.]+rem$/.test(v)) return false;
+            if (/-lg\b/.test(r.selector)) return false;
+            if (r.selector.includes('.btn-primary:not(')) return false;
+            return true;
+        });
+        expect(literal.map((r) => r.selector)).toEqual([]);
     });
 });

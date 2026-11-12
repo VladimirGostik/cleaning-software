@@ -184,7 +184,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                 <template #buttons="{ row }">
                     <Link
                         :href="`/contracts/${row.id}`"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('view')"
                         :aria-label="t('view')"
                     >
@@ -194,7 +194,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                     <button
                         v-if="allows('edit contracts') && row.can_be_signed"
                         type="button"
-                        class="btn btn-ghost btn-square"
+                        class="btn btn-ghost btn-sm btn-square"
                         :title="t('contract_action_sign')"
                         :aria-label="t('contract_action_sign')"
                         @click="signConfirm.openModal(row)"
@@ -205,7 +205,7 @@ const signConfirm = useDeleteConfirm<App.Data.Contracts.ContractListItemData>({
                     <button
                         v-if="allows('terminate contracts') && row.can_be_terminated"
                         type="button"
-                        class="btn btn-ghost btn-square text-warning"
+                        class="btn btn-ghost btn-sm btn-square text-warning"
                         :title="t('contract_action_terminate')"
                         :aria-label="t('contract_action_terminate')"
                         @click="ui.terminateFor = row.id"
