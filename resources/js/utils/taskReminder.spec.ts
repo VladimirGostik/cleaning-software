@@ -52,50 +52,22 @@ describe('initialReminderState', () => {
 });
 
 describe('buildReminderPayload', () => {
-    it('clears when toggle is off', () => {
-        const payload = buildReminderPayload(
-            { remind_enabled: false, remind_on: '2026-11-05', remind_slot: 'morning' },
-            null,
-        );
-        expect(payload).toEqual({ remind_on: null, remind_slot: null });
-        expect(payload).not.toHaveProperty('remind_at');
-    });
-
-    it('clears when toggle is off on edit', () => {
+    it('clears the pair when toggle is off', () => {
         expect(
-            buildReminderPayload({ remind_enabled: false, remind_on: '2026-11-10', remind_slot: 'noon' }, task()),
+            buildReminderPayload({ remind_enabled: false, remind_on: '2026-11-05', remind_slot: 'morning' }),
         ).toEqual({
             remind_on: null,
             remind_slot: null,
         });
     });
 
-    it('sends the original remind_at when unchanged', () => {
-        const payload = buildReminderPayload(
-            { remind_enabled: true, remind_on: '2026-11-10', remind_slot: 'noon' },
-            task(),
+    it('sends date and slot when toggle is on', () => {
+        expect(buildReminderPayload({ remind_enabled: true, remind_on: '2026-11-05', remind_slot: 'evening' })).toEqual(
+            {
+                remind_on: '2026-11-05',
+                remind_slot: 'evening',
+            },
         );
-        expect(payload).toEqual({ remind_at: '2026-11-10T11:00:00Z' });
-        expect(payload).not.toHaveProperty('remind_on');
-        expect(payload).not.toHaveProperty('remind_slot');
-    });
-
-    it('sends date and slot when changed on edit', () => {
-        const payload = buildReminderPayload(
-            { remind_enabled: true, remind_on: '2026-11-11', remind_slot: 'noon' },
-            task(),
-        );
-        expect(payload).toEqual({ remind_on: '2026-11-11', remind_slot: 'noon' });
-        expect(payload).not.toHaveProperty('remind_at');
-    });
-
-    it('sends date and slot on create', () => {
-        const payload = buildReminderPayload(
-            { remind_enabled: true, remind_on: '2026-11-05', remind_slot: 'evening' },
-            null,
-        );
-        expect(payload).toEqual({ remind_on: '2026-11-05', remind_slot: 'evening' });
-        expect(payload).not.toHaveProperty('remind_at');
     });
 });
 

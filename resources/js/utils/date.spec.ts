@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDate, formatDatetime, formatMonth, formatShortDatetime, monthOptions, previousMonth } from './date';
+import {
+    formatDate,
+    formatDatetime,
+    formatMonth,
+    formatRelativeTime,
+    formatShortDatetime,
+    localDatetimeToIso,
+    monthOptions,
+    previousMonth,
+} from './date';
 
 describe('date formats', () => {
     it('formats a date without zero padding', () => {
@@ -17,6 +26,22 @@ describe('date formats', () => {
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 30);
         expect(formatShortDatetime(today)).toBe('7:30');
         expect(formatShortDatetime('2020-03-05T07:30:00')).toBe('5. 3.');
+    });
+});
+
+describe('localDatetimeToIso', () => {
+    it('returns null for an empty value', () => {
+        expect(localDatetimeToIso('', '2026-11-01T07:30:00Z')).toBeNull();
+    });
+
+    it('keeps the original when the local value did not change', () => {
+        expect(localDatetimeToIso('2026-11-01T07:30', '2026-11-01T07:30:00')).toBe('2026-11-01T07:30:00');
+    });
+
+    it('converts a changed local value to ISO', () => {
+        expect(localDatetimeToIso('2026-11-02T08:00', '2026-11-01T07:30:00')).toBe(
+            new Date('2026-11-02T08:00').toISOString(),
+        );
     });
 });
 
@@ -51,5 +76,36 @@ describe('month helpers', () => {
 
     it('does not duplicate an included month already in range', () => {
         expect(monthOptions('sk', 3, '2026-10', new Date(2026, 10, 15))).toHaveLength(3);
+    });
+});
+
+describe('formatRelativeTime', () => {
+    const now = new Date(2026, 10, 13, 12, 0, 0);
+    const rtf = (locale: string) => new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+
+    it('says now under a minute', () => {
+        expect(formatRelativeTime(new Date(2026, 10, 13, 11, 59, 40).toISOString(), now, 'en')).toBe(
+            rtf('en-GB').format(0, 'second'),
+        );
+    });
+
+    it('uses minutes and hours', () => {
+        expect(formatRelativeTime(new Date(2026, 10, 13, 11, 55).toISOString(), now, 'sk')).toBe(
+            rtf('sk-SK').format(-5, 'minute'),
+        );
+        expect(formatRelativeTime(new Date(2026, 10, 13, 9, 0).toISOString(), now, 'uk')).toBe(
+            rtf('uk-UA').format(-3, 'hour'),
+        );
+    });
+
+    it('says yesterday for the previous calendar day', () => {
+        expect(formatRelativeTime(new Date(2026, 10, 12, 8, 0).toISOString(), now, 'sk')).toBe(
+            rtf('sk-SK').format(-1, 'day'),
+        );
+    });
+
+    it('falls back to a short date this year and a full date before', () => {
+        expect(formatRelativeTime(new Date(2026, 8, 3, 8, 0).toISOString(), now, 'sk')).toBe('3. 9.');
+        expect(formatRelativeTime(new Date(2025, 8, 3, 8, 0).toISOString(), now, 'sk')).toBe('3. 9. 2025');
     });
 });

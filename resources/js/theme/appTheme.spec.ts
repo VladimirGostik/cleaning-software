@@ -329,6 +329,30 @@ describe('density contract', () => {
         expect(touch.get(name)).toBe(narrow);
     });
 
+    it('declares the property label column once for every width', () => {
+        expect(desktop.get('--kg-property-label-width')).toBe('8.5rem');
+        expect(touch.get('--kg-property-label-width')).toBeUndefined();
+    });
+
+    it('stacks popovers above the DaisyUI modal', () => {
+        expect(desktop.get('--kg-z-popover')).toBe('1000');
+        expect(touch.get('--kg-z-popover')).toBeUndefined();
+        expect(Number(desktop.get('--kg-z-popover'))).toBeGreaterThan(999);
+    });
+
+    it('shapes calendar days from tokens only', () => {
+        expect(declsOf('.kg-calendar-day', 'height')).toEqual(['var(--kg-menu-item-height)']);
+        expect(declsOf('.kg-calendar-day', 'border-radius')).toEqual(['var(--radius-pill)']);
+        expect(declsOf('.kg-calendar-day--selected', 'background-color')).toEqual(['var(--color-primary)']);
+    });
+
+    it('sizes the heading input from the 2xl text token', () => {
+        expect(declsOf('.kg-heading-input', 'font-size')).toEqual(['var(--text-2xl)']);
+        expect(declsOf('.kg-heading-input', 'font-weight')).toEqual(['400']);
+        expect(declsOf('.kg-quiet-textarea', 'font-weight')).toEqual(['400']);
+        expect(declsOf('.kg-quiet-textarea', 'resize')).toEqual(['none']);
+    });
+
     it.each([
         ['.input', '--size', 'var(--kg-field-height)'],
         ['.select', '--size', 'var(--kg-field-height)'],

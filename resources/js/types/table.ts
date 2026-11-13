@@ -39,16 +39,7 @@ export interface Paginator<TRow> {
 
 export type FilterOperator = '=' | '!=' | '<' | '<=' | '>' | '>=' | 'between' | '~';
 
-export type FilterType =
-    | 'string'
-    | 'text'
-    | 'number'
-    | 'boolean'
-    | 'date'
-    | 'datetime'
-    | 'enum'
-    | 'select'
-    | 'autocomplete';
+export type FilterType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'enum' | 'select' | 'autocomplete';
 
 export interface FilterOption {
     label: string;

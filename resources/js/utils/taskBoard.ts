@@ -1,3 +1,5 @@
+import { format, isSameDay, addDays, parseISO } from 'date-fns';
+
 export type TaskBoardColumn = App.Data.Tasks.TaskBoardColumnData;
 export type PendingMoves = Record<string, App.Enums.TaskStatusEnum>;
 
@@ -45,4 +47,16 @@ export function boardShowAllHref(status: App.Enums.TaskStatusEnum, filters: Reco
     params.set('filter[status]', status);
 
     return `/tasks?${params.toString()}`;
+}
+
+export function formatTaskDue(
+    iso: string,
+    today: Date = new Date(),
+): { kind: 'today' | 'tomorrow' | 'date'; text: string } {
+    const date = parseISO(iso);
+
+    if (isSameDay(date, today)) return { kind: 'today', text: format(date, 'd. M.') };
+    if (isSameDay(date, addDays(today, 1))) return { kind: 'tomorrow', text: format(date, 'd. M.') };
+
+    return { kind: 'date', text: format(date, date.getFullYear() === today.getFullYear() ? 'd. M.' : 'd. M. yyyy') };
 }

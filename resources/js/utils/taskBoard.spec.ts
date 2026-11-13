@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyPendingMoves, boardShowAllHref, isTaskOverdue } from './taskBoard';
+import { applyPendingMoves, boardShowAllHref, formatTaskDue, isTaskOverdue } from './taskBoard';
 
 function task(id: string, status: App.Enums.TaskStatusEnum): App.Data.Tasks.TaskListItemData {
     return {
@@ -103,5 +103,36 @@ describe('isTaskOverdue', () => {
         expect(isTaskOverdue({ is_active: true, due_at: '2026-11-05T13:00:00Z' }, now)).toBe(false);
         expect(isTaskOverdue({ is_active: true, due_at: null }, now)).toBe(false);
         expect(isTaskOverdue({ is_active: false, due_at: '2026-11-01T00:00:00Z' }, now)).toBe(false);
+    });
+});
+
+describe('formatTaskDue', () => {
+    const today = new Date(2026, 10, 13, 23, 30);
+
+    it('marks today and tomorrow by local calendar day', () => {
+        expect(formatTaskDue(new Date(2026, 10, 13, 8, 0).toISOString(), today).kind).toBe('today');
+        expect(formatTaskDue(new Date(2026, 10, 14, 0, 5).toISOString(), today).kind).toBe('tomorrow');
+    });
+
+    it('formats a later date of this year without the year', () => {
+        expect(formatTaskDue(new Date(2026, 11, 3, 9, 0).toISOString(), today)).toEqual({
+            kind: 'date',
+            text: '3. 12.',
+        });
+    });
+
+    it('adds the year for another year', () => {
+        expect(formatTaskDue(new Date(2027, 0, 5, 9, 0).toISOString(), today)).toEqual({
+            kind: 'date',
+            text: '5. 1. 2027',
+        });
+    });
+
+    it('treats a time crossing midnight as the next day', () => {
+        const justBefore = new Date(2026, 10, 13, 23, 59);
+        const justAfter = new Date(2026, 10, 14, 0, 1);
+
+        expect(formatTaskDue(justBefore.toISOString(), today).kind).toBe('today');
+        expect(formatTaskDue(justAfter.toISOString(), today).kind).toBe('tomorrow');
     });
 });

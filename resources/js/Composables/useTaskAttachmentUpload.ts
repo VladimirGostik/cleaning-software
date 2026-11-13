@@ -2,6 +2,7 @@ import { computed, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
 
+import { flushActiveTaskEdit, taskEditIdle } from '@/Composables/useTaskInlineEdit';
 import { useToast } from '@/Composables/useToast';
 import { formatAttachmentLimit, taskAttachmentRejection } from '@/utils/taskAttachments';
 
@@ -171,6 +172,7 @@ export function useTaskAttachmentUpload(options: {
         }
 
         running = true;
+        if (!taskEditIdle()) await flushActiveTaskEdit();
         let uploaded = 0;
         let unknown = false;
 

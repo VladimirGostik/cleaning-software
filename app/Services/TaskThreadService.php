@@ -97,6 +97,7 @@ final readonly class TaskThreadService
             ->map(fn (TaskComment $comment): TaskCommentData => TaskCommentData::fromModel(
                 $comment,
                 $viewer->id,
+                $this->policy->mayEditComment($viewer, $task, $comment, true),
                 $this->policy->mayDeleteComment($viewer, $task, $comment, true),
                 in_array($comment->answers_comment_id, $questionIds, true) ? $comment->answers_comment_id : null,
             ))

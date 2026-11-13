@@ -28,6 +28,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $task_run_id
  * @property string|null $answers_comment_id
  * @property string $body
+ * @property Carbon|null $edited_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
@@ -47,14 +48,14 @@ final class TaskComment extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['author_kind' => TaskCommentAuthorEnum::class];
+        return ['author_kind' => TaskCommentAuthorEnum::class, 'edited_at' => 'datetime'];
     }
 
     /** The body stays out of the log: AI text would otherwise reach audit viewers outside its audience. */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['author_kind', 'task_run_id', 'answers_comment_id'])
+            ->logOnly(['author_kind', 'task_run_id', 'answers_comment_id', 'edited_at'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

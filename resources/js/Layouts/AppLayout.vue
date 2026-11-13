@@ -10,6 +10,7 @@ import { useAuthorization } from '@/Composables/useAuthorization';
 import NotificationBell from '@/Components/Notifications/NotificationBell.vue';
 import AssistantLauncher from '@/Components/Assistant/AssistantLauncher.vue';
 import { useAssistantChat } from '@/Composables/useAssistantChat';
+import { clearTaskActivityCache } from '@/Composables/useTaskActivity';
 import { useListQueryMemory } from '@/Composables/useListQueryMemory';
 
 type NavigationItem = App.Data.NavigationItemData;
@@ -90,6 +91,8 @@ watch(
     },
     { immediate: true },
 );
+
+watch(() => auth.value.user?.id, clearTaskActivityCache, { immediate: true });
 
 let removeNavigate: (() => void) | undefined;
 

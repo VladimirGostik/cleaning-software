@@ -13,6 +13,7 @@ use App\Data\Tasks\TaskDetailData;
 use App\Data\Tasks\TaskFormContextData;
 use App\Data\Tasks\TaskListItemData;
 use App\Data\Tasks\TaskMemberOptionData;
+use App\Data\Tasks\TaskPatchData;
 use App\Data\Tasks\TaskReminderSlotData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Enums\PermissionEnum;
@@ -46,6 +47,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Spatie\LaravelData\Optional;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -219,6 +221,31 @@ final readonly class TaskService
 
             return $this->hydrate($task);
         });
+    }
+
+    public function patch(Task $task, TaskPatchData $data, User $actor): Task
+    {
+        $alias = array_search($task->taskable_type, Task::TASKABLE_TYPES, true);
+        $pairSent = ! $data->remind_on instanceof Optional && ! $data->remind_slot instanceof Optional;
+
+        $remindAt = match (true) {
+            $pairSent => null,
+            ! $data->remind_at instanceof Optional => $data->remind_at,
+            default => $task->remind_at?->toIso8601String(),
+        };
+
+        return $this->update($task, new TaskUpsertData(
+            title: $data->title instanceof Optional ? $task->title : $data->title,
+            priority: $data->priority instanceof Optional ? $task->priority : $data->priority,
+            tenant_id: $task->tenant_id,
+            description: $data->description instanceof Optional ? $task->description : $data->description,
+            due_at: $data->due_at instanceof Optional ? $task->due_at?->toIso8601String() : $data->due_at,
+            remind_at: $remindAt,
+            remind_on: $pairSent ? $data->remind_on : null,
+            remind_slot: $pairSent ? $data->remind_slot : null,
+            taskable_type: is_string($alias) ? $alias : null,
+            taskable_id: $task->taskable_id,
+        ), $actor);
     }
 
     /** A reminder the request does not actually change (same minute, or the slot pair derived from it) is kept as stored. */

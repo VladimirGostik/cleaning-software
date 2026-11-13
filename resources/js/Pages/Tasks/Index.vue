@@ -30,6 +30,7 @@ const props = defineProps<{
     selected_task?: App.Data.Tasks.TaskDetailData | null;
     selected_attachments?: App.Data.Tasks.TaskAttachmentListData | null;
     selected_thread?: App.Data.Tasks.TaskThreadData | null;
+    selected_activity?: App.Data.Tasks.TaskActivityFeedData | null;
 }>();
 
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('tasks') }];
@@ -134,6 +135,7 @@ function openCreate(status: App.Enums.TaskStatusEnum | null = null): void {
         :attachments="selected_attachments"
         :context="context"
         :thread="selected_thread"
+        :activity="selected_activity"
         @close="panel.close"
     />
 

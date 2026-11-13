@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { flushActiveTaskEdit, taskEditIdle } from '@/Composables/useTaskInlineEdit';
 import { useToast } from '@/Composables/useToast';
 
 export function useTaskTransition() {
@@ -8,7 +9,9 @@ export function useTaskTransition() {
     const toast = useToast();
     const processingId = ref<string | null>(null);
 
-    function transition(taskId: string, action: 'complete' | 'reopen'): void {
+    async function transition(taskId: string, action: 'complete' | 'reopen'): Promise<void> {
+        if (!taskEditIdle()) await flushActiveTaskEdit();
+
         router.post(`/tasks/${taskId}/${action}`, undefined, {
             preserveScroll: true,
             onStart: () => (processingId.value = taskId),

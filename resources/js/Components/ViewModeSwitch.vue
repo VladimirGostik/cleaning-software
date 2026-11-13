@@ -24,7 +24,7 @@ const emit = defineEmits<{
             v-for="option in options"
             :key="option.value"
             type="button"
-            class="tab gap-1"
+            class="tab gap-1 whitespace-nowrap"
             :class="{ 'tab-active': modelValue === option.value }"
             :aria-pressed="modelValue === option.value"
             @click="emit('update:modelValue', option.value)"

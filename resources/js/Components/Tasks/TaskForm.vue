@@ -7,8 +7,8 @@ import FormProvider from '@/Components/Forms/FormProvider.vue';
 import TextInput from '@/Components/Forms/TextInput.vue';
 import TextareaInput from '@/Components/Forms/TextareaInput.vue';
 import SelectInput from '@/Components/Forms/SelectInput.vue';
-import DateTimeInput from '@/Components/Forms/DateTimeInput.vue';
 import DateInput from '@/Components/Forms/DateInput.vue';
+import TimeInput from '@/Components/Forms/TimeInput.vue';
 import RadioGroup from '@/Components/Forms/RadioGroup.vue';
 import ToggleInput from '@/Components/Forms/ToggleInput.vue';
 import FormActions from '@/Components/Forms/FormActions.vue';
@@ -16,7 +16,7 @@ import type { SelectOption } from '@/Components/Forms/SelectInput.vue';
 import type { RadioOption } from '@/Components/Forms/RadioGroup.vue';
 
 import { usePageProps } from '@/Composables/usePageProps';
-import { toDatetimeInputValue } from '@/utils/date';
+import { joinLocalDatetime, localDatetimeToIso } from '@/utils/date';
 import {
     TASK_ACTIVE_STATUSES,
     TASK_PRIORITIES,
@@ -46,7 +46,6 @@ const GLOBAL_CHOICE = '__global';
 
 const props = defineProps<{
     context: App.Data.Tasks.TaskFormContextData;
-    task?: App.Data.Tasks.TaskDetailData | null;
     initialStatus?: App.Enums.TaskStatusEnum | null;
 }>();
 
@@ -57,8 +56,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const pageProps = usePageProps();
-
-const isEdit = computed(() => !!props.task);
 
 function defaultTenantId(): string | null {
     const activeId = pageProps.value.tenant.active?.id ?? null;
@@ -71,23 +68,32 @@ function defaultTenantId(): string | null {
     return companies[0]?.tenant_id ?? null;
 }
 
-const form = useForm<TaskFormData>(
-    isEdit.value ? 'put' : 'post',
-    isEdit.value ? `/tasks/${props.task!.id}` : '/tasks',
-    {
-        title: props.task?.title ?? '',
-        status: props.initialStatus ?? 'open',
-        priority: props.task?.priority ?? 'normal',
-        description: props.task?.description ?? '',
-        due_at: toDatetimeInputValue(props.task?.due_at),
-        ...initialReminderState(props.task, props.context),
-        tenant_id: props.task ? props.task.tenant_id : defaultTenantId(),
-        assigned_membership_id: props.task?.assigned_membership_id ?? null,
-        taskable_type: props.task?.subject?.type ?? null,
-        taskable_id: props.task?.subject?.id ?? null,
-        source: props.task?.source ?? 'manual',
+const form = useForm<TaskFormData>('post', '/tasks', {
+    title: '',
+    status: props.initialStatus ?? 'open',
+    priority: 'normal',
+    description: '',
+    due_at: '',
+    ...initialReminderState(null, props.context),
+    tenant_id: defaultTenantId(),
+    assigned_membership_id: null,
+    taskable_type: null,
+    taskable_id: null,
+    source: 'manual',
+});
+
+const dueDate = computed<string | null>({
+    get: () => form.due_at.slice(0, 10) || null,
+    set: (value) => {
+        form.due_at = joinLocalDatetime(value, form.due_at.slice(11, 16) || null);
     },
-);
+});
+const dueTime = computed<string | null>({
+    get: () => form.due_at.slice(11, 16) || null,
+    set: (value) => {
+        if (form.due_at) form.due_at = joinLocalDatetime(form.due_at.slice(0, 10), value);
+    },
+});
 
 const statusOptions = computed<SelectOption[]>(() =>
     TASK_ACTIVE_STATUSES.map((v) => ({ value: v, label: t(taskStatusKey(v)) })),
@@ -122,7 +128,7 @@ function onCompanyChange(value: string): void {
 
 const members = computed(() => (form.tenant_id ? (props.context.members[form.tenant_id] ?? []) : []));
 
-const showAssignee = computed(() => !isEdit.value && form.tenant_id !== null && members.value.length > 0);
+const showAssignee = computed(() => form.tenant_id !== null && members.value.length > 0);
 
 const assigneeOptions = computed<SelectOption[]>(() => [
     { value: '', label: t('task_unassigned') },
@@ -138,29 +144,15 @@ watch(
     () => form.clearErrors(),
 );
 
-function toIso(local: string, original: string | null | undefined): string | null {
-    if (local === '') return null;
-    if (original && toDatetimeInputValue(original) === local) return original;
-
-    return new Date(local).toISOString();
-}
-
 function buildPayload(data: TaskFormData): Record<string, unknown> {
     const { remind_enabled, remind_on, remind_slot, ...rest } = data;
-    const payload: Record<string, unknown> = {
+
+    return {
         ...rest,
         description: data.description === '' ? null : data.description,
-        due_at: toIso(data.due_at, props.task?.due_at),
-        ...buildReminderPayload({ remind_enabled, remind_on, remind_slot }, props.task),
+        due_at: localDatetimeToIso(data.due_at),
+        ...buildReminderPayload({ remind_enabled, remind_on, remind_slot }),
     };
-
-    if (isEdit.value) {
-        delete payload.status;
-        delete payload.tenant_id;
-        delete payload.assigned_membership_id;
-    }
-
-    return payload;
 }
 
 function submit(): void {
@@ -184,11 +176,14 @@ function submit(): void {
                     :rows="4"
                 />
 
-                <SelectInput v-if="!isEdit" field="status" :label="t('status')" :options="statusOptions" required />
+                <SelectInput field="status" :label="t('status')" :options="statusOptions" required />
 
                 <SelectInput field="priority" :label="t('task_priority')" :options="priorityOptions" required />
 
-                <DateTimeInput v-model="form.due_at" :label="t('task_due_at')" :error="form.errors.due_at" />
+                <div class="grid grid-cols-[minmax(0,1fr)_8rem] items-start gap-3">
+                    <DateInput v-model="dueDate" :label="t('task_due_at')" :error="form.errors.due_at" />
+                    <TimeInput v-model="dueTime" :label="t('date_picker_time')" :disabled="!dueDate" />
+                </div>
 
                 <ToggleInput v-model="form.remind_enabled" :label="t('task_reminder_toggle')" />
 
@@ -203,7 +198,7 @@ function submit(): void {
                 </template>
 
                 <SelectInput
-                    v-if="!isEdit && context.companies.length > 0"
+                    v-if="context.companies.length > 0"
                     :model-value="companyChoice"
                     :label="t('task_company')"
                     :options="companyOptions"

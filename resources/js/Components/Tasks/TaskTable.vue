@@ -4,13 +4,13 @@ import { useI18n } from 'vue-i18n';
 import CheckIcon from '~icons/material-symbols/check-outline-rounded';
 import EyeIcon from '~icons/material-symbols/visibility-outline-rounded';
 import DataTable from '@/Components/DataTable/DataTable.vue';
-import InitialsAvatar from '@/Components/InitialsAvatar.vue';
 import { formatDatetime } from '@/utils/date';
 import { isTaskRunListWorthy } from '@/utils/taskAi';
 import { isTaskOverdue } from '@/utils/taskBoard';
 import { TASK_PANEL_PROPS, useTaskPanel } from '@/Composables/useTaskPanel';
 import type { FilterConfig, Paginator, TableColumn } from '@/types/table';
 import TaskAiRunBadge from './TaskAiRunBadge.vue';
+import TaskCard from './TaskCard.vue';
 import TaskPriorityBadge from './TaskPriorityBadge.vue';
 import TaskStatusMenu from './TaskStatusMenu.vue';
 import TaskSubjectLink from './TaskSubjectLink.vue';
@@ -105,37 +105,8 @@ const columns: TableColumn<Row>[] = [
         </template>
 
         <template #card="{ row }">
-            <div class="flex flex-col gap-2">
-                <Link
-                    :href="taskHref(row.id)"
-                    :only="TASK_PANEL_PROPS"
-                    preserve-state
-                    preserve-scroll
-                    class="link link-hover break-words font-medium"
-                    >{{ row.title }}</Link
-                >
-                <div class="flex flex-wrap items-center gap-1">
-                    <TaskStatusMenu
-                        variant="chip"
-                        :status="row.status"
-                        :editable="row.can_update"
-                        :disabled="processingId === row.id"
-                        @select="emit('status', row, $event)"
-                    />
-                    <TaskPriorityBadge :priority="row.priority" />
-                    <TaskAiRunBadge
-                        v-if="row.ai_run_status && isTaskRunListWorthy(row.ai_run_status)"
-                        :status="row.ai_run_status"
-                    />
-                </div>
-                <div class="flex items-center justify-between gap-2 text-sm text-muted">
-                    <span v-if="row.due_at" :class="{ 'text-error': isTaskOverdue(row) }">
-                        <template v-if="isTaskOverdue(row)">{{ t('task_overdue') }}: </template
-                        >{{ formatDatetime(row.due_at) }}
-                    </span>
-                    <span v-else>{{ t('empty_dash') }}</span>
-                    <InitialsAvatar v-if="row.assignee_name" :name="row.assignee_name" />
-                </div>
+            <div class="relative">
+                <TaskCard :task="row" :busy="processingId === row.id" @toggle="emit('status', row, $event)" />
             </div>
         </template>
 

@@ -2082,6 +2082,23 @@ readonly position: number,
 };
 }
 namespace Tasks {
+export type TaskActivityChangeData = {
+readonly field: App.Enums.TaskActivityFieldEnum,
+readonly from: string | null,
+readonly to: string | null,
+};
+export type TaskActivityEntryData = {
+readonly id: string,
+readonly kind: App.Enums.TaskActivityKindEnum,
+readonly actor_name: string | null,
+readonly occurred_at: string,
+readonly changes: App.Data.Tasks.TaskActivityChangeData[],
+readonly attachment_name: string | null,
+};
+export type TaskActivityFeedData = {
+readonly entries: App.Data.Tasks.TaskActivityEntryData[],
+readonly has_older: boolean,
+};
 export type TaskAssignData = {
 readonly assigned_membership_id: string | null,
 };
@@ -2131,12 +2148,17 @@ readonly author_name: string,
 readonly body: string,
 readonly created_at: string,
 readonly is_mine: boolean,
+readonly can_edit: boolean,
 readonly can_delete: boolean,
+readonly edited_at: string | null,
 readonly answers_comment_id: string | null,
 };
 export type TaskCommentStoreData = {
 readonly body: string,
 readonly answers_comment_id: string | null,
+};
+export type TaskCommentUpdateData = {
+readonly body: string,
 };
 export type TaskDetailData = {
 readonly id: string,
@@ -2203,6 +2225,15 @@ readonly name: string,
 export type TaskParseData = {
 readonly text: string,
 readonly company_id: string | null,
+};
+export type TaskPatchData = {
+readonly title?: string,
+readonly priority?: App.Enums.TaskPriorityEnum,
+readonly description?: string | null,
+readonly due_at?: string | null,
+readonly remind_on?: string | null,
+readonly remind_slot?: App.Enums.TaskReminderSlotEnum | null,
+readonly remind_at?: string | null,
 };
 export type TaskQuestionData = {
 readonly comment_id: string,
@@ -2381,6 +2412,8 @@ export type RecurringFrequencyEnum = "monthly" | "every_2_months" | "quarterly" 
 export type RecurringInvoiceStatusEnum = "active" | "paused" | "completed" | "cancelled";
 export type RoundingModeEnum = "none" | "document" | "cash_005";
 export type SupportedLanguage = "sk" | "en" | "uk";
+export type TaskActivityFieldEnum = "title" | "description" | "status" | "priority" | "due_at" | "remind_at" | "assignee" | "subject";
+export type TaskActivityKindEnum = "created" | "updated" | "attachment_added" | "attachment_deleted";
 export type TaskCommentAuthorEnum = "user" | "ai";
 export type TaskFrequencyEnum = "one_time" | "weekly_1x" | "weekly_2x" | "weekly_3x" | "biweekly" | "monthly" | "bimonthly" | "seasonal";
 export type TaskIndexViewEnum = "table" | "board";

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
-use App\Data\Tasks\TaskUpsertData;
+use App\Data\Tasks\TaskPatchData;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\TaskService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -33,20 +34,9 @@ final class UpdateTaskTool extends TenantTool
 
         Gate::forUser($user)->authorize('update', $task);
 
-        $alias = array_search($task->taskable_type, Task::TASKABLE_TYPES, true);
+        $data = TaskPatchData::validateAndCreate(Arr::only($request->all(), ['title', 'priority', 'description', 'due_at', 'remind_at']));
 
-        $data = TaskUpsertData::validateAndCreate([
-            'title' => $request->get('title', $task->title),
-            'priority' => $request->get('priority', $task->priority->value),
-            'description' => $request->has('description') ? $request->get('description') : $task->description,
-            'due_at' => $request->has('due_at') ? $request->get('due_at') : $task->due_at?->toIso8601String(),
-            'remind_at' => $request->has('remind_at') ? $request->get('remind_at') : $task->remind_at?->toIso8601String(),
-            'taskable_type' => is_string($alias) ? $alias : null,
-            'taskable_id' => $task->taskable_id,
-            'tenant_id' => $task->tenant_id,
-        ]);
-
-        return $this->json($tasks->detail($tasks->update($task, $data, $user), $user));
+        return $this->json($tasks->detail($tasks->patch($task, $data, $user), $user));
     }
 
     /** @return array<string, Type> */

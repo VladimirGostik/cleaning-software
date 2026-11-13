@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Tasks\TaskCommentStoreData;
+use App\Data\Tasks\TaskCommentUpdateData;
 use App\Enums\TaskCommentAuthorEnum;
 use App\Events\TaskCommented;
 use App\Models\Task;
@@ -76,6 +77,25 @@ final readonly class TaskCommentService
         Gate::forUser($actor)->authorize('deleteComment', [$task, $comment]);
 
         $this->db->transaction(fn () => $comment->delete());
+    }
+
+    public function update(Task $task, string $commentId, TaskCommentUpdateData $data, User $actor): TaskComment
+    {
+        $comment = $task->comments()
+            ->visibleInThread($actor, Gate::forUser($actor)->allows('seesAllAiOutput', $task))
+            ->findOrFail($commentId);
+
+        Gate::forUser($actor)->authorize('updateComment', [$task, $comment]);
+
+        if ($comment->body === $data->body) {
+            return $comment;
+        }
+
+        return $this->db->transaction(function () use ($comment, $data): TaskComment {
+            $comment->forceFill(['body' => $data->body, 'edited_at' => now()])->save();
+
+            return $comment;
+        });
     }
 
     private function assertAnswerable(Task $task, string $questionId, User $actor, int $commentCount): void

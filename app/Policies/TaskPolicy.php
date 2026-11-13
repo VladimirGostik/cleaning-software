@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Enums\PermissionEnum;
+use App\Enums\TaskCommentAuthorEnum;
 use App\Models\Media;
 use App\Models\Task;
 use App\Models\TaskComment;
@@ -82,6 +83,20 @@ final class TaskPolicy
     public function deleteComment(User $user, Task $task, TaskComment $comment): bool
     {
         return $this->mayDeleteComment($user, $task, $comment, $task->isVisibleTo($user));
+    }
+
+    public function updateComment(User $user, Task $task, TaskComment $comment): bool
+    {
+        return $this->mayEditComment($user, $task, $comment, $task->isVisibleTo($user));
+    }
+
+    /** Author only; an AI comment or an answer to an AI question (the run's input) is never editable. */
+    public function mayEditComment(User $user, Task $task, TaskComment $comment, bool $taskVisible): bool
+    {
+        return $taskVisible
+            && $comment->user_id === $user->id
+            && $comment->author_kind === TaskCommentAuthorEnum::User
+            && $comment->answers_comment_id === null;
     }
 
     public function mayDeleteComment(User $user, Task $task, TaskComment $comment, bool $taskVisible): bool

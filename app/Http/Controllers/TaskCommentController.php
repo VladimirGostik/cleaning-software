@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Tasks\TaskCommentStoreData;
+use App\Data\Tasks\TaskCommentUpdateData;
 use App\Data\Tasks\TaskThreadData;
 use App\Models\Task;
 use App\Models\User;
@@ -34,6 +35,17 @@ final class TaskCommentController extends Controller
         $actor = $request->user();
 
         $this->comments->add($task, $data, $actor);
+
+        return back();
+    }
+
+    #[Authorize('view', 'task')]
+    public function update(TaskCommentUpdateData $data, Task $task, string $comment, Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $this->comments->update($task, $comment, $data, $actor);
 
         return back();
     }

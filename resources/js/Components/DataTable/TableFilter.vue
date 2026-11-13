@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { KG_ICONS } from '@/icons/kegosIcons';
 import { computed, ref, watch } from 'vue';
+import DateInput from '@/Components/Forms/DateInput.vue';
 import type { FilterConfig, FilterOperator } from '@/types/table';
 import {
     defaultOperatorForType,
@@ -62,12 +63,9 @@ const selectedValues = computed<string[]>({
     set: (next) => changeValue(next.length ? next.join(',') : null),
 });
 
-const betweenInputType = computed<'date' | 'datetime-local' | 'number' | 'text'>(() => {
+const betweenInputType = computed<'number' | 'text' | 'date'>(() => {
     if (props.filter.type === 'date') {
         return 'date';
-    }
-    if (props.filter.type === 'datetime') {
-        return 'datetime-local';
     }
     if (props.filter.type === 'number') {
         return 'number';
@@ -161,34 +159,58 @@ function toggleBoolean(): void {
         </button>
 
         <template v-else-if="operator === 'between'">
-            <input
-                class="input min-w-0 flex-1 sm:w-36 sm:flex-none"
-                :type="betweenInputType"
-                :placeholder="$t('date_from')"
-                :value="betweenFrom"
-                @input="changeBetween(($event.target as HTMLInputElement).value, betweenTo)"
-            />
-            <input
-                class="input min-w-0 flex-1 sm:w-36 sm:flex-none"
-                :type="betweenInputType"
-                :placeholder="$t('date_to')"
-                :value="betweenTo"
-                @input="changeBetween(betweenFrom, ($event.target as HTMLInputElement).value)"
-            />
+            <template v-if="betweenInputType === 'date'">
+                <div class="min-w-0 flex-1 sm:w-44 sm:flex-none">
+                    <DateInput
+                        :model-value="betweenFrom || null"
+                        :label="$t('date_from')"
+                        label-class="sr-only"
+                        :placeholder="$t('date_from')"
+                        @update:model-value="changeBetween($event ?? '', betweenTo)"
+                    />
+                </div>
+                <div class="min-w-0 flex-1 sm:w-44 sm:flex-none">
+                    <DateInput
+                        :model-value="betweenTo || null"
+                        :label="$t('date_to')"
+                        label-class="sr-only"
+                        :placeholder="$t('date_to')"
+                        @update:model-value="changeBetween(betweenFrom, $event ?? '')"
+                    />
+                </div>
+            </template>
+            <template v-else>
+                <input
+                    class="input min-w-0 flex-1 sm:w-36 sm:flex-none"
+                    :type="betweenInputType"
+                    :placeholder="$t('date_from')"
+                    :value="betweenFrom"
+                    @input="changeBetween(($event.target as HTMLInputElement).value, betweenTo)"
+                />
+                <input
+                    class="input min-w-0 flex-1 sm:w-36 sm:flex-none"
+                    :type="betweenInputType"
+                    :placeholder="$t('date_to')"
+                    :value="betweenTo"
+                    @input="changeBetween(betweenFrom, ($event.target as HTMLInputElement).value)"
+                />
+            </template>
         </template>
+
+        <div v-else-if="filter.type === 'date'" class="min-w-0 flex-1 sm:w-48 sm:flex-none">
+            <DateInput
+                :model-value="value"
+                :label="filter.label"
+                label-class="sr-only"
+                :placeholder="filter.placeholder ?? filter.label"
+                @update:model-value="changeValue"
+            />
+        </div>
 
         <input
             v-else
             class="input min-w-0 flex-1 sm:w-48 sm:flex-none"
-            :type="
-                filter.type === 'number'
-                    ? 'number'
-                    : filter.type === 'date'
-                      ? 'date'
-                      : filter.type === 'datetime'
-                        ? 'datetime-local'
-                        : 'text'
-            "
+            :type="filter.type === 'number' ? 'number' : 'text'"
             :placeholder="filter.placeholder ?? filter.label"
             :value="value ?? ''"
             @input="changeValue(($event.target as HTMLInputElement).value || null)"

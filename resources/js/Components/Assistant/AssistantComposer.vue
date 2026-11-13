@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CameraIcon from '~icons/material-symbols/photo-camera-outline-rounded';
 import PaperClipIcon from '~icons/material-symbols/attach-file-outline-rounded';
@@ -7,6 +7,7 @@ import SendIcon from '~icons/material-symbols/send-outline-rounded';
 import AssistantAttachmentChip from '@/Components/Assistant/AssistantAttachmentChip.vue';
 import FilePickerButton from '@/Components/Forms/FilePickerButton.vue';
 import type { AssistantAttachmentItem } from '@/Composables/useAssistantAttachments';
+import { useAutosize } from '@/Composables/useAutosize';
 import { ASSISTANT_ATTACHMENT_MIMES, MAX_MESSAGE_CHARS } from '@/utils/assistant';
 
 const props = defineProps<{
@@ -27,6 +28,8 @@ const { t } = useI18n();
 
 const draft = ref('');
 const textarea = useTemplateRef<HTMLTextAreaElement>('textarea');
+
+useAutosize(textarea, () => draft.value);
 
 const accept = ASSISTANT_ATTACHMENT_MIMES.join(',');
 const cameraAccept = ASSISTANT_ATTACHMENT_MIMES.filter((mime) => mime.startsWith('image/')).join(',');
@@ -58,20 +61,11 @@ function onPaste(event: Event): void {
     emit('add', files);
 }
 
-// field-sizing: content is not supported everywhere (Safari, Firefox), so the composer grows here.
-function resize(): void {
-    const el = textarea.value;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
-}
-
 function restore(text: string): void {
     draft.value = text;
     void nextTick(() => textarea.value?.focus());
 }
 
-watch(draft, () => nextTick(resize));
 onMounted(() => textarea.value?.focus());
 
 defineExpose({ restore });

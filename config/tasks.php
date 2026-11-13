@@ -14,6 +14,11 @@ return [
         'column_limit' => 50,
     ],
 
+    'activity' => [
+        'limit' => 100,
+        'coalesce_minutes' => 10,
+    ],
+
     'attachments' => [
         'disk' => env('DOCUMENTS_DISK', 'local'),
         'max_size_kb' => 10240,

@@ -31,7 +31,6 @@ export const operatorsByType: Record<FilterType, FilterOperator[]> = {
     boolean: ['='],
 
     date: ['=', '<', '<=', '>', '>=', 'between'],
-    datetime: ['=', '<', '<=', '>', '>=', 'between'],
 
     enum: ['=', '!='],
     select: ['=', '!='],

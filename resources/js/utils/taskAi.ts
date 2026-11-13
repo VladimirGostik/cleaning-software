@@ -37,7 +37,11 @@ export function defaultRunCompanyId(thread: Thread): string | null {
 }
 
 export function shouldShowTaskAiCard(thread: Thread): boolean {
-    return thread.latest_run !== null || thread.can_start_run || thread.pending_actions.length > 0;
+    if (thread.latest_run !== null || thread.pending_actions.length > 0) {
+        return true;
+    }
+
+    return thread.ai_available && thread.can_start_run;
 }
 
 export function earliestPendingExpiry(thread: Thread): string | null {

@@ -4,10 +4,10 @@ export interface ReminderState {
     remind_slot: App.Enums.TaskReminderSlotEnum;
 }
 
-export type ReminderPayload =
-    | { remind_on: null; remind_slot: null }
-    | { remind_at: string | null }
-    | { remind_on: string | null; remind_slot: App.Enums.TaskReminderSlotEnum };
+export interface ReminderPayload {
+    remind_on: string | null;
+    remind_slot: App.Enums.TaskReminderSlotEnum | null;
+}
 
 export function formatSlotTime(hour: number): string {
     return `${hour}:00`;
@@ -33,16 +33,9 @@ export function initialReminderState(
     };
 }
 
-export function buildReminderPayload(
-    state: ReminderState,
-    task: App.Data.Tasks.TaskDetailData | null | undefined,
-): ReminderPayload {
+export function buildReminderPayload(state: ReminderState): ReminderPayload {
     if (!state.remind_enabled) {
         return { remind_on: null, remind_slot: null };
-    }
-
-    if (task && task.remind_on === state.remind_on && task.remind_slot === state.remind_slot) {
-        return { remind_at: task.remind_at };
     }
 
     return { remind_on: state.remind_on, remind_slot: state.remind_slot };

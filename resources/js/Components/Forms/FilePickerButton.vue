@@ -31,10 +31,10 @@ function onChange(event: Event): void {
 <template>
     <button
         type="button"
+        :title="iconOnly ? label : undefined"
         v-bind="$attrs"
         :disabled="disabled"
         :aria-label="iconOnly ? label : undefined"
-        :title="iconOnly ? label : undefined"
         @click="input?.click()"
     >
         <slot />

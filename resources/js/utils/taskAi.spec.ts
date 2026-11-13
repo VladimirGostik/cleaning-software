@@ -107,7 +107,8 @@ describe('shouldShowTaskAiCard', () => {
 
     it('shows for a run, for the right (also without a key) and for pending actions', () => {
         expect(shouldShowTaskAiCard(thread({ can_start_run: false, latest_run: run() }))).toBe(true);
-        expect(shouldShowTaskAiCard(thread({ ai_available: false }))).toBe(true);
+        expect(shouldShowTaskAiCard(thread({ ai_available: false }))).toBe(false);
+        expect(shouldShowTaskAiCard(thread({ ai_available: false, latest_run: run() }))).toBe(true);
         expect(shouldShowTaskAiCard(thread({ can_start_run: false, pending_actions: [pending('x')] }))).toBe(true);
     });
 });

@@ -1,5 +1,6 @@
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
+import { flushActiveTaskEdit } from '@/Composables/useTaskInlineEdit';
 
 export const TASK_PANEL_PROPS = ['selected_task', 'selected_attachments', 'selected_thread'];
 
@@ -20,8 +21,12 @@ export function useTaskPanel() {
         return `${url.pathname}${url.search}`;
     }
 
-    function visit(id: string | null): void {
-        router.visit(href(id), {
+    async function visit(id: string | null): Promise<void> {
+        const target = href(id);
+
+        await flushActiveTaskEdit();
+
+        router.visit(target, {
             only: TASK_PANEL_PROPS,
             preserveState: true,
             preserveScroll: true,

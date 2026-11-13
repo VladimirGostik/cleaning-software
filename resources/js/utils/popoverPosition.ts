@@ -6,7 +6,8 @@ export interface PopoverSize {
 export interface PopoverPlacement {
     top: number;
     left: number;
-    placement: 'bottom' | 'top';
+    placement: 'bottom' | 'top' | 'shift';
+    maxHeight: number | null;
 }
 
 const GAP = 4;
@@ -17,13 +18,24 @@ export function popoverPosition(
     panel: PopoverSize,
     viewport: PopoverSize,
 ): PopoverPlacement {
-    const roomBelow = viewport.height - anchor.bottom - GAP - MARGIN;
-    const roomAbove = anchor.top - GAP - MARGIN;
-    const placement = roomBelow >= panel.height || roomBelow >= roomAbove ? 'bottom' : 'top';
-
-    const top = placement === 'bottom' ? anchor.bottom + GAP : anchor.top - GAP - panel.height;
     const maxLeft = Math.max(MARGIN, viewport.width - panel.width - MARGIN);
     const left = Math.min(Math.max(anchor.left, MARGIN), maxLeft);
+    const limit = viewport.height - 2 * MARGIN;
 
-    return { top: Math.max(top, MARGIN), left, placement };
+    if (panel.height > limit) {
+        return { top: MARGIN, left, placement: 'shift', maxHeight: limit };
+    }
+
+    const roomBelow = viewport.height - anchor.bottom - GAP - MARGIN;
+    const roomAbove = anchor.top - GAP - MARGIN;
+
+    if (roomBelow >= panel.height) {
+        return { top: anchor.bottom + GAP, left, placement: 'bottom', maxHeight: null };
+    }
+
+    if (roomAbove >= panel.height) {
+        return { top: anchor.top - GAP - panel.height, left, placement: 'top', maxHeight: null };
+    }
+
+    return { top: viewport.height - MARGIN - panel.height, left, placement: 'shift', maxHeight: null };
 }

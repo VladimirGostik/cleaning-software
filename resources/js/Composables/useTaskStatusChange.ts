@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { flushActiveTaskEdit, taskEditIdle } from '@/Composables/useTaskInlineEdit';
 import { useToast } from '@/Composables/useToast';
 import { taskStatusKey } from '@/utils/enums';
 import type { PendingMoves } from '@/utils/taskBoard';
@@ -23,10 +24,12 @@ export function useTaskStatusChange() {
         pending.value = rest;
     }
 
-    function change(task: ChangeTarget, status: App.Enums.TaskStatusEnum): void {
+    async function change(task: ChangeTarget, status: App.Enums.TaskStatusEnum): Promise<void> {
         if (task.status === status || pending.value[task.id] !== undefined) return;
 
         pending.value = { ...pending.value, [task.id]: status };
+
+        if (!taskEditIdle()) await flushActiveTaskEdit();
 
         router.post(
             `/tasks/${task.id}/status`,

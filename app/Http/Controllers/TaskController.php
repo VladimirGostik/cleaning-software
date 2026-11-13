@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\Tasks\TaskAssignData;
+use App\Data\Tasks\TaskPatchData;
 use App\Data\Tasks\TaskStatusChangeData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Enums\NavIconEnum;
@@ -13,6 +14,7 @@ use App\Enums\TaskIndexViewEnum;
 use App\Models\Task;
 use App\Models\User;
 use App\Navigation\NavItem;
+use App\Services\TaskActivityService;
 use App\Services\TaskAttachmentService;
 use App\Services\TaskService;
 use App\Services\TaskThreadService;
@@ -28,6 +30,7 @@ final class TaskController extends Controller
         private readonly TaskService $tasks,
         private readonly TaskAttachmentService $attachments,
         private readonly TaskThreadService $threads,
+        private readonly TaskActivityService $activity,
     ) {}
 
     #[Authorize('viewAny', Task::class)]
@@ -49,6 +52,7 @@ final class TaskController extends Controller
             'selected_task' => fn () => $selected === null ? null : $this->tasks->detail($selected, $actor),
             'selected_attachments' => fn () => $selected === null ? null : $this->attachments->list($selected, $actor, 'tasks.attachments.show'),
             'selected_thread' => fn () => $selected === null ? null : $this->threads->for($selected, $actor),
+            'selected_activity' => Inertia::optional(fn () => $selected === null ? null : $this->activity->for($selected, $actor)),
         ]);
     }
 
@@ -82,6 +86,17 @@ final class TaskController extends Controller
         $this->tasks->update($task, $data, $actor);
 
         return back()->with('success', __('app.task_updated'));
+    }
+
+    #[Authorize('update', 'task')]
+    public function patch(TaskPatchData $data, Task $task, Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $this->tasks->patch($task, $data, $actor);
+
+        return back();
     }
 
     #[Authorize('delete', 'task')]

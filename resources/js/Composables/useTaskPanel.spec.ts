@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const visit = vi.fn();
+const flushActive = vi.fn(() => Promise.resolve());
 const page = { url: '/tasks?view=board&filter[status]=open' };
 
 vi.mock('@inertiajs/vue3', () => ({
@@ -8,16 +9,20 @@ vi.mock('@inertiajs/vue3', () => ({
     usePage: () => page,
 }));
 
+vi.mock('@/Composables/useTaskInlineEdit', () => ({ flushActiveTaskEdit: () => flushActive() }));
+
 import { TASK_PANEL_PROPS, useTaskPanel } from './useTaskPanel';
 
 beforeEach(() => {
     visit.mockClear();
+    flushActive.mockClear();
+    flushActive.mockImplementation(() => Promise.resolve());
     page.url = '/tasks?view=board&filter[status]=open';
 });
 
 describe('useTaskPanel', () => {
-    it('opens a task by adding task to the current query as a new history entry', () => {
-        useTaskPanel().open('abc');
+    it('opens a task by adding task to the current query as a new history entry', async () => {
+        await useTaskPanel().open('abc');
 
         expect(visit).toHaveBeenCalledWith('/tasks?view=board&filter%5Bstatus%5D=open&task=abc', {
             only: TASK_PANEL_PROPS,
@@ -27,13 +32,28 @@ describe('useTaskPanel', () => {
         });
     });
 
-    it('closes by removing task and keeping the rest', () => {
+    it('closes by removing task and keeping the rest', async () => {
         page.url = '/tasks?view=board&task=abc';
 
-        useTaskPanel().close();
+        await useTaskPanel().close();
 
         expect(visit.mock.calls[0][0]).toBe('/tasks?view=board');
         expect(visit.mock.calls[0][1]).toMatchObject({ only: TASK_PANEL_PROPS, preserveState: true });
+    });
+
+    it('sends the pending inline save before navigating', async () => {
+        let release: () => void = () => {};
+        flushActive.mockImplementation(() => new Promise<void>((resolve) => (release = resolve)));
+
+        const closing = useTaskPanel().close();
+
+        expect(flushActive).toHaveBeenCalledTimes(1);
+        expect(visit).not.toHaveBeenCalled();
+
+        release();
+        await closing;
+
+        expect(visit).toHaveBeenCalledTimes(1);
     });
 
     it('swaps the task id', () => {
