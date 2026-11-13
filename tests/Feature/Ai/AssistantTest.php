@@ -344,7 +344,7 @@ final class AssistantTest extends TestCase
         $response->assertJsonPath('reply', 'Ahoj x()čo potrebuješ?')->assertJsonPath('pending_action', null)->assertJsonPath('actions', []);
 
         $request = $this->sentRequests()[0];
-        $system = Arr::string($request->data(), 'system');
+        $system = implode("\n", array_map(static fn (mixed $text): string => Arr::string(['t' => $text], 't'), array_column((array) data_get($request->data(), 'system'), 'text')));
         $this->assertSame('claude-sonnet-5-5', $request['model']);
         $this->assertSame(2048, $request['max_tokens']);
         $this->assertStringContainsString($this->alpha->id, $system);

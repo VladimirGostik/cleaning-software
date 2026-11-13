@@ -7,6 +7,11 @@ return [
 
     'model' => env('AI_MODEL', 'claude-sonnet-5-5'),
 
+    // Exact "thinking off" value per model id; between_tools needs effort low|medium|high. A model not listed gets no thinking key.
+    'thinking_off' => [
+        'claude-sonnet-5-5' => ['type' => 'between_tools'],
+    ],
+
     'providers' => [
         'anthropic' => [
             'driver' => 'anthropic',
@@ -32,6 +37,7 @@ return [
     'timezone' => 'Europe/Bratislava',
 
     'assistant' => [
+        'effort' => 'medium',
         'max_steps' => 6,
         'turn_seconds' => 20,
         'max_tool_output_chars' => 20000,
@@ -74,6 +80,7 @@ return [
     ],
 
     'task_run' => [
+        'effort' => 'medium',
         'queue' => env('AI_TASK_RUN_QUEUE', 'ai'),
         'turn_seconds' => 45,
         'step_seconds' => 25,
