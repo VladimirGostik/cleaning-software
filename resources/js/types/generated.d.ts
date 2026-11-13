@@ -236,6 +236,32 @@ readonly label: string,
 readonly url: string | null,
 readonly company_id: string | null,
 };
+export type AssistantConversationData = {
+readonly id: string,
+readonly title: string,
+readonly last_message_at: string,
+readonly messages: App.Data.Ai.AssistantHistoryMessageData[],
+};
+export type AssistantConversationItemData = {
+readonly id: string,
+readonly title: string,
+readonly last_message_at: string,
+readonly created_at: string,
+};
+export type AssistantConversationRenameData = {
+readonly title: string,
+};
+export type AssistantHistoryMessageData = {
+readonly id: string,
+readonly role: App.Enums.AssistantRoleEnum,
+readonly content: string,
+readonly attachment_names: string[],
+readonly actions: App.Data.Ai.AssistantActionData[],
+readonly pending_action: App.Data.Ai.PendingActionData | null,
+readonly security_notice: string | null,
+readonly attachment_note: string | null,
+readonly created_at: string,
+};
 export type AssistantMessageData = {
 readonly role: App.Enums.AssistantRoleEnum,
 readonly content: string,
@@ -247,10 +273,14 @@ readonly actions: App.Data.Ai.AssistantActionData[],
 readonly pending_action: App.Data.Ai.PendingActionData | null,
 readonly security_notice: string | null,
 readonly attachment_note: string | null,
+readonly conversation_id: string,
+readonly conversation_title: string,
 };
 export type AssistantRequestData = {
 readonly company_id: string,
-readonly messages: App.Data.Ai.AssistantMessageData[],
+readonly conversation_id: string | null,
+readonly client_message_id: string,
+readonly content: string,
 readonly attachments: File[],
 };
 export type PendingActionData = {

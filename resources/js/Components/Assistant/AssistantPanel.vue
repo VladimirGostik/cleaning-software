@@ -4,8 +4,11 @@ import { computed, nextTick, onMounted, provide, ref, useTemplateRef, watch } fr
 import { useI18n } from 'vue-i18n';
 import CloseIcon from '~icons/material-symbols/close-outline-rounded';
 import NewConversationIcon from '~icons/material-symbols/add-outline-rounded';
+import HistoryIcon from '~icons/material-symbols/history-outline-rounded';
+import BackIcon from '~icons/material-symbols/arrow-back-outline-rounded';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
 import AssistantComposer from '@/Components/Assistant/AssistantComposer.vue';
+import AssistantHistory from '@/Components/Assistant/AssistantHistory.vue';
 import AssistantMessage from '@/Components/Assistant/AssistantMessage.vue';
 import { useAssistantAttachments } from '@/Composables/useAssistantAttachments';
 import { useAssistantChat } from '@/Composables/useAssistantChat';
@@ -28,12 +31,22 @@ const log = ref<HTMLElement | null>(null);
 const isSendAgainOpen = ref(false);
 const returnedError = ref<string | null>(null);
 const dragDepth = ref(0);
+const view = ref<'chat' | 'history'>('chat');
+const historyTitle = useTemplateRef<HTMLElement>('historyTitle');
+const historyToggle = useTemplateRef<HTMLElement>('historyToggle');
 
 const company = computed(() => props.value.tenant.active);
 const available = computed(() => props.value.assistantAvailable);
 const canChat = computed(() => available.value && company.value !== null);
-const composerDisabled = computed(() => !canChat.value || chat.state.blocked);
-const canReset = computed(() => chat.state.messages.length > 0 && !chat.state.sending);
+const composerDisabled = computed(
+    () => !canChat.value || chat.state.blocked || chat.state.loading || chat.state.loadError || view.value !== 'chat',
+);
+const canReset = computed(
+    () => (chat.state.messages.length > 0 || chat.state.conversationId !== null) && !chat.state.sending,
+);
+const headerTitle = computed(() =>
+    view.value === 'history' ? t('assistant_history_title') : (chat.state.title ?? t('assistant_title')),
+);
 
 function describeError(error: AssistantError | null): string | null {
     if (error === null) return null;
@@ -44,6 +57,7 @@ function describeError(error: AssistantError | null): string | null {
     if (error.kind === 'session') return t('assistant_error_session');
     if (error.kind === 'outcome_unknown') return t('assistant_error_outcome_unknown');
     if (error.kind === 'too_large') return t('assistant_error_too_large');
+    if (error.kind === 'conversation_gone') return t('assistant_conversation_gone');
     return t('assistant_error_failed');
 }
 
@@ -105,8 +119,33 @@ function sendAgain(): void {
     void retry();
 }
 
+async function showHistory(): Promise<void> {
+    view.value = 'history';
+    await nextTick();
+    historyTitle.value?.focus();
+}
+
+async function showChat(): Promise<void> {
+    view.value = 'chat';
+    await nextTick();
+    historyToggle.value?.focus();
+}
+
+function startNew(): void {
+    chat.startNew();
+    view.value = 'chat';
+}
+
+function retryLoad(): void {
+    const id = chat.state.conversationId;
+    if (id !== null) void chat.load(id);
+}
+
 watch(chat.returned, takeBack);
-onMounted(takeBack);
+onMounted(() => {
+    takeBack();
+    void chat.restoreRemembered();
+});
 
 watch(
     () => [chat.state.messages.length, chat.state.sending, chat.state.error],
@@ -139,17 +178,46 @@ watch(
         </div>
 
         <header class="flex items-center gap-2 px-4 py-3">
+            <button
+                v-if="view === 'history'"
+                type="button"
+                class="btn btn-ghost btn-square"
+                :aria-label="t('assistant_history_back')"
+                :title="t('assistant_history_back')"
+                @click="showChat"
+            >
+                <BackIcon />
+            </button>
             <div class="min-w-0 flex-1">
-                <h2 id="assistant-panel-title" class="text-lg font-medium">{{ t('assistant_title') }}</h2>
-                <p class="text-xs text-muted">{{ t('assistant_all_companies') }}</p>
+                <h2
+                    id="assistant-panel-title"
+                    ref="historyTitle"
+                    tabindex="-1"
+                    class="truncate text-lg font-medium outline-none"
+                >
+                    {{ headerTitle }}
+                </h2>
+                <p v-if="view === 'chat'" class="text-xs text-muted">{{ t('assistant_all_companies') }}</p>
             </div>
+            <button
+                v-if="view === 'chat'"
+                ref="historyToggle"
+                type="button"
+                class="btn btn-ghost btn-square"
+                :aria-label="t('assistant_history_open')"
+                :title="t('assistant_history_open')"
+                :disabled="chat.state.sending"
+                @click="showHistory"
+            >
+                <HistoryIcon />
+            </button>
             <button
                 type="button"
                 class="btn btn-ghost btn-square"
                 :aria-label="t('assistant_new_conversation')"
                 :title="t('assistant_new_conversation')"
                 :disabled="!canReset"
-                @click="chat.reset()"
+                @click="startNew"
             >
                 <NewConversationIcon />
             </button>
@@ -164,13 +232,35 @@ watch(
             </button>
         </header>
 
-        <div ref="log" role="log" aria-live="polite" class="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+        <div v-if="view === 'history'" class="flex-1 overflow-y-auto">
+            <AssistantHistory :active-id="chat.state.conversationId" @opened="view = 'chat'" />
+        </div>
+
+        <div v-else ref="log" role="log" aria-live="polite" class="flex-1 space-y-3 overflow-y-auto px-4 py-3">
             <div v-if="!available" class="alert alert-info text-sm" role="status">
                 {{ t('assistant_not_configured') }}
             </div>
-            <p v-else-if="chat.state.messages.length === 0" class="py-6 text-center text-sm text-muted">
+            <p
+                v-else-if="chat.state.messages.length === 0 && !chat.state.loading && !chat.state.loadError"
+                class="py-6 text-center text-sm text-muted"
+            >
                 {{ t('assistant_empty_hint') }}
             </p>
+
+            <p v-if="chat.state.loading" class="flex justify-center py-6" role="status">
+                <span class="loading loading-dots loading-sm" aria-hidden="true" />
+            </p>
+            <div v-if="chat.state.loadError" class="alert alert-error flex-col items-start text-sm" role="alert">
+                <p>{{ t('assistant_conversation_load_failed') }}</p>
+                <button
+                    v-if="chat.state.conversationId !== null"
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    @click="retryLoad"
+                >
+                    {{ t('retry') }}
+                </button>
+            </div>
 
             <AssistantMessage v-for="message in chat.state.messages" :key="message.id" :message="message" />
 
@@ -204,6 +294,7 @@ watch(
         </div>
 
         <AssistantComposer
+            v-show="view === 'chat'"
             ref="composer"
             :items="attachments.items.value"
             :error="composerError"

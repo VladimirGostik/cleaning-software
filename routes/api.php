@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AssistantController;
+use App\Http\Controllers\Api\AssistantConversationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeviceController;
@@ -63,6 +64,12 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     });
 
     Route::post('/assistant/messages', [AssistantController::class, 'store'])->middleware('throttle:assistant')->name('api.assistant.messages');
+    Route::middleware('throttle:assistant-history')->group(function (): void {
+        Route::get('/assistant/conversations', [AssistantConversationController::class, 'index'])->name('api.assistant.conversations.index');
+        Route::get('/assistant/conversations/{conversation}', [AssistantConversationController::class, 'show'])->name('api.assistant.conversations.show')->whereUuid('conversation');
+        Route::patch('/assistant/conversations/{conversation}', [AssistantConversationController::class, 'update'])->name('api.assistant.conversations.update')->whereUuid('conversation');
+        Route::delete('/assistant/conversations/{conversation}', [AssistantConversationController::class, 'destroy'])->name('api.assistant.conversations.destroy')->whereUuid('conversation');
+    });
     Route::post('/tasks/parse', TaskParseController::class)->middleware('throttle:ai-analyze')->name('api.tasks.parse');
 
     Route::get('/tasks', [TaskController::class, 'index'])->name('api.tasks.index');

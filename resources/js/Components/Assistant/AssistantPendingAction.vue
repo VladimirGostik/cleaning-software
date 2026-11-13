@@ -19,7 +19,9 @@ if (decision === undefined) {
 }
 
 const destructive = computed(() => DESTRUCTIVE_ACTIONS.includes(props.action.action));
-const expired = computed(() => new Date(props.action.expires_at).getTime() <= Date.now());
+const expired = computed(
+    () => props.action.status === 'expired' || new Date(props.action.expires_at).getTime() <= Date.now(),
+);
 const busy = computed(() => decision.processingId.value !== null);
 </script>
 

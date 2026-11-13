@@ -11,6 +11,7 @@ use Illuminate\Contracts\Encryption\Encrypter;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\Fakes\FakeAssistant;
 use Tests\Support\CreatesMcpFixtures;
 use Tests\TestCase;
@@ -39,10 +40,10 @@ final class WebAssistantTest extends TestCase
         $this->app->instance(ChatsWithTools::class, $this->fake = new FakeAssistant);
     }
 
-    /** @return array{company_id: string, messages: list<array{role: string, content: string}>} */
+    /** @return array{company_id: string, conversation_id: null, client_message_id: string, content: string} */
     private function payload(?Tenant $tenant = null): array
     {
-        return ['company_id' => ($tenant ?? $this->alpha)->id, 'messages' => [['role' => 'user', 'content' => 'Ahoj']]];
+        return ['company_id' => ($tenant ?? $this->alpha)->id, 'conversation_id' => null, 'client_message_id' => (string) Str::uuid(), 'content' => 'Ahoj'];
     }
 
     public function test_a_member_with_the_permission_chats_in_the_active_company(): void
@@ -50,10 +51,10 @@ final class WebAssistantTest extends TestCase
         $this->webAs($this->admin, $this->alpha)
             ->postJson(route('assistant.messages'), $this->payload())
             ->assertOk()
-            ->assertExactJson(['reply' => 'Fake reply', 'actions' => [], 'pending_action' => null, 'security_notice' => null, 'attachment_note' => null]);
+            ->assertJsonStructure(['reply', 'actions', 'pending_action', 'security_notice', 'attachment_note', 'conversation_id', 'conversation_title']);
 
         $this->assertSame($this->alpha->id, $this->fake->requests[0]->company_id);
-        $this->assertSame('Ahoj', $this->fake->requests[0]->messages[0]->content);
+        $this->assertSame('Ahoj', $this->fake->requests[0]->content);
     }
 
     public function test_a_chat_may_target_another_company_of_the_user_than_the_session_tenant(): void

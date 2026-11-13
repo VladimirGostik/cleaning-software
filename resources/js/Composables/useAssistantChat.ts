@@ -1,12 +1,16 @@
 import { computed, reactive, readonly, shallowRef, type DeepReadonly } from 'vue';
-import { postForm } from '@/utils/http';
+import { HttpError, getJson, postForm } from '@/utils/http';
 import {
     FILES_REQUEST_TIMEOUT_MS,
     REQUEST_TIMEOUT_MS,
     buildAssistantFormData,
-    buildPayloadMessages,
     describeAssistantError,
+    forgetConversation,
     isAttachmentRejection,
+    isConversationGone,
+    rememberConversation,
+    rememberedConversation,
+    toChatMessages,
     type AssistantError,
 } from '@/utils/assistant';
 
@@ -29,6 +33,7 @@ export interface ChatMessage {
     securityNotice: string | null;
     attachmentNames: string[];
     attachmentNote: string | null;
+    clientMessageId: string | null;
 }
 
 export interface AssistantChatState {
@@ -39,9 +44,14 @@ export interface AssistantChatState {
     blocked: boolean;
     userId: string | null;
     companyId: string | null;
+    conversationId: string | null;
+    title: string | null;
+    loading: boolean;
+    loadError: boolean;
 }
 
 const ENDPOINT = '/assistant/messages';
+const CONVERSATIONS = '/assistant/conversations';
 
 const state = reactive<AssistantChatState>({
     open: false,
@@ -51,6 +61,10 @@ const state = reactive<AssistantChatState>({
     blocked: false,
     userId: null,
     companyId: null,
+    conversationId: null,
+    title: null,
+    loading: false,
+    loadError: false,
 });
 
 let epoch = 0;
@@ -65,6 +79,7 @@ function turn(
     content: string,
     reply?: App.Data.Ai.AssistantReplyData,
     attachmentNames: string[] = [],
+    clientMessageId: string | null = null,
 ): ChatMessage {
     return {
         id: `m${++sequence}`,
@@ -76,15 +91,8 @@ function turn(
         securityNotice: reply?.security_notice ?? null,
         attachmentNames,
         attachmentNote: reply?.attachment_note ?? null,
+        clientMessageId,
     };
-}
-
-function history(files: readonly File[]) {
-    const messages = buildPayloadMessages(state.messages);
-    const last = messages.at(-1);
-    if (files.length > 0 && last !== undefined) delete last.attachment_names;
-
-    return messages;
 }
 
 function giveBack(content: string, files: File[], error: AssistantError): void {
@@ -93,7 +101,13 @@ function giveBack(content: string, files: File[], error: AssistantError): void {
     returned.value = { text: content, files, error };
 }
 
-async function dispatch(companyId: string): Promise<SendOutcome> {
+function dropConversation(): void {
+    const userId = state.userId;
+    reset();
+    if (userId !== null) forgetConversation(userId);
+}
+
+async function dispatch(companyId: string, user: ChatMessage): Promise<SendOutcome> {
     const mine = epoch;
     const own = new AbortController();
     controller = own;
@@ -109,11 +123,20 @@ async function dispatch(companyId: string): Promise<SendOutcome> {
     try {
         const reply = await postForm<App.Data.Ai.AssistantReplyData>(
             ENDPOINT,
-            buildAssistantFormData(companyId, history(files), files),
+            buildAssistantFormData({
+                companyId,
+                conversationId: state.conversationId,
+                clientMessageId: user.clientMessageId ?? window.crypto.randomUUID(),
+                content: user.content,
+                files,
+            }),
             { signal: own.signal },
         );
         if (mine !== epoch) return 'failed';
         heldFiles = [];
+        state.conversationId = reply.conversation_id;
+        state.title = reply.conversation_title;
+        if (state.userId !== null) rememberConversation(state.userId, reply.conversation_id);
         state.messages.push(turn('assistant', reply.reply, reply));
         outcome = 'replied';
     } catch (e) {
@@ -122,6 +145,11 @@ async function dispatch(companyId: string): Promise<SendOutcome> {
         const last = state.messages.at(-1);
         if (isAttachmentRejection(e) && last?.role === 'user') {
             giveBack(last.content, files, error);
+            outcome = 'returned';
+        } else if (isConversationGone(e) && last?.role === 'user') {
+            const content = last.content;
+            dropConversation();
+            returned.value = { text: content, files, error: { kind: 'conversation_gone', message: null } };
             outcome = 'returned';
         } else {
             state.error = error;
@@ -143,16 +171,16 @@ function send(text: string, files: File[] = []): Promise<SendOutcome> {
 
     returned.value = null;
     heldFiles = files;
-    state.messages.push(
-        turn(
-            'user',
-            content,
-            undefined,
-            files.map((file) => file.name),
-        ),
+    const user = turn(
+        'user',
+        content,
+        undefined,
+        files.map((file) => file.name),
+        window.crypto.randomUUID(),
     );
+    state.messages.push(user);
 
-    return dispatch(state.companyId);
+    return dispatch(state.companyId, user);
 }
 
 function retry(): Promise<SendOutcome> {
@@ -161,7 +189,7 @@ function retry(): Promise<SendOutcome> {
 
     state.blocked = false;
 
-    return dispatch(state.companyId);
+    return dispatch(state.companyId, last);
 }
 
 function takeReturned(): ReturnedMessage | null {
@@ -186,6 +214,68 @@ function reset(): void {
     state.sending = false;
     state.error = null;
     state.blocked = false;
+    state.conversationId = null;
+    state.title = null;
+    state.loading = false;
+    state.loadError = false;
+}
+
+function startNew(): void {
+    dropConversation();
+}
+
+async function load(conversationId: string): Promise<void> {
+    epoch += 1;
+    const mine = epoch;
+    controller?.abort();
+    const own = new AbortController();
+    controller = own;
+    heldFiles = [];
+    returned.value = null;
+    state.sending = false;
+    state.error = null;
+    state.blocked = false;
+    state.messages = [];
+    state.conversationId = conversationId;
+    state.title = null;
+    state.loading = true;
+    state.loadError = false;
+
+    try {
+        const conversation = await getJson<App.Data.Ai.AssistantConversationData>(
+            `${CONVERSATIONS}/${conversationId}`,
+            { signal: own.signal },
+        );
+        if (mine !== epoch) return;
+        state.messages = toChatMessages(conversation.messages);
+        state.conversationId = conversation.id;
+        state.title = conversation.title;
+        if (state.userId !== null) rememberConversation(state.userId, conversation.id);
+    } catch (e) {
+        if (mine !== epoch) return;
+        if (e instanceof HttpError && e.status === 404) {
+            startNew();
+            return;
+        }
+        state.loadError = true;
+    } finally {
+        if (mine === epoch) state.loading = false;
+    }
+}
+
+async function restoreRemembered(): Promise<void> {
+    if (state.userId === null || state.messages.length > 0 || state.conversationId !== null) return;
+
+    const id = rememberedConversation(state.userId);
+    if (id !== null) await load(id);
+}
+
+function retitle(conversationId: string, title: string): void {
+    if (state.conversationId === conversationId) state.title = title;
+}
+
+function forgetIfOpen(conversationId: string): void {
+    if (state.conversationId === conversationId) startNew();
 }
 
 /** The assistant works across all of the user's companies: a company switch keeps the conversation, a new user starts over. */
@@ -222,6 +312,11 @@ export function useAssistantChat() {
         takeReturned,
         acknowledge,
         reset,
+        startNew,
+        load,
+        restoreRemembered,
+        retitle,
+        forgetIfOpen,
         bind,
         settlePending,
         toggle,

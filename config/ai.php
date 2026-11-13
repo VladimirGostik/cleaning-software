@@ -26,6 +26,7 @@ return [
     'throttle' => [
         'analyze' => 20,
         'assistant' => 30,
+        'assistant_history' => 60,
     ],
 
     'timezone' => 'Europe/Bratislava',
@@ -37,6 +38,15 @@ return [
         'max_messages' => 20,
         'max_message_chars' => 4000,
         'max_total_chars' => 12000,
+
+        'history' => [
+            'max_messages' => 200,
+            'title_chars' => 80,
+            'max_title_chars' => 120,
+            'per_page' => 20,
+            'lock_seconds' => 90,
+            'lock_wait_seconds' => 25,
+        ],
 
         'attachments' => [
             'types' => [

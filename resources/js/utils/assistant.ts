@@ -1,8 +1,7 @@
+import type { ChatMessage, PendingOutcome } from '@/Composables/useAssistantChat';
 import { HttpError } from '@/utils/http';
 
-export const MAX_MESSAGES = 20;
 export const MAX_MESSAGE_CHARS = 4000;
-export const MAX_TOTAL_CHARS = 12000;
 export const REQUEST_TIMEOUT_MS = 90_000;
 export const FILES_REQUEST_TIMEOUT_MS = 120_000;
 
@@ -31,6 +30,7 @@ export type AssistantErrorKind =
     | 'session'
     | 'outcome_unknown'
     | 'too_large'
+    | 'conversation_gone'
     | 'other';
 
 export interface AssistantError {
@@ -38,57 +38,105 @@ export interface AssistantError {
     message: string | null;
 }
 
-interface Turn {
-    role: App.Enums.AssistantRoleEnum;
-    content: string;
-    attachmentNames?: readonly string[];
-}
-
-export interface PayloadMessage {
-    role: App.Enums.AssistantRoleEnum;
-    content: string;
-    attachment_names?: string[];
-}
-
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const LINK_ALLOWLIST = new RegExp(`^/((tasks|invoices|quotes|expenses)/${UUID}|pending-actions)$`, 'i');
+const MEMORY_PREFIX = 'kg:assistant:conversation:';
 
-function total(turns: Turn[]): number {
-    return turns.reduce((sum, turn) => sum + turn.content.length, 0);
+export interface AssistantSendInput {
+    companyId: string;
+    conversationId: string | null;
+    clientMessageId: string;
+    content: string;
+    files: readonly File[];
 }
 
-export function buildPayloadMessages(history: readonly Turn[]): PayloadMessage[] {
-    let turns = history
-        .filter((turn) => turn.content.trim() !== '' || (turn.attachmentNames?.length ?? 0) > 0)
-        .map((turn): PayloadMessage => {
-            const message: PayloadMessage = { role: turn.role, content: turn.content.slice(0, MAX_MESSAGE_CHARS) };
-            if (turn.attachmentNames !== undefined && turn.attachmentNames.length > 0) {
-                message.attachment_names = [...turn.attachmentNames];
-            }
-
-            return message;
-        })
-        .slice(-MAX_MESSAGES);
-
-    while (turns.length > 1 && total(turns) > MAX_TOTAL_CHARS) {
-        turns = turns.slice(1);
-    }
-
-    return turns;
+export interface AssistantConversationPage {
+    data: App.Data.Ai.AssistantConversationItemData[];
+    meta: { current_page: number; last_page: number };
 }
 
-export function buildAssistantFormData(companyId: string, messages: readonly PayloadMessage[], files: readonly File[]) {
+export function buildAssistantFormData(input: AssistantSendInput): FormData {
     const form = new FormData();
-    form.append('company_id', companyId);
-
-    messages.forEach((message, i) => {
-        form.append(`messages[${i}][role]`, message.role);
-        form.append(`messages[${i}][content]`, message.content);
-        message.attachment_names?.forEach((name) => form.append(`messages[${i}][attachment_names][]`, name));
-    });
-    files.forEach((file) => form.append('attachments[]', file));
+    form.append('company_id', input.companyId);
+    if (input.conversationId !== null) form.append('conversation_id', input.conversationId);
+    form.append('client_message_id', input.clientMessageId);
+    form.append('content', input.content);
+    input.files.forEach((file) => form.append('attachments[]', file));
 
     return form;
+}
+
+export function pendingOutcomeOf(action: App.Data.Ai.PendingActionData | null): PendingOutcome | null {
+    if (action?.status === 'executed') return 'done';
+    if (action?.status === 'cancelled') return 'cancelled';
+
+    return null;
+}
+
+export function toChatMessages(messages: readonly App.Data.Ai.AssistantHistoryMessageData[]): ChatMessage[] {
+    return messages.map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        actions: message.actions,
+        pending: message.pending_action,
+        pendingOutcome: pendingOutcomeOf(message.pending_action),
+        securityNotice: message.security_notice,
+        attachmentNames: message.attachment_names,
+        attachmentNote: message.attachment_note,
+        clientMessageId: null,
+    }));
+}
+
+export function isConversationGone(e: unknown): boolean {
+    return e instanceof HttpError && e.status === 422 && (e.errors?.conversation_id?.length ?? 0) > 0;
+}
+
+function memory(): Storage | null {
+    try {
+        return typeof window === 'undefined' ? null : window.sessionStorage;
+    } catch {
+        return null;
+    }
+}
+
+export function rememberConversation(userId: string, conversationId: string): void {
+    try {
+        memory()?.setItem(MEMORY_PREFIX + userId, conversationId);
+    } catch {
+        return;
+    }
+}
+
+export function rememberedConversation(userId: string): string | null {
+    try {
+        return memory()?.getItem(MEMORY_PREFIX + userId) ?? null;
+    } catch {
+        return null;
+    }
+}
+
+export function forgetConversation(userId: string): void {
+    try {
+        memory()?.removeItem(MEMORY_PREFIX + userId);
+    } catch {
+        return;
+    }
+}
+
+export function forgetAllConversations(): void {
+    try {
+        const storage = memory();
+        if (storage === null) return;
+        const keys: string[] = [];
+        for (let i = 0; i < storage.length; i++) {
+            const key = storage.key(i);
+            if (key?.startsWith(MEMORY_PREFIX)) keys.push(key);
+        }
+        keys.forEach((key) => storage.removeItem(key));
+    } catch {
+        return;
+    }
 }
 
 export function assistantAttachmentKind(file: { name: string; type: string }): AssistantAttachmentKind | null {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, getBlob, getJson, getXsrfToken, postBlob, postForm, postJson } from './http';
+import { HttpError, deleteJson, getBlob, getJson, getXsrfToken, patchJson, postBlob, postForm, postJson } from './http';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -110,6 +110,46 @@ describe('postJson', () => {
         );
 
         await expect(postJson('/x', {})).rejects.toMatchObject({ status: 403, serverMessage: 'Nope', errors: null });
+    });
+});
+
+describe('patchJson', () => {
+    it('sends PATCH with the XSRF header and JSON body', async () => {
+        fetchMock.mockResolvedValue(response('{"ok":true}', 200, { 'Content-Type': 'application/json' }));
+
+        await expect(patchJson('/x', { title: 'a' })).resolves.toEqual({ ok: true });
+
+        const [, init] = fetchMock.mock.calls[0];
+        expect(init?.method).toBe('PATCH');
+        expect(init?.body).toBe('{"title":"a"}');
+        expect(init?.headers).toMatchObject({ 'X-XSRF-TOKEN': 'abc==', 'Content-Type': 'application/json' });
+    });
+
+    it('maps a 422 to HttpError with errors', async () => {
+        fetchMock.mockResolvedValue(
+            response('{"errors":{"title":["Required"]}}', 422, { 'Content-Type': 'application/json' }),
+        );
+
+        await expect(patchJson('/x', {})).rejects.toMatchObject({ status: 422, errors: { title: ['Required'] } });
+    });
+});
+
+describe('deleteJson', () => {
+    it('sends DELETE with the XSRF header and resolves on 204', async () => {
+        fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+        await expect(deleteJson('/x')).resolves.toBeUndefined();
+
+        const [, init] = fetchMock.mock.calls[0];
+        expect(init?.method).toBe('DELETE');
+        expect(init?.body).toBeUndefined();
+        expect(init?.headers).toMatchObject({ 'X-XSRF-TOKEN': 'abc==', Accept: 'application/json' });
+    });
+
+    it('throws HttpError for 404', async () => {
+        fetchMock.mockResolvedValue(response(null, 404, {}));
+
+        await expect(deleteJson('/x')).rejects.toMatchObject({ status: 404 });
     });
 });
 

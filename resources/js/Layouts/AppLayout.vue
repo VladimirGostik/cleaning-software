@@ -16,6 +16,7 @@ type NavigationItem = App.Data.NavigationItemData;
 import LogoutIcon from '~icons/material-symbols/logout-outline-rounded';
 import LanguageIcon from '~icons/material-symbols/language-outline-rounded';
 import { KG_ICONS, NAV_ICONS } from '@/icons/kegosIcons';
+import { forgetAllConversations } from '@/utils/assistant';
 import { mobileNavItems } from '@/utils/mobileNav';
 import AnchoredPopover from '@/Components/AnchoredPopover.vue';
 import InitialsAvatar from '@/Components/InitialsAvatar.vue';
@@ -108,6 +109,7 @@ onUnmounted(() => {
 
 function logout() {
     clearListMemory();
+    forgetAllConversations();
     router.post('/logout');
 }
 

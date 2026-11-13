@@ -61,13 +61,14 @@ export function getXsrfToken(): string {
 }
 
 async function request(
+    method: 'POST' | 'PATCH' | 'DELETE',
     url: string,
-    body: FormData | string,
+    body: FormData | string | undefined,
     headers: Record<string, string>,
     signal?: AbortSignal,
 ): Promise<Response> {
     const response = await fetch(url, {
-        method: 'POST',
+        method,
         credentials: 'same-origin',
         headers: { 'X-XSRF-TOKEN': getXsrfToken(), 'X-Requested-With': 'XMLHttpRequest', ...headers },
         body,
@@ -81,8 +82,14 @@ async function request(
     return response;
 }
 
-function send(url: string, body: unknown, accept: string, signal?: AbortSignal): Promise<Response> {
-    return request(url, JSON.stringify(body), { Accept: accept, 'Content-Type': 'application/json' }, signal);
+function send(
+    method: 'POST' | 'PATCH',
+    url: string,
+    body: unknown,
+    accept: string,
+    signal?: AbortSignal,
+): Promise<Response> {
+    return request(method, url, JSON.stringify(body), { Accept: accept, 'Content-Type': 'application/json' }, signal);
 }
 
 export async function getJson<T>(url: string, opts?: { signal?: AbortSignal }): Promise<T> {
@@ -118,19 +125,29 @@ export async function getBlob(url: string, opts?: { signal?: AbortSignal }): Pro
 }
 
 export async function postJson<T>(url: string, body: unknown, opts?: { signal?: AbortSignal }): Promise<T> {
-    const response = await send(url, body, 'application/json', opts?.signal);
+    const response = await send('POST', url, body, 'application/json', opts?.signal);
 
     return (await response.json()) as T;
 }
 
+export async function patchJson<T>(url: string, body: unknown, opts?: { signal?: AbortSignal }): Promise<T> {
+    const response = await send('PATCH', url, body, 'application/json', opts?.signal);
+
+    return (await response.json()) as T;
+}
+
+export async function deleteJson(url: string, opts?: { signal?: AbortSignal }): Promise<void> {
+    await request('DELETE', url, undefined, { Accept: 'application/json' }, opts?.signal);
+}
+
 export async function postForm<T>(url: string, body: FormData, opts?: { signal?: AbortSignal }): Promise<T> {
-    const response = await request(url, body, { Accept: 'application/json' }, opts?.signal);
+    const response = await request('POST', url, body, { Accept: 'application/json' }, opts?.signal);
 
     return (await response.json()) as T;
 }
 
 export async function postBlob(url: string, body: unknown, opts?: { signal?: AbortSignal }): Promise<Blob> {
-    const response = await send(url, body, 'application/json, application/pdf;q=0.9', opts?.signal);
+    const response = await send('POST', url, body, 'application/json, application/pdf;q=0.9', opts?.signal);
 
     if (!(response.headers.get('Content-Type') ?? '').includes('application/pdf')) {
         throw new HttpError(response.status);

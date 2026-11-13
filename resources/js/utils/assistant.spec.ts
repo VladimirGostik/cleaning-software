@@ -1,53 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HttpError } from '@/utils/http';
 import {
-    MAX_MESSAGES,
-    MAX_MESSAGE_CHARS,
-    MAX_TOTAL_CHARS,
     ASSISTANT_ATTACHMENTS_MAX_TOTAL_BYTES,
     ASSISTANT_IMAGE_MAX_BYTES,
     ASSISTANT_PDF_MAX_BYTES,
     assistantAttachmentRejection,
     buildAssistantFormData,
-    buildPayloadMessages,
+    forgetAllConversations,
+    forgetConversation,
+    isConversationGone,
+    pendingOutcomeOf,
+    rememberConversation,
+    rememberedConversation,
+    toChatMessages,
     describeAssistantError,
     isAllowedAssistantLink,
     isAttachmentRejection,
 } from './assistant';
 
 const UUID = '0197a1c2-3b4d-7e5f-8a6b-7c8d9e0f1a2b';
-
-function turn(content: string, role: App.Enums.AssistantRoleEnum = 'user') {
-    return { role, content };
-}
-
-describe('buildPayloadMessages', () => {
-    it('drops empty turns', () => {
-        expect(buildPayloadMessages([turn('hi'), turn('   '), turn('there')])).toEqual([turn('hi'), turn('there')]);
-    });
-
-    it('keeps the newest messages up to the count limit', () => {
-        const history = Array.from({ length: MAX_MESSAGES + 1 }, (_, i) => turn(`m${i}`));
-        const result = buildPayloadMessages(history);
-
-        expect(result).toHaveLength(MAX_MESSAGES);
-        expect(result[0].content).toBe('m1');
-    });
-
-    it('cuts a single message at the character limit', () => {
-        expect(buildPayloadMessages([turn('x'.repeat(MAX_MESSAGE_CHARS + 1))])[0].content).toHaveLength(
-            MAX_MESSAGE_CHARS,
-        );
-    });
-
-    it('drops the oldest turns until the total fits', () => {
-        const big = 'x'.repeat(MAX_MESSAGE_CHARS);
-        const result = buildPayloadMessages([turn(big), turn(big), turn(big), turn('last')]);
-
-        expect(result.reduce((sum, m) => sum + m.content.length, 0)).toBeLessThanOrEqual(MAX_TOTAL_CHARS);
-        expect(result.at(-1)?.content).toBe('last');
-    });
-});
 
 describe('describeAssistantError', () => {
     it('reads the ai text from a 422', () => {
@@ -121,46 +92,151 @@ function file(name: string, type: string, size = 10): File {
     return new File([new Uint8Array(size)], name, { type });
 }
 
-describe('buildPayloadMessages with files', () => {
-    it('keeps an empty turn that has file names and emits the names only when present', () => {
-        const result = buildPayloadMessages([
-            { role: 'user', content: '', attachmentNames: ['a.pdf'] },
-            { role: 'assistant', content: 'ok', attachmentNames: [] },
-        ]);
-
-        expect(result).toEqual([
-            { role: 'user', content: '', attachment_names: ['a.pdf'] },
-            { role: 'assistant', content: 'ok' },
-        ]);
-    });
-});
-
 describe('buildAssistantFormData', () => {
-    it('emits indexed message keys, names only when present, and each file under attachments[]', () => {
-        const a = file('a.jpg', 'image/jpeg');
-        const b = file('b.pdf', 'application/pdf');
-        const form = buildAssistantFormData(
-            'c1',
-            [
-                { role: 'user', content: '', attachment_names: ['old.pdf'] },
-                { role: 'assistant', content: 'ok' },
-                { role: 'user', content: 'now' },
-            ],
-            [a, b],
-        );
+    const base = { companyId: 'c1', conversationId: null, clientMessageId: 'm1', content: 'hi', files: [] };
 
-        expect(form.get('company_id')).toBe('c1');
-        expect(form.get('messages[0][role]')).toBe('user');
-        expect(form.get('messages[0][content]')).toBe('');
-        expect(form.getAll('messages[0][attachment_names][]')).toEqual(['old.pdf']);
-        expect(form.has('messages[1][attachment_names][]')).toBe(false);
-        expect(form.get('messages[2][content]')).toBe('now');
-        expect(form.getAll('attachments[]')).toHaveLength(2);
+    it('emits the flat field set and each file under attachments[]', () => {
+        const form = buildAssistantFormData({
+            ...base,
+            conversationId: 'conv1',
+            files: [file('a.jpg', 'image/jpeg'), file('b.pdf', 'application/pdf')],
+        });
+
+        expect(Array.from(form.keys())).toEqual([
+            'company_id',
+            'conversation_id',
+            'client_message_id',
+            'content',
+            'attachments[]',
+            'attachments[]',
+        ]);
+        expect(form.get('conversation_id')).toBe('conv1');
+        expect(form.get('client_message_id')).toBe('m1');
         expect((form.getAll('attachments[]')[0] as File).name).toBe('a.jpg');
     });
 
-    it('sends no attachments key without files', () => {
-        expect(buildAssistantFormData('c1', [], []).has('attachments[]')).toBe(false);
+    it('omits conversation_id when null and attachments without files', () => {
+        const form = buildAssistantFormData(base);
+
+        expect(form.has('conversation_id')).toBe(false);
+        expect(form.has('attachments[]')).toBe(false);
+        expect(Array.from(form.keys()).some((key) => key.startsWith('messages'))).toBe(false);
+    });
+});
+
+function pending(status: App.Enums.PendingActionStatusEnum): App.Data.Ai.PendingActionData {
+    return { id: 'p1', status } as App.Data.Ai.PendingActionData;
+}
+
+describe('toChatMessages', () => {
+    it('maps roles, attachment names and live pending status', () => {
+        const messages = toChatMessages([
+            {
+                id: 'a',
+                role: 'user',
+                content: 'x',
+                attachment_names: ['a.pdf'],
+                actions: [],
+                pending_action: null,
+                security_notice: null,
+                attachment_note: null,
+                created_at: '2026-11-13T10:00:00Z',
+            },
+            {
+                id: 'b',
+                role: 'assistant',
+                content: 'y',
+                attachment_names: [],
+                actions: [],
+                pending_action: pending('executed'),
+                security_notice: 'n',
+                attachment_note: 'note',
+                created_at: '2026-11-13T10:00:01Z',
+            },
+        ]);
+
+        expect(messages[0]).toMatchObject({ id: 'a', role: 'user', attachmentNames: ['a.pdf'], clientMessageId: null });
+        expect(messages[1]).toMatchObject({
+            role: 'assistant',
+            pendingOutcome: 'done',
+            securityNotice: 'n',
+            attachmentNote: 'note',
+        });
+    });
+
+    it.each([
+        ['executed', 'done'],
+        ['cancelled', 'cancelled'],
+        ['pending', null],
+        ['expired', null],
+    ] as const)('maps pending status %s to %s', (status, outcome) => {
+        expect(pendingOutcomeOf(pending(status))).toBe(outcome);
+    });
+
+    it('maps no action to null', () => {
+        expect(pendingOutcomeOf(null)).toBeNull();
+    });
+});
+
+describe('isConversationGone', () => {
+    it('is true for a 422 with errors.conversation_id only', () => {
+        expect(isConversationGone(new HttpError(422, null, null, { conversation_id: ['gone'] }))).toBe(true);
+        expect(isConversationGone(new HttpError(422, null, null, { content: ['x'] }))).toBe(false);
+        expect(isConversationGone(new HttpError(404))).toBe(false);
+        expect(isConversationGone(new Error('x'))).toBe(false);
+    });
+});
+
+describe('conversation memory', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        window.sessionStorage.clear();
+    });
+
+    it('remembers per user and forgets', () => {
+        rememberConversation('u1', 'c1');
+        rememberConversation('u2', 'c2');
+
+        expect(rememberedConversation('u1')).toBe('c1');
+        forgetConversation('u1');
+        expect(rememberedConversation('u1')).toBeNull();
+        expect(rememberedConversation('u2')).toBe('c2');
+    });
+
+    it('forgetAllConversations leaves foreign keys', () => {
+        rememberConversation('u1', 'c1');
+        rememberConversation('u2', 'c2');
+        window.sessionStorage.setItem('other', 'x');
+
+        forgetAllConversations();
+
+        expect(rememberedConversation('u1')).toBeNull();
+        expect(rememberedConversation('u2')).toBeNull();
+        expect(window.sessionStorage.getItem('other')).toBe('x');
+    });
+
+    it('survives a throwing sessionStorage', () => {
+        const throwing = {
+            setItem: () => {
+                throw new Error('quota');
+            },
+            getItem: () => {
+                throw new Error('denied');
+            },
+            removeItem: () => {
+                throw new Error('denied');
+            },
+            key: () => {
+                throw new Error('denied');
+            },
+            length: 1,
+        };
+        vi.spyOn(window, 'sessionStorage', 'get').mockReturnValue(throwing as unknown as Storage);
+
+        expect(() => rememberConversation('u1', 'c1')).not.toThrow();
+        expect(rememberedConversation('u1')).toBeNull();
+        expect(() => forgetConversation('u1')).not.toThrow();
+        expect(() => forgetAllConversations()).not.toThrow();
     });
 });
 

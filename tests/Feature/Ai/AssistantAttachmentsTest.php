@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Ai;
 
 use App\Contracts\Ai\ChatsWithTools;
+use App\Enums\AssistantRoleEnum;
+use App\Models\AssistantConversation;
+use App\Models\AssistantMessage;
 use App\Models\Expense;
 use App\Models\Task;
 use App\Models\Tenant;
@@ -20,6 +23,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\PermissionRegistrar;
@@ -117,7 +121,9 @@ final class AssistantAttachmentsTest extends TestCase
     {
         return $this->apiAs($this->admin, $this->alpha)->post('/api/assistant/messages', [
             'company_id' => $this->alpha->id,
-            'messages' => [['role' => 'user', 'content' => $text]],
+            'conversation_id' => null,
+            'client_message_id' => (string) Str::uuid(),
+            'content' => $text,
             ...($files === [] ? [] : ['attachments' => $files]),
             ...$extra,
         ], ['Accept' => 'application/json']);
@@ -359,19 +365,31 @@ final class AssistantAttachmentsTest extends TestCase
         $this->assertSame(0, Task::withoutGlobalScopes()->count());
     }
 
+    /** @param  list<array{0: AssistantRoleEnum, 1: string, 2?: list<string>}>  $rows */
+    private function storedConversation(array $rows): AssistantConversation
+    {
+        $conversation = AssistantConversation::factory()->create(['user_id' => $this->admin->id]);
+
+        foreach ($rows as $i => $row) {
+            AssistantMessage::factory()->create([
+                'assistant_conversation_id' => $conversation->id,
+                'role' => $row[0],
+                'content' => $row[1],
+                'attachment_names' => $row[2] ?? null,
+                'created_at' => now()->subMinutes(10 - $i),
+            ]);
+        }
+
+        return $conversation;
+    }
+
     public function test_history_names_become_a_marker_without_a_file_block(): void
     {
         $this->realProvider();
         $this->providerSays([$this->textTurn('ok')]);
+        $conversation = $this->storedConversation([[AssistantRoleEnum::User, 'zapíš to', ['bon.jpg']], [AssistantRoleEnum::Assistant, 'Hotovo']]);
 
-        $this->apiAs($this->admin, $this->alpha)->postJson('/api/assistant/messages', [
-            'company_id' => $this->alpha->id,
-            'messages' => [
-                ['role' => 'user', 'content' => 'zapíš to', 'attachment_names' => ['bon.jpg']],
-                ['role' => 'assistant', 'content' => 'Hotovo'],
-                ['role' => 'user', 'content' => 'a ešte raz'],
-            ],
-        ])->assertOk();
+        $this->chat([], 'a ešte raz', ['conversation_id' => $conversation->id])->assertOk();
 
         $request = $this->sentRequests()[0];
         $this->assertStringContainsString('Files attached earlier, no longer available: [\"bon.jpg\"]', (string) json_encode($request->data()['messages']));
@@ -383,34 +401,19 @@ final class AssistantAttachmentsTest extends TestCase
     {
         $this->realProvider();
         $this->providerSays([$this->textTurn('ok')]);
+        $conversation = $this->storedConversation([[AssistantRoleEnum::User, '', ['bon.jpg']], [AssistantRoleEnum::Assistant, 'Je to bloček.']]);
 
-        $this->apiAs($this->admin, $this->alpha)->postJson('/api/assistant/messages', [
-            'company_id' => $this->alpha->id,
-            'messages' => [
-                ['role' => 'user', 'content' => '', 'attachment_names' => ['bon.jpg']],
-                ['role' => 'assistant', 'content' => 'Je to bloček.'],
-                ['role' => 'user', 'content' => 'zapíš ho'],
-            ],
-        ])->assertOk();
+        $this->chat([], 'zapíš ho', ['conversation_id' => $conversation->id])->assertOk();
 
         $this->assertStringContainsString('bon.jpg', (string) json_encode($this->sentRequests()[0]->data()['messages']));
     }
 
-    public function test_empty_text_needs_a_file_or_names_and_assistant_turns_need_text(): void
+    public function test_empty_text_needs_a_file(): void
     {
         $this->app->instance(ChatsWithTools::class, new FakeAssistant);
 
-        $this->chat([], '')->assertUnprocessable()->assertJsonValidationErrors('messages');
+        $this->chat([], '')->assertUnprocessable()->assertJsonValidationErrors('content');
         $this->chat([$this->jpeg()], '')->assertOk();
-
-        $this->apiAs($this->admin, $this->alpha)->postJson('/api/assistant/messages', [
-            'company_id' => $this->alpha->id,
-            'messages' => [
-                ['role' => 'user', 'content' => 'a'],
-                ['role' => 'assistant', 'content' => '', 'attachment_names' => ['x.jpg']],
-                ['role' => 'user', 'content' => 'b'],
-            ],
-        ])->assertUnprocessable()->assertJsonValidationErrors('messages');
     }
 
     /** @return array<string, array{0: Closure(self): list<UploadedFile>, 1: string}> */
@@ -449,7 +452,8 @@ final class AssistantAttachmentsTest extends TestCase
 
         $this->webAs($this->admin, $this->alpha)->post(route('assistant.messages'), [
             'company_id' => $this->alpha->id,
-            'messages' => [['role' => 'user', 'content' => 'zapíš']],
+            'client_message_id' => (string) Str::uuid(),
+            'content' => 'zapíš',
             'attachments' => [$this->jpeg()],
         ], ['Accept' => 'application/json'])->assertOk();
 

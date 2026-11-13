@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace App\Data\Ai;
 
-use App\Enums\AssistantRoleEnum;
 use App\Rules\AllowedUploadFile;
 use App\Services\Pdf\PdfPageCounter;
 use Closure;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Validation\Rule;
-use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\MergeValidationRules;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Support\Validation\ValidationContext;
@@ -21,14 +18,13 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[MergeValidationRules]
 final class AssistantRequestData extends Data
 {
-    /**
-     * @param  AssistantMessageData[]  $messages
-     * @param  list<UploadedFile>  $attachments
-     */
+    /** @param  list<UploadedFile>  $attachments */
     public function __construct(
         public readonly string $company_id,
-        #[DataCollectionOf(AssistantMessageData::class)]
-        public readonly array $messages,
+        public readonly ?string $conversation_id,
+        public readonly string $client_message_id,
+        #[LiteralTypeScriptType('string')]
+        public readonly ?string $content = null,
         #[LiteralTypeScriptType('File[]')]
         public readonly array $attachments = [],
     ) {}
@@ -39,6 +35,8 @@ final class AssistantRequestData extends Data
      */
     public static function prepareForPipeline(array $properties): array
     {
+        $properties['conversation_id'] ??= null;
+
         if (is_array($properties['attachments'] ?? null)) {
             $properties['attachments'] = array_values($properties['attachments']);
         }
@@ -49,9 +47,7 @@ final class AssistantRequestData extends Data
     /** @return array<string, mixed> */
     public static function rules(ValidationContext $context): array
     {
-        $maxMessages = config()->integer('ai.assistant.max_messages', 20);
         $maxChars = config()->integer('ai.assistant.max_message_chars', 4000);
-        $maxTotal = config()->integer('ai.assistant.max_total_chars', 12000);
         $maxFiles = config()->integer('ai.assistant.attachments.max_files');
         $maxName = config()->integer('ai.assistant.attachments.max_name_chars');
         $attachments = data_get($context->payload, 'attachments');
@@ -60,38 +56,9 @@ final class AssistantRequestData extends Data
 
         return [
             'company_id' => ['required', 'uuid'],
-            'messages' => [
-                'required', 'array', 'min:1', 'max:'.$maxMessages,
-                function (string $attribute, mixed $value, Closure $fail) use ($maxTotal, $hasFiles): void {
-                    $messages = is_array($value) ? array_values($value) : [];
-                    $lastIndex = count($messages) - 1;
-                    $last = $messages[$lastIndex] ?? null;
-                    $total = array_sum(array_map(static fn (mixed $m): int => is_array($m) && is_string($m['content'] ?? null) ? mb_strlen($m['content']) : 0, $messages));
-
-                    if (! is_array($last) || ($last['role'] ?? null) !== AssistantRoleEnum::User->value) {
-                        $fail(__('app.assistant_last_must_be_user'));
-                    }
-
-                    if ($total > $maxTotal) {
-                        $fail(__('app.assistant_too_long'));
-                    }
-
-                    foreach ($messages as $index => $message) {
-                        $empty = ! is_array($message) || ! is_string($message['content'] ?? null) || trim($message['content']) === '';
-                        $hasNames = is_array($message) && ($message['role'] ?? null) === AssistantRoleEnum::User->value && is_array($message['attachment_names'] ?? null) && $message['attachment_names'] !== [];
-
-                        if ($empty && ! $hasNames && ! ($hasFiles && $index === $lastIndex)) {
-                            $fail(__('app.assistant_message_empty'));
-
-                            break;
-                        }
-                    }
-                },
-            ],
-            'messages.*.role' => ['required', Rule::enum(AssistantRoleEnum::class)],
-            'messages.*.content' => ['nullable', 'string', 'max:'.$maxChars],
-            'messages.*.attachment_names' => ['sometimes', 'array', 'max:'.$maxFiles],
-            'messages.*.attachment_names.*' => ['string', 'max:'.$maxName],
+            'conversation_id' => ['nullable', 'uuid'],
+            'client_message_id' => ['required', 'uuid'],
+            'content' => [$hasFiles ? 'nullable' : 'required', 'string', 'max:'.$maxChars],
             'attachments' => [
                 'sometimes', 'array', 'max:'.$maxFiles,
                 function (string $attribute, mixed $value, Closure $fail): void {
@@ -159,6 +126,17 @@ final class AssistantRequestData extends Data
                 },
             ],
         ];
+    }
+
+    public function text(): string
+    {
+        return $this->content ?? '';
+    }
+
+    /** @return array<string, string> */
+    public static function messages(): array
+    {
+        return ['content.required' => __('app.assistant_message_empty')];
     }
 
     private static function isPdf(UploadedFile $file): bool

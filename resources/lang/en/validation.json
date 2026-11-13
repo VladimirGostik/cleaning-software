@@ -177,6 +177,7 @@
     "attributes.color": "colour",
     "attributes.company_ico": "company ID",
     "attributes.company_id": "company",
+    "attributes.keep_module": "keep module",
     "attributes.company_name": "company name",
     "attributes.confidence": "confidence",
     "attributes.constant_symbol": "constant symbol",
@@ -391,5 +392,7 @@
     "attributes.messages.*.attachment_names.*": "attachment name",
     "attributes.role": "role",
     "attributes.content": "message content",
+    "attributes.conversation_id": "conversation",
+    "attributes.client_message_id": "message id",
     "attributes.attachment_names": "attachment names"
 }

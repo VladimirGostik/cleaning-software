@@ -177,6 +177,7 @@
     "attributes.color": "колір",
     "attributes.company_ico": "ІПН компанії",
     "attributes.company_id": "компанія",
+    "attributes.keep_module": "залишити модуль",
     "attributes.company_name": "назва компанії",
     "attributes.confidence": "достовірність",
     "attributes.constant_symbol": "константний символ",
@@ -391,5 +392,7 @@
     "attributes.messages.*.attachment_names.*": "назва вкладення",
     "attributes.role": "роль",
     "attributes.content": "вміст повідомлення",
+    "attributes.conversation_id": "розмова",
+    "attributes.client_message_id": "ідентифікатор повідомлення",
     "attributes.attachment_names": "назви вкладень"
 }

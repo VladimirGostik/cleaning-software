@@ -177,6 +177,7 @@
     "attributes.color": "farba",
     "attributes.company_ico": "IČO",
     "attributes.company_id": "firma",
+    "attributes.keep_module": "ponechať modul",
     "attributes.company_name": "názov firmy",
     "attributes.confidence": "istota",
     "attributes.constant_symbol": "konštantný symbol",
@@ -391,5 +392,7 @@
     "attributes.messages.*.attachment_names.*": "názov prílohy",
     "attributes.role": "rola",
     "attributes.content": "obsah správy",
+    "attributes.conversation_id": "konverzácia",
+    "attributes.client_message_id": "identifikátor správy",
     "attributes.attachment_names": "názvy príloh"
 }

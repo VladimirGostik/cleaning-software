@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, postForm } from '@/utils/http';
+import { HttpError, getJson, postForm } from '@/utils/http';
+import { rememberConversation, rememberedConversation } from '@/utils/assistant';
 import { FILES_REQUEST_TIMEOUT_MS, REQUEST_TIMEOUT_MS } from '@/utils/assistant';
 import { useAssistantChat } from './useAssistantChat';
 
 vi.mock('@/utils/http', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/utils/http')>()),
     postForm: vi.fn(),
+    getJson: vi.fn(),
 }));
 
 const post = vi.mocked(postForm);
+const get = vi.mocked(getJson);
 
 function reply(overrides: Partial<App.Data.Ai.AssistantReplyData> = {}): App.Data.Ai.AssistantReplyData {
     return {
@@ -17,6 +20,8 @@ function reply(overrides: Partial<App.Data.Ai.AssistantReplyData> = {}): App.Dat
         pending_action: null,
         security_notice: null,
         attachment_note: null,
+        conversation_id: 'conv1',
+        conversation_title: 'Title',
         ...overrides,
     };
 }
@@ -50,7 +55,9 @@ function pdf(name: string): File {
 const chat = useAssistantChat();
 
 beforeEach(() => {
+    window.sessionStorage.clear();
     post.mockReset();
+    get.mockReset();
     chat.reset();
     chat.close();
     chat.bind('u1', 'c1');
@@ -66,11 +73,9 @@ describe('useAssistantChat', () => {
         expect(chat.state.messages.map((m) => [m.role, m.content])).toEqual([['user', 'Hi']]);
         expect(chat.state.sending).toBe(true);
         expect(post.mock.calls[0][0]).toBe('/assistant/messages');
-        expect(entries(sentForm())).toEqual([
-            ['company_id', 'c1'],
-            ['messages[0][role]', 'user'],
-            ['messages[0][content]', 'Hi'],
-        ]);
+        expect(sentForm().get('content')).toBe('Hi');
+        expect(sentForm().has('conversation_id')).toBe(false);
+        expect(sentForm().get('client_message_id')).toMatch(/^[0-9a-f-]{36}$/);
 
         pending.resolve(reply({ reply: 'Hey', security_notice: 'careful' }));
         await sent;
@@ -153,8 +158,8 @@ describe('useAssistantChat', () => {
         await chat.send('And firm B?');
         const form = sentForm(post.mock.calls.length - 1);
         expect(form.get('company_id')).toBe('c2');
-        expect(form.get('messages[2][content]')).toBe('And firm B?');
-        expect(form.has('messages[3][role]')).toBe(false);
+        expect(form.get('conversation_id')).toBe('conv1');
+        expect(form.get('content')).toBe('And firm B?');
     });
 
     it('starts over for another user', async () => {
@@ -192,6 +197,7 @@ describe('useAssistantChat', () => {
 
         expect(chat.state.blocked).toBe(false);
         expect(chat.state.error).toBeNull();
+        expect(sentForm(1).get('client_message_id')).toBe(sentForm(0).get('client_message_id'));
         expect(entries(sentForm(1))).toEqual(entries(sentForm(0)));
         expect(chat.state.messages.at(-1)?.role).toBe('assistant');
     });
@@ -226,6 +232,143 @@ describe('useAssistantChat', () => {
         expect(chat.state.messages.at(-1)?.pendingOutcome).toBe('done');
     });
 
+    describe('conversation', () => {
+        it('stores id and title from the reply, remembers them and continues the conversation', async () => {
+            post.mockResolvedValue(reply());
+
+            await chat.send('Hi');
+
+            expect(chat.state.conversationId).toBe('conv1');
+            expect(chat.state.title).toBe('Title');
+            expect(rememberedConversation('u1')).toBe('conv1');
+
+            await chat.send('more');
+
+            expect(sentForm(1).get('conversation_id')).toBe('conv1');
+        });
+
+        it('resets on a 422 for conversation_id and returns text and files', async () => {
+            const file = pdf('a.pdf');
+            post.mockResolvedValueOnce(reply());
+            await chat.send('Hi');
+            post.mockRejectedValueOnce(new HttpError(422, null, null, { conversation_id: ['gone'] }));
+
+            await expect(chat.send('again', [file])).resolves.toBe('returned');
+
+            expect(chat.state.messages).toEqual([]);
+            expect(chat.state.conversationId).toBeNull();
+            expect(chat.state.error).toBeNull();
+            expect(rememberedConversation('u1')).toBeNull();
+            expect(chat.takeReturned()).toMatchObject({
+                text: 'again',
+                files: [file],
+                error: { kind: 'conversation_gone' },
+            });
+        });
+
+        it('load maps messages with the live pending status', async () => {
+            get.mockResolvedValueOnce({
+                id: 'conv9',
+                title: 'Old',
+                last_message_at: '2026-11-13T10:00:00Z',
+                messages: [
+                    {
+                        id: 'a',
+                        role: 'assistant',
+                        content: 'x',
+                        attachment_names: [],
+                        actions: [],
+                        pending_action: { id: 'p1', status: 'executed' },
+                        security_notice: null,
+                        attachment_note: null,
+                        created_at: '2026-11-13T10:00:00Z',
+                    },
+                ],
+            });
+
+            await chat.load('conv9');
+
+            expect(chat.state.conversationId).toBe('conv9');
+            expect(chat.state.title).toBe('Old');
+            expect(chat.state.loading).toBe(false);
+            expect(chat.state.messages[0].pendingOutcome).toBe('done');
+            expect(rememberedConversation('u1')).toBe('conv9');
+        });
+
+        it('load aborts an in-flight send and drops its late reply', async () => {
+            const pending = deferred<App.Data.Ai.AssistantReplyData>();
+            post.mockReturnValueOnce(pending.promise);
+            get.mockResolvedValueOnce({ id: 'conv9', title: 'Old', last_message_at: '', messages: [] });
+
+            const sent = chat.send('Hi');
+            await chat.load('conv9');
+            pending.resolve(reply());
+            await sent;
+
+            expect(chat.state.sending).toBe(false);
+            expect(chat.state.messages).toEqual([]);
+            expect(chat.state.conversationId).toBe('conv9');
+        });
+
+        it('load starts new and forgets on 404, flags loadError on 500', async () => {
+            rememberConversation('u1', 'gone');
+            get.mockRejectedValueOnce(new HttpError(404));
+            await chat.load('gone');
+
+            expect(chat.state.conversationId).toBeNull();
+            expect(rememberedConversation('u1')).toBeNull();
+            expect(chat.state.loadError).toBe(false);
+
+            get.mockRejectedValueOnce(new HttpError(500));
+            await chat.load('x');
+
+            expect(chat.state.loadError).toBe(true);
+            expect(chat.state.loading).toBe(false);
+        });
+
+        it('restoreRemembered loads only an empty chat with a remembered id of this user', async () => {
+            rememberConversation('u2', 'other');
+            await chat.restoreRemembered();
+            expect(get).not.toHaveBeenCalled();
+
+            rememberConversation('u1', 'mine');
+            get.mockResolvedValue({ id: 'mine', title: 'T', last_message_at: '', messages: [] });
+            await chat.restoreRemembered();
+            expect(get).toHaveBeenCalledTimes(1);
+
+            await chat.restoreRemembered();
+            expect(get).toHaveBeenCalledTimes(1);
+        });
+
+        it('startNew forgets the memory, reset does not', async () => {
+            post.mockResolvedValue(reply());
+            await chat.send('Hi');
+
+            chat.reset();
+            expect(rememberedConversation('u1')).toBe('conv1');
+            expect(chat.state.conversationId).toBeNull();
+
+            chat.startNew();
+            expect(rememberedConversation('u1')).toBeNull();
+        });
+
+        it('retitle and forgetIfOpen act only on the open conversation', async () => {
+            post.mockResolvedValue(reply());
+            await chat.send('Hi');
+
+            chat.retitle('other', 'X');
+            expect(chat.state.title).toBe('Title');
+            chat.retitle('conv1', 'New');
+            expect(chat.state.title).toBe('New');
+
+            chat.forgetIfOpen('other');
+            expect(chat.state.conversationId).toBe('conv1');
+            chat.forgetIfOpen('conv1');
+            expect(chat.state.conversationId).toBeNull();
+            expect(chat.state.messages).toEqual([]);
+        });
+    });
+
     describe('files', () => {
         it('a message with files sends the files', async () => {
             post.mockResolvedValueOnce(reply());
@@ -233,17 +376,15 @@ describe('useAssistantChat', () => {
             const outcome = await chat.send('', [pdf('a.pdf'), pdf('b.pdf')]);
 
             expect(outcome).toBe('replied');
-            expect(entries(sentForm())).toEqual([
-                ['company_id', 'c1'],
-                ['messages[0][role]', 'user'],
-                ['messages[0][content]', ''],
+            expect(entries(sentForm()).filter(([key]) => key === 'attachments[]')).toEqual([
                 ['attachments[]', 'file:a.pdf'],
                 ['attachments[]', 'file:b.pdf'],
             ]);
+            expect(sentForm().get('content')).toBe('');
             expect(chat.state.messages[0].attachmentNames).toEqual(['a.pdf', 'b.pdf']);
         });
 
-        it('sends only the names of an earlier message and no files on the next turn', async () => {
+        it('sends no files on the next turn', async () => {
             post.mockResolvedValue(reply({ attachment_note: 'File saved to: expense.' }));
             await chat.send('', [pdf('a.pdf')]);
 
@@ -252,9 +393,8 @@ describe('useAssistantChat', () => {
             await chat.send('thanks');
 
             const form = sentForm(1);
-            expect(form.getAll('messages[0][attachment_names][]')).toEqual(['a.pdf']);
             expect(form.has('attachments[]')).toBe(false);
-            expect(form.get('messages[2][content]')).toBe('thanks');
+            expect(form.get('content')).toBe('thanks');
         });
 
         it('retry resends the held files after a network error', async () => {
@@ -266,7 +406,6 @@ describe('useAssistantChat', () => {
             await expect(chat.retry()).resolves.toBe('replied');
 
             expect(entries(sentForm(1))).toEqual(entries(sentForm(0)));
-            expect(sentForm(1).has('messages[0][attachment_names][]')).toBe(false);
         });
 
         it('hands the message back on a 422 for attachments and removes the user turn', async () => {

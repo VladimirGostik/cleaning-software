@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Api\AssistantController;
+use App\Http\Controllers\Api\AssistantConversationController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
@@ -93,6 +94,12 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::delete('/profile/mcp-tokens/{token}', [ProfileMcpTokenController::class, 'destroy'])->name('profile.mcp-tokens.destroy')->whereNumber('token');
 
     Route::post('/assistant/messages', [AssistantController::class, 'store'])->middleware('throttle:assistant')->name('assistant.messages');
+    Route::middleware('throttle:assistant-history')->group(function (): void {
+        Route::get('/assistant/conversations', [AssistantConversationController::class, 'index'])->name('assistant.conversations.index');
+        Route::get('/assistant/conversations/{conversation}', [AssistantConversationController::class, 'show'])->name('assistant.conversations.show')->whereUuid('conversation');
+        Route::patch('/assistant/conversations/{conversation}', [AssistantConversationController::class, 'update'])->name('assistant.conversations.update')->whereUuid('conversation');
+        Route::delete('/assistant/conversations/{conversation}', [AssistantConversationController::class, 'destroy'])->name('assistant.conversations.destroy')->whereUuid('conversation');
+    });
     Route::get('/pending-actions', [PendingActionController::class, 'index'])->name('pending-actions.index');
     Route::post('/pending-actions/{pendingAction}/confirm', [PendingActionController::class, 'confirm'])->name('pending-actions.confirm')->whereUuid('pendingAction');
     Route::post('/pending-actions/{pendingAction}/cancel', [PendingActionController::class, 'cancel'])->name('pending-actions.cancel')->whereUuid('pendingAction');
