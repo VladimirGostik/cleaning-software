@@ -13,6 +13,8 @@ withDefaults(
         disabled?: boolean;
         placeholder?: string;
         labelClass?: string;
+        suffix?: string;
+        ariaLabel?: string;
     }>(),
     { labelClass: undefined },
 );
@@ -29,7 +31,25 @@ function parseValue(event: Event): number | null {
 
 <template>
     <FormField :label="label" :error="error" :required="required" :label-class="labelClass">
+        <label v-if="suffix" class="input w-full" :class="{ 'input-error': error }">
+            <input
+                :value="modelValue ?? ''"
+                type="number"
+                :required="required"
+                :min="min"
+                :max="max"
+                :step="step"
+                :disabled="disabled"
+                :placeholder="placeholder"
+                :aria-label="ariaLabel"
+                :aria-required="required ? 'true' : undefined"
+                :aria-invalid="error ? 'true' : undefined"
+                @input="$emit('update:modelValue', parseValue($event))"
+            />
+            <span class="label">{{ suffix }}</span>
+        </label>
         <input
+            v-else
             :value="modelValue ?? ''"
             type="number"
             class="input w-full"
@@ -40,6 +60,7 @@ function parseValue(event: Event): number | null {
             :step="step"
             :disabled="disabled"
             :placeholder="placeholder"
+            :aria-label="ariaLabel"
             :aria-required="required ? 'true' : undefined"
             :aria-invalid="error ? 'true' : undefined"
             @input="$emit('update:modelValue', parseValue($event))"

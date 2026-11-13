@@ -9,6 +9,7 @@ use App\Data\UpdateUserData;
 use App\Enums\SupportedLanguage;
 use App\Models\Expense;
 use App\Models\Role;
+use App\Models\ScheduledJob;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
@@ -130,6 +131,10 @@ final readonly class UserService
             if ($membership !== null) {
                 if (Expense::withTrashed()->where('tenant_membership_id', $membership->id)->exists()) {
                     throw ValidationException::withMessages(['status' => [__('app.user_delete_has_expenses')]]);
+                }
+
+                if (ScheduledJob::withoutGlobalScopes()->workRecords()->where('assigned_membership_id', $membership->id)->exists()) {
+                    throw ValidationException::withMessages(['status' => [__('app.user_delete_has_work_records')]]);
                 }
 
                 $this->tasks->unassignForMembership($membership, onlyOpen: false);

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    currentMonth,
     formatDate,
+    formatMonthLabel,
     formatDatetime,
     formatMonth,
     formatRelativeTime,
@@ -9,6 +11,7 @@ import {
     localDatetimeToIso,
     monthOptions,
     previousMonth,
+    shiftMonth,
 } from './date';
 
 describe('date formats', () => {
@@ -107,5 +110,21 @@ describe('formatRelativeTime', () => {
     it('falls back to a short date this year and a full date before', () => {
         expect(formatRelativeTime(new Date(2026, 8, 3, 8, 0).toISOString(), now, 'sk')).toBe('3. 9.');
         expect(formatRelativeTime(new Date(2025, 8, 3, 8, 0).toISOString(), now, 'sk')).toBe('3. 9. 2025');
+    });
+});
+
+describe('month helpers', () => {
+    it('shifts across year boundaries', () => {
+        expect(shiftMonth('2026-01', -1)).toBe('2025-12');
+        expect(shiftMonth('2026-12', 1)).toBe('2027-01');
+        expect(shiftMonth('2026-11', 0)).toBe('2026-11');
+    });
+
+    it('reads the current month from a date', () => {
+        expect(currentMonth(new Date(2026, 10, 13))).toBe('2026-11');
+    });
+
+    it('labels a month capitalised in the locale', () => {
+        expect(formatMonthLabel('2026-11', 'en')).toBe('November 2026');
     });
 });

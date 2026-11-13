@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Data\Contracts\MembershipOptionData;
 use App\Data\Schedule\JobAssignData;
 use App\Data\Schedule\JobCalendarFilterData;
 use App\Data\Schedule\JobCalendarItemData;
@@ -15,12 +14,14 @@ use App\Data\Schedule\JobUpdateData;
 use App\Data\Schedule\WorkBreakdownDetailData;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
+use App\Models\CleaningObject;
 use App\Models\ScheduledJob;
-use App\Models\TenantMembership;
 use App\Models\User;
 use App\Navigation\NavItem;
 use App\Services\JobService;
 use App\Services\ObjectService;
+use App\Services\ObjectVisitItemService;
+use App\Services\WorkRecordService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,8 @@ final class ScheduledJobController extends Controller
     public function __construct(
         private readonly JobService $jobs,
         private readonly ObjectService $objects,
+        private readonly WorkRecordService $workRecords,
+        private readonly ObjectVisitItemService $visitItems,
     ) {}
 
     #[Authorize('viewAny', ScheduledJob::class)]
@@ -47,7 +50,7 @@ final class ScheduledJobController extends Controller
             'filters' => $request->query(),
             'filterOptions' => [
                 'objects' => $this->objects->optionsVisibleTo($actor),
-                'memberships' => $actor->can(PermissionEnum::ViewAllSchedule->value) ? $this->membershipOptions() : [],
+                'memberships' => $actor->can(PermissionEnum::ViewAllSchedule->value) ? $this->jobs->assignableMembershipOptions() : [],
             ],
         ]);
     }
@@ -96,6 +99,8 @@ final class ScheduledJobController extends Controller
             'workBreakdown.contract:id,title,status',
             'workBreakdownTask',
             'contract:id,title',
+            'items',
+            'media',
         ]);
 
         $can = [
@@ -108,8 +113,11 @@ final class ScheduledJobController extends Controller
         ];
 
         return Inertia::render('Schedule/Show', [
-            'job' => JobDetailData::fromModel($job, $can),
-            'membershipOptions' => $can['assign'] ? $this->membershipOptions() : [],
+            'job' => JobDetailData::fromModel($job, $can, $job->isWorkRecord() ? $this->workRecords->present($job, $actor) : null),
+            'visitItems' => $job->isWorkRecord() && $job->cleaningObject !== null && $actor->can('viewVisitItems', CleaningObject::class)
+                ? $this->visitItems->listFor($job->cleaningObject)
+                : null,
+            'membershipOptions' => $can['assign'] || $actor->can('updateWorkRecord', $job) ? $this->jobs->assignableMembershipOptions() : [],
             'workBreakdown' => $job->workBreakdown !== null ? WorkBreakdownDetailData::fromModel($job->workBreakdown) : null,
         ]);
     }
@@ -183,21 +191,7 @@ final class ScheduledJobController extends Controller
     {
         return new JobFormContextData(
             objects: $this->objects->optionsVisibleTo($actor),
-            memberships: $actor->can(PermissionEnum::AssignCleaners->value) ? $this->membershipOptions() : [],
+            memberships: $actor->can(PermissionEnum::AssignCleaners->value) ? $this->jobs->assignableMembershipOptions() : [],
         );
-    }
-
-    /** @return array<int, MembershipOptionData> */
-    private function membershipOptions(): array
-    {
-        return TenantMembership::query()
-            ->with('user:id,name,email')
-            ->where('tenant_id', current_tenant_id())
-            ->where('is_active', true)
-            ->get()
-            ->map(fn (TenantMembership $membership) => MembershipOptionData::fromModel($membership))
-            ->sortBy('label')
-            ->values()
-            ->all();
     }
 }

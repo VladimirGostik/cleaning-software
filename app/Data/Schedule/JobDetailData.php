@@ -45,6 +45,7 @@ final class JobDetailData extends Data
         public readonly bool $can_be_completed,
         public readonly bool $can_be_unapproved,
         public readonly array $can,
+        public readonly ?JobWorkRecordData $work_record = null,
     ) {}
 
     /**
@@ -52,7 +53,7 @@ final class JobDetailData extends Data
      *
      * @param  array<string, bool>  $can
      */
-    public static function fromModel(ScheduledJob $job, array $can = []): self
+    public static function fromModel(ScheduledJob $job, array $can = [], ?JobWorkRecordData $workRecord = null): self
     {
         $object = $job->cleaningObject;
         $client = $object !== null ? $object->client : null;
@@ -88,6 +89,7 @@ final class JobDetailData extends Data
             can_be_completed: $job->canBeCompleted(),
             can_be_unapproved: $job->canBeUnapproved(),
             can: $can,
+            work_record: $workRecord,
         );
     }
 }

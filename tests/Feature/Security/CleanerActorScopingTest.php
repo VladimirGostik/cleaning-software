@@ -127,7 +127,7 @@ final class CleanerActorScopingTest extends TestCase
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
         $colleagueJob = ScheduledJob::factory()->forObject($object)->create(['tenant_id' => $tenant->id]);
 
-        $this->assertFalse((new ScheduledJobPolicy)->update($actor, $colleagueJob));
+        $this->assertFalse(app(ScheduledJobPolicy::class)->update($actor, $colleagueJob));
     }
 
     public function test_can_shared_prop_reflects_view_all_schedule_permission(): void

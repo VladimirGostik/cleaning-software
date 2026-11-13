@@ -25,7 +25,7 @@ final class MobileAccessTest extends TestCase
         $tenantB = Tenant::factory()->create(['name' => 'B firm']);
 
         $this->actingAsTenantUser('Vedúca', $tenantA, $user);
-        $this->actingAsTenantUser('Interná upratovačka', $tenantB, $user);
+        $this->actingAsTenantUser('Sekretárka', $tenantB, $user);
         $this->app['auth']->forgetGuards();
 
         return [$user, $tenantA, $tenantB];
@@ -85,7 +85,7 @@ final class MobileAccessTest extends TestCase
     public function test_login_without_the_permission_anywhere_is_rejected_and_creates_no_token(): void
     {
         $user = User::factory()->create(['email' => 'cleaner@example.com']);
-        $this->actingAsTenantUser('Interná upratovačka', null, $user);
+        $this->actingAsTenantUser('Sekretárka', null, $user);
 
         $response = $this->postJson('/api/auth/login', ['email' => 'cleaner@example.com', 'password' => 'password']);
 
@@ -106,7 +106,7 @@ final class MobileAccessTest extends TestCase
         $user = User::factory()->create(['email' => 'late@example.com']);
         $tenantA = Tenant::factory()->forOwner($user)->create();
         $tenantB = Tenant::factory()->create();
-        $this->actingAsTenantUser('Interná upratovačka', $tenantA, $user);
+        $this->actingAsTenantUser('Sekretárka', $tenantA, $user);
         $this->actingAsTenantUser('Vedúca', $tenantB, $user);
         TenantMembership::query()->where('tenant_id', $tenantA->id)->update(['joined_at' => now()->subDay()]);
         $this->app['auth']->forgetGuards();

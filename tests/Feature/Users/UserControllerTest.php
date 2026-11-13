@@ -7,6 +7,8 @@ namespace Tests\Feature\Users;
 use App\Models\Expense;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\ScheduledJob;
+use App\Models\ScheduledJobItem;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
@@ -395,5 +397,29 @@ final class UserControllerTest extends TestCase
 
         $response->assertForbidden();
         $this->assertDatabaseHas('users', ['id' => $owner->id]);
+    }
+
+    public function test_destroy_is_refused_when_the_member_has_work_records_even_soft_deleted_but_not_for_plain_jobs(): void
+    {
+        $user = $this->userWithPermission('delete employees', 'manage employee_access');
+        $tenant = Tenant::findOrFail(current_tenant_id());
+        $plain = User::factory()->create();
+        $this->addMember($tenant, $plain);
+        $plainMembership = TenantMembership::query()->where('user_id', $plain->id)->where('tenant_id', $tenant->id)->firstOrFail();
+        ScheduledJob::factory()->create(['tenant_id' => $tenant->id, 'assigned_membership_id' => $plainMembership->id]);
+
+        $this->actingAs($user)->delete("/users/{$plain->id}")->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('tenant_memberships', ['id' => $plainMembership->id]);
+
+        $target = User::factory()->create();
+        $this->addMember($tenant, $target);
+        $membership = TenantMembership::query()->where('user_id', $target->id)->where('tenant_id', $tenant->id)->firstOrFail();
+        $record = ScheduledJob::factory()->completed()->create(['tenant_id' => $tenant->id, 'assigned_membership_id' => $membership->id]);
+        ScheduledJobItem::factory()->forJob($record)->create();
+        $record->delete();
+
+        $this->actingAs($user)->delete("/users/{$target->id}")->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('tenant_memberships', ['id' => $membership->id]);
     }
 }

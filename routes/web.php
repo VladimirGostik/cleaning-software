@@ -23,12 +23,14 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceExportController;
 use App\Http\Controllers\InvoicePaymentImportController;
 use App\Http\Controllers\InvoiceSettingsController;
+use App\Http\Controllers\JobPhotoController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\NewPasswordController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationSettingsController;
 use App\Http\Controllers\ObjectController;
+use App\Http\Controllers\ObjectVisitItemController;
 use App\Http\Controllers\PasswordResetLinkController;
 use App\Http\Controllers\PendingActionController;
 use App\Http\Controllers\ProfileController;
@@ -45,6 +47,7 @@ use App\Http\Controllers\TaskRunController;
 use App\Http\Controllers\TemporaryUploadController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WorkRecordController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
@@ -173,6 +176,8 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/objects', [ObjectController::class, 'store'])->name('objects.store');
         Route::match(['PUT', 'PATCH'], '/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->whereUuid('object');
+        Route::put('/objects/{object}/visit-items', [ObjectVisitItemController::class, 'update'])->name('objects.visit-items.update')->whereUuid('object');
+        Route::post('/objects/{object}/work-records', [WorkRecordController::class, 'store'])->name('objects.work-records.store')->whereUuid('object');
     });
 
     Route::get('/quotes', [QuoteController::class, 'index'])->name('quotes.index');
@@ -303,10 +308,13 @@ Route::middleware(['auth', 'tenant.required'])->group(function (): void {
     Route::post('/jobs/{job}/start', [ScheduledJobController::class, 'start'])->name('jobs.start')->whereUuid('job');
     Route::post('/jobs/{job}/complete', [ScheduledJobController::class, 'complete'])->name('jobs.complete')->whereUuid('job');
     Route::post('/jobs/{job}/unapprove', [ScheduledJobController::class, 'unapprove'])->name('jobs.unapprove')->whereUuid('job');
+    Route::get('/jobs/{job}/photos/{photo}', [JobPhotoController::class, 'show'])->name('jobs.photos.show')->whereUuid(['job', 'photo']);
+    Route::delete('/jobs/{job}/work-record', [WorkRecordController::class, 'destroy'])->name('jobs.work-record.destroy')->whereUuid('job');
     Route::middleware([HandlePrecognitiveRequests::class])->group(function (): void {
         Route::post('/jobs', [ScheduledJobController::class, 'store'])->name('jobs.store');
         Route::match(['PUT', 'PATCH'], '/jobs/{job}', [ScheduledJobController::class, 'update'])->name('jobs.update')->whereUuid('job');
         Route::post('/jobs/{job}/assign', [ScheduledJobController::class, 'assign'])->name('jobs.assign')->whereUuid('job');
+        Route::put('/jobs/{job}/work-record', [WorkRecordController::class, 'update'])->name('jobs.work-record.update')->whereUuid('job');
     });
 
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');

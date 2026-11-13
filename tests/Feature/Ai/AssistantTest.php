@@ -270,8 +270,8 @@ final class AssistantTest extends TestCase
     public function test_use_assistant_held_only_in_a_company_without_mobile_access_is_mobile_forbidden(): void
     {
         $this->app->instance(ChatsWithTools::class, $fake = new FakeAssistant);
-        $user = $this->member($this->alpha, 'Interná upratovačka');
-        $this->member($this->beta, 'Interná upratovačka', $user);
+        $user = $this->member($this->alpha, 'Sekretárka');
+        $this->member($this->beta, 'Sekretárka', $user);
         $this->apiAs($user, $this->alpha);
         $this->grant($user, $this->beta, 'use assistant');
         $user->revokePermissionTo('access mobile app');

@@ -51,4 +51,19 @@ final class ObjectPolicy
         // Same breadth modifier as contacts: own-only cleaners reach objects through jobs.
         return $this->viewContacts($user);
     }
+
+    public function viewVisitItems(User $user): bool
+    {
+        return $user->can(PermissionEnum::ViewAllObjects->value);
+    }
+
+    public function viewVisitRecords(User $user): bool
+    {
+        return $user->can(PermissionEnum::ViewAllObjects->value);
+    }
+
+    public function manageVisitItems(User $user, CleaningObject $object): bool
+    {
+        return $this->update($user, $object) && $this->viewVisitItems($user);
+    }
 }

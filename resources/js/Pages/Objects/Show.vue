@@ -11,6 +11,9 @@ import ObjectFormDrawer from '@/Components/Objects/ObjectFormDrawer.vue';
 import ObjectDetailCard from '@/Components/Objects/ObjectDetailCard.vue';
 import ObjectBillingCard from '@/Components/Objects/ObjectBillingCard.vue';
 import ObjectAccessCard from '@/Components/Objects/ObjectAccessCard.vue';
+import ObjectVisitItemsCard from '@/Components/Objects/ObjectVisitItemsCard.vue';
+import ObjectVisitItemsDrawer from '@/Components/Objects/ObjectVisitItemsDrawer.vue';
+import ObjectVisitRecordsCard from '@/Components/Objects/ObjectVisitRecordsCard.vue';
 import ObjectWorkBreakdownsCard from '@/Components/Objects/ObjectWorkBreakdownsCard.vue';
 import RelatedContractsCard from '@/Components/Contracts/RelatedContractsCard.vue';
 import RelatedQuotesCard from '@/Components/Quotes/RelatedQuotesCard.vue';
@@ -31,6 +34,8 @@ const props = defineProps<{
     canCreateContract: boolean;
     quotes: App.Data.Quotes.QuoteListItemData[] | null;
     canCreateQuote: boolean;
+    visitItems: App.Data.Objects.ObjectVisitItemData[] | null;
+    visitRecords: App.Data.Objects.ObjectVisitRecordsData | null;
 }>();
 
 const breadcrumbs: Breadcrumb[] = [
@@ -45,8 +50,11 @@ const page = usePage();
 const focusSection =
     new URL(page.url, window.location.origin).searchParams.get('edit') === 'billing' ? 'billing' : undefined;
 
+const canEditVisitItems = computed(() => allows('edit objects') && props.visitItems !== null);
+
 const ui = reactive({
     editOpen: focusSection === 'billing' && canEdit.value,
+    visitItemsOpen: false,
 });
 
 const reactivating = ref(false);
@@ -133,12 +141,26 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
             />
 
             <ObjectWorkBreakdownsCard :breakdowns="workBreakdowns" />
+
+            <ObjectVisitRecordsCard
+                v-if="visitRecords !== null"
+                :object-id="object.id"
+                :overview="visitRecords"
+                :items="visitItems ?? []"
+            />
         </div>
 
         <div class="space-y-4">
             <ObjectDetailCard :object="object" />
 
             <ObjectBillingCard v-if="object.billing !== null" :billing="object.billing" />
+
+            <ObjectVisitItemsCard
+                v-if="visitItems !== null"
+                :items="visitItems"
+                :can-edit="canEditVisitItems"
+                @edit="ui.visitItemsOpen = true"
+            />
 
             <ContactsList
                 v-if="object.contacts !== null"
@@ -155,6 +177,14 @@ const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDesc
         :clients="clients"
         :focus-section="focusSection"
         @close="ui.editOpen = false"
+    />
+
+    <ObjectVisitItemsDrawer
+        v-if="visitItems !== null"
+        :open="ui.visitItemsOpen"
+        :object-id="object.id"
+        :items="visitItems"
+        @close="ui.visitItemsOpen = false"
     />
 
     <ConfirmDeleteModal

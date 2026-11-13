@@ -63,6 +63,26 @@ export function formatMonth(value: string | null | undefined): string {
     return `${Number(match[2])}/${match[1]}`;
 }
 
+export function currentMonth(today: Date = new Date()): string {
+    return monthKey(today);
+}
+
+export function shiftMonth(month: string, delta: number): string {
+    const [year, monthNumber] = month.split('-').map(Number);
+
+    return monthKey(new Date(year as number, (monthNumber as number) - 1 + delta, 1));
+}
+
+export function formatMonthLabel(month: string, locale: string): string {
+    const [year, monthNumber] = month.split('-').map(Number);
+    const tag = localeTag(locale);
+    const label = new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric' }).format(
+        new Date(year as number, (monthNumber as number) - 1, 1),
+    );
+
+    return label.charAt(0).toLocaleUpperCase(tag) + label.slice(1);
+}
+
 export function previousMonth(today: Date = new Date()): string {
     return monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
 }

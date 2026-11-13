@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Media;
 
+use App\Models\CleaningObject;
 use App\Models\Media;
+use App\Models\ScheduledJob;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
@@ -137,6 +139,20 @@ final class MediaControllerTest extends TestCase
             ->where('media.data', fn ($data) => is_iterable($data) && array_column(iterator_to_array($data), 'file_name') === ['plain.jpg']));
 
         $this->actingAs($user)->get("/media/{$taskMedia->id}")->assertForbidden();
+    }
+
+    public function test_job_photos_are_absent_from_index_and_forbidden_on_show(): void
+    {
+        $user = $this->userWithPermission('view media');
+        $object = CleaningObject::factory()->create(['tenant_id' => current_tenant_id()]);
+        $job = ScheduledJob::factory()->forObject($object)->create(['tenant_id' => current_tenant_id()]);
+        $photo = $this->createMedia(['model_type' => $job->getMorphClass(), 'model_id' => $job->id, 'collection_name' => ScheduledJob::PHOTOS_COLLECTION, 'file_name' => 'job-photo.jpg', 'tenant_id' => current_tenant_id()]);
+        $this->createMedia(['file_name' => 'plain.jpg']);
+
+        $this->withoutVite()->actingAs($user)->get('/media')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('media.data', fn ($data) => is_iterable($data) && array_column(iterator_to_array($data), 'file_name') === ['plain.jpg']));
+
+        $this->actingAs($user)->get("/media/{$photo->id}")->assertForbidden();
     }
 
     // -------------------------------------------------------------------------

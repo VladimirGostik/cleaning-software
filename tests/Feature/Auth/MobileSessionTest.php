@@ -171,7 +171,7 @@ final class MobileSessionTest extends TestCase
         $inactive = User::factory()->inactive()->create();
         $this->member($this->firm, 'Admin', $inactive);
         $loner = User::factory()->create();
-        $cleaner = $this->member($this->firm, 'Interná upratovačka');
+        $cleaner = $this->member($this->firm, 'Sekretárka');
         $this->consoleContext();
 
         foreach ([[$this->user->email, 'wrong'], [$inactive->email, 'password'], [$loner->email, 'password'], [$cleaner->email, 'password']] as [$email, $password]) {

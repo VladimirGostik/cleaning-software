@@ -9,7 +9,9 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\JobPhotoController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\MyJobController;
 use App\Http\Controllers\Api\NotificationBellController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PendingActionController;
@@ -22,6 +24,7 @@ use App\Http\Controllers\Api\TaskParseController;
 use App\Http\Controllers\Api\TaskRunController;
 use App\Http\Controllers\Api\TokenUploadController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WorkRecordController;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +44,11 @@ Route::middleware(['auth:sanctum', 'locale.api'])->group(function (): void {
 Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile', 'tenant.context', 'tenant.required'])->group(function (): void {
     Route::get('/me', MeController::class);
     Route::get('/dashboard', DashboardController::class)->name('api.dashboard');
+    Route::get('/my-jobs', [MyJobController::class, 'index'])->name('api.my-jobs.index');
+    Route::post('/jobs/{job}/complete', [MyJobController::class, 'complete'])->name('api.jobs.complete')->whereUuid('job');
+    Route::get('/work-records/context', [WorkRecordController::class, 'context'])->name('api.work-records.context');
+    Route::post('/work-records', [WorkRecordController::class, 'store'])->middleware('throttle:work-records')->name('api.work-records.store');
+    Route::post('/jobs/{job}/photos', [JobPhotoController::class, 'store'])->middleware('throttle:job-photos')->name('api.jobs.photos.store')->whereUuid('job');
     Route::get('/notifications/bell', NotificationBellController::class)->name('api.notifications.bell');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('api.notifications.read-all');

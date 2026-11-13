@@ -8,6 +8,7 @@ use App\Concerns\BelongsToTenant;
 use App\Concerns\HasUuids;
 use App\Enums\ObjectTypeEnum;
 use App\Enums\PermissionEnum;
+use App\Scopes\TenantScope;
 use Database\Factories\CleaningObjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -59,6 +60,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Collection<int, WorkBreakdown> $workBreakdowns
  * @property Collection<int, ScheduledJob> $jobs
  * @property Collection<int, Contact> $contacts
+ * @property Collection<int, ObjectVisitItem> $visitItems
  * @property Contact|null $primaryContact
  *
  * D1 override (phase 3 plan): two lifecycle switches on this model — `is_active` for direct
@@ -139,6 +141,12 @@ final class CleaningObject extends Model
         return $this->hasMany(ScheduledJob::class, 'cleaning_object_id');
     }
 
+    /** @return HasMany<ObjectVisitItem, $this> */
+    public function visitItems(): HasMany
+    {
+        return $this->hasMany(ObjectVisitItem::class, 'cleaning_object_id')->orderBy('position')->orderBy('id');
+    }
+
     /** @return MorphMany<Contract, $this> */
     public function contracts(): MorphMany
     {
@@ -179,7 +187,19 @@ final class CleaningObject extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('jobs', fn (Builder $q) => $q->where('assigned_membership_id', $membershipId));
+        return $this->scopeReachableByMemberships($query, [$membershipId]);
+    }
+
+    /**
+     * @param  Builder<CleaningObject>  $query
+     * @param  list<string>  $membershipIds
+     * @return Builder<CleaningObject>
+     */
+    public function scopeReachableByMemberships(Builder $query, array $membershipIds): Builder
+    {
+        return $query->whereHas('jobs', fn (Builder $q) => $q
+            ->withoutGlobalScope(TenantScope::class)
+            ->whereIn('assigned_membership_id', $membershipIds));
     }
 
     public function isVisibleTo(User $actor): bool

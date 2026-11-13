@@ -8,6 +8,7 @@ use App\Data\MediaDetailData;
 use App\Data\MediaIndexFilterData;
 use App\Models\Document;
 use App\Models\Media;
+use App\Models\ScheduledJob;
 use App\Models\Task;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
@@ -22,7 +23,7 @@ final readonly class MediaService
     /** @return LengthAwarePaginator<int, Media> */
     public function index(MediaIndexFilterData $filter): LengthAwarePaginator
     {
-        return QueryBuilder::for(Media::inTenant(current_tenant_id())->whereNotIn('model_type', [(new Document)->getMorphClass(), (new Task)->getMorphClass()]))
+        return QueryBuilder::for(Media::inTenant(current_tenant_id())->whereNotIn('model_type', [(new Document)->getMorphClass(), (new Task)->getMorphClass(), (new ScheduledJob)->getMorphClass()]))
             ->allowedFilters(
                 AllowedFilter::callbackClean('search', function (Builder $q, mixed $v): void {
                     if (blank($v) || ! is_scalar($v)) {

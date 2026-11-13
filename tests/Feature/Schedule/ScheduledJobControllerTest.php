@@ -290,13 +290,26 @@ final class ScheduledJobControllerTest extends TestCase
         $this->post(route('jobs.start', $job))->assertForbidden();
     }
 
-    public function test_complete_on_planned_job_returns_403(): void
+    public function test_complete_on_planned_job_completes_it_in_one_step(): void
     {
         $tenant = Tenant::factory()->create();
         $this->actingAsTenantUser('Admin', $tenant);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
         $job = ScheduledJob::factory()->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->post(route('jobs.complete', $job))->assertRedirect();
+        $this->assertSame(JobStatusEnum::Completed, $job->fresh()?->status);
+        $this->assertNull($job->fresh()->started_at);
+    }
+
+    public function test_complete_on_completed_job_returns_403(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAsTenantUser('Admin', $tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $job = ScheduledJob::factory()->completed()->forObject($object)->create(['tenant_id' => $tenant->id]);
 
         $this->post(route('jobs.complete', $job))->assertForbidden();
     }
@@ -325,7 +338,7 @@ final class ScheduledJobControllerTest extends TestCase
         $this->get(route('jobs.show', $job))->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->where('job.can.start', true)
-                ->where('job.can.complete', false)
+                ->where('job.can.complete', true)
                 ->where('job.can.unapprove', false)
                 ->where('job.can_be_started', true),
         );

@@ -240,7 +240,6 @@
     "attributes.hourly_rate": "hodinová sadzba",
     "attributes.iban": "IBAN",
     "attributes.ico": "IČO",
-    "attributes.id": "identifikátor",
     "attributes.ids": "vybrané záznamy",
     "attributes.include": "zahrnúť",
     "attributes.include_references": "zahrnúť referencie",
@@ -394,5 +393,16 @@
     "attributes.content": "obsah správy",
     "attributes.conversation_id": "konverzácia",
     "attributes.client_message_id": "identifikátor správy",
-    "attributes.attachment_names": "názvy príloh"
+    "attributes.attachment_names": "názvy príloh",
+    "attributes.items.*.name": "názov položky",
+    "attributes.items.*.price": "cena za návštevu",
+    "attributes.items.*.id": "položka",
+    "attributes.item_ids.*": "položka",
+    "attributes.keep_item_ids.*": "ponechaná položka",
+    "attributes.add_item_ids.*": "pridaná položka",
+    "attributes.performed_at": "čas vykonania",
+    "attributes.client_uuid": "identifikátor",
+    "attributes.records_month": "mesiac záznamov",
+    "attributes.id": "identifikátor",
+    "attributes.price": "cena"
 }

@@ -20,7 +20,7 @@ final class JobStatusEnumTest extends TestCase
             'unassigned to completed' => [JobStatusEnum::Unassigned, JobStatusEnum::Completed, false],
             'planned to in_progress' => [JobStatusEnum::Planned, JobStatusEnum::InProgress, true],
             'planned to cancelled' => [JobStatusEnum::Planned, JobStatusEnum::Cancelled, true],
-            'planned to completed' => [JobStatusEnum::Planned, JobStatusEnum::Completed, false],
+            'planned to completed' => [JobStatusEnum::Planned, JobStatusEnum::Completed, true],
             'planned to unassigned' => [JobStatusEnum::Planned, JobStatusEnum::Unassigned, false],
             'in_progress to completed' => [JobStatusEnum::InProgress, JobStatusEnum::Completed, true],
             'in_progress to unapproved' => [JobStatusEnum::InProgress, JobStatusEnum::Unapproved, true],

@@ -9,6 +9,7 @@ import JobDetailCard from '@/Components/Schedule/JobDetailCard.vue';
 import JobActionsCard from '@/Components/Schedule/JobActionsCard.vue';
 import JobLinksCard from '@/Components/Schedule/JobLinksCard.vue';
 import JobAssignPanel from '@/Components/Schedule/JobAssignPanel.vue';
+import JobWorkRecordCard from '@/Components/Schedule/JobWorkRecordCard.vue';
 import WorkBreakdownView from '@/Components/Schedule/WorkBreakdownView.vue';
 
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
@@ -17,6 +18,7 @@ import type { Breadcrumb } from '@/types';
 const props = defineProps<{
     job: App.Data.Schedule.JobDetailData;
     membershipOptions: App.Data.Contracts.MembershipOptionData[];
+    visitItems: App.Data.Objects.ObjectVisitItemData[] | null;
     workBreakdown: App.Data.Schedule.WorkBreakdownDetailData | null;
 }>();
 
@@ -60,6 +62,14 @@ const confirmVariant = computed(() => (statusConfirm.state.item ? CONFIRM_VARIAN
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div class="space-y-4">
             <JobDetailCard :job="job" />
+
+            <JobWorkRecordCard
+                v-if="job.work_record"
+                :record="job.work_record"
+                :object-id="job.cleaning_object_id"
+                :items="visitItems ?? []"
+                :members="membershipOptions"
+            />
 
             <div v-if="workBreakdown" class="card bg-base-100">
                 <div class="card-body">

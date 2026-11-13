@@ -307,6 +307,7 @@ readonly locale: App.Enums.SupportedLanguage,
 readonly activeTenantId: string,
 readonly permissions: App.Enums.PermissionEnum[],
 readonly companies: App.Data.Auth.MobileCompanyData[],
+readonly mode: App.Enums.MobileAppModeEnum,
 };
 export type MobileCompanyData = {
 readonly tenant_id: string,
@@ -1671,6 +1672,34 @@ readonly billing_city: string | null,
 readonly billing_postal_code: string | null,
 readonly billing_email: string | null,
 };
+export type ObjectVisitItemData = {
+readonly id: string,
+readonly name: string,
+readonly price: string,
+readonly position: number,
+};
+export type ObjectVisitItemInputData = {
+readonly id: string | null,
+readonly name: string,
+readonly price: string | number,
+};
+export type ObjectVisitItemsSyncData = {
+readonly items: App.Data.Objects.ObjectVisitItemInputData[],
+};
+export type ObjectVisitRecordsData = {
+readonly month: string,
+readonly summary: App.Data.Objects.ObjectVisitSummaryLineData[],
+readonly total: string,
+readonly records: App.Data.Schedule.JobWorkRecordData[],
+readonly can_add: boolean,
+readonly members: App.Data.Contracts.MembershipOptionData[],
+};
+export type ObjectVisitSummaryLineData = {
+readonly name: string,
+readonly unit_price: string,
+readonly count: number,
+readonly total: string,
+};
 }
 namespace Profile {
 export type McpTokenCreateData = {
@@ -2033,6 +2062,7 @@ readonly can_be_started: boolean,
 readonly can_be_completed: boolean,
 readonly can_be_unapproved: boolean,
 readonly can: Record<string, boolean>,
+readonly work_record: App.Data.Schedule.JobWorkRecordData | null,
 };
 export type JobFormContextData = {
 readonly objects: App.Data.Objects.ObjectOptionData[],
@@ -2052,6 +2082,16 @@ readonly type: App.Enums.JobTypeEnum,
 readonly status: App.Enums.JobStatusEnum,
 readonly is_invoiced: boolean,
 };
+export type JobPhotoData = {
+readonly id: string,
+readonly name: string,
+readonly mime_type: string,
+readonly size: number,
+};
+export type JobPhotoUploadData = {
+readonly file: File,
+readonly client_uuid: string,
+};
 export type JobStoreData = {
 readonly cleaning_object_id: string,
 readonly type: App.Enums.JobTypeEnum,
@@ -2068,6 +2108,50 @@ readonly scheduled_date: string,
 readonly start_time: string | null,
 readonly end_time: string | null,
 readonly note: string | null,
+};
+export type JobWorkRecordData = {
+readonly job_id: string,
+readonly performed_at: string,
+readonly tenant_membership_id: string | null,
+readonly recorded_by_name: string | null,
+readonly note: string | null,
+readonly items: App.Data.Schedule.JobWorkRecordItemData[],
+readonly photos: App.Data.Schedule.JobWorkRecordPhotoData[],
+readonly can_update: boolean,
+readonly can_delete: boolean,
+};
+export type JobWorkRecordItemData = {
+readonly id: string,
+readonly name: string,
+readonly unit_price: string | null,
+readonly object_visit_item_id: string | null,
+};
+export type JobWorkRecordPhotoData = {
+readonly id: string,
+readonly name: string,
+readonly url: string,
+};
+export type MyJobData = {
+readonly id: string,
+readonly tenant_id: string,
+readonly scheduled_date: string,
+readonly start_time: string | null,
+readonly end_time: string | null,
+readonly object_name: string,
+readonly object_street: string | null,
+readonly object_city: string | null,
+readonly task_name: string | null,
+readonly type: App.Enums.JobTypeEnum,
+readonly status: App.Enums.JobStatusEnum,
+readonly note: string | null,
+readonly completed_at: string | null,
+readonly can_complete: boolean,
+readonly items: string[],
+readonly photos_count: number,
+};
+export type MyJobsFilterData = {
+readonly from: string,
+readonly to: string,
 };
 export type WorkBreakdownDetailData = {
 readonly id: string,
@@ -2086,6 +2170,44 @@ readonly name: string,
 readonly description: string | null,
 readonly frequency: App.Enums.TaskFrequencyEnum,
 readonly position: number,
+};
+export type WorkRecordAdminStoreData = {
+readonly tenant_membership_id: string,
+readonly item_ids: string[],
+readonly performed_at: string,
+readonly note: string | null,
+};
+export type WorkRecordContextData = {
+readonly objects: App.Data.Schedule.WorkRecordObjectData[],
+readonly backdate_days: number,
+readonly max_photos: number,
+readonly max_photo_size_kb: number,
+};
+export type WorkRecordItemOptionData = {
+readonly id: string,
+readonly name: string,
+};
+export type WorkRecordObjectData = {
+readonly tenant_id: string,
+readonly object_id: string,
+readonly name: string,
+readonly street: string | null,
+readonly city: string | null,
+readonly items: App.Data.Schedule.WorkRecordItemOptionData[],
+};
+export type WorkRecordStoreData = {
+readonly client_uuid: string,
+readonly cleaning_object_id: string,
+readonly item_ids: string[],
+readonly performed_at: string,
+readonly note: string | null,
+};
+export type WorkRecordUpdateData = {
+readonly tenant_membership_id: string,
+readonly performed_at: string,
+readonly keep_item_ids: string[],
+readonly add_item_ids: string[],
+readonly note: string | null,
 };
 }
 namespace Tasks {
@@ -2400,6 +2522,7 @@ export type InvoiceStatusEnum = "draft" | "issued" | "paid" | "overdue" | "cance
 export type InvoiceTypeEnum = "monthly" | "one_off" | "special";
 export type JobStatusEnum = "unassigned" | "planned" | "in_progress" | "completed" | "unapproved" | "cancelled";
 export type JobTypeEnum = "regular" | "one_off" | "special";
+export type MobileAppModeEnum = "admin" | "cleaner";
 export type MobileSessionRevokeReasonEnum = "logout" | "password_changed" | "password_reset" | "access_lost" | "reuse_detected" | "expired" | "membership_lost";
 export type NavIconEnum = "dashboard" | "buildings" | "team" | "clients" | "quotes" | "invoices" | "recurring_invoices" | "contracts" | "documents" | "schedule" | "tasks" | "expenses" | "notifications" | "notification_settings" | "pending_actions" | "users" | "roles" | "audit_logs" | "media" | "profile" | "invoice_settings" | "settings";
 export type NotificationTypeEnum = "invitation.created" | "invoice.issued" | "invoice.overdue" | "invoice.issue_reminder" | "contract.expiring" | "contract.expired" | "quote.sent" | "quote.expiring" | "quote.expired" | "task.due" | "task.assigned" | "task.commented" | "task.ai_run";
@@ -2409,7 +2532,7 @@ export type PaymentSourceEnum = "manual" | "bank_import" | "legacy_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
 export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense" | "delete_contact";
 export type PendingActionStatusEnum = "pending" | "executed" | "cancelled" | "expired";
-export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "manage employee_access" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "revert audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "use assistant" | "view expenses" | "manage expenses";
+export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "manage employee_access" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "revert audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "record own work" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "use assistant" | "view expenses" | "manage expenses";
 export type QuoteBillingPeriodEnum = "one_off" | "monthly" | "quarterly" | "yearly";
 export type QuoteKindEnum = "itemized" | "document";
 export type QuoteStatusEnum = "draft" | "sent" | "accepted" | "rejected" | "expired";

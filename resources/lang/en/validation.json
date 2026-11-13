@@ -240,7 +240,6 @@
     "attributes.hourly_rate": "hourly rate",
     "attributes.iban": "IBAN",
     "attributes.ico": "company ID",
-    "attributes.id": "ID",
     "attributes.ids": "selected records",
     "attributes.include": "include",
     "attributes.include_references": "included references",
@@ -394,5 +393,16 @@
     "attributes.content": "message content",
     "attributes.conversation_id": "conversation",
     "attributes.client_message_id": "message id",
-    "attributes.attachment_names": "attachment names"
+    "attributes.attachment_names": "attachment names",
+    "attributes.items.*.name": "item name",
+    "attributes.items.*.price": "price per visit",
+    "attributes.items.*.id": "item",
+    "attributes.item_ids.*": "item",
+    "attributes.keep_item_ids.*": "kept item",
+    "attributes.add_item_ids.*": "added item",
+    "attributes.performed_at": "time performed",
+    "attributes.client_uuid": "identifier",
+    "attributes.records_month": "records month",
+    "attributes.id": "identifier",
+    "attributes.price": "price"
 }

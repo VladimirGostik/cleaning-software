@@ -216,7 +216,7 @@ final class PushDeliveryTest extends TestCase
     public function test_firm_without_mobile_access_is_never_pushed_but_in_app_row_stays(): void
     {
         $other = $this->firm('Other');
-        $this->member($other, 'Interná upratovačka', $this->user);
+        $this->member($other, 'Sekretárka', $this->user);
         $this->consoleContext();
         $this->twoDevices();
 
@@ -232,8 +232,8 @@ final class PushDeliveryTest extends TestCase
     public function test_global_notification_needs_mobile_access_in_any_firm(): void
     {
         $nobody = User::factory()->create();
-        $cleanerFirm = $this->firm('Cleaners');
-        $this->member($cleanerFirm, 'Interná upratovačka', $nobody);
+        $officeFirm = $this->firm('Office');
+        $this->member($officeFirm, 'Sekretárka', $nobody);
         $this->consoleContext();
         DeviceToken::factory()->for($nobody)->create();
 

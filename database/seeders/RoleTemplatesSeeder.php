@@ -44,6 +44,7 @@ final class RoleTemplatesSeeder extends Seeder
                 PermissionEnum::ViewNotifications->value,
                 PermissionEnum::ConfigureNotifications->value,
                 PermissionEnum::AccessMobileApp->value,
+                PermissionEnum::RecordOwnWork->value,
                 PermissionEnum::ViewTasks->value,
                 PermissionEnum::CreateTasks->value,
                 PermissionEnum::EditTasks->value,
@@ -54,6 +55,8 @@ final class RoleTemplatesSeeder extends Seeder
             'Interná upratovačka' => [
                 PermissionEnum::ViewSchedule->value,
                 PermissionEnum::ViewObjects->value,
+                PermissionEnum::RecordOwnWork->value,
+                PermissionEnum::AccessMobileApp->value,
             ],
             'Sekretárka' => [
                 PermissionEnum::ViewClients->value,

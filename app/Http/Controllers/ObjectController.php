@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Data\Clients\ClientOptionData;
 use App\Data\Objects\ObjectDetailData;
 use App\Data\Objects\ObjectUpsertData;
+use App\Data\Objects\ObjectVisitRecordsData;
 use App\Data\Schedule\WorkBreakdownDetailData;
 use App\Enums\NavIconEnum;
 use App\Enums\PermissionEnum;
@@ -18,7 +19,9 @@ use App\Models\WorkBreakdown;
 use App\Navigation\NavItem;
 use App\Services\ContractService;
 use App\Services\ObjectService;
+use App\Services\ObjectVisitItemService;
 use App\Services\QuoteService;
+use App\Services\WorkRecordService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -31,6 +34,8 @@ final class ObjectController extends Controller
         private readonly ObjectService $objects,
         private readonly ContractService $contracts,
         private readonly QuoteService $quotes,
+        private readonly ObjectVisitItemService $visitItems,
+        private readonly WorkRecordService $workRecords,
     ) {}
 
     #[Authorize('viewAny', CleaningObject::class)]
@@ -75,6 +80,10 @@ final class ObjectController extends Controller
             'canCreateContract' => $this->contracts->canCreateFor($object, $actor),
             'quotes' => $this->quotes->listFor($object, $actor),
             'canCreateQuote' => $actor->can('create', Quote::class),
+            'visitItems' => $actor->can('viewVisitItems', CleaningObject::class) ? $this->visitItems->listFor($object) : null,
+            'visitRecords' => fn (): ?ObjectVisitRecordsData => $actor->can('viewVisitRecords', CleaningObject::class)
+                ? $this->workRecords->overview($object, $this->recordsMonth($request), $actor)
+                : null,
         ]);
     }
 
@@ -114,6 +123,17 @@ final class ObjectController extends Controller
         $this->objects->reactivate($object);
 
         return to_route('objects.show', $object)->with('success', __('app.object_reactivated'));
+    }
+
+    private function recordsMonth(Request $request): string
+    {
+        $month = $request->query('records_month');
+
+        if (is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1) {
+            return $month;
+        }
+
+        return now(config()->string('scheduling.timezone'))->format('Y-m');
     }
 
     /** @return array<int, ClientOptionData> */

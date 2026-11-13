@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\Contracts\MembershipOptionData;
 use App\Data\Schedule\JobAssignData;
 use App\Data\Schedule\JobCalendarFilterData;
 use App\Data\Schedule\JobCalendarItemData;
 use App\Data\Schedule\JobListItemData;
 use App\Data\Schedule\JobStoreData;
 use App\Data\Schedule\JobUpdateData;
+use App\Data\Schedule\MyJobData;
+use App\Data\Schedule\MyJobsFilterData;
 use App\Enums\JobStatusEnum;
 use App\Enums\JobTypeEnum;
 use App\Enums\PermissionEnum;
@@ -21,12 +24,15 @@ use App\Models\User;
 use App\Models\WorkBreakdown;
 use App\Models\WorkBreakdownTask;
 use App\Scopes\TenantScope;
+use App\Services\Dashboard\TenantVisibility;
+use App\Services\Tenancy\TenantPermissionSnapshot;
 use App\Utils\AllowedFilter;
 use App\Utils\Filters;
 use Carbon\CarbonPeriod;
 use DateTimeInterface;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -38,6 +44,7 @@ final readonly class JobService
 {
     public function __construct(
         private DatabaseManager $db,
+        private TenantPermissionSnapshot $snapshot,
     ) {}
 
     /**
@@ -88,6 +95,70 @@ final readonly class JobService
             ->orderBy('start_time')
             ->get()
             ->map(fn (ScheduledJob $job) => JobCalendarItemData::fromModel($job));
+    }
+
+    /** @return Collection<int, MyJobData> */
+    public function myJobs(MyJobsFilterData $filter, User $actor): Collection
+    {
+        $firms = array_filter(
+            $this->snapshot->forRequest($actor),
+            static fn (TenantVisibility $visibility): bool => $visibility->schedule && $visibility->membershipId !== null,
+        );
+
+        if ($firms === []) {
+            return new Collection;
+        }
+
+        $recordingTenantIds = TenantVisibility::idsWhere(
+            array_values($firms),
+            static fn (TenantVisibility $visibility): bool => in_array(PermissionEnum::RecordOwnWork, $visibility->permissions, true),
+        );
+        $today = Carbon::today(config()->string('scheduling.timezone'));
+
+        return ScheduledJob::withoutGlobalScope(TenantScope::class)
+            ->where(function (Builder $query) use ($firms): void {
+                foreach ($firms as $firm) {
+                    $query->orWhere(fn (Builder $own) => $own
+                        ->where('tenant_id', $firm->tenant->id)
+                        ->where('assigned_membership_id', $firm->membershipId));
+                }
+            })
+            ->whereBetween('scheduled_date', [$filter->from, $filter->to])
+            ->where('status', '!=', JobStatusEnum::Cancelled)
+            ->with([
+                'cleaningObject' => fn (Relation $query) => $query->withoutGlobalScope(TenantScope::class),
+                'workBreakdownTask' => fn (Relation $query) => $query->withoutGlobalScope(TenantScope::class),
+                'items' => fn (Relation $query) => $query->withoutGlobalScope(TenantScope::class),
+            ])
+            ->withCount(['media as photos_count' => fn (Builder $query) => $query->where('collection_name', ScheduledJob::PHOTOS_COLLECTION)])
+            ->orderBy('scheduled_date')
+            ->orderBy('start_time')
+            ->get()
+            ->map(fn (ScheduledJob $job): MyJobData => MyJobData::fromModel(
+                $job,
+                in_array($job->tenant_id, $recordingTenantIds, true) && $job->isCompletableByAssignee($today),
+            ));
+    }
+
+    public function presentMine(ScheduledJob $job, bool $canComplete = false): MyJobData
+    {
+        $job->loadMissing(['cleaningObject', 'workBreakdownTask', 'items']);
+        $job->loadCount(['media as photos_count' => fn (Builder $query) => $query->where('collection_name', ScheduledJob::PHOTOS_COLLECTION)]);
+
+        return MyJobData::fromModel($job, $canComplete);
+    }
+
+    /** @return list<MembershipOptionData> */
+    public function assignableMembershipOptions(): array
+    {
+        return array_values(TenantMembership::query()
+            ->with('user:id,name,email')
+            ->where('tenant_id', current_tenant_id())
+            ->where('is_active', true)
+            ->get()
+            ->map(fn (TenantMembership $membership) => MembershipOptionData::fromModel($membership))
+            ->sortBy('label')
+            ->all());
     }
 
     public function create(JobStoreData $data, User $actor): ScheduledJob
@@ -194,14 +265,20 @@ final readonly class JobService
 
     public function complete(ScheduledJob $job): ScheduledJob
     {
-        if (! $job->status->canTransitionTo(JobStatusEnum::Completed)) {
-            throw ValidationException::withMessages(['status' => [__('app.job_invalid_transition')]]);
-        }
-
         return $this->db->transaction(function () use ($job): ScheduledJob {
-            $job->update(['status' => JobStatusEnum::Completed, 'completed_at' => now()]);
+            $locked = ScheduledJob::query()->lockForUpdate()->findOrFail($job->id);
 
-            return $job;
+            if ($locked->status === JobStatusEnum::Completed) {
+                return $locked;
+            }
+
+            if (! $locked->status->canTransitionTo(JobStatusEnum::Completed)) {
+                throw ValidationException::withMessages(['status' => [__('app.job_invalid_transition')]]);
+            }
+
+            $locked->update(['status' => JobStatusEnum::Completed, 'completed_at' => now()]);
+
+            return $locked;
         });
     }
 

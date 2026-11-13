@@ -11,12 +11,14 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\CreatesTaskFixtures;
 use Tests\TestCase;
 
 final class MeTest extends TestCase
 {
-    use RefreshDatabase;
+    use CreatesTaskFixtures, RefreshDatabase;
 
     public function test_returns_user_id_active_tenant_and_permissions(): void
     {
@@ -66,5 +68,55 @@ final class MeTest extends TestCase
         $response = $this->getJson('/api/me');
 
         $response->assertUnauthorized();
+    }
+
+    /** @return array<string, array{list<string>, string}> */
+    public static function modeProvider(): array
+    {
+        return [
+            'cleaner in one firm' => [['Interná upratovačka'], 'cleaner'],
+            'cleaner in two firms' => [['Interná upratovačka', 'Interná upratovačka'], 'cleaner'],
+            'admin' => [['Admin'], 'admin'],
+            'vedúca' => [['Vedúca'], 'admin'],
+            'admin in one firm, cleaner in another' => [['Admin', 'Interná upratovačka'], 'admin'],
+            'no record own work' => [['Účtovníčka'], 'admin'],
+        ];
+    }
+
+    /** @param list<string> $roles */
+    #[DataProvider('modeProvider')]
+    public function test_mode_comes_from_the_firms_with_mobile_access(array $roles, string $expected): void
+    {
+        $this->seedPermissionCatalog();
+        $user = User::factory()->create();
+        $first = null;
+
+        foreach ($roles as $index => $role) {
+            $firm = $this->firm('Firm '.$index);
+            $first ??= $firm;
+            $this->member($firm, $role, $user);
+        }
+
+        $this->assertNotNull($first);
+        $this->apiAs($user, $first)->getJson('/api/me')->assertOk()->assertJsonPath('mode', $expected);
+    }
+
+    public function test_firm_without_mobile_access_does_not_count_for_the_mode(): void
+    {
+        $this->seedPermissionCatalog();
+        $user = User::factory()->create();
+        $cleaning = $this->firm('Cleaning');
+        $admin = $this->firm('Admin');
+        $this->member($cleaning, 'Interná upratovačka', $user);
+        $this->member($admin, 'Admin', $user);
+        $this->actingAsMobile($user);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($admin->id);
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+        $user->revokePermissionTo(PermissionEnum::AccessMobileApp->value);
+        $user->roles()->detach();
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->withHeaders(['X-Tenant-Id' => $cleaning->id])->getJson('/api/me')->assertOk()->assertJsonPath('mode', 'cleaner');
     }
 }

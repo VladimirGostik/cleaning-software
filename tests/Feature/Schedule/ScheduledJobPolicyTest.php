@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Schedule;
 
+use App\Enums\PermissionEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
+use App\Models\Role;
 use App\Models\ScheduledJob;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Policies\ScheduledJobPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 final class ScheduledJobPolicyTest extends TestCase
@@ -22,7 +25,7 @@ final class ScheduledJobPolicyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->policy = new ScheduledJobPolicy;
+        $this->policy = app(ScheduledJobPolicy::class);
     }
 
     public function test_admin_can_do_everything_on_own_object(): void
@@ -126,7 +129,7 @@ final class ScheduledJobPolicyTest extends TestCase
         $this->assertFalse($this->policy->start($user, $inProgress));
     }
 
-    public function test_complete_and_unapprove_are_allowed_only_from_in_progress(): void
+    public function test_complete_is_allowed_from_planned_and_in_progress_unapprove_only_from_in_progress(): void
     {
         $tenant = Tenant::factory()->create();
         $user = $this->actingAsTenantUser('Admin', $tenant);
@@ -137,7 +140,7 @@ final class ScheduledJobPolicyTest extends TestCase
 
         $this->assertTrue($this->policy->complete($user, $inProgress));
         $this->assertTrue($this->policy->unapprove($user, $inProgress));
-        $this->assertFalse($this->policy->complete($user, $planned));
+        $this->assertTrue($this->policy->complete($user, $planned));
         $this->assertFalse($this->policy->unapprove($user, $planned));
     }
 
@@ -151,8 +154,58 @@ final class ScheduledJobPolicyTest extends TestCase
         $ownPlanned = ScheduledJob::factory()->assignedTo($membership)->planned()->forObject($object)->create(['tenant_id' => $tenant->id]);
         $ownInProgress = ScheduledJob::factory()->assignedTo($membership)->inProgress()->forObject($object)->create(['tenant_id' => $tenant->id]);
 
+        $ownInProgress->update(['scheduled_date' => today()]);
+        $ownPlanned->update(['scheduled_date' => today()]);
+        Role::inTenant($tenant->id)->where('name', 'Interná upratovačka')->firstOrFail()->revokePermissionTo(PermissionEnum::RecordOwnWork->value);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+
         $this->assertFalse($this->policy->start($user, $ownPlanned));
         $this->assertFalse($this->policy->complete($user, $ownInProgress));
+        $this->assertFalse($this->policy->complete($user, $ownPlanned));
         $this->assertFalse($this->policy->unapprove($user, $ownInProgress));
+    }
+
+    public function test_assignee_completes_only_own_job_dated_today_or_earlier(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = $this->actingAsTenantUser('Interná upratovačka', $tenant);
+        $membership = TenantMembership::query()->where('user_id', $user->id)->where('tenant_id', $tenant->id)->firstOrFail();
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $make = fn (string $date, ?TenantMembership $who = null): ScheduledJob => ScheduledJob::factory()->assignedTo($who ?? $membership)->forObject($object)
+            ->create(['tenant_id' => $tenant->id, 'scheduled_date' => $date]);
+
+        $today = $make(today()->toDateString());
+        $past = $make(today()->subDays(2)->toDateString());
+        $future = $make(today()->addDay()->toDateString());
+        $cancelled = ScheduledJob::factory()->assignedTo($membership)->cancelled()->forObject($object)->create(['tenant_id' => $tenant->id, 'scheduled_date' => today()]);
+        $otherMembership = TenantMembership::factory()->create(['tenant_id' => $tenant->id]);
+        $foreign = $make(today()->toDateString(), $otherMembership);
+
+        $this->assertTrue($this->policy->complete($user, $today));
+        $this->assertTrue($this->policy->complete($user, $past));
+        $this->assertFalse($this->policy->complete($user, $future));
+        $this->assertFalse($this->policy->complete($user, $cancelled));
+        $this->assertFalse($this->policy->complete($user, $foreign));
+    }
+
+    public function test_mark_done_repeats_only_for_assignee_or_editor_on_a_completed_job(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = $this->actingAsTenantUser('Interná upratovačka', $tenant);
+        $membership = TenantMembership::query()->where('user_id', $user->id)->where('tenant_id', $tenant->id)->firstOrFail();
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $object = CleaningObject::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+        $own = ScheduledJob::factory()->assignedTo($membership)->completed()->forObject($object)->create(['tenant_id' => $tenant->id]);
+        $otherMembership = TenantMembership::factory()->create(['tenant_id' => $tenant->id]);
+        $foreign = ScheduledJob::factory()->assignedTo($otherMembership)->completed()->forObject($object)->create(['tenant_id' => $tenant->id]);
+
+        $this->assertFalse($this->policy->complete($user, $own));
+        $this->assertTrue($this->policy->markDone($user, $own));
+        $this->assertFalse($this->policy->markDone($user, $foreign));
+
+        $admin = $this->actingAsTenantUser('Admin', $tenant);
+        $this->assertTrue($this->policy->markDone($admin, $foreign));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Auth;
 
+use App\Enums\MobileAppModeEnum;
 use App\Enums\PermissionEnum;
 use App\Enums\SupportedLanguage;
 use App\Models\User;
@@ -25,6 +26,7 @@ final class MeData extends Data
         public readonly string $activeTenantId,
         public readonly array $permissions,
         public readonly array $companies,
+        public readonly MobileAppModeEnum $mode,
     ) {}
 
     /** Used by ResponseFromSpatieData Scribe strategy to generate example docs. */
@@ -38,6 +40,7 @@ final class MeData extends Data
             activeTenantId: app()->bound('current_tenant_id') ? current_tenant_id() : '0195d123-0000-7000-0000-000000000002',
             permissions: [],
             companies: [],
+            mode: MobileAppModeEnum::Admin,
         );
     }
 }

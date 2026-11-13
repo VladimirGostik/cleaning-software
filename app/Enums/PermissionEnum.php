@@ -76,6 +76,7 @@ enum PermissionEnum: string
     case AssignCleaners = 'assign cleaners';
     /** Breadth modifier — requires ViewSchedule. Without it the actor sees only jobs reachable through her active membership. */
     case ViewAllSchedule = 'view all schedule';
+    case RecordOwnWork = 'record own work';
 
     // Invoices
     case ViewInvoices = 'view invoices';
@@ -146,7 +147,7 @@ enum PermissionEnum: string
             self::EditDocumentTemplates, self::DeleteDocumentTemplates => 'document_templates',
 
             self::ViewSchedule, self::CreateSchedule, self::EditSchedule,
-            self::AssignCleaners, self::ViewAllSchedule => 'schedule',
+            self::AssignCleaners, self::ViewAllSchedule, self::RecordOwnWork => 'schedule',
 
             self::ViewInvoices, self::CreateInvoices, self::EditInvoices,
             self::CancelInvoices => 'invoices',

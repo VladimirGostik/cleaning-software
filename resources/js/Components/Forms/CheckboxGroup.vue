@@ -9,14 +9,18 @@ export interface CheckboxOption {
     disabled?: boolean;
 }
 
-const props = defineProps<{
-    field?: string;
-    modelValue?: string[];
-    options: CheckboxOption[];
-    label?: string;
-    error?: string | null;
-    disabled?: boolean;
-}>();
+const props = withDefaults(
+    defineProps<{
+        field?: string;
+        modelValue?: string[];
+        options: CheckboxOption[];
+        label?: string;
+        error?: string | null;
+        disabled?: boolean;
+        capitalizeLabels?: boolean;
+    }>(),
+    { capitalizeLabels: true },
+);
 
 const emit = defineEmits<{
     'update:modelValue': [value: string[]];
@@ -64,7 +68,7 @@ function toggle(value: string): void {
                     :disabled="disabled || option.disabled"
                     @change="toggle(option.value)"
                 />
-                <span class="text-sm capitalize">{{ option.label }}</span>
+                <span class="text-sm" :class="{ capitalize: capitalizeLabels }">{{ option.label }}</span>
             </label>
         </div>
         <p v-if="resolvedError" class="text-error text-sm mt-1">

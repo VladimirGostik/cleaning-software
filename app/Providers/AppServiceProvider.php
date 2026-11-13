@@ -157,6 +157,8 @@ final class AppServiceProvider extends ServiceProvider
         RateLimiter::for('document-preview', fn (Request $request) => Limit::perMinute(30)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('invoice-send', fn (Request $request) => Limit::perMinute(10)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('task-attachments', fn (Request $request) => Limit::perMinute(60)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
+        RateLimiter::for('work-records', fn (Request $request) => Limit::perMinute(60)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
+        RateLimiter::for('job-photos', fn (Request $request) => Limit::perMinute(60)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('task-comments', fn (Request $request) => Limit::perMinute(30)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('task-ai-runs', fn (Request $request) => Limit::perMinute(10)->by($request->user() instanceof User ? 'user:'.$request->user()->id : 'ip:'.get_client_ip()));
         RateLimiter::for('mobile-token', fn (Request $request) => Limit::perMinute(30)->by('ip:'.get_client_ip()));

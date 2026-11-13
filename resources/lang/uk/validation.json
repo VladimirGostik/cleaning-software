@@ -240,7 +240,6 @@
     "attributes.hourly_rate": "погодинна ставка",
     "attributes.iban": "IBAN",
     "attributes.ico": "ІПН",
-    "attributes.id": "ідентифікатор",
     "attributes.ids": "вибрані записи",
     "attributes.include": "включити",
     "attributes.include_references": "включені референси",
@@ -394,5 +393,16 @@
     "attributes.content": "вміст повідомлення",
     "attributes.conversation_id": "розмова",
     "attributes.client_message_id": "ідентифікатор повідомлення",
-    "attributes.attachment_names": "назви вкладень"
+    "attributes.attachment_names": "назви вкладень",
+    "attributes.items.*.name": "назва позиції",
+    "attributes.items.*.price": "ціна за візит",
+    "attributes.items.*.id": "позиція",
+    "attributes.item_ids.*": "позиція",
+    "attributes.keep_item_ids.*": "залишена позиція",
+    "attributes.add_item_ids.*": "додана позиція",
+    "attributes.performed_at": "час виконання",
+    "attributes.client_uuid": "ідентифікатор",
+    "attributes.records_month": "місяць записів",
+    "attributes.id": "ідентифікатор",
+    "attributes.price": "ціна"
 }

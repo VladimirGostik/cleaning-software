@@ -26,7 +26,7 @@ enum JobStatusEnum: string
     {
         return match ($this) {
             self::Unassigned => [self::Planned, self::Cancelled],
-            self::Planned => [self::InProgress, self::Cancelled],
+            self::Planned => [self::InProgress, self::Completed, self::Cancelled],
             self::InProgress => [self::Completed, self::Unapproved],
             self::Completed, self::Unapproved, self::Cancelled => [],
         };
