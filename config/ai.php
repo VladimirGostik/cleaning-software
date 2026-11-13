@@ -103,6 +103,7 @@ return [
         'delete_quote' => ['app'],
         'delete_task' => ['app'],
         'delete_expense' => ['app'],
+        'delete_contact' => ['app'],
     ],
 
     'pending_action_ttl_minutes' => 10,

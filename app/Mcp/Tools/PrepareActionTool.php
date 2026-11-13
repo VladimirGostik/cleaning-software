@@ -19,7 +19,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Name('prepare_action')]
-#[Description('Step one of an irreversible action (issue/send invoice, send quote, sign contract, cancel invoice, delete invoice draft/quote/task/expense). Nothing happens yet: it returns a preview and a one-time token. Show the preview verbatim to the user, and only after their explicit yes call confirm_action. Actions marked confirm_in_app_only must be confirmed by the user in the app.')]
+#[Description('Step one of an irreversible action (issue/send invoice, send quote, sign contract, cancel invoice, delete invoice draft/quote/task/expense/contact). Nothing happens yet: it returns a preview and a one-time token. Show the preview verbatim to the user, and only after their explicit yes call confirm_action. Actions marked confirm_in_app_only must be confirmed by the user in the app.')]
 #[IsDestructive]
 final class PrepareActionTool extends TenantTool
 {
@@ -66,7 +66,7 @@ final class PrepareActionTool extends TenantTool
         return [
             ...$this->companyProperty($schema),
             'action' => $schema->string()->enum(array_map(fn (PendingActionEnum $case): string => $case->value, PendingActionEnum::cases()))->description('What to do.')->required(),
-            'subject_id' => $schema->string()->format('uuid')->description('Id of the invoice, quote, contract, task or expense the action applies to.')->required(),
+            'subject_id' => $schema->string()->format('uuid')->description('Id of the invoice, quote, contract, task, expense or contact the action applies to.')->required(),
             'number' => $schema->string()->max(50)->nullable()->description('issue_invoice only: explicit invoice number instead of the next one in the sequence.'),
         ];
     }

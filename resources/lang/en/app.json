@@ -2406,5 +2406,11 @@
     "assistant_file_too_large": "The file is too large (at most {max} MB).",
     "assistant_files_total_too_large": "The files together are too large (at most {max} MB).",
     "assistant_attachment_name_too_long": "The file name is too long (at most :max characters).",
-    "task_activity_former_member": "A former member"
+    "task_activity_former_member": "A former member",
+    "assistant_noun_object": "Object",
+    "assistant_noun_client": "Client",
+    "pending_action_delete_contact": "Remove contact",
+    "pending_action_done_delete_contact": "Contact removed.",
+    "pending_preview_delete_contact": "Remove contact :name from :owner.",
+    "pending_label_contact": "Contact :name (:owner)"
 }

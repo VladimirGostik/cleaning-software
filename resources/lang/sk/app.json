@@ -2406,5 +2406,11 @@
     "assistant_file_too_large": "Súbor je príliš veľký (najviac {max} MB).",
     "assistant_files_total_too_large": "Súbory spolu sú príliš veľké (najviac {max} MB).",
     "assistant_attachment_name_too_long": "Názov súboru je príliš dlhý (najviac :max znakov).",
-    "task_activity_former_member": "Bývalý člen tímu"
+    "task_activity_former_member": "Bývalý člen tímu",
+    "assistant_noun_object": "Objekt",
+    "assistant_noun_client": "Klient",
+    "pending_action_delete_contact": "Odstrániť kontakt",
+    "pending_action_done_delete_contact": "Kontakt bol odstránený.",
+    "pending_preview_delete_contact": "Odstrániť kontakt :name z :owner.",
+    "pending_label_contact": "Kontakt :name (:owner)"
 }

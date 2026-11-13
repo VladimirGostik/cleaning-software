@@ -31,7 +31,7 @@ final class AssistantTurn
         'update_invoice_draft' => [AssistantActionTypeEnum::Updated, 'invoice', '/invoices/'],
     ];
 
-    private const array FILE_TURN_WRITES = ['create_expense', 'create_task', 'create_quote_draft', 'create_invoice_draft', 'prepare_action'];
+    private const array FILE_TURN_WRITES = ['create_expense', 'create_task', 'create_contact', 'create_quote_draft', 'create_invoice_draft', 'prepare_action'];
 
     public readonly string $nonce;
 
@@ -218,6 +218,12 @@ final class AssistantTurn
             return;
         }
 
+        if ($tool === 'create_contact' || $tool === 'update_contact') {
+            $this->observeContact($data, $companyId);
+
+            return;
+        }
+
         $id = $data['id'] ?? null;
 
         if (isset(self::WRITES[$tool]) && is_string($id) && Str::isUuid($id)) {
@@ -237,6 +243,21 @@ final class AssistantTurn
                 ];
             }
         }
+    }
+
+    /** @param  array<mixed>  $data */
+    private function observeContact(array $data, ?string $companyId): void
+    {
+        $type = data_get($data, 'owner.type');
+        $id = data_get($data, 'owner.id');
+
+        if (! is_string($id) || ! Str::isUuid($id) || ! in_array($type, ['object', 'client'], true)) {
+            return;
+        }
+
+        $path = ($type === 'object' ? '/objects/' : '/clients/').$id;
+
+        $this->writes[$path] = new AssistantActionData(AssistantActionTypeEnum::Updated, __('app.assistant_noun_'.$type), $path, $companyId);
     }
 
     /** @return list<array{kind: string, id: string, company_id: string, label: string, numbers: list<int>}> */

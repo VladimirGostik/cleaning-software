@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Models\Contact;
 use App\Models\Contract;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -24,6 +25,7 @@ enum PendingActionEnum: string
     case DeleteQuote = 'delete_quote';
     case DeleteTask = 'delete_task';
     case DeleteExpense = 'delete_expense';
+    case DeleteContact = 'delete_contact';
 
     /** @return class-string<Model> */
     public function subjectClass(): string
@@ -34,6 +36,7 @@ enum PendingActionEnum: string
             self::SignContract => Contract::class,
             self::DeleteTask => Task::class,
             self::DeleteExpense => Expense::class,
+            self::DeleteContact => Contact::class,
         };
     }
 
@@ -45,7 +48,7 @@ enum PendingActionEnum: string
             self::SendInvoice, self::SendQuote => 'send',
             self::SignContract => 'sign',
             self::CancelInvoice => 'cancel',
-            self::DeleteInvoiceDraft, self::DeleteQuote, self::DeleteTask, self::DeleteExpense => 'delete',
+            self::DeleteInvoiceDraft, self::DeleteQuote, self::DeleteTask, self::DeleteExpense, self::DeleteContact => 'delete',
         };
     }
 

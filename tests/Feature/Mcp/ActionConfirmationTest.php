@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Mcp;
 
+use App\Data\Ai\PendingActionData;
 use App\Enums\ActionChannelEnum;
 use App\Enums\ConfirmationChannelEnum;
 use App\Enums\ContractStatusEnum;
@@ -14,6 +15,7 @@ use App\Enums\PendingActionStatusEnum;
 use App\Enums\QuoteStatusEnum;
 use App\Models\CleaningObject;
 use App\Models\Client;
+use App\Models\Contact;
 use App\Models\Contract;
 use App\Models\Document;
 use App\Models\Expense;
@@ -407,6 +409,83 @@ final class ActionConfirmationTest extends TestCase
 
         $this->assertSame(PendingActionStatusEnum::Executed, $pending->refresh()->status);
         $this->assertNull(Task::unscopedForSystem()->find($firm->id));
+    }
+
+    private function objectOf(string $name = 'Dom'): CleaningObject
+    {
+        return CleaningObject::factory()->create([
+            'tenant_id' => $this->alpha->id, 'name' => $name, 'client_id' => Client::factory()->create(['tenant_id' => $this->alpha->id])->id,
+        ]);
+    }
+
+    private function contactOf(CleaningObject $object, string $name, bool $primary = false): Contact
+    {
+        return Contact::factory()->create([
+            'tenant_id' => $this->alpha->id, 'contactable_type' => 'cleaning_object', 'contactable_id' => $object->id, 'name' => $name, 'is_primary' => $primary,
+        ]);
+    }
+
+    public function test_delete_contact_is_prepared_app_only_and_confirmed_in_the_app_with_primary_promotion(): void
+    {
+        $object = $this->objectOf('Dom Hlavná');
+        $primary = $this->contactOf($object, 'Anna', true);
+        $other = $this->contactOf($object, 'Boris');
+
+        ['pending' => $pending, 'token' => $token] = $this->prepare(PendingActionEnum::DeleteContact, $primary->id);
+
+        $this->assertTrue(PendingActionData::fromModel($pending)->confirm_in_app_only);
+        $this->assertStringContainsString('Anna', $pending->preview);
+        $this->assertStringContainsString('Dom Hlavná', $pending->preview);
+
+        $refused = $this->callTool($this->token, 'confirm_action', ['token' => $token]);
+        $this->assertTrue($refused->isError);
+        $this->assertStringContainsString(__('app.pending_action_app_only'), $refused->text);
+        $this->assertNotSoftDeleted($primary);
+
+        $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $pending))->assertRedirect();
+
+        $this->assertSoftDeleted($primary);
+        $this->assertTrue($other->refresh()->is_primary);
+        $this->assertSame(PendingActionStatusEnum::Executed, $pending->refresh()->status);
+    }
+
+    public function test_delete_contact_result_url_is_the_owner_page(): void
+    {
+        $client = Client::factory()->create(['tenant_id' => $this->alpha->id]);
+        $contact = Contact::factory()->primary()->create(['tenant_id' => $this->alpha->id, 'contactable_type' => 'client', 'contactable_id' => $client->id]);
+        ['pending' => $pending] = $this->prepare(PendingActionEnum::DeleteContact, $contact->id);
+
+        $result = app(ActionConfirmationService::class)->execute($this->admin, $pending, ConfirmationChannelEnum::App);
+
+        $this->assertSame(route('clients.show', $client), $result->url);
+    }
+
+    public function test_delete_contact_prepare_is_refused_without_edit_objects(): void
+    {
+        $object = $this->objectOf();
+        $contact = $this->contactOf($object, 'Anna', true);
+        $viewer = $this->member($this->alpha, 'Vedúca');
+
+        $result = $this->callTool($this->mcpToken($viewer), 'prepare_action', [
+            'company_id' => $this->alpha->id, 'action' => PendingActionEnum::DeleteContact->value, 'subject_id' => $contact->id,
+        ]);
+
+        $this->assertTrue($result->isError);
+        $this->assertSame(0, PendingAction::query()->count());
+    }
+
+    public function test_delete_contact_is_cancelled_when_the_contact_changed_after_prepare(): void
+    {
+        $object = $this->objectOf();
+        $contact = $this->contactOf($object, 'Anna', true);
+        ['pending' => $pending] = $this->prepare(PendingActionEnum::DeleteContact, $contact->id);
+
+        $contact->update(['phone' => '0999']);
+
+        $this->webAs($this->admin, $this->alpha)->post(route('pending-actions.confirm', $pending))->assertSessionHasErrors();
+
+        $this->assertNotSoftDeleted($contact);
+        $this->assertSame(PendingActionStatusEnum::Cancelled, $pending->refresh()->status);
     }
 
     public function test_delete_global_task_is_direct_creator_only_and_audited_as_executed(): void

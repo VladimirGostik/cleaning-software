@@ -14,6 +14,9 @@ use App\Enums\PendingActionEnum;
 use App\Enums\PendingActionStatusEnum;
 use App\Enums\PermissionEnum;
 use App\Exceptions\PendingActionSubjectChangedException;
+use App\Models\CleaningObject;
+use App\Models\Client;
+use App\Models\Contact;
 use App\Models\Contract;
 use App\Models\Document;
 use App\Models\Expense;
@@ -23,6 +26,7 @@ use App\Models\Quote;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\ContactService;
 use App\Services\ContractService;
 use App\Services\ExpenseService;
 use App\Services\InvoiceService;
@@ -53,6 +57,7 @@ final readonly class ActionConfirmationService
         private ContractService $contracts,
         private TaskService $tasks,
         private ExpenseService $expenses,
+        private ContactService $contacts,
     ) {}
 
     /** @param  array<string, mixed>  $payload */
@@ -300,6 +305,7 @@ final readonly class ActionConfirmationService
             $row->action === PendingActionEnum::SignContract && $subject instanceof Contract => $this->contracts->sign($subject),
             $row->action === PendingActionEnum::DeleteTask && $subject instanceof Task => $this->tasks->delete($subject),
             $row->action === PendingActionEnum::DeleteExpense && $subject instanceof Expense => $this->expenses->delete($subject),
+            $row->action === PendingActionEnum::DeleteContact && $subject instanceof Contact => $this->contacts->delete($subject),
             default => throw new LogicException('Pending action does not match its subject.'),
         };
     }
@@ -310,6 +316,18 @@ final readonly class ActionConfirmationService
             $subject instanceof Invoice && $row->action !== PendingActionEnum::DeleteInvoiceDraft => route('invoices.show', $subject),
             $subject instanceof Quote && $row->action === PendingActionEnum::SendQuote => route('quotes.show', $subject),
             $subject instanceof Contract => route('contracts.show', $subject),
+            $subject instanceof Contact => $this->contactUrl($subject),
+            default => null,
+        };
+    }
+
+    private function contactUrl(Contact $contact): ?string
+    {
+        $owner = $contact->contactable;
+
+        return match (true) {
+            $owner instanceof CleaningObject => route('objects.show', $owner),
+            $owner instanceof Client => route('clients.show', $owner),
             default => null,
         };
     }
@@ -400,6 +418,22 @@ final readonly class ActionConfirmationService
                 'preview' => $this->fill('app.pending_preview_'.$action->value, $params),
                 'customer' => null,
                 'total' => $amount,
+                'email' => null,
+            ];
+        }
+
+        if ($subject instanceof Contact) {
+            $owner = $subject->contactable;
+            $params = [
+                'name' => $this->untrusted($subject->name),
+                'owner' => $this->untrusted($owner instanceof Client || $owner instanceof CleaningObject ? $owner->name : ''),
+            ];
+
+            return [
+                'label' => $this->fill('app.pending_label_contact', $params),
+                'preview' => $this->fill('app.pending_preview_'.$action->value, $params),
+                'customer' => null,
+                'total' => null,
                 'email' => null,
             ];
         }

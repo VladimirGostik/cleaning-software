@@ -375,6 +375,13 @@ readonly email: string | null,
 readonly phone: string | null,
 readonly is_primary: boolean,
 };
+export type ContactPatchData = {
+readonly name?: string,
+readonly position?: string | null,
+readonly email?: string | null,
+readonly phone?: string | null,
+readonly is_primary?: boolean,
+};
 }
 namespace Contracts {
 export type ContractAttachmentUploadData = {
@@ -2400,7 +2407,7 @@ export type ObjectTypeEnum = "office" | "apartment" | "house" | "residential_bui
 export type PaymentImportRowStateEnum = "already_imported" | "no_vs" | "vs_not_found" | "invoice_not_payable" | "invoice_paid" | "previously_deleted" | "possible_duplicate" | "overpaid" | "partial" | "matched";
 export type PaymentSourceEnum = "manual" | "bank_import" | "legacy_import";
 export type PaymentTypeEnum = "transfer" | "cash" | "card" | "cod" | "other";
-export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense";
+export type PendingActionEnum = "issue_invoice" | "send_invoice" | "send_quote" | "sign_contract" | "cancel_invoice" | "delete_invoice_draft" | "delete_quote" | "delete_task" | "delete_expense" | "delete_contact";
 export type PendingActionStatusEnum = "pending" | "executed" | "cancelled" | "expired";
 export type PermissionEnum = "view employees" | "create employees" | "edit employees" | "delete employees" | "assign employees" | "view employee_personal_data" | "view employee_documents" | "manage employee_documents" | "manage employee_access" | "view roles" | "create roles" | "edit roles" | "delete roles" | "view audit logs" | "revert audit logs" | "view api docs" | "view media" | "upload files" | "view clients" | "create clients" | "edit clients" | "delete clients" | "view objects" | "create objects" | "edit objects" | "delete objects" | "view all objects" | "view quotes" | "create quotes" | "edit quotes" | "send quotes" | "approve quotes" | "delete quotes" | "view contracts" | "create contracts" | "edit contracts" | "terminate contracts" | "delete contracts" | "view document_templates" | "create document_templates" | "edit document_templates" | "delete document_templates" | "view schedule" | "create schedule" | "edit schedule" | "assign cleaners" | "view all schedule" | "view invoices" | "create invoices" | "edit invoices" | "cancel invoices" | "manage billing settings" | "view recurring_invoices" | "create recurring_invoices" | "edit recurring_invoices" | "delete recurring_invoices" | "view notifications" | "configure notifications" | "access mobile app" | "view tasks" | "create tasks" | "edit tasks" | "delete tasks" | "view all tasks" | "run tasks with ai" | "use assistant" | "view expenses" | "manage expenses";
 export type QuoteBillingPeriodEnum = "one_off" | "monthly" | "quarterly" | "yearly";

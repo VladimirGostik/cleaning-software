@@ -88,9 +88,21 @@ final class AssistantAgentToolsTest extends TestCase
 
     public function test_the_assistant_toolset_and_the_server_tools_are_unchanged_by_task_runs(): void
     {
-        $this->assertCount(32, CleanMasterServer::TOOLS);
+        $this->assertCount(35, CleanMasterServer::TOOLS);
         $this->assertNotContains('report_task_outcome', $this->serverToolNames());
         $this->assertContains('complete_task', array_map(ToolNameResolver::resolve(...), (new AssistantToolbox)->make(new AssistantTurn)));
+    }
+
+    public function test_the_contact_tools_are_in_the_assistant_and_task_run_toolsets(): void
+    {
+        $assistant = array_map(ToolNameResolver::resolve(...), (new AssistantToolbox)->make(new AssistantTurn));
+        $taskRun = array_map(ToolNameResolver::resolve(...), (new AssistantToolbox)->forTaskRun(new AssistantTurn(null, ActionChannelEnum::TaskRun, 'company-id')));
+
+        foreach (['list_contacts', 'create_contact', 'update_contact'] as $name) {
+            $this->assertContains($name, $this->serverToolNames(), $name);
+            $this->assertContains($name, $assistant, $name);
+            $this->assertContains($name, $taskRun, $name);
+        }
     }
 
     public function test_the_outcome_tool_schema_maps_to_a_valid_provider_definition(): void

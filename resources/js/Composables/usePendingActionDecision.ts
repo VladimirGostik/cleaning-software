@@ -10,6 +10,7 @@ export const DESTRUCTIVE_ACTIONS: readonly App.Enums.PendingActionEnum[] = [
     'delete_quote',
     'delete_task',
     'delete_expense',
+    'delete_contact',
 ];
 
 export type PendingActionDecision = ReturnType<typeof usePendingActionDecision>;

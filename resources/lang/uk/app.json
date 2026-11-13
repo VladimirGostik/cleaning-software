@@ -2406,5 +2406,11 @@
     "assistant_file_too_large": "Файл завеликий (щонайбільше {max} МБ).",
     "assistant_files_total_too_large": "Файли разом завеликі (щонайбільше {max} МБ).",
     "assistant_attachment_name_too_long": "Назва файлу задовга (щонайбільше :max символів).",
-    "task_activity_former_member": "Колишній учасник команди"
+    "task_activity_former_member": "Колишній учасник команди",
+    "assistant_noun_object": "Об'єкт",
+    "assistant_noun_client": "Клієнт",
+    "pending_action_delete_contact": "Видалити контакт",
+    "pending_action_done_delete_contact": "Контакт видалено.",
+    "pending_preview_delete_contact": "Видалити контакт :name з :owner.",
+    "pending_label_contact": "Контакт :name (:owner)"
 }
