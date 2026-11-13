@@ -43,7 +43,7 @@ function hasKeys(value: object): boolean {
     return Object.keys(value).length > 0;
 }
 
-export function useTaskInlineEdit(options: { taskId: string }) {
+export function useTaskInlineEdit(options: { taskId: string | (() => string | null) }) {
     const { t } = useI18n();
     const toast = useToast();
 
@@ -80,6 +80,10 @@ export function useTaskInlineEdit(options: { taskId: string }) {
             settle();
             return;
         }
+
+        const taskId = typeof options.taskId === 'function' ? options.taskId() : options.taskId;
+
+        if (taskId === null) return;
 
         const patch = queued;
         const keys = Object.keys(patch) as Array<keyof TaskPatch>;
@@ -119,7 +123,7 @@ export function useTaskInlineEdit(options: { taskId: string }) {
         };
 
         router.patch(
-            `/tasks/${options.taskId}`,
+            `/tasks/${taskId}`,
             { ...patch },
             {
                 async: true,

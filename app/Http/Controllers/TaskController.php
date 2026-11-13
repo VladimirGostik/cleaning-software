@@ -68,7 +68,11 @@ final class TaskController extends Controller
 
         $visibleHere = $task->tenant_id === null || $task->tenant_id === current_tenant_id();
 
-        return to_route('tasks.index', $visibleHere ? ['task' => $task->id] : [])->with('success', __('app.task_created'));
+        if (! $visibleHere) {
+            return $this->toIndex($request, null)->with('success', __('app.task_created'));
+        }
+
+        return $this->toIndex($request, $task->id);
     }
 
     #[Authorize('view', 'task')]
@@ -100,11 +104,11 @@ final class TaskController extends Controller
     }
 
     #[Authorize('delete', 'task')]
-    public function destroy(Task $task): RedirectResponse
+    public function destroy(Task $task, Request $request): RedirectResponse
     {
         $this->tasks->delete($task);
 
-        return to_route('tasks.index')->with('success', __('app.task_deleted'));
+        return $this->toIndex($request, null)->with('success', __('app.task_deleted'));
     }
 
     #[Authorize('update', 'task')]
@@ -140,6 +144,26 @@ final class TaskController extends Controller
         $this->tasks->assign($task, $data, $actor);
 
         return back()->with('success', __('app.task_assigned'));
+    }
+
+    private function toIndex(Request $request, ?string $taskId): RedirectResponse
+    {
+        $query = [];
+        $referer = parse_url(url()->previous());
+
+        if (is_array($referer)
+            && ($referer['host'] ?? null) === $request->getHost()
+            && ($referer['path'] ?? null) === parse_url(route('tasks.index', absolute: false), PHP_URL_PATH)) {
+            parse_str($referer['query'] ?? '', $query);
+        }
+
+        unset($query['task']);
+
+        if ($taskId !== null) {
+            $query['task'] = $taskId;
+        }
+
+        return to_route('tasks.index', $query);
     }
 
     private function resolveView(Request $request): TaskIndexViewEnum

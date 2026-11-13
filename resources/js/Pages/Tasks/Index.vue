@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CheckCircleIcon from '~icons/material-symbols/check-circle-outline-rounded';
 import Header from '@/Layouts/Header.vue';
@@ -7,12 +7,15 @@ import { TableFilters } from '@/Components/DataTable';
 import EmptyState from '@/Components/EmptyState.vue';
 import PageMainAction from '@/Components/PageMainAction.vue';
 import ViewModeSwitch from '@/Components/ViewModeSwitch.vue';
+import TaskDetailBody from '@/Components/Tasks/TaskDetailBody.vue';
 import TaskDetailPanel from '@/Components/Tasks/TaskDetailPanel.vue';
 import TaskBoard from '@/Components/Tasks/TaskBoard.vue';
-import TaskFormDrawer from '@/Components/Tasks/TaskFormDrawer.vue';
 import TaskTable from '@/Components/Tasks/TaskTable.vue';
 import { KG_ICONS } from '@/icons/kegosIcons';
 
+import { useAuthorization } from '@/Composables/useAuthorization';
+import { usePageProps } from '@/Composables/usePageProps';
+import { settleTaskCreate, useTaskCreate } from '@/Composables/useTaskCreate';
 import { useTaskFilters } from '@/Composables/useTaskFilters';
 import { useTaskPanel } from '@/Composables/useTaskPanel';
 import { useTaskStatusChange } from '@/Composables/useTaskStatusChange';
@@ -35,12 +38,15 @@ const props = defineProps<{
 
 const breadcrumbs: Breadcrumb[] = [{ label: t('dashboard'), url: '/' }, { label: t('tasks') }];
 
-const ui = reactive({
-    createOpen: false,
-    createStatus: null as App.Enums.TaskStatusEnum | null,
-});
-
 const panel = useTaskPanel();
+const pageProps = usePageProps();
+const { allows } = useAuthorization();
+const creator = useTaskCreate({
+    context: () => props.context,
+    activeTenantId: () => pageProps.value.tenant.active?.id ?? null,
+    selectedTaskId: () => props.selected_task?.id ?? null,
+    mayEditInActive: () => allows('edit tasks'),
+});
 const { processingId, transition } = useTaskTransition();
 const { pending, announcement, change } = useTaskStatusChange();
 const { query, definitions, reloadOnly, hasActiveFilters, chipSignature, changeFilter, clearFilters, changeView } =
@@ -62,9 +68,32 @@ const total = computed(() =>
 );
 const showEmptyState = computed(() => total.value === 0 && !hasActiveFilters.value);
 
-function openCreate(status: App.Enums.TaskStatusEnum | null = null): void {
-    ui.createStatus = status;
-    ui.createOpen = true;
+const inSession = computed(() => creator.state.value !== 'closed');
+const panelTask = computed(() => {
+    if (!props.selected_task || !props.selected_attachments || !props.selected_thread) return null;
+    if (!inSession.value) return props.selected_task;
+
+    return props.selected_task.id === creator.createdId.value ? props.selected_task : null;
+});
+const panelOpen = computed(() => inSession.value || panelTask.value !== null);
+const panelKey = computed(() => (inSession.value ? `new-${creator.sessionKey.value}` : (panelTask.value?.id ?? '')));
+const panelHeading = computed(() => (inSession.value && !panelTask.value ? t('task_add') : t('task_detail_heading')));
+
+async function openCreate(status: App.Enums.TaskStatusEnum | null = null): Promise<void> {
+    if (!(await settleTaskCreate())) return;
+    if (panel.selectedId.value) await panel.close();
+
+    creator.open(status);
+}
+
+async function closePanel(): Promise<void> {
+    if (!inSession.value) {
+        await panel.close();
+        return;
+    }
+
+    if (!(await creator.leave())) return;
+    if (panel.selectedId.value) await panel.close();
 }
 </script>
 
@@ -129,20 +158,15 @@ function openCreate(status: App.Enums.TaskStatusEnum | null = null): void {
         />
     </div>
 
-    <TaskDetailPanel
-        v-if="selected_task && selected_attachments && selected_thread"
-        :task="selected_task"
-        :attachments="selected_attachments"
-        :context="context"
-        :thread="selected_thread"
-        :activity="selected_activity"
-        @close="panel.close"
-    />
-
-    <TaskFormDrawer
-        :open="ui.createOpen"
-        :context="context"
-        :initial-status="ui.createStatus"
-        @close="ui.createOpen = false"
-    />
+    <TaskDetailPanel v-if="panelOpen" :heading="panelHeading" @close="closePanel">
+        <TaskDetailBody
+            :key="panelKey"
+            :task="panelTask"
+            :attachments="panelTask ? (selected_attachments ?? null) : null"
+            :context="context"
+            :thread="panelTask ? (selected_thread ?? null) : null"
+            :activity="selected_activity"
+            :creator="inSession ? creator : null"
+        />
+    </TaskDetailPanel>
 </template>

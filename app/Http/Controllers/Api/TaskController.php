@@ -9,6 +9,7 @@ use App\Data\Tasks\TaskBoardData;
 use App\Data\Tasks\TaskDetailData;
 use App\Data\Tasks\TaskFormContextData;
 use App\Data\Tasks\TaskListItemData;
+use App\Data\Tasks\TaskPatchData;
 use App\Data\Tasks\TaskStatusChangeData;
 use App\Data\Tasks\TaskUpsertData;
 use App\Http\Controllers\Controller;
@@ -122,7 +123,7 @@ final class TaskController extends Controller
     }
 
     #[Authorize('update', 'task')]
-    #[Endpoint('Update task', 'Tenant and assignee are not changed here; use the assign endpoint.')]
+    #[Endpoint('Update task', 'Full replace: title and priority are required, omitted optional keys are cleared. Tenant and assignee are not changed here; use the assign endpoint.')]
     #[ResponseFromSpatieData(TaskDetailData::class, User::class)]
     public function update(TaskUpsertData $data, Task $task, Request $request): JsonResponse
     {
@@ -130,6 +131,17 @@ final class TaskController extends Controller
         $actor = $request->user();
 
         return response()->json($this->tasks->detail($this->tasks->update($task, $data, $actor), $actor));
+    }
+
+    #[Authorize('update', 'task')]
+    #[Endpoint('Patch task', 'Partial update: only sent keys change. Status, assignee and tenant are ignored; use the status and assign endpoints.')]
+    #[ResponseFromSpatieData(TaskDetailData::class, User::class)]
+    public function patch(TaskPatchData $data, Task $task, Request $request): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return response()->json($this->tasks->detail($this->tasks->patch($task, $data, $actor), $actor));
     }
 
     #[Authorize('delete', 'task')]

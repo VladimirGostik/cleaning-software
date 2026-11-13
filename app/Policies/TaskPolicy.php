@@ -52,7 +52,7 @@ final class TaskPolicy
 
     public function delete(User $user, Task $task): bool
     {
-        return $this->mayChange($user, $task, PermissionEnum::DeleteTasks);
+        return $this->mayChange($user, $task, PermissionEnum::DeleteTasks) || $this->isOwnFirmTask($user, $task);
     }
 
     public function assign(User $user, Task $task): bool
@@ -151,6 +151,15 @@ final class TaskPolicy
             $task->created_by_user_id === $user->id,
             $task->isVisibleTo($user) && $user->can($permission->value),
         );
+    }
+
+    /** A creator can always discard their own firm task, so quick-create stays undoable without `delete tasks`. */
+    private function isOwnFirmTask(User $user, Task $task): bool
+    {
+        return ! $task->isGlobal()
+            && $task->created_by_user_id === $user->id
+            && $task->isVisibleTo($user)
+            && $user->can(PermissionEnum::CreateTasks->value);
     }
 
     private function holds(User $user, PermissionEnum $permission, ?string $tenantId): bool

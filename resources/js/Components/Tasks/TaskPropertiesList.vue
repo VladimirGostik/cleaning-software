@@ -135,10 +135,6 @@ function clearDue(): void {
             <TaskAssigneeField :task="task" :members="members" :editable="canAssign" :disabled="disabled" />
         </TaskPropertyRow>
 
-        <TaskPropertyRow :label="t('task_company')">
-            <span>{{ task.is_global ? t('task_kind_global') : (task.tenant_name ?? t('empty_dash')) }}</span>
-        </TaskPropertyRow>
-
         <TaskPropertyRow v-if="task.subject" :label="t('task_subject')">
             <TaskSubjectLink :subject="task.subject" />
         </TaskPropertyRow>

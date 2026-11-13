@@ -77,7 +77,8 @@ Route::middleware(['auth:sanctum', 'locale.api', 'user.active', 'ability:mobile'
     Route::get('/tasks/form-context', [TaskController::class, 'formContext'])->name('api.tasks.form-context');
     Route::post('/tasks', [TaskController::class, 'store'])->name('api.tasks.store');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('api.tasks.show')->whereUuid('task');
-    Route::match(['PUT', 'PATCH'], '/tasks/{task}', [TaskController::class, 'update'])->name('api.tasks.update')->whereUuid('task');
+    Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('api.tasks.update')->whereUuid('task');
+    Route::patch('/tasks/{task}', [TaskController::class, 'patch'])->name('api.tasks.patch')->whereUuid('task');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('api.tasks.destroy')->whereUuid('task');
     Route::post('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('api.tasks.complete')->whereUuid('task');
     Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('api.tasks.reopen')->whereUuid('task');

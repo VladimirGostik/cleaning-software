@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import HeadingInput from '@/Components/Forms/HeadingInput.vue';
@@ -9,17 +10,24 @@ const props = defineProps<{
     editable: boolean;
     disabled: boolean;
     error?: string | null;
+    live?: boolean;
+    describedby?: string;
 }>();
 
 const emit = defineEmits<{
     save: [title: string];
+    input: [title: string];
+    enter: [];
 }>();
+
+const field = useTemplateRef<{ $el: HTMLElement }>('field');
 
 const { t } = useI18n();
 const { draft, focused, commit, revert, isDirty } = useFieldDraft(() => props.title);
 
 function onInput(value: string): void {
     draft.value = value.replace(/\s*\n+\s*/g, ' ');
+    if (props.live) emit('input', draft.value);
 }
 
 function save(): void {
@@ -31,7 +39,7 @@ function save(): void {
 }
 
 function onEscape(event: KeyboardEvent): void {
-    if (!isDirty()) return;
+    if (props.live || !isDirty()) return;
 
     event.stopPropagation();
     revert();
@@ -40,13 +48,27 @@ function onEscape(event: KeyboardEvent): void {
 
 function onEnter(event: KeyboardEvent): void {
     event.preventDefault();
+
+    if (props.live) {
+        emit('enter');
+        return;
+    }
+
     (event.target as HTMLElement).blur();
 }
+
+defineExpose({
+    focus: () => field.value?.$el.querySelector('textarea')?.focus(),
+});
 </script>
 
 <template>
     <HeadingInput
         v-if="editable"
+        ref="field"
+        :autofocus="live"
+        :placeholder="live ? t('task_title') : undefined"
+        :aria-describedby="describedby"
         :model-value="draft"
         :label="t('task_title')"
         :error="error"

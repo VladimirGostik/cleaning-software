@@ -8,18 +8,29 @@ import TaskTitleField from './TaskTitleField.vue';
 
 let app: App | null = null;
 
-function mountField(title = 'Pôvodný názov') {
+function mountField(title = 'Pôvodný názov', live = false) {
     const save = vi.fn();
+    const input = vi.fn();
+    const enter = vi.fn();
     const state = reactive({ title });
     const host = document.createElement('div');
     document.body.appendChild(host);
     app = createApp({
-        render: () => h(TaskTitleField, { title: state.title, editable: true, disabled: false, onSave: save }),
+        render: () =>
+            h(TaskTitleField, {
+                title: state.title,
+                editable: true,
+                disabled: false,
+                live,
+                onSave: save,
+                onInput: input,
+                onEnter: enter,
+            }),
     });
     app.mount(host);
     const textarea = host.querySelector<HTMLTextAreaElement>('textarea')!;
 
-    return { textarea, save, state };
+    return { textarea, save, input, enter, state };
 }
 
 async function type(textarea: HTMLTextAreaElement, value: string) {
@@ -102,5 +113,53 @@ describe('TaskTitleField', () => {
         await nextTick();
 
         expect(textarea.value).toBe('Moja úprava');
+    });
+
+    it('emits nothing live outside live mode', async () => {
+        const { textarea, input, enter } = mountField();
+
+        await type(textarea, 'Nový');
+        key(textarea, 'Enter');
+
+        expect(input).not.toHaveBeenCalled();
+        expect(enter).not.toHaveBeenCalled();
+    });
+
+    it('emits every keystroke in live mode with line breaks collapsed', async () => {
+        const { textarea, input } = mountField('', true);
+
+        await type(textarea, 'Z');
+        await type(textarea, 'Za\nv');
+
+        expect(input).toHaveBeenNthCalledWith(1, 'Z');
+        expect(input).toHaveBeenNthCalledWith(2, 'Za v');
+    });
+
+    it('emits enter in live mode without blurring or breaking the line', async () => {
+        const { textarea, enter, save } = mountField('', true);
+
+        await type(textarea, 'Zav');
+        const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+        textarea.dispatchEvent(event);
+        await nextTick();
+
+        expect(enter).toHaveBeenCalledTimes(1);
+        expect(event.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(textarea);
+        expect(save).not.toHaveBeenCalled();
+    });
+
+    it('does not revert on Escape in live mode and lets the event through', async () => {
+        const { textarea } = mountField('', true);
+        const seen = vi.fn();
+        document.addEventListener('keydown', seen);
+
+        await type(textarea, 'Rozpísané');
+        key(textarea, 'Escape');
+        await nextTick();
+        document.removeEventListener('keydown', seen);
+
+        expect(textarea.value).toBe('Rozpísané');
+        expect(seen).toHaveBeenCalledTimes(1);
     });
 });

@@ -1,12 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createApp, h, nextTick } from 'vue';
+import { computed, createApp, effectScope, h, nextTick, reactive, ref } from 'vue';
 import type { App as VueApp } from 'vue';
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key, locale: { value: 'sk' } }) }));
 vi.mock('@inertiajs/vue3', () => ({
-    router: { patch: vi.fn(), post: vi.fn(), delete: vi.fn(), get: vi.fn(), reload: vi.fn() },
+    router: {
+        patch: vi.fn(),
+        post: vi.fn(),
+        delete: vi.fn(),
+        get: vi.fn(),
+        reload: vi.fn(),
+        visit: vi.fn(),
+        replace: vi.fn(),
+    },
     Link: { render: () => null },
-    usePage: () => ({ props: { auth: { user: { name: 'Admin' } } } }),
+    usePage: () => ({ url: '/tasks?view=board', props: { auth: { user: { name: 'Admin' } } } }),
     useForm: (_method: string, _url: string, data: Record<string, unknown>) => ({
         ...data,
         errors: {},
@@ -38,6 +46,9 @@ vi.mock('@/Composables/useTaskAiRun', async () => {
     };
 });
 
+import { router } from '@inertiajs/vue3';
+import { useTaskCreate } from '@/Composables/useTaskCreate';
+import { useTaskPanel } from '@/Composables/useTaskPanel';
 import TaskDetailBody from './TaskDetailBody.vue';
 
 let app: VueApp | null = null;
@@ -225,5 +236,300 @@ describe('TaskDetailBody', () => {
 
         expect(host.querySelector('.kg-quiet-textarea')).toBeNull();
         expect(host.textContent).not.toContain('description');
+    });
+
+    describe('create session', () => {
+        const attachments = {
+            attachments: [],
+            can_add: true,
+            constraints: {
+                max_size_kb: 10240,
+                max_count: 20,
+                allowed_mimes: ['application/pdf'],
+                allowed_extensions: ['pdf'],
+            },
+        };
+        const context = {
+            companies: [],
+            members: {},
+            reminder_slots: [],
+            default_remind_on: '2026-11-14',
+            default_remind_slot: 'morning',
+        };
+
+        function makeCreator() {
+            const state = ref('drafting');
+            const createdId = ref<string | null>(null);
+            const draft = reactive({ title: '', tenantId: null as string | null, status: null as string | null });
+            let handler: ((title: string | null) => void) | null = null;
+
+            return {
+                state,
+                sessionKey: ref(1),
+                createdId,
+                draft,
+                errors: ref({}),
+                companyOptions: computed(() => [
+                    { value: null, label: 'Globálna' },
+                    { value: 'tA', label: 'Alfa' },
+                ]),
+                firmLocked: computed(() => state.value === 'creating' || state.value === 'created'),
+                autoCreate: computed(() => true),
+                open: vi.fn(),
+                type: vi.fn((title: string) => {
+                    draft.title = title;
+                }),
+                holdPause: vi.fn(),
+                releasePause: vi.fn(),
+                setCompany: vi.fn((id: string | null) => {
+                    draft.tenantId = id;
+                }),
+                createNow: vi.fn(),
+                leave: vi.fn(),
+                discard: vi.fn(),
+                onCreated: vi.fn((next: (title: string | null) => void) => {
+                    handler = next;
+
+                    return () => undefined;
+                }),
+                fire: (title: string | null) => handler?.(title),
+            };
+        }
+
+        function mountSession() {
+            const creator = makeCreator();
+            const host = document.createElement('div');
+            document.body.appendChild(host);
+            const shown = reactive({ task: null as ReturnType<typeof makeTask> | null });
+            app = createApp({
+                render: () =>
+                    h(TaskDetailBody, {
+                        task: shown.task,
+                        attachments: shown.task ? attachments : null,
+                        thread: shown.task ? thread : null,
+                        context,
+                        creator,
+                    } as never),
+            });
+            app.mount(host);
+
+            return {
+                host,
+                creator,
+                arrive: async (can: { update: boolean } = { update: true }) => {
+                    creator.createdId.value = 'n1';
+                    creator.state.value = 'created';
+                    shown.task = makeTask(can, { id: 'n1', title: 'Zav', is_global: true });
+                    await nextTick();
+                    await nextTick();
+                },
+            };
+        }
+
+        function titleOf(host: HTMLElement): HTMLTextAreaElement {
+            return host.querySelector<HTMLTextAreaElement>('textarea.kg-heading-input')!;
+        }
+
+        function typeInto(textarea: HTMLTextAreaElement, value: string) {
+            textarea.focus();
+            textarea.value = value;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function enter(textarea: HTMLTextAreaElement) {
+            textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        }
+
+        it('renders the firm choice above the focused title, the hint and discard, and no properties', async () => {
+            const { host } = mountSession();
+            await nextTick();
+
+            const firm = host.querySelector('button[aria-haspopup="menu"]')!;
+            const title = titleOf(host);
+
+            expect(firm.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+            expect(host.textContent).toContain('task_new_hint');
+            expect(
+                Array.from(host.querySelectorAll('button')).some((b) => b.textContent?.includes('task_discard')),
+            ).toBe(true);
+            expect(host.querySelector('button[aria-label^="task_due_at"]')).toBeNull();
+            expect(document.activeElement).toBe(title);
+        });
+
+        it('routes typing to the creator and Enter to createNow without a line break', async () => {
+            const { host, creator } = mountSession();
+            await nextTick();
+
+            const title = titleOf(host);
+            typeInto(title, 'Zav');
+            enter(title);
+            await nextTick();
+
+            expect(creator.type).toHaveBeenCalledWith('Zav');
+            expect(creator.createNow).toHaveBeenCalledTimes(1);
+            expect(title.value).not.toContain('\n');
+        });
+
+        it('keeps the same focused title element when the task arrives and locks the firm', async () => {
+            const { host, arrive } = mountSession();
+            await nextTick();
+
+            const title = titleOf(host);
+            typeInto(title, 'Zav');
+            await arrive();
+
+            expect(titleOf(host)).toBe(title);
+            expect(document.activeElement).toBe(title);
+            expect(host.querySelector('.sr-only')?.textContent).toBe('task_company_locked');
+            expect(host.querySelector('[role="img"]')).toBeNull();
+            expect(host.querySelector('button[aria-label^="task_due_at"]')).not.toBeNull();
+        });
+
+        it('sends the title typed during the request as one patch once the task has arrived', async () => {
+            const { host, creator, arrive } = mountSession();
+            await nextTick();
+            vi.mocked(router.patch).mockClear();
+
+            typeInto(titleOf(host), 'Zavolať');
+            creator.createdId.value = 'n1';
+            creator.fire('Zavolať');
+            await arrive();
+
+            expect(router.patch).toHaveBeenCalledTimes(1);
+            expect(router.patch).toHaveBeenCalledWith('/tasks/n1', { title: 'Zavolať' }, expect.anything());
+        });
+
+        it('focuses the description after an Enter create', async () => {
+            const { host, arrive } = mountSession();
+            await nextTick();
+
+            const title = titleOf(host);
+            typeInto(title, 'Zav');
+            enter(title);
+            await arrive();
+            await nextTick();
+
+            const description = host.querySelector('textarea[placeholder="task_add_description"]');
+
+            expect(description).not.toBeNull();
+            expect(document.activeElement).toBe(description);
+        });
+
+        it('shows a static heading and sends no pending title when the creator cannot update', async () => {
+            const { host, creator, arrive } = mountSession();
+            await nextTick();
+            vi.mocked(router.patch).mockClear();
+
+            creator.createdId.value = 'n1';
+            creator.fire('Zavolať');
+            await arrive({ update: false });
+
+            expect(host.querySelector('textarea.kg-heading-input')).toBeNull();
+            expect(host.querySelector('h2.kg-heading-input')).not.toBeNull();
+            expect(host.textContent).toContain('task_created_read_only');
+            expect(router.patch).not.toHaveBeenCalled();
+        });
+
+        it('shows a placeholder on the empty title and describes it with the hint', async () => {
+            const { host } = mountSession();
+            await nextTick();
+
+            const title = titleOf(host);
+            const hint = Array.from(host.querySelectorAll('p')).find((p) => p.textContent === 'task_new_hint')!;
+
+            expect(title.getAttribute('placeholder')).toBe('task_title');
+            expect(title.getAttribute('aria-describedby')).toBe(hint.id);
+            expect(hint.id).not.toBe('');
+        });
+
+        it('keeps characters typed in the create window when the title is blurred there', async () => {
+            const { host, creator, arrive } = mountSession();
+            await nextTick();
+
+            const title = titleOf(host);
+            typeInto(title, 'Zav');
+            typeInto(title, 'Zavolať');
+            title.blur();
+            await nextTick();
+
+            creator.createdId.value = 'n1';
+            creator.fire('Zavolať');
+            await arrive();
+            await nextTick();
+
+            expect(titleOf(host).value).toBe('Zavolať');
+        });
+
+        it('sends the pending title to the new task before the visit to another task', async () => {
+            const scope = effectScope();
+            const selected = ref<string | null>(null);
+            const creator = scope.run(() =>
+                useTaskCreate({
+                    context: () => context as never,
+                    activeTenantId: () => null,
+                    selectedTaskId: () => selected.value,
+                    mayEditInActive: () => true,
+                }),
+            )!;
+            creator.open();
+
+            const host = document.createElement('div');
+            document.body.appendChild(host);
+            const shown = reactive({ task: null as ReturnType<typeof makeTask> | null });
+            app = createApp({
+                render: () =>
+                    h(TaskDetailBody, {
+                        task: shown.task,
+                        attachments: shown.task ? attachments : null,
+                        thread: shown.task ? thread : null,
+                        context,
+                        creator,
+                    } as never),
+            });
+            app.mount(host);
+            await nextTick();
+
+            vi.mocked(router.post).mockReset();
+            vi.mocked(router.post).mockImplementation(((_u: string, _b: unknown, options: { onStart: () => void }) =>
+                options.onStart()) as never);
+            vi.mocked(router.patch).mockReset();
+            vi.mocked(router.patch).mockImplementation(((
+                _u: string,
+                _d: unknown,
+                patchOptions: { onStart: () => void },
+            ) => patchOptions.onStart()) as never);
+            vi.mocked(router.visit).mockClear();
+
+            const title = titleOf(host);
+            typeInto(title, 'Zav');
+            creator.createNow();
+            typeInto(title, 'Zavolať');
+
+            const opening = useTaskPanel().open('taskB');
+            await nextTick();
+
+            const options = vi.mocked(router.post).mock.calls[0][2] as unknown as {
+                onSuccess: (page: unknown) => void;
+                onFinish: () => void;
+            };
+            shown.task = makeTask({ update: true }, { id: 'n1', title: 'Zav', is_global: true });
+            options.onSuccess({ url: '/tasks?view=board&task=n1', props: { selected_task: { id: 'n1' } } });
+            options.onFinish();
+            await vi.waitFor(() => expect(router.patch).toHaveBeenCalledTimes(1));
+            const patchOptions = vi.mocked(router.patch).mock.calls[0][2] as unknown as {
+                onSuccess: () => void;
+                onFinish: () => void;
+            };
+            expect(router.visit).not.toHaveBeenCalled();
+            patchOptions.onSuccess();
+            patchOptions.onFinish();
+            await opening;
+
+            expect(router.patch).toHaveBeenCalledWith('/tasks/n1', { title: 'Zavolať' }, expect.anything());
+            expect(router.visit).toHaveBeenCalledTimes(1);
+            expect(vi.mocked(router.patch).mock.invocationCallOrder[0]).toBeLessThan(
+                vi.mocked(router.visit).mock.invocationCallOrder[0],
+            );
+        });
     });
 });

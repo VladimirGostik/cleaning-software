@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const visit = vi.fn();
 const flushActive = vi.fn(() => Promise.resolve());
+const settle = vi.fn(() => Promise.resolve(true));
 const page = { url: '/tasks?view=board&filter[status]=open' };
 
 vi.mock('@inertiajs/vue3', () => ({
@@ -9,6 +10,7 @@ vi.mock('@inertiajs/vue3', () => ({
     usePage: () => page,
 }));
 
+vi.mock('@/Composables/useTaskCreate', () => ({ settleTaskCreate: () => settle() }));
 vi.mock('@/Composables/useTaskInlineEdit', () => ({ flushActiveTaskEdit: () => flushActive() }));
 
 import { TASK_PANEL_PROPS, useTaskPanel } from './useTaskPanel';
@@ -16,6 +18,8 @@ import { TASK_PANEL_PROPS, useTaskPanel } from './useTaskPanel';
 beforeEach(() => {
     visit.mockClear();
     flushActive.mockClear();
+    settle.mockClear();
+    settle.mockImplementation(() => Promise.resolve(true));
     flushActive.mockImplementation(() => Promise.resolve());
     page.url = '/tasks?view=board&filter[status]=open';
 });
@@ -46,6 +50,7 @@ describe('useTaskPanel', () => {
         flushActive.mockImplementation(() => new Promise<void>((resolve) => (release = resolve)));
 
         const closing = useTaskPanel().close();
+        await new Promise((resolve) => setTimeout(resolve));
 
         expect(flushActive).toHaveBeenCalledTimes(1);
         expect(visit).not.toHaveBeenCalled();
@@ -54,6 +59,30 @@ describe('useTaskPanel', () => {
         await closing;
 
         expect(visit).toHaveBeenCalledTimes(1);
+    });
+
+    it('waits for a pending create before opening another task', async () => {
+        let release: (ok: boolean) => void = () => {};
+        settle.mockImplementation(() => new Promise<boolean>((resolve) => (release = resolve)));
+
+        const opening = useTaskPanel().open('abc');
+
+        expect(visit).not.toHaveBeenCalled();
+        expect(flushActive).not.toHaveBeenCalled();
+
+        release(true);
+        await opening;
+
+        expect(visit).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not navigate when the create failed', async () => {
+        settle.mockImplementation(() => Promise.resolve(false));
+
+        await useTaskPanel().open('abc');
+
+        expect(visit).not.toHaveBeenCalled();
+        expect(flushActive).not.toHaveBeenCalled();
     });
 
     it('swaps the task id', () => {

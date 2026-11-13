@@ -1,57 +1,90 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ArrowPathIcon from '~icons/material-symbols/autorenew-outline-rounded';
 import CheckIcon from '~icons/material-symbols/check-outline-rounded';
 import TrashIcon from '~icons/material-symbols/delete-outline-rounded';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue';
-import TaskAiCard from '@/Components/Tasks/TaskAiCard.vue';
-import TaskAttachmentsCard from '@/Components/Tasks/TaskAttachmentsCard.vue';
-import TaskActivitySection from '@/Components/Tasks/TaskActivitySection.vue';
-import TaskDescriptionField from '@/Components/Tasks/TaskDescriptionField.vue';
-import TaskPanelSection from '@/Components/Tasks/TaskPanelSection.vue';
-import TaskPropertiesList from '@/Components/Tasks/TaskPropertiesList.vue';
+import TaskCompanyMenu from '@/Components/Tasks/TaskCompanyMenu.vue';
+import TaskDetailSections from '@/Components/Tasks/TaskDetailSections.vue';
+import TaskPropertyRow from '@/Components/Tasks/TaskPropertyRow.vue';
 import TaskSaveIndicator from '@/Components/Tasks/TaskSaveIndicator.vue';
+import TaskStatusMenu from '@/Components/Tasks/TaskStatusMenu.vue';
 import TaskTitleField from '@/Components/Tasks/TaskTitleField.vue';
 
-import { useTaskAttachmentUpload } from '@/Composables/useTaskAttachmentUpload';
-import { useTaskAiRun } from '@/Composables/useTaskAiRun';
-import { flushActiveTaskEdit, taskEditIdle, useTaskInlineEdit } from '@/Composables/useTaskInlineEdit';
+import type { TaskCompanyOption, TaskCreateSession } from '@/Composables/useTaskCreate';
+import { flushActiveTaskEdit, taskEditIdle, useTaskInlineEdit, type SaveState } from '@/Composables/useTaskInlineEdit';
 import { useTaskTransition } from '@/Composables/useTaskTransition';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
-import { shouldShowTaskAiCard } from '@/utils/taskAi';
 
 const { t } = useI18n();
 
-const props = defineProps<{
-    task: App.Data.Tasks.TaskDetailData;
-    attachments: App.Data.Tasks.TaskAttachmentListData;
-    context: App.Data.Tasks.TaskFormContextData;
-    thread: App.Data.Tasks.TaskThreadData;
-    activity?: App.Data.Tasks.TaskActivityFeedData | null;
-}>();
+const props = withDefaults(
+    defineProps<{
+        task: App.Data.Tasks.TaskDetailData | null;
+        attachments: App.Data.Tasks.TaskAttachmentListData | null;
+        context: App.Data.Tasks.TaskFormContextData;
+        thread: App.Data.Tasks.TaskThreadData | null;
+        activity?: App.Data.Tasks.TaskActivityFeedData | null;
+        creator?: TaskCreateSession | null;
+    }>(),
+    { creator: null },
+);
 
 const { processingId, transition } = useTaskTransition();
-const edit = useTaskInlineEdit({ taskId: props.task.id });
-const {
-    items: uploadItems,
-    uploading,
-    add,
-    dismiss,
-} = useTaskAttachmentUpload({
-    taskId: props.task.id,
-    list: () => props.attachments,
-});
-const {
-    starting,
-    errors: aiErrors,
-    statusCheckFailed,
-    start,
-} = useTaskAiRun({
-    taskId: props.task.id,
-    thread: () => props.thread,
-});
+const edit = useTaskInlineEdit({ taskId: () => props.task?.id ?? props.creator?.createdId.value ?? null });
+
+const uploading = ref(false);
 const processing = computed(() => processingId.value !== null || uploading.value);
+
+const titleField = useTemplateRef<{ focus: () => void }>('titleField');
+const sections = useTemplateRef<{ focusDescription: () => void }>('sections');
+
+const draftPhase = computed(() => props.creator !== null && props.creator.createdId.value === null);
+const canUpdate = computed(() => (props.task ? props.task.can.update : true));
+const discardable = computed(
+    () => props.task === null && (props.creator?.state.value === 'drafting' || props.creator?.state.value === 'error'),
+);
+const readOnlyAfterCreate = computed(
+    () =>
+        props.creator !== null &&
+        props.creator.createdId.value !== null &&
+        props.task !== null &&
+        !props.task.can.update,
+);
+
+const firmOptions = computed<TaskCompanyOption[]>(() => {
+    if (!props.task) return props.creator?.companyOptions.value ?? [];
+
+    return [
+        {
+            value: props.task.tenant_id,
+            label: props.task.is_global ? t('task_global') : (props.task.tenant_name ?? t('empty_dash')),
+        },
+    ];
+});
+const firmValue = computed(() => (props.task ? props.task.tenant_id : (props.creator?.draft.tenantId ?? null)));
+const firmLocked = computed(() => props.task !== null || (props.creator?.firmLocked.value ?? true));
+
+const hint = computed(() => {
+    if (!discardable.value || !props.creator) return null;
+
+    return props.creator.autoCreate.value ? t('task_new_hint') : t('task_new_hint_enter');
+});
+
+const indicatorState = computed<SaveState>(() => {
+    const creator = props.creator;
+
+    if (draftPhase.value && creator) {
+        if (creator.state.value === 'creating') return 'saving';
+
+        return creator.state.value === 'error' ? 'error' : 'idle';
+    }
+
+    if (edit.state.value !== 'idle') return edit.state.value;
+
+    return creator?.createdId.value ? 'saved' : 'idle';
+});
 
 const { state, openModal, closeModal, confirmDelete, getModalTitle, getModalDescription } =
     useDeleteConfirm<App.Data.Tasks.TaskDetailData>({
@@ -64,13 +97,112 @@ async function deleteAfterFlush(): Promise<void> {
     if (!taskEditIdle()) await flushActiveTaskEdit();
     confirmDelete();
 }
+
+const hintId = useId();
+const pendingTitle = ref<string | null>(null);
+let titleToSend = false;
+let focusDescriptionOnArrival = false;
+
+function applyPendingTitle(): void {
+    if (!titleToSend || !props.task || pendingTitle.value === null) return;
+
+    titleToSend = false;
+
+    if (props.task.can.update) edit.save({ title: pendingTitle.value });
+    else pendingTitle.value = null;
+}
+
+const unregister = props.creator?.onCreated((title) => {
+    pendingTitle.value = title;
+    titleToSend = title !== null;
+    applyPendingTitle();
+});
+
+watch(() => props.task, applyPendingTitle);
+watch(
+    () => props.task?.title,
+    (title) => {
+        if (title === pendingTitle.value) pendingTitle.value = null;
+    },
+);
+watch(
+    () => edit.state.value,
+    (value) => {
+        if (value === 'saved') pendingTitle.value = null;
+    },
+);
+
+watch(
+    sections,
+    async (value) => {
+        if (!value || !focusDescriptionOnArrival) return;
+
+        focusDescriptionOnArrival = false;
+        await nextTick();
+        value.focusDescription();
+    },
+    { flush: 'post' },
+);
+
+onMounted(() => {
+    if (props.creator) titleField.value?.focus();
+});
+
+onBeforeUnmount(() => unregister?.());
+
+function onTitleInput(value: string): void {
+    if (draftPhase.value) {
+        props.creator?.type(value);
+        return;
+    }
+
+    pendingTitle.value = null;
+
+    const title = value.trim();
+    if (title !== '') edit.saveDebounced({ title });
+}
+
+function onTitleSave(value: string): void {
+    if (!draftPhase.value) edit.save({ title: value });
+}
+
+function onTitleEnter(): void {
+    const creator = props.creator;
+
+    if (draftPhase.value && creator) {
+        if (creator.draft.title.trim() === '') return;
+
+        focusDescriptionOnArrival = true;
+        creator.createNow();
+        return;
+    }
+
+    sections.value?.focusDescription();
+}
+
+function onFirmMenu(open: boolean): void {
+    const creator = props.creator;
+    if (!creator) return;
+
+    if (open) {
+        creator.holdPause();
+        return;
+    }
+
+    creator.releasePause();
+    titleField.value?.focus();
+}
+
+function onFirmChange(value: string | null): void {
+    props.creator?.setCompany(value);
+}
 </script>
 
 <template>
     <div class="space-y-6 px-6 pb-6">
         <div class="flex items-center gap-2">
             <button
-                v-if="task.can.update && task.is_active"
+                v-if="task && task.can.update && task.is_active"
                 type="button"
                 class="btn btn-primary"
                 :disabled="processing"
@@ -81,7 +213,7 @@ async function deleteAfterFlush(): Promise<void> {
             </button>
 
             <button
-                v-if="task.can.update && !task.is_active"
+                v-if="task && task.can.update && !task.is_active"
                 type="button"
                 class="btn btn-ghost"
                 :disabled="processing"
@@ -91,10 +223,14 @@ async function deleteAfterFlush(): Promise<void> {
                 {{ t('task_reopen') }}
             </button>
 
-            <TaskSaveIndicator class="ms-auto" :state="edit.state.value" />
+            <TaskSaveIndicator class="ms-auto" :state="indicatorState" />
+
+            <button v-if="discardable" type="button" class="btn btn-ghost" @click="creator?.discard()">
+                {{ t('task_discard') }}
+            </button>
 
             <button
-                v-if="task.can.delete"
+                v-if="task && task.can.delete"
                 type="button"
                 class="btn btn-ghost btn-square"
                 :disabled="uploading"
@@ -107,66 +243,62 @@ async function deleteAfterFlush(): Promise<void> {
         </div>
 
         <div class="space-y-3">
+            <dl class="text-sm">
+                <TaskPropertyRow :label="t('task_company')">
+                    <TaskCompanyMenu
+                        :model-value="firmValue"
+                        :options="firmOptions"
+                        :locked="firmLocked"
+                        :locked-label="t('task_company_locked')"
+                        @update:model-value="onFirmChange"
+                        @update:open="onFirmMenu"
+                    />
+                    <p v-if="creator?.errors.value.tenant_id" class="text-sm text-error">
+                        {{ creator.errors.value.tenant_id }}
+                    </p>
+                </TaskPropertyRow>
+            </dl>
+
             <TaskTitleField
+                ref="titleField"
                 :key="`title-${edit.resets.value}`"
-                :title="task.title"
-                :editable="task.can.update"
+                :title="pendingTitle ?? task?.title ?? creator?.draft.title ?? ''"
+                :editable="canUpdate"
                 :disabled="uploading"
-                :error="edit.errors.value.title"
-                @save="edit.save({ title: $event })"
+                :live="creator !== null"
+                :describedby="hint ? hintId : undefined"
+                :error="creator?.errors.value.title ?? edit.errors.value.title"
+                @input="onTitleInput"
+                @enter="onTitleEnter"
+                @save="onTitleSave"
             />
 
-            <TaskPropertiesList
-                :key="`properties-${edit.resets.value}`"
-                :task="task"
-                :context="context"
-                :editable="task.can.update"
-                :disabled="uploading"
-                :errors="edit.errors.value"
-                @save="edit.save($event)"
-            />
+            <p v-if="hint" :id="hintId" class="text-sm text-muted">{{ hint }}</p>
+
+            <p v-if="draftPhase && creator?.errors.value.general" class="text-sm text-error" role="alert">
+                {{ creator.errors.value.general }}
+            </p>
+
+            <dl v-if="draftPhase && creator?.draft.status" class="text-sm">
+                <TaskPropertyRow :label="t('status')">
+                    <TaskStatusMenu variant="chip" :status="creator.draft.status" :editable="false" />
+                </TaskPropertyRow>
+            </dl>
+
+            <p v-if="readOnlyAfterCreate" class="text-sm text-muted">{{ t('task_created_read_only') }}</p>
         </div>
 
-        <TaskPanelSection v-if="task.can.update || task.description" :title="t('description')">
-            <TaskDescriptionField
-                :key="`description-${edit.resets.value}`"
-                :description="task.description"
-                :editable="task.can.update"
-                :disabled="uploading"
-                :error="edit.errors.value.description"
-                @save="
-                    (value, debounced) =>
-                        debounced ? edit.saveDebounced({ description: value }) : edit.save({ description: value })
-                "
-            />
-        </TaskPanelSection>
-
-        <TaskAttachmentsCard
-            :task-id="task.id"
-            :list="attachments"
-            :items="uploadItems"
-            :uploading="uploading"
-            @add="add"
-            @dismiss="dismiss"
-        />
-
-        <TaskAiCard
-            v-if="shouldShowTaskAiCard(thread)"
-            :thread="thread"
-            :is-global="task.is_global"
-            :uploading="uploading"
-            :starting="starting"
-            :errors="aiErrors"
-            :status-check-failed="statusCheckFailed"
-            @start="start"
-        />
-
-        <TaskActivitySection
+        <TaskDetailSections
+            v-if="task && attachments && thread"
+            ref="sections"
+            :key="task.id"
             :task="task"
-            :thread="thread"
             :attachments="attachments"
+            :context="context"
+            :thread="thread"
             :activity="activity"
-            :uploading="uploading"
+            :edit="edit"
+            @update:uploading="uploading = $event"
         />
     </div>
 

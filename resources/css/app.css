@@ -434,7 +434,7 @@
 :is(.kg-heading-input, .kg-quiet-textarea):focus:not(.kg-quiet--static) {
     background-color: var(--kg-control-bg);
 }
-.kg-quiet-textarea:placeholder-shown:not(.kg-quiet--static) {
+:is(.kg-heading-input, .kg-quiet-textarea):placeholder-shown:not(.kg-quiet--static) {
     background-color: var(--kg-control-bg);
 }
 .kg-composer {

@@ -82,7 +82,7 @@ final class TaskScopingTest extends TestCase
     public function test_secretary_edits_but_cannot_delete_without_the_delete_permission(): void
     {
         $secretary = $this->member($this->firm, 'Sekretárka');
-        $task = Task::factory()->forTenant($this->firm)->createdBy($secretary)->create();
+        $task = Task::factory()->forTenant($this->firm)->createdBy($this->member($this->firm, 'Admin'))->assignedTo($this->membershipOf($secretary, $this->firm))->create();
         $this->webAs($secretary, $this->firm);
 
         $this->put(route('tasks.update', $task), ['title' => 'Edited', 'priority' => 'low'])->assertRedirect();

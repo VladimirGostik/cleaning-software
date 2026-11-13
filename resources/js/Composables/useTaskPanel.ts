@@ -1,5 +1,6 @@
-import { computed } from 'vue';
+import { computed, nextTick } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
+import { settleTaskCreate } from '@/Composables/useTaskCreate';
 import { flushActiveTaskEdit } from '@/Composables/useTaskInlineEdit';
 
 export const TASK_PANEL_PROPS = ['selected_task', 'selected_attachments', 'selected_thread'];
@@ -22,6 +23,10 @@ export function useTaskPanel() {
     }
 
     async function visit(id: string | null): Promise<void> {
+        if (!(await settleTaskCreate())) return;
+
+        await nextTick();
+
         const target = href(id);
 
         await flushActiveTaskEdit();

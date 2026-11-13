@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import QuietTextarea from '@/Components/Forms/QuietTextarea.vue';
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const root = useTemplateRef<HTMLElement>('root');
 const { draft, focused, commit } = useFieldDraft(() => props.description ?? '');
 
 function normalize(value: string): string | null {
@@ -27,6 +29,10 @@ function onInput(value: string): void {
     emit('save', normalize(value), true);
 }
 
+defineExpose({
+    focus: () => root.value?.querySelector('textarea')?.focus(),
+});
+
 function onBlur(): void {
     focused.value = false;
 
@@ -36,7 +42,7 @@ function onBlur(): void {
 </script>
 
 <template>
-    <div v-if="editable" @focusin="focused = true" @focusout="onBlur">
+    <div v-if="editable" ref="root" @focusin="focused = true" @focusout="onBlur">
         <QuietTextarea
             :model-value="draft"
             :label="t('description')"

@@ -156,7 +156,7 @@ final class TaskApiTest extends TestCase
 
         $this->apiAs($this->user, $this->alpha);
 
-        $this->getJson('/api/tasks/'.$task->id)->assertOk()->assertJsonPath('can.update', true)->assertJsonPath('can.delete', false);
+        $this->getJson('/api/tasks/'.$task->id)->assertOk()->assertJsonPath('can.update', true)->assertJsonPath('can.delete', true);
         $this->putJson('/api/tasks/'.$task->id, ['title' => 'Edited', 'priority' => 'high'])->assertOk()->assertJsonPath('title', 'Edited');
         $this->postJson('/api/tasks/'.$task->id.'/complete')->assertOk()->assertJsonPath('status', 'done');
         $this->postJson('/api/tasks/'.$task->id.'/complete')->assertUnprocessable();
@@ -165,7 +165,19 @@ final class TaskApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('assignee_name', $assignee->name);
         $this->postJson('/api/tasks/'.$task->id.'/assign', ['assigned_membership_id' => null])->assertOk()->assertJsonPath('assigned_membership_id', null);
+        $this->deleteJson('/api/tasks/'.$task->id)->assertNoContent();
+    }
+
+    public function test_secretary_cannot_delete_a_task_created_by_someone_else(): void
+    {
+        $secretary = $this->member($this->alpha, 'Sekretárka');
+        $task = Task::factory()->forTenant($this->alpha)->createdBy($this->user)->assignedTo($this->membershipOf($secretary, $this->alpha))->create();
+
+        $this->apiAs($secretary, $this->alpha);
+
+        $this->getJson('/api/tasks/'.$task->id)->assertOk()->assertJsonPath('can.delete', false);
         $this->deleteJson('/api/tasks/'.$task->id)->assertForbidden();
+        $this->assertNotSoftDeleted($task);
     }
 
     public function test_task_of_another_firm_is_not_found_under_the_active_firm(): void

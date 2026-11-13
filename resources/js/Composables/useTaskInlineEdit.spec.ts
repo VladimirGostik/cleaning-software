@@ -271,4 +271,25 @@ describe('useTaskInlineEdit', () => {
 
         expect(api.state.value).toBe('error');
     });
+
+    it('keeps a save queued while the id getter returns null and sends it to the id that arrives', async () => {
+        let id: string | null = null;
+        const scope = effectScope();
+        const api = scope.run(() => useTaskInlineEdit({ taskId: () => id }))!;
+
+        api.save({ title: 'Zav' });
+
+        expect(patch).not.toHaveBeenCalled();
+        expect(api.state.value).toBe('idle');
+
+        id = 'new1';
+        const flushed = api.flush();
+
+        expect(patch).toHaveBeenCalledTimes(1);
+        expect(call(0).url).toBe('/tasks/new1');
+        expect(call(0).data).toEqual({ title: 'Zav' });
+
+        succeed(0);
+        await flushed;
+    });
 });
