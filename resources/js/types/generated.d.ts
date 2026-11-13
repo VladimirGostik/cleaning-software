@@ -1560,6 +1560,7 @@ readonly total: number,
 namespace Notifications {
 export type NotificationBellData = {
 readonly unread_count: number,
+readonly badge_count: number | null,
 readonly recent: App.Data.Notifications.NotificationListItemData[],
 };
 export type NotificationListItemData = {

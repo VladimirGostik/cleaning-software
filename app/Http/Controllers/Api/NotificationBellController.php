@@ -22,7 +22,7 @@ use Knuckles\Scribe\Attributes\Group;
 #[Authenticated]
 final class NotificationBellController extends Controller
 {
-    #[Endpoint('Bell', 'Unread count + 5 latest notifications for the active tenant.')]
+    #[Endpoint('Bell', 'Unread count + 5 latest notifications for the active tenant; badge_count = unread across every company shown on the phone.')]
     #[ResponseFromSpatieData(NotificationBellData::class, User::class)]
     #[Authorize('viewAny', Notification::class)]
     public function __invoke(Request $request, NotificationService $notifications): JsonResponse
@@ -30,6 +30,6 @@ final class NotificationBellController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        return response()->json($notifications->bell($user, current_tenant_id()));
+        return response()->json($notifications->bell($user, current_tenant_id(), withBadge: true));
     }
 }

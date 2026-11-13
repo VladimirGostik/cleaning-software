@@ -294,9 +294,12 @@ final class PushDeliveryTest extends TestCase
     {
         $service = app(NotificationService::class);
 
-        $this->assertSame(1, $service->badgeFor($this->user, 'a0000000-0000-7000-8000-00000000000a'));
+        $pending = $this->dueNotification(null);
+        $pending->id = 'a0000000-0000-7000-8000-00000000000a';
+        $this->assertSame(1, $service->badgeCount($this->user, $pending));
 
         $row = Notification::factory()->for($this->user, 'notifiable')->create(['tenant_id' => null, 'read_at' => null]);
-        $this->assertSame(1, $service->badgeFor($this->user, $row->id));
+        $pending->id = $row->id;
+        $this->assertSame(1, $service->badgeCount($this->user, $pending));
     }
 }

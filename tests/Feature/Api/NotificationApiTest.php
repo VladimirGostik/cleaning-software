@@ -115,7 +115,7 @@ final class NotificationApiTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_read_all_marks_active_firm_and_company_less_rows_only(): void
+    public function test_read_all_marks_every_phone_company_and_company_less_rows_for_the_caller_only(): void
     {
         $inAlpha = $this->notificationFor($this->user, $this->alpha);
         $global = $this->notificationFor($this->user, null);
@@ -124,11 +124,11 @@ final class NotificationApiTest extends TestCase
 
         $this->apiAs($this->user, $this->alpha)->postJson('/api/notifications/read-all')
             ->assertOk()
-            ->assertJsonPath('updated', 2);
+            ->assertJsonPath('updated', 3);
 
         $this->assertNotNull($inAlpha->fresh()?->read_at);
         $this->assertNotNull($global->fresh()?->read_at);
-        $this->assertNull($inBeta->fresh()?->read_at);
+        $this->assertNotNull($inBeta->fresh()?->read_at);
         $this->assertNull($other->fresh()?->read_at);
     }
 

@@ -13,11 +13,28 @@ final readonly class PushMessage
         public string $tenantId,
         public string $notificationId,
         public int $badge,
+        public bool $badgeOnly = false,
     ) {}
+
+    public static function badgeOnly(int $badge): self
+    {
+        return new self('', '', '', '', '', $badge, badgeOnly: true);
+    }
 
     /** @return array<string, mixed> */
     public function toFcmPayload(): array
     {
+        if ($this->badgeOnly) {
+            return [
+                'data' => ['kind' => 'badge'],
+                'apns' => [
+                    'headers' => ['apns-push-type' => 'alert', 'apns-priority' => '10'],
+                    'payload' => ['aps' => ['badge' => $this->badge]],
+                ],
+                'android' => ['priority' => 'normal'],
+            ];
+        }
+
         return [
             'notification' => ['title' => $this->title, 'body' => $this->body],
             'data' => ['route' => $this->route, 'notification_id' => $this->notificationId, 'tenant_id' => $this->tenantId],

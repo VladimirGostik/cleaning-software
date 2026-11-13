@@ -30,6 +30,7 @@ final class NotificationBellTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('unread_count', 4);
+        $response->assertJsonPath('badge_count', null);
         $this->assertCount(5, (array) $response->json('recent'));
     }
 
@@ -72,6 +73,33 @@ final class NotificationBellTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('unread_count', 1);
+        $response->assertJsonPath('badge_count', 1);
+    }
+
+    public function test_api_bell_badge_count_spans_phone_companies_while_unread_count_is_active_company(): void
+    {
+        $alpha = Tenant::factory()->create();
+        $beta = Tenant::factory()->create();
+        $user = User::factory()->create();
+
+        foreach ([$alpha, $beta] as $tenant) {
+            TenantMembership::query()->create(['user_id' => $user->id, 'tenant_id' => $tenant->id, 'is_active' => true, 'joined_at' => now()]);
+            RoleTemplatesSeeder::seedForTenant($tenant);
+            app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+            $user->assignRole(Role::inTenant($tenant->id)->where('name', 'Vedúca')->firstOrFail());
+        }
+
+        Notification::factory()->for($user, 'notifiable')->for($alpha)->count(2)->create();
+        Notification::factory()->for($user, 'notifiable')->for($beta)->count(3)->create();
+        Notification::factory()->for($user, 'notifiable')->state(['tenant_id' => null])->create();
+
+        $this->actingAsMobile($user);
+
+        $this->withHeaders(['X-Tenant-Id' => $alpha->id])->getJson('/api/notifications/bell')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 3)
+            ->assertJsonPath('badge_count', 6)
+            ->assertJsonCount(3, 'recent');
     }
 
     public function test_api_bell_requires_authentication(): void

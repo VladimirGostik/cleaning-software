@@ -14,12 +14,13 @@ final class NotificationBellData extends Data
     /** @param array<int, NotificationListItemData> $recent */
     public function __construct(
         public readonly int $unread_count,
+        public readonly ?int $badge_count,
         public readonly array $recent,
     ) {}
 
     /** Example-only shape for Scribe (`#[ResponseFromSpatieData]`) — real payload built by `NotificationService::bell()`. */
     public static function fromModel(User $user): self
     {
-        return new self(unread_count: 0, recent: []);
+        return new self(unread_count: 0, badge_count: 0, recent: []);
     }
 }

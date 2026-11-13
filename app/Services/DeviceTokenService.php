@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\Devices\DeviceRegisterData;
+use App\Enums\DevicePlatformEnum;
 use App\Models\DeviceToken;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
@@ -57,6 +58,20 @@ final readonly class DeviceTokenService
     public function hasTokens(User $user): bool
     {
         return DeviceToken::query()->where('user_id', $user->id)->exists();
+    }
+
+    public function hasIosTokens(User $user): bool
+    {
+        return DeviceToken::query()->where('user_id', $user->id)->where('platform', DevicePlatformEnum::Ios)->exists();
+    }
+
+    /** @return list<string> */
+    public function iosTokensFor(User $user): array
+    {
+        /** @var list<string> $tokens */
+        $tokens = DeviceToken::query()->where('user_id', $user->id)->where('platform', DevicePlatformEnum::Ios)->pluck('token')->values()->all();
+
+        return $tokens;
     }
 
     /** @return list<string> */

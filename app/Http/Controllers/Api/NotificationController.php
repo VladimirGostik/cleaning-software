@@ -41,20 +41,23 @@ final class NotificationController extends Controller
 
     #[Authorize('update', 'notification')]
     #[Endpoint('Mark read', 'Marks one own notification as read.')]
-    public function read(Notification $notification): Response
+    public function read(Request $request, Notification $notification): Response
     {
-        $this->notifications->markRead($notification);
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->notifications->markRead($notification, $user);
 
         return response()->noContent();
     }
 
     #[Authorize('viewAny', Notification::class)]
-    #[Endpoint('Mark all read', 'Marks all own notifications of the active company (and company-less ones) as read.')]
+    #[Endpoint('Mark all read', 'Marks all own unread notifications of every company shown on the phone (mobile access and view notifications) and company-less ones as read.')]
     public function readAll(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
-        return response()->json(['updated' => $this->notifications->markAllRead($user, current_tenant_id())]);
+        return response()->json(['updated' => $this->notifications->markAllReadOnPhone($user)]);
     }
 }

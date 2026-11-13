@@ -48,9 +48,12 @@ final class NotificationController extends Controller
     }
 
     #[Authorize('update', 'notification')]
-    public function markRead(Notification $notification): RedirectResponse
+    public function markRead(Request $request, Notification $notification): RedirectResponse
     {
-        $this->notifications->markRead($notification);
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->notifications->markRead($notification, $user);
 
         return back()->with('success', __('app.notification_marked_read'));
     }

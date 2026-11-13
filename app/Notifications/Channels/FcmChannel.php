@@ -46,7 +46,7 @@ final readonly class FcmChannel
             route: PushRoute::fromUrl($payload['url'] ?? null),
             tenantId: $notification->tenantId ?? '',
             notificationId: $notification->id,
-            badge: $this->notifications->badgeFor($notifiable, $notification->id),
+            badge: $this->notifications->badgeCount($notifiable, $notification),
         );
 
         // Swallowed on purpose: a retry after a partial multicast failure would re-send to the tokens that already got it.
